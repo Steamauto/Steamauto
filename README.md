@@ -1,5 +1,5 @@
 # PyBuffHelper
-#注意：此库为Selenium版的buff-bot，且已经停止更新支持！
+# 注意：此库为Selenium版的buff-bot，且已经停止更新支持！
 使用Selenium实现的BUFF全自动发货(csgo)  
 ## 如何使用？
 1. 确保你的系统内已经安装Chrome和Python  
