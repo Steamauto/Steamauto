@@ -51,13 +51,13 @@ if __name__ == '__main__':
     while True:
         print("正在进行例行待发货物品检查...")
         response = requests.get("https://buff.163.com/api/message/notification", headers=headers)
+        to_deliver_count = int(json.loads(response.text).get('data').get('to_deliver_order').get('csgo'))
+        if to_deliver_count != 0:
+            print("检测到", to_deliver_count, "个待发货请求！")
+        response = requests.get("https://buff.163.com/api/market/steam_trade", headers=headers)
+        trade = json.loads(response.text).get('data')
+        print("查找到", len(trade), "个待处理的交易报价请求！")
         try:
-            to_deliver_count = int(json.loads(response.text).get('data').get('to_deliver_order').get('csgo'))
-            if to_deliver_count != 0:
-                print("检测到", to_deliver_count, "个待发货请求！")
-            response = requests.get("https://buff.163.com/api/market/steam_trade", headers=headers)
-            trade = json.loads(response.text).get('data')
-            print("查找到", len(trade), "个待处理的交易报价请求！")
             if len(trade) != 0:
                 i = 0
                 for go in trade:
