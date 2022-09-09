@@ -79,5 +79,6 @@ if __name__ == '__main__':
             else:
                 print("暂无BUFF报价请求.将在180秒后再次检查BUFF交易信息！\n")
         except Exception:
+            print(traceback.print_exc())
             print("出现错误，稍后再试！")
         time.sleep(180)
