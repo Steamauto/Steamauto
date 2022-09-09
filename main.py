@@ -3,6 +3,7 @@ import sys
 from steampy.client import SteamClient
 import undetected_chromedriver as webdriver
 from selenium.webdriver.common.by import By as by
+import requests
 import pickle
 import time
 import builtins as __builtin__
