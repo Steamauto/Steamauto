@@ -1,5 +1,5 @@
 # Buff-Bot
-使用Python 3实现的网易BUFF饰品交易平台(csgo)全自动发货  
+使用Python3和Requests库实现的网易BUFF饰品交易平台(csgo)全自动发货  
 **请仔细阅读教程！**  
 **欢迎有能力者提交PR来完善本程序。**  
 
