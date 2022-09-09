@@ -8,6 +8,7 @@
 2. 安装依赖
     ```
     pip install steampy
+    pip install lxml
     ```
 3. 下载仓库并解压 
 4. 打开`steamaccount.txt`，修改所有参数（相关教程见FAQ）
