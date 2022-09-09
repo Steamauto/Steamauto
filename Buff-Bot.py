@@ -49,7 +49,7 @@ if __name__ == '__main__':
         sys.exit()
 
     while True:
-        print("正在进行例行待发货物品检查...")
+        print("正在进行待发货/待收货饰品检查...")
         response = requests.get("https://buff.163.com/api/message/notification", headers=headers)
         to_deliver_count = int(json.loads(response.text).get('data').get('to_deliver_order').get('csgo'))
         if to_deliver_count != 0:
@@ -75,9 +75,9 @@ if __name__ == '__main__':
                             print("出现错误，稍后再试！")
                     else:
                         print("该报价已经被处理过，跳过.\n")
-                print("暂无待发货请求.60秒后再次获取BUFF交易信息！\n")
+                print("暂无BUFF报价请求.将在180秒后再次检查BUFF交易信息！\n")
             else:
-                print("暂无待发货请求.60秒后再次获取BUFF交易信息！\n")
+                print("暂无BUFF报价请求.将在180秒后再次检查BUFF交易信息！\n")
         except Exception:
             print("出现错误，稍后再试！")
-        time.sleep(60)
+        time.sleep(180)
