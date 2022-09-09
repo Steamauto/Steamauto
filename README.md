@@ -1,43 +1,38 @@
-# PyBuffHelper
-使用Selenium实现的BUFF全自动发货(csgo)  
-**注意：由于我的时间非常有限，因此本程序的完善度很低！我只能保证按照使用教程不会出错。**  
-**当然，我十分欢迎有能力者提交PR来完善本程序。**  
-TODO：计划使用Requests库重写  
+# Buff-Bot
+使用Python 3实现的网易BUFF饰品交易平台(csgo)全自动发货  
+**请仔细阅读教程！请勿不读教程直接使用！**  
+**欢迎有能力者提交PR来完善本程序。**  
+
 ## 如何使用？
-1. 确保你的系统内已经安装Chrome和Python  
+1. 确保你的系统内已经安装Python  
 2. 安装依赖
-```
-pip install undetected-chromedriver
-pip install steampy
-```
+    ```
+    pip install steampy
+    ```
 3. 下载仓库并解压 
-4. 打开main.py，修改clientid、steamid和steampassword（见FAQ）
-5. 在程序运行目录新建steamguard.txt，并添加以下内容
-```
-{
-    "steamid": "YOUR_STEAM_ID_64",
-    "shared_secret": "YOUR_SHARED_SECRET",
-    "identity_secret": "YOUR_IDENTITY_SECRET"
-}
-```
-6. 在命令行内输入```python main.py```来运行PyBuffHelper  
+4. 打开`steamaccount.txt`，修改所有参数（相关教程见FAQ）
+5. 打开`cookies.txt`，填入[网易BUFF](https://buff.163.com)的cookie
+6. 在命令行内输入```python Buff-Bot.py```
+7. Enjoy.
 ## FAQ
-1.clientid是什么？  
-即 网页APIKEY  
+**1.支持Linux？**  
+完美支持.
 
-2.steamguard.txt内的内容如何填写？  
-见附录
-
-3.为什么关闭Issues？  
-如前文所说，本人非常忙碌，无暇解决问题。如果你操作正确，一定是可以正常运行的（我自己一直在用）。  
-仅提供PR的通道，不提供解决问题的通道。  
-
-4.支持Linux？  
-不推荐但是支持。可能会出现部分不影响程序正常运行的BUG。
+**2.`steamaccount.txt`说明**  
+steamid:Steam的数字ID  
+shared_secret:Steam令牌参数  
+identity_secret:Steam令牌参数  
+api_key:Steam网页API密钥  
+steam_username:Steam登录时填写的用户名  
+steam_password:Steam登录时填写的密码  
+**部分参数获取教程请查看附录**
 
 ## 附录
-[Obtaining API Key](http://steamcommunity.com/dev/apikey)
+关于`steamaccount.txt`相关参数的获取教程都在下面，请自行参阅  
+个人推荐使用[ Watt Toolkit ](https://github.com/BeyondDimension/SteamTools)获取Steam令牌参数 操作非常简便
 
-[Obtaining SteamGuard from mobile device]( https://github.com/SteamTimeIdler/stidler/wiki/Getting-your-%27shared_secret%27-code-for-use-with-Auto-Restarter-on-Mobile-Authentication )
-
+[获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)   
+[Steam令牌介绍以及提取转移](https://steam.red/blog/archives/Steamguard.html)  
+[buffhelp 网易buff自动发货-哔哩哔哩（请查看P2-P7）](https://www.bilibili.com/video/BV1DT4y1P7Dx)  
+[Obtaining SteamGuard from mobile device]( https://github.com/SteamTimeIdler/stidler/wiki/Getting-your-%27shared_secret%27-code-for-use-with-Auto-Restarter-on-Mobile-Authentication )  
 [Obtaining SteamGuard using Android emulation]( https://github.com/codepath/android_guides/wiki/Genymotion-2.0-Emulators-with-Google-Play-support)
