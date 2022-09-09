@@ -1,0 +1,8 @@
+{
+    "steamid": "",
+    "shared_secret": "",
+    "identity_secret": "",
+    "api_key": "",
+    "steam_username": "",
+    "steam_password": ""
+}
