@@ -15,6 +15,18 @@ def print(*args, **kwargs):
     return __builtin__.print(time.strftime("[%Y-%m-%d %H:%M:%S]", time.localtime()), *args, **kwargs)
 
 
+def checkaccountstate():
+    try:
+        userid = etree.HTML(requests.get('https://buff.163.com/', headers=headers).text).xpath("/html//strong["
+                                                                                               "@id='navbar-user-name"
+                                                                                               "']/text()")
+        return userid[0]
+    except IndexError:
+        print('BUFF账户登录状态失效，请检查cookies.txt！')
+        os.system('pause')
+        sys.exit()
+
+
 if __name__ == '__main__':
     os.system("title Buff-Bot 作者：甲甲")
     print("欢迎使用Buff-Bot 作者：甲甲")
@@ -28,10 +40,7 @@ if __name__ == '__main__':
     try:
         headers['Cookie'] = FileUtils.readfile('cookies.txt')
         print("已检测到cookies，尝试登录")
-        response = requests.get('https://buff.163.com/market/sell_order/to_deliver?game=csgo', headers=headers)
-        userid = etree.HTML(response.text).xpath("/html//strong[@id='navbar-user-name']/text()")
-        print("BUFF用户名", userid[0])
-        print("使用cookies登录成功\n")
+        print("已经登录至BUFF 用户名："+checkaccountstate())
     except FileNotFoundError:
         print('未检测到cookies.txt，请添加cookies.txt后再进行操作！')
         os.system('pause')
@@ -49,9 +58,16 @@ if __name__ == '__main__':
         sys.exit()
 
     while True:
+        print("正在检查Steam账户登录状态...")
+        if not client.is_session_alive():
+            print("Steam登录状态失效！程序退出...")
+            sys.exit()
+        print("Steam账户状态正常")
         print("正在进行待发货/待收货饰品检查...")
+        checkaccountstate()
         response = requests.get("https://buff.163.com/api/message/notification", headers=headers)
-        to_deliver_count = int(json.loads(response.text).get('data').get('to_deliver_order').get('csgo'))
+        to_deliver_order = json.loads(response.text).get('data').get('to_deliver_order')
+        to_deliver_count = int(to_deliver_order.get('csgo')) + int(to_deliver_order.get('dota2'))
         if to_deliver_count != 0:
             print("检测到", to_deliver_count, "个待发货请求！")
         response = requests.get("https://buff.163.com/api/market/steam_trade", headers=headers)
