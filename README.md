@@ -12,7 +12,7 @@
     ```
 3. 下载仓库并解压 
 4. 打开`steamaccount.txt`，修改所有参数（相关教程见FAQ）
-5. 打开`cookies.txt`，填入[网易BUFF](https://buff.163.com)的cookie
+5. 打开`cookies.txt`，填入[网易BUFF](https://buff.163.com)的cookie（包含session即可）
 6. 在命令行内输入```python Buff-Bot.py```
 7. Enjoy.
 ## FAQ
