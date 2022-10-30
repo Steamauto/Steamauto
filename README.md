@@ -5,21 +5,20 @@
 
 ## 如何使用？
 1. 确保你的系统内已经安装Python  
-2. 安装依赖
+2. 下载仓库并解压
+3. 安装依赖
     ```
-    pip install steampy
-    pip install lxml
+    pip install -r requirements.txt
     ```
-3. 下载仓库并解压 
-4. 打开`steamaccount.txt`，修改所有参数（相关教程见FAQ）
-5. 打开`cookies.txt`，填入[网易BUFF](https://buff.163.com)的cookie（包含session即可）
-6. 在命令行内输入```python Buff-Bot.py```
+4. 执行程序, 在命令行内输入```python Buff-Bot.py```
+5. 打开`steamaccount.json`，修改所有参数（相关教程见FAQ）
+6. 打开`cookies.txt`，填入[网易BUFF](https://buff.163.com)的cookie（包含session即可）
 7. Enjoy.
 ## FAQ
 **1.支持Linux？**  
 完美支持.
 
-**2.`steamaccount.txt`说明**  
+**2.`steamaccount.json`说明**  
 steamid:Steam的数字ID  
 shared_secret:Steam令牌参数  
 identity_secret:Steam令牌参数  
@@ -29,7 +28,7 @@ steam_password:Steam登录时填写的密码
 **部分参数获取教程请查看附录**
 
 ## 附录
-关于`steamaccount.txt`相关参数的获取教程都在下面，请自行参阅  
+关于`steamaccount.json`相关参数的获取教程都在下面，请自行参阅  
 个人推荐使用[ Watt Toolkit ](https://github.com/BeyondDimension/SteamTools)获取Steam令牌参数 操作非常简便
 
 [获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)   
