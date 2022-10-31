@@ -1,3 +1,4 @@
 steampy
 lxml
 requests
+apprise

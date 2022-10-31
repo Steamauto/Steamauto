@@ -1,8 +1,13 @@
 import logging
 import os
+import shutil
 import sys
 import json
 import traceback
+
+import apprise
+from apprise.AppriseAsset import *
+from apprise.decorators import notify
 from steampy.client import SteamClient
 from lxml import etree
 import requests
@@ -30,11 +35,39 @@ def checkaccountstate(headers=None):
         sys.exit()
 
 
+@notify(on="ftqq", name="Server酱通知插件")
+def server_chan_notification_wrapper(body, title, notify_type, *args, **kwargs):
+    token = kwargs['meta']['host']
+    try:
+        resp = requests.get('https://sctapi.ftqq.com/%s.send?title=%s&desp=%s' % (token, title, body))
+        if resp.status_code == 200:
+            if resp.json()['code'] == 0:
+                logger.info('Server酱通知发送成功')
+                return True
+            else:
+                logger.error('Server酱通知发送失败, return code = %d' % resp.json()['code'])
+                return False
+        else:
+            logger.error('Server酱通知发送失败, http return code = %s' % resp.status_code)
+            return False
+    except Exception as e:
+        logger.error('Server酱通知插件发送失败！')
+        logger.error(e)
+        return False
+
+    # Returning True/False is a way to relay your status back to Apprise.
+    # Returning nothing (None by default) is always interpreted as a Success
+
+
 def main():
+    asset = AppriseAsset(plugin_paths=[__file__])
     os.system("title Buff-Bot 作者：甲甲")
     logger.info("欢迎使用Buff-Bot 作者：甲甲")
     logger.info("正在初始化...")
     first_run = False
+    if not os.path.exists("config.json"):
+        first_run = True
+        shutil.copy("config.json.example", "config.json")
     if not os.path.exists("cookies.txt"):
         first_run = True
         FileUtils.writefile("cookies.txt", "session=")
@@ -44,9 +77,10 @@ def main():
                                                              "identity_secret": "", "api_key": "",
                                                              "steam_username": "", "steam_password": ""}))
     if first_run:
-        logger.info("检测到首次运行，已为您生成配置文件，请按照提示填写配置文件！")
+        logger.info("检测到首次运行，已为您生成配置文件，请按照README提示填写配置文件！")
         logger.info('点击任何键继续...')
         os.system('pause >nul')
+    config = json.loads(FileUtils.readfile("config.json"))
     ignoredoffer = []
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -98,6 +132,15 @@ def main():
                             client.accept_trade_offer(offerid)
                             ignoredoffer.append(offerid)
                             logger.info("接受完成！已经将此交易报价加入忽略名单！\n")
+                            if 'sell_notification' in config:
+                                apprise_obj = apprise.Apprise()
+                                for server in config['servers']:
+                                    apprise_obj.add(server)
+                                # TODO: 优化消息内容, 支持更多消息内容, 需要先看BUFF的API
+                                apprise_obj.notify(
+                                    title=config['sell_notification']['title'],
+                                    body=config['sell_notification']['body'],
+                                )
                         except Exception as e:
                             logger.info(traceback.logger.info_exc())
                             logger.info("出现错误，稍后再试！")
