@@ -19,9 +19,9 @@
 **1.支持Linux?**  
 完美支持.
 
-**2. `config.json` 说明**
+**2. `config.json` 说明**  
 title:通知标题  
-content:通知内容  
+body:通知内容  
 sell_notification:出售通知(如不需要可直接删除)  
 servers:Apprise格式服务器列表 - 详见[Apprise](https://github.com/caronc/apprise)  
 - 额外支持 [Server酱](https://sct.ftqq.com/) 格式为`ftqq://<SENDKEY>`
