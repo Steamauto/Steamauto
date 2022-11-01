@@ -17,15 +17,20 @@ import FileUtils
 logging.basicConfig(format='[%(asctime)s] - %(filename)s - %(levelname)s: %(message)s',
                     level=logging.INFO)
 
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                  'Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27',
+}
 
-def checkaccountstate(headers=None):
+
+def checkaccountstate():
     try:
         userid = etree.HTML(requests.get('https://buff.163.com/', headers=headers).text).xpath("/html//strong["
                                                                                                "@id='navbar-user-name"
                                                                                                "']/text()")
         return userid[0]
     except IndexError:
-        logging.info('BUFF账户登录状态失效，请检查cookies.txt！')
+        logging.error('BUFF账户登录状态失效，请检查cookies.txt！')
         logging.info('点击任何键继续...')
         os.system('pause >nul')
         sys.exit()
@@ -79,14 +84,10 @@ def main():
         os.system('pause >nul')
     config = json.loads(FileUtils.readfile("config.json"))
     ignoredoffer = []
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                      'Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27',
-    }
     logging.info("正在准备登录至BUFF...")
     headers['Cookie'] = FileUtils.readfile('cookies.txt')
     logging.info("已检测到cookies，尝试登录")
-    logging.info("已经登录至BUFF 用户名：" + checkaccountstate(headers=headers))
+    logging.info("已经登录至BUFF 用户名：" + checkaccountstate())
 
     try:
         logging.info("正在登录Steam...")
@@ -95,15 +96,15 @@ def main():
         SteamClient.login(client, acc.get('steam_username'), acc.get('steam_password'), 'steamaccount.json')
         logging.info("登录完成！\n")
     except FileNotFoundError:
-        logging.info('未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！')
-        logging.info('点击任何键继续...')
+        logging.error('未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！')
+        logging.info('点击任何键退出...')
         os.system('pause >nul')
         sys.exit()
 
     while True:
         logging.info("正在检查Steam账户登录状态...")
         if not client.is_session_alive():
-            logging.info("Steam登录状态失效！程序退出...")
+            logging.error("Steam登录状态失效！程序退出...")
             sys.exit()
         logging.info("Steam账户状态正常")
         logging.info("正在进行待发货/待收货饰品检查...")
@@ -112,17 +113,17 @@ def main():
         to_deliver_order = json.loads(response.text).get('data').get('to_deliver_order')
         to_deliver_count = int(to_deliver_order.get('csgo')) + int(to_deliver_order.get('dota2'))
         if to_deliver_count != 0:
-            logging.info("检测到", to_deliver_count, "个待发货请求！")
+            logging.info("检测到" + str(to_deliver_count), "个待发货请求！")
         response = requests.get("https://buff.163.com/api/market/steam_trade", headers=headers)
         trade = json.loads(response.text).get('data')
-        logging.info("查找到", len(trade), "个待处理的交易报价请求！")
+        logging.info("查找到" + str(len(trade)) + "个待处理的交易报价请求！")
         try:
             if len(trade) != 0:
                 i = 0
                 for go in trade:
                     i += 1
                     offerid = go.get('tradeofferid')
-                    logging.info("正在处理第", i, "个交易报价 报价ID", offerid)
+                    logging.info("正在处理第" + str(i) + "个交易报价 报价ID", offerid)
                     if offerid not in ignoredoffer:
                         try:
                             logging.info("正在接受报价...")
@@ -139,7 +140,7 @@ def main():
                                     body=config['sell_notification']['body'],
                                 )
                         except Exception as e:
-                            logging.info(traceback.logging.info_exc())
+                            # logging.info(traceback.logging.info_exc())
                             logging.info("出现错误，稍后再试！")
                     else:
                         logging.info("该报价已经被处理过，跳过.\n")
@@ -147,7 +148,7 @@ def main():
             else:
                 logging.info("暂无BUFF报价请求.将在180秒后再次检查BUFF交易信息！\n")
         except Exception:
-            logging.info(traceback.logging.info_exc())
+            # logging.info(traceback.logging.info_exc())
             logging.info("出现错误，稍后再试！")
         time.sleep(180)
 
