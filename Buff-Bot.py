@@ -61,8 +61,8 @@ def server_chan_notification_wrapper(body, title, notify_type, *args, **kwargs):
 
 def main():
     asset = AppriseAsset(plugin_paths=[__file__])
-    os.system("title Buff-Bot 作者：甲甲")
-    logger.info("欢迎使用Buff-Bot 作者：甲甲")
+    os.system("title Buff-Bot https://github.com/jiajiaxd/Buff-Bot")
+    logger.info("欢迎使用Buff-Bot Github:https://github.com/jiajiaxd/Buff-Bot")
     logger.info("正在初始化...")
     first_run = False
     if not os.path.exists("config.json"):
