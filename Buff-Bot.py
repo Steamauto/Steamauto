@@ -113,7 +113,7 @@ def main():
         to_deliver_order = json.loads(response.text).get('data').get('to_deliver_order')
         to_deliver_count = int(to_deliver_order.get('csgo')) + int(to_deliver_order.get('dota2'))
         if to_deliver_count != 0:
-            logging.info("检测到" + str(to_deliver_count), "个待发货请求！")
+            logging.info("检测到" + str(to_deliver_count) + "个待发货请求！")
         response = requests.get("https://buff.163.com/api/market/steam_trade", headers=headers)
         trade = json.loads(response.text).get('data')
         logging.info("查找到" + str(len(trade)) + "个待处理的交易报价请求！")
