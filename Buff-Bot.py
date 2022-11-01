@@ -123,7 +123,7 @@ def main():
                 for go in trade:
                     i += 1
                     offerid = go.get('tradeofferid')
-                    logging.info("正在处理第" + str(i) + "个交易报价 报价ID", offerid)
+                    logging.info("正在处理第" + str(i) + "个交易报价 报价ID" + str(offerid))
                     if offerid not in ignoredoffer:
                         try:
                             logging.info("正在接受报价...")
