@@ -63,7 +63,6 @@ def main():
 
     logger.info("欢迎使用Buff-Bot Github:https://github.com/jiajiaxd/Buff-Bot")
     logger.info("正在初始化...")
-    return
     first_run = False
     if not os.path.exists("config.json"):
         first_run = True
