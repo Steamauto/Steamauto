@@ -2,5 +2,4 @@ cookies.txt
 steamaccount.txt
 steamaccount.json
 config.json
-steam_trade.json
-message_notification.json
+dev/*

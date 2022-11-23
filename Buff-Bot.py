@@ -18,16 +18,20 @@ headers = {
 }
 
 
-def checkaccountstate():
-    response_json = requests.get('https://buff.163.com/account/api/user/info', headers=headers).json()
-    if response_json['code'] == 'OK':
-        if 'data' in response_json:
-            if 'nickname' in response_json['data']:
-                return response_json['data']['nickname']
-    logger.error('BUFF账户登录状态失效，请检查cookies.txt！')
-    logger.info('点击任何键继续...')
-    os.system('pause >nul')
-    sys.exit()
+def checkaccountstate(dev=False):
+    if dev and os.path.exists('dev/buff_account.json'):
+        logger.info('开发模式，使用本地账号')
+        return json.loads(FileUtils.readfile('dev/buff_account.json'))['data']['nickname']
+    else:
+        response_json = requests.get('https://buff.163.com/account/api/user/info', headers=headers).json()
+        if response_json['code'] == 'OK':
+            if 'data' in response_json:
+                if 'nickname' in response_json['data']:
+                    return response_json['data']['nickname']
+        logger.error('BUFF账户登录状态失效，请检查cookies.txt！')
+        logger.info('点击任何键继续...')
+        os.system('pause >nul')
+        sys.exit()
 
 
 @notify(on="ftqq", name="Server酱通知插件")
@@ -66,7 +70,11 @@ def format_str(text: str, trade):
 
 
 def main():
+    client = None
     development_mode = False
+    sell_protection = True
+    protection_price = 30
+    protection_price_percentage = 0.9
     asset = AppriseAsset(plugin_paths=[__file__])
     os.system("title Buff-Bot https://github.com/jiajiaxd/Buff-Bot")
 
@@ -90,38 +98,50 @@ def main():
         os.system('pause >nul')
     config = json.loads(FileUtils.readfile("config.json"))
     ignoredoffer = []
+    orderinfo = {}
     if 'dev' in config and config['dev']:
         development_mode = True
     if development_mode:
         logger.info("开发者模式已开启")
+    if 'sell_protection' in config:
+        sell_protection = config['sell_protection']
+    if 'protection_price' in config:
+        protection_price = config['protection_price']
+    if 'protection_price_percentage' in config:
+        protection_price_percentage = config['protection_price_percentage']
     logger.info("正在准备登录至BUFF...")
     headers['Cookie'] = FileUtils.readfile('cookies.txt')
     logger.info("已检测到cookies，尝试登录")
-    logger.info("已经登录至BUFF 用户名：" + checkaccountstate())
+    logger.info("已经登录至BUFF 用户名：" + checkaccountstate(dev=development_mode))
 
-    try:
-        logger.info("正在登录Steam...")
-        acc = json.loads(FileUtils.readfile('steamaccount.json'))
-        client = SteamClient(acc.get('api_key'))
-        SteamClient.login(client, acc.get('steam_username'), acc.get('steam_password'), 'steamaccount.json')
-        logger.info("登录完成！\n")
-    except FileNotFoundError:
-        logger.error('未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！')
-        logger.info('点击任何键退出...')
-        os.system('pause >nul')
-        sys.exit()
+    if development_mode:
+        logger.info("开发者模式已开启，跳过Steam登录")
+    else:
+        try:
+            logger.info("正在登录Steam...")
+            acc = json.loads(FileUtils.readfile('steamaccount.json'))
+            client = SteamClient(acc.get('api_key'))
+            SteamClient.login(client, acc.get('steam_username'), acc.get('steam_password'), 'steamaccount.json')
+            logger.info("登录完成！\n")
+        except FileNotFoundError:
+            logger.error('未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！')
+            logger.info('点击任何键退出...')
+            os.system('pause >nul')
+            sys.exit()
 
     while True:
         try:
             logger.info("正在检查Steam账户登录状态...")
-            if not client.is_session_alive():
-                logger.error("Steam登录状态失效！程序退出...")
-                sys.exit()
+            if not development_mode:
+                if not client.is_session_alive():
+                    logger.error("Steam登录状态失效！程序退出...")
+                    sys.exit()
             logger.info("Steam账户状态正常")
             logger.info("正在进行待发货/待收货饰品检查...")
             checkaccountstate()
-            if development_mode and os.path.exists("message_notification.json"):
-                to_deliver_order = json.loads(FileUtils.readfile("message_notification.json")).get('data').get(
+            if development_mode and os.path.exists("dev/message_notification.json"):
+                logger.info("开发者模式已开启，使用本地消息通知文件")
+                to_deliver_order = json.loads(FileUtils.readfile("dev/message_notification.json")).get('data').get(
                     'to_deliver_order')
             else:
                 response = requests.get("https://buff.163.com/api/message/notification", headers=headers)
@@ -131,8 +151,9 @@ def main():
                     int(to_deliver_order.get('csgo')) + int(to_deliver_order.get('dota2'))) + "个待发货请求！")
                 logger.info("CSGO待发货：" + str(int(to_deliver_order.get('csgo'))) + "个")
                 logger.info("DOTA2待发货：" + str(int(to_deliver_order.get('dota2'))) + "个")
-            if development_mode and os.path.exists("steam_trade.json"):
-                trade = json.loads(FileUtils.readfile("steam_trade.json")).get('data')
+            if development_mode and os.path.exists("dev/steam_trade.json"):
+                logger.info("开发者模式已开启，使用本地待发货文件")
+                trade = json.loads(FileUtils.readfile("dev/steam_trade.json")).get('data')
             else:
                 response = requests.get("https://buff.163.com/api/market/steam_trade", headers=headers)
                 trade = json.loads(response.text).get('data')
@@ -146,6 +167,49 @@ def main():
                         logger.info("正在处理第" + str(i) + "个交易报价 报价ID" + str(offerid))
                         if offerid not in ignoredoffer:
                             try:
+                                if sell_protection:
+                                    logger.info("正在检查交易金额...")
+                                    # 只检查第一个物品的价格, 多个物品为批量购买, 理论上批量上架的价格应该是一样的
+                                    if go['tradeofferid'] not in orderinfo:
+                                        if development_mode and os.path.exists("dev/sell_order_history.json"):
+                                            logger.info("开发者模式已开启，使用本地数据")
+                                            resp_json = json.loads(FileUtils.readfile("dev/sell_order_history.json"))
+                                        else:
+                                            sell_order_history_url = 'https://buff.163.com/api/market/sell_order/history' \
+                                                                     '?appid=' + str(go['appid']) + '&mode=1 '
+                                            resp = requests.get(sell_order_history_url, headers=headers)
+                                            resp_json = resp.json()
+                                        if resp_json['code'] == 'OK':
+                                            for sell_item in resp_json['data']['items']:
+                                                if 'tradeofferid' in sell_item and sell_item['tradeofferid']:
+                                                    orderinfo[sell_item['tradeofferid']] = sell_item
+                                    if go['tradeofferid'] not in orderinfo:
+                                        logger.error("无法获取交易金额，跳过此交易报价")
+                                        continue
+                                    price = float(orderinfo[go['tradeofferid']]['price'])
+                                    goods_id = str(list(go['goods_infos'].keys())[0])
+                                    if development_mode and os.path.exists("dev/shop_listing.json"):
+                                        logger.info("开发者模式已开启，使用本地价格数据")
+                                        resp_json = json.loads(FileUtils.readfile("dev/shop_listing.json"))
+                                    else:
+                                        shop_listing_url = 'https://buff.163.com/api/market/goods/sell_order?game=' + \
+                                                           go['game'] + '&goods_id=' + goods_id + \
+                                                           '&page_num=1&sort_by=default&mode=&allow_tradable_cooldown=1'
+                                        resp = requests.get(shop_listing_url, headers=headers)
+                                        resp_json = resp.json()
+                                    other_lowest_price = float(resp_json['data']['items'][0]['price'])
+                                    if price < other_lowest_price * protection_price_percentage and \
+                                            other_lowest_price > protection_price:
+                                        logger.error("交易金额过低，跳过此交易报价")
+                                        if 'protection_notification' in config:
+                                            apprise_obj = apprise.Apprise()
+                                            for server in config['servers']:
+                                                apprise_obj.add(server)
+                                            apprise_obj.notify(
+                                                title=format_str(config['protection_notification']['title'], go),
+                                                body=format_str(config['protection_notification']['body'], go),
+                                            )
+                                        continue
                                 logger.info("正在接受报价...")
                                 if development_mode:
                                     logger.info("开发者模式已开启，跳过接受报价")

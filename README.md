@@ -20,9 +20,16 @@
 完美支持.
 
 **2. `config.json` 说明**  
+dev:是否开启开发者模式, 非开发者请勿开启, 具体效果请自行查看代码  
+sell_protection:是否开启出售保护, 开启后将不会自动接收低于价格过低的出售请求  
+protection_price:出售保护价格, 若其他卖家最低价低于此价格, 则不会进行出售保护  
+protection_price_percentage:出售价格保护比例, 若出售价格低于此比例*其他卖家最低价格, 则不会自动接收报价  
+sell_notification:出售通知(如不需要可直接删除)  
 title:通知标题  
 body:通知内容  
-sell_notification:出售通知(如不需要可直接删除)  
+protection_notification:出售保护通知(如不需要可直接删除)  
+title:通知标题  
+body:通知内容  
 servers:Apprise格式服务器列表 - 详见[Apprise](https://github.com/caronc/apprise)  
 - 额外支持 [Server酱](https://sct.ftqq.com/) 格式为`ftqq://<SENDKEY>`
 
