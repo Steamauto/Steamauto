@@ -57,7 +57,19 @@ def server_chan_notification_wrapper(body, title, notify_type, *args, **kwargs):
     # Returning nothing (None by default) is always interpreted as a Success
 
 
+def format_str(text: str, trade):
+    for good in trade['goods_infos']:
+        good_item = trade['goods_infos'][good]
+        created_at_time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(trade['created_at']))
+        text = text.format(item_name=good_item['name'], steam_price=good_item['steam_price'],
+                           steam_price_cny=good_item['steam_price_cny'], buyer_name=trade['bot_name'],
+                           buyer_avatar=trade['bot_avatar'], order_time=created_at_time_str, game=good_item['game'],
+                           good_icon=good_item['original_icon_url'])
+    return text
+
+
 def main():
+    development_mode = False
     asset = AppriseAsset(plugin_paths=[__file__])
     os.system("title Buff-Bot https://github.com/jiajiaxd/Buff-Bot")
 
@@ -81,6 +93,10 @@ def main():
         os.system('pause >nul')
     config = json.loads(FileUtils.readfile("config.json"))
     ignoredoffer = []
+    if 'dev' in config and config['dev']:
+        development_mode = True
+    if development_mode:
+        logger.info("开发者模式已开启")
     logger.info("正在准备登录至BUFF...")
     headers['Cookie'] = FileUtils.readfile('cookies.txt')
     logger.info("已检测到cookies，尝试登录")
@@ -99,55 +115,73 @@ def main():
         sys.exit()
 
     while True:
-        logger.info("正在检查Steam账户登录状态...")
-        if not client.is_session_alive():
-            logger.error("Steam登录状态失效！程序退出...")
-            sys.exit()
-        logger.info("Steam账户状态正常")
-        logger.info("正在进行待发货/待收货饰品检查...")
-        checkaccountstate()
-        response = requests.get("https://buff.163.com/api/message/notification", headers=headers)
-        to_deliver_order = json.loads(response.text).get('data').get('to_deliver_order')
-        to_deliver_count = int(to_deliver_order.get('csgo')) + int(to_deliver_order.get('dota2'))
-        if to_deliver_count != 0:
-            logger.info("检测到" + str(to_deliver_count) + "个待发货请求！")
-        response = requests.get("https://buff.163.com/api/market/steam_trade", headers=headers)
-        trade = json.loads(response.text).get('data')
-        logger.info("查找到" + str(len(trade)) + "个待处理的交易报价请求！")
         try:
-            if len(trade) != 0:
-                i = 0
-                for go in trade:
-                    i += 1
-                    offerid = go.get('tradeofferid')
-                    logger.info("正在处理第" + str(i) + "个交易报价 报价ID" + str(offerid))
-                    if offerid not in ignoredoffer:
-                        try:
-                            logger.info("正在接受报价...")
-                            client.accept_trade_offer(offerid)
-                            ignoredoffer.append(offerid)
-                            logger.info("接受完成！已经将此交易报价加入忽略名单！\n")
-                            if 'sell_notification' in config:
-                                apprise_obj = apprise.Apprise()
-                                for server in config['servers']:
-                                    apprise_obj.add(server)
-                                # TODO: 优化消息内容, 支持更多消息内容, 需要先看BUFF的API
-                                apprise_obj.notify(
-                                    title=config['sell_notification']['title'],
-                                    body=config['sell_notification']['body'],
-                                )
-                        except Exception as e:
-                            # logger.info(traceback.logging.info_exc())
-                            logger.info("出现错误，稍后再试！")
-                    else:
-                        logger.info("该报价已经被处理过，跳过.\n")
-                logger.info("暂无BUFF报价请求.将在180秒后再次检查BUFF交易信息！\n")
+            logger.info("正在检查Steam账户登录状态...")
+            if not client.is_session_alive():
+                logger.error("Steam登录状态失效！程序退出...")
+                sys.exit()
+            logger.info("Steam账户状态正常")
+            logger.info("正在进行待发货/待收货饰品检查...")
+            checkaccountstate()
+            if development_mode and os.path.exists("message_notification.json"):
+                to_deliver_order = json.loads(FileUtils.readfile("message_notification.json")).get('data').get(
+                    'to_deliver_order')
             else:
-                logger.info("暂无BUFF报价请求.将在180秒后再次检查BUFF交易信息！\n")
-        except Exception:
-            # logger.info(traceback.logger.info_exc())
-            logger.info("出现错误，稍后再试！")
-        time.sleep(180)
+                response = requests.get("https://buff.163.com/api/message/notification", headers=headers)
+                to_deliver_order = json.loads(response.text).get('data').get('to_deliver_order')
+            if int(to_deliver_order.get('csgo')) != 0 or int(to_deliver_order.get('dota2')) != 0:
+                logger.info("检测到" + str(
+                    int(to_deliver_order.get('csgo')) + int(to_deliver_order.get('dota2'))) + "个待发货请求！")
+                logger.info("CSGO待发货：" + str(int(to_deliver_order.get('csgo'))) + "个")
+                logger.info("DOTA2待发货：" + str(int(to_deliver_order.get('dota2'))) + "个")
+            if development_mode and os.path.exists("steam_trade.json"):
+                trade = json.loads(FileUtils.readfile("steam_trade.json")).get('data')
+            else:
+                response = requests.get("https://buff.163.com/api/market/steam_trade", headers=headers)
+                trade = json.loads(response.text).get('data')
+            logger.info("查找到" + str(len(trade)) + "个待处理的交易报价请求！")
+            try:
+                if len(trade) != 0:
+                    i = 0
+                    for go in trade:
+                        i += 1
+                        offerid = go.get('tradeofferid')
+                        logger.info("正在处理第" + str(i) + "个交易报价 报价ID" + str(offerid))
+                        if offerid not in ignoredoffer:
+                            try:
+                                logger.info("正在接受报价...")
+                                if development_mode:
+                                    logger.info("开发者模式已开启，跳过接受报价")
+                                else:
+                                    client.accept_trade_offer(offerid)
+                                ignoredoffer.append(offerid)
+                                logger.info("接受完成！已经将此交易报价加入忽略名单！\n")
+                                if 'sell_notification' in config:
+                                    apprise_obj = apprise.Apprise()
+                                    for server in config['servers']:
+                                        apprise_obj.add(server)
+                                    apprise_obj.notify(
+                                        title=format_str(config['sell_notification']['title'], go),
+                                        body=format_str(config['sell_notification']['body'], go),
+                                    )
+                            except Exception as e:
+                                logger.error(e, exc_info=True)
+                                logger.info("出现错误，稍后再试！")
+                        else:
+                            logger.info("该报价已经被处理过，跳过.\n")
+                    logger.info("暂无BUFF报价请求.将在180秒后再次检查BUFF交易信息！\n")
+                else:
+                    logger.info("暂无BUFF报价请求.将在180秒后再次检查BUFF交易信息！\n")
+            except KeyboardInterrupt:
+                logger.info("用户停止，程序退出...")
+                sys.exit()
+            except Exception as e:
+                logger.error(e, exc_info=True)
+                logger.info("出现错误，稍后再试！")
+            time.sleep(180)
+        except KeyboardInterrupt:
+            logger.info("用户停止，程序退出...")
+            sys.exit()
 
 
 if __name__ == '__main__':
