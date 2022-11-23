@@ -3,13 +3,11 @@ import os
 import shutil
 import sys
 import json
-import traceback
 
 import apprise
 from apprise.AppriseAsset import *
 from apprise.decorators import notify
 from steampy.client import SteamClient
-from lxml import etree
 import requests
 import time
 import FileUtils
@@ -21,16 +19,15 @@ headers = {
 
 
 def checkaccountstate():
-    try:
-        userid = etree.HTML(requests.get('https://buff.163.com/', headers=headers).text).xpath("/html//strong["
-                                                                                               "@id='navbar-user-name"
-                                                                                               "']/text()")
-        return userid[0]
-    except IndexError:
-        logger.error('BUFF账户登录状态失效，请检查cookies.txt！')
-        logger.info('点击任何键继续...')
-        os.system('pause >nul')
-        sys.exit()
+    response_json = requests.get('https://buff.163.com/account/api/user/info', headers=headers).json()
+    if response_json['code'] == 'OK':
+        if 'data' in response_json:
+            if 'nickname' in response_json['data']:
+                return response_json['data']['nickname']
+    logger.error('BUFF账户登录状态失效，请检查cookies.txt！')
+    logger.info('点击任何键继续...')
+    os.system('pause >nul')
+    sys.exit()
 
 
 @notify(on="ftqq", name="Server酱通知插件")

@@ -1,4 +1,3 @@
 steampy
-lxml
 requests
 apprise
