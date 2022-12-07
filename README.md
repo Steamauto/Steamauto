@@ -54,4 +54,7 @@ steam_password:Steam登录时填写的密码
 [Obtaining SteamGuard using Android emulation]( https://github.com/codepath/android_guides/wiki/Genymotion-2.0-Emulators-with-Google-Play-support)
 
 ## 鸣谢
-感谢 [**@lupohan44**](https://github.com/lupohan44) 为本项目提交的大量代码！
+感谢 [**@lupohan44**](https://github.com/lupohan44) 为本项目提交的大量代码！  
+特别感谢 [JetBrains](https://www.jetbrains.com/) 为开源项目提供免费的 [PyCharm](https://www.jetbrains.com/pycharm/) 等 IDE 的授权  
+[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg" width="200"/>](https://jb.gg/OpenSourceSupport)
+[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/PyCharm_icon.svg" width="200"/>](https://jb.gg/OpenSourceSupport)
