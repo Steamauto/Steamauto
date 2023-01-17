@@ -43,6 +43,10 @@ steam_username:Steam登录时填写的用户名
 steam_password:Steam登录时填写的密码  
 **部分参数获取教程请查看附录**
 
+**4.账号安全问题?**  
+Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安全性  
+在用户的电脑不被恶意软件入侵的情况下，账号不可能泄露  
+
 ## 附录
 关于`steamaccount.json`相关参数的获取教程都在下面, 请自行参阅  
 个人推荐使用[ Watt Toolkit ](https://github.com/BeyondDimension/SteamTools)获取Steam令牌参数 操作非常简便
