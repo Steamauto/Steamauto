@@ -1,3 +1,4 @@
 steampy-fixed
 requests
 apprise
+colorama

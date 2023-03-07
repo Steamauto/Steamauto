@@ -8,9 +8,11 @@ import apprise
 from apprise.AppriseAsset import *
 from apprise.decorators import notify
 from steampy.client import SteamClient
+from requests.exceptions import SSLError, ConnectTimeout
 import requests
 import time
 import FileUtils
+from colorama import Fore
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -124,7 +126,13 @@ def main():
             SteamClient.login(client, acc.get('steam_username'), acc.get('steam_password'), 'steamaccount.json')
             logger.info("登录完成！\n")
         except FileNotFoundError:
-            logger.error('未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！')
+            logger.error(Fore.RED+'未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！'+Fore.RESET)
+            logger.info('点击任何键退出...')
+            os.system('pause >nul')
+            sys.exit()
+        except (SSLError, ConnectTimeout, TimeoutError):
+            logger.error(Fore.RED+'\n网络错误！请通过修改hosts/使用代理等方法代理Python解决问题。\n'
+                         '注意：使用游戏加速器并不能解决问题。请尝试使用Proxifier及其类似软件代理Python.exe解决。'+Fore.RESET)
             logger.info('点击任何键退出...')
             os.system('pause >nul')
             sys.exit()
@@ -200,7 +208,7 @@ def main():
                                     other_lowest_price = float(resp_json['data']['items'][0]['price'])
                                     if price < other_lowest_price * protection_price_percentage and \
                                             other_lowest_price > protection_price:
-                                        logger.error("交易金额过低，跳过此交易报价")
+                                        logger.error(Fore.RED+"交易金额过低，跳过此交易报价"+Fore.RESET)
                                         if 'protection_notification' in config:
                                             apprise_obj = apprise.Apprise()
                                             for server in config['servers']:
