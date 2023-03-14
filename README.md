@@ -12,10 +12,11 @@
     pip install -r requirements.txt
     ```
 4. 执行程序, 在命令行内输入```python Buff-Bot.py```
-5. 将 `config.example.json` 复制到 `config.json` 并修改配置(相关教程见FAQ)
-6. 打开`steamaccount.json`, 修改所有参数(相关教程见FAQ)
-7. 打开`cookies.txt`, 填入[网易BUFF](https://buff.163.com)的cookie(包含session即可)
-8. Enjoy.
+5. 打开 `config` 文件夹
+6. 将 `config.example.json` 复制到 `config.json` 并修改配置(相关教程见FAQ)
+7. 打开`steamaccount.json`, 修改所有参数(相关教程见FAQ)
+8. 打开`cookies.txt`, 填入[网易BUFF](https://buff.163.com)的cookie(包含session即可)
+9. ~~给予本仓库一个star(手动狗头)~~
 ## FAQ
 **1.支持Linux?**  
 完美支持.

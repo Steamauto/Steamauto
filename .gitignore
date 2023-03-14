@@ -1,5 +1,5 @@
-cookies.txt
+config/cookies.txt
 steamaccount.txt
-steamaccount.json
-config.json
+config/steamaccount.json
+config/config.json
 dev/*
