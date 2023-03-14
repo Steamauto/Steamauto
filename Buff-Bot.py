@@ -43,7 +43,7 @@ def server_chan_notification_wrapper(body, title, notify_type, *args, **kwargs):
         resp = requests.get('https://sctapi.ftqq.com/%s.send?title=%s&desp=%s' % (token, title, body))
         if resp.status_code == 200:
             if resp.json()['code'] == 0:
-                logger.info('Server酱通知发送成功')
+                logger.info('Server酱通知发送成功\n')
                 return True
             else:
                 logger.error('Server酱通知发送失败, return code = %d' % resp.json()['code'])
@@ -83,9 +83,14 @@ def main():
     logger.info("欢迎使用Buff-Bot Github:https://github.com/jiajiaxd/Buff-Bot")
     logger.info("正在初始化...")
     first_run = False
-    if not os.path.exists("config.json"):
-        first_run = True
-        shutil.copy("config.example.json", "config.json")
+    try:
+        if not os.path.exists("config.json"):
+            first_run = True
+            shutil.copy("config.example.json", "config.json")
+    except FileNotFoundError:
+        logger.error("未检测到config.example.json，请前往GitHub进行下载，并保证文件和程序在同一目录下。")
+        logger.info('点击任何键继续...')
+        sys.exit()
     if not os.path.exists("cookies.txt"):
         first_run = True
         FileUtils.writefile("cookies.txt", "session=")
