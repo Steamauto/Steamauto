@@ -72,7 +72,6 @@ def format_str(text: str, trade):
 
 
 def main():
-    os.chdir(sys.path[0])  # 设置程序运行目录为相对路径
     client = None
     development_mode = False
     sell_protection = True
