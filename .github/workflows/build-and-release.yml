@@ -1,5 +1,8 @@
 name: Build and publish
-on: [push]
+on: 
+  push:
+    branches:
+      master
 jobs:
   Build:
     runs-on: ${{ matrix.os }}
@@ -60,7 +63,7 @@ jobs:
           wget https://github.com/jiajiaxd/jiajiaxd/raw/main/action_zip.py
           python action_zip.py Buff-Bot releases
           sudo timedatectl set-timezone "Asia/Shanghai"
-          echo "DATE=$(date +"%Y%m%d-%H:%M")" >> $GITHUB_ENV
+          echo "DATE=$(date +"%Y%m%d-%H%M")" >> $GITHUB_ENV
       
       - name: Upload to Github Releases
         uses: ncipollo/release-action@v1.11.1
