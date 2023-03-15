@@ -5,18 +5,13 @@
 **请勿违反开源协议，包括但不限于倒卖此程序或修改后不进行开源等。**
 
 ## 如何使用?
-1. 确保你的系统内已经安装Python  
-2. 下载仓库并解压
-3. 安装依赖
-    ```
-    pip install -r requirements.txt
-    ```
-4. 执行程序, 在命令行内输入```python Buff-Bot.py```
-5. 打开 `config` 文件夹
-6. 将 `config.example.json` 复制到 `config.json` 并修改配置(相关教程见FAQ)
-7. 打开`steamaccount.json`, 修改所有参数(相关教程见FAQ)
-8. 打开`cookies.txt`, 填入[网易BUFF](https://buff.163.com)的cookie(包含session即可)
-9. ~~给予本仓库一个star(手动狗头)~~
+1. 前往[Github Releases](https://github.com/jiajiaxd/Buff-Bot/releases/latest)下载适合自己系统的Buff-Bot
+2. 将所得文件解压缩
+3. 打开 `config` 文件夹
+4. 将 `config.example.json` 复制到 `config.json` 并修改配置(相关教程见FAQ)
+5. 打开`steamaccount.json`, 修改所有参数(相关教程见FAQ)
+6. 打开`cookies.txt`, 填入[网易BUFF](https://buff.163.com)的cookie(包含session即可) 
+7. ~~给予本仓库一个star(手动狗头)~~
 ## FAQ
 **1.支持Linux?**  
 完美支持.
