@@ -5,7 +5,7 @@
 **请勿违反开源协议，包括但不限于倒卖此程序或修改后不进行开源等。**
 
 ## 如何使用?
-1. 前往[Github Releases](https://github.com/jiajiaxd/Buff-Bot/releases/latest)下载适合自己系统的Buff-Bot
+1. 前往 [Github Releases](https://github.com/jiajiaxd/Buff-Bot/releases/latest) 下载适合自己系统的Buff-Bot
 2. 将所得文件解压缩
 3. 打开 `config` 文件夹
 4. 将 `config.example.json` 复制到 `config.json` 并修改配置(相关教程见FAQ)
