@@ -1,1 +1,71 @@
+name: Build and publish
+on: [push]
+jobs:
+  Build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macOS-latest]
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4.5.0
+        with:
+          python-version: '3.10'
+          
+      - name: Install requirements and build
+        run: |
+          pip install pyinstaller
+          pip install -r requirements.txt
+          pyinstaller -F Buff-Bot.py --collect-all apprise --collect-all steampy-fixed --name Buff-Bot-${{ matrix.os }}
+      
+      - name: Copy config folder(Linux,macos)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cp -R config dist/
+    
+      - name: Copy config folder(windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          Copy-Item config dist -Recurse
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: ${{ matrix.os }}-dist
+          path: dist
+
+      
+  Publish:
+    needs: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4.5.0
+        with:
+          python-version: '3.10'
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3.0.2
+        with:
+          path: ./Buff-Bot
+      
+      - name: Finalization
+        run: |
+          mkdir releases
+          wget https://github.com/jiajiaxd/jiajiaxd/raw/main/action_zip.py
+          python action_zip.py Buff-Bot releases
+          sudo timedatectl set-timezone "Asia/Shanghai"
+          echo "DATE=$(date +"%Y%m%d-%H:%M")" >> $GITHUB_ENV
+      
+      - name: Upload to Github Releases
+        uses: ncipollo/release-action@v1.11.1
+        with:
+          commit: "master"
+          tag: ${{ env.DATE }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: releases/*
