@@ -47,8 +47,7 @@ Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安
 关于`steamaccount.json`相关参数的获取教程都在下面, 请自行参阅  
 个人推荐使用[ Watt Toolkit ](https://github.com/BeyondDimension/SteamTools)获取Steam令牌参数 操作非常简便
 
-[获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)   
-[Steam令牌介绍以及提取转移](https://steam.red/blog/archives/Steamguard.html)  
+[获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)  
 [buffhelp 网易buff自动发货-哔哩哔哩(请查看P2-P7)](https://www.bilibili.com/video/BV1DT4y1P7Dx)  
 [Obtaining SteamGuard from mobile device]( https://github.com/SteamTimeIdler/stidler/wiki/Getting-your-%27shared_secret%27-code-for-use-with-Auto-Restarter-on-Mobile-Authentication )  
 [Obtaining SteamGuard using Android emulation]( https://github.com/codepath/android_guides/wiki/Genymotion-2.0-Emulators-with-Google-Play-support)
