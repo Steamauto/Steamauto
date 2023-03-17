@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 import json
+import msvcrt
 
 import apprise
 from apprise.AppriseAsset import *
@@ -32,7 +33,7 @@ def checkaccountstate(dev=False):
                     return response_json['data']['nickname']
         logger.error('BUFF账户登录状态失效，请检查cookies.txt！')
         logger.info('点击任何键继续...')
-        os.system('pause >nul')
+        ord(msvcrt.getch())
         sys.exit()
 
 
@@ -102,7 +103,7 @@ def main():
     if first_run:
         logger.info("检测到首次运行，已为您生成配置文件，请按照README提示填写配置文件！")
         logger.info('点击任何键继续...')
-        os.system('pause >nul')
+        ord(msvcrt.getch())
     config = json.loads(FileUtils.readfile("config/config.json"))
     ignoredoffer = []
     orderinfo = {}
@@ -133,13 +134,13 @@ def main():
         except FileNotFoundError:
             logger.error(Fore.RED + '未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！' + Fore.RESET)
             logger.info('点击任何键退出...')
-            os.system('pause >nul')
+            ord(msvcrt.getch())
             sys.exit()
         except (SSLError, ConnectTimeout, TimeoutError):
             logger.error(Fore.RED + '\n网络错误！请通过修改hosts/使用代理等方法代理Python解决问题。\n'
                                     '注意：使用游戏加速器并不能解决问题。请尝试使用Proxifier及其类似软件代理Python.exe解决。' + Fore.RESET)
             logger.info('点击任何键退出...')
-            os.system('pause >nul')
+            ord(msvcrt.getch())
             sys.exit()
 
     while True:
