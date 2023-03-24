@@ -13,6 +13,7 @@ import requests
 import time
 from libs import FileUtils
 from colorama import Fore
+import pickle
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -32,7 +33,7 @@ def checkaccountstate(dev=False):
                     return response_json['data']['nickname']
         logger.error('BUFF账户登录状态失效，请检查cookies.txt！')
         logger.info('点击任何键继续...')
-        os.system('pause >nul')
+        input()
         sys.exit()
 
 
@@ -102,7 +103,7 @@ def main():
     if first_run:
         logger.info("检测到首次运行，已为您生成配置文件，请按照README提示填写配置文件！")
         logger.info('点击任何键继续...')
-        os.system('pause >nul')
+        input()
     config = json.loads(FileUtils.readfile("config/config.json"))
     ignoredoffer = []
     orderinfo = {}
@@ -133,13 +134,13 @@ def main():
         except FileNotFoundError:
             logger.error(Fore.RED + '未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！' + Fore.RESET)
             logger.info('点击任何键退出...')
-            os.system('pause >nul')
+            input()
             sys.exit()
         except (SSLError, ConnectTimeout, TimeoutError):
             logger.error(Fore.RED + '\n网络错误！请通过修改hosts/使用代理等方法代理Python解决问题。\n'
                                     '注意：使用游戏加速器并不能解决问题。请尝试使用Proxifier及其类似软件代理Python.exe解决。' + Fore.RESET)
             logger.info('点击任何键退出...')
-            os.system('pause >nul')
+            input()
             sys.exit()
 
     while True:
@@ -188,7 +189,8 @@ def main():
                                             logger.info("开发者模式已开启，使用本地数据")
                                             resp_json = json.loads(FileUtils.readfile("dev/sell_order_history.json"))
                                         else:
-                                            sell_order_history_url = 'https://buff.163.com/api/market/sell_order/history' \
+                                            sell_order_history_url = 'https://buff.163.com/api/market/sell_order' \
+                                                                     '/history' \
                                                                      '?appid=' + str(go['appid']) + '&mode=1 '
                                             resp = requests.get(sell_order_history_url, headers=headers)
                                             resp_json = resp.json()
