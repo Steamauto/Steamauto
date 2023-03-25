@@ -1,9 +1,0 @@
-{
-  "sell_notification": {
-    "title": "成功出售饰品",
-    "body": "成功出售饰品"
-  },
-  "servers": [
-    "tgram://bottoken/ChatID"
-  ]
-}
