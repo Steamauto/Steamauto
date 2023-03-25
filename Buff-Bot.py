@@ -152,9 +152,14 @@ def main():
                 logger.info('点击任何键退出...')
                 input()
                 sys.exit()
-            except (SSLError, ConnectTimeout, TimeoutError):
+            except (ConnectTimeout, TimeoutError):
                 logger.error(Fore.RED + '\n网络错误！请通过修改hosts/使用代理等方法代理Python解决问题。\n'
                                         '注意：使用游戏加速器并不能解决问题。请尝试使用Proxifier及其类似软件代理Python.exe解决。' + Fore.RESET)
+                logger.info('点击任何键退出...')
+                input()
+                sys.exit()
+            except SSLError:
+                logger.error(Fore.RED + '登录失败。SSL证书验证错误！\n' + Fore.RESET)
                 logger.info('点击任何键退出...')
                 input()
                 sys.exit()
