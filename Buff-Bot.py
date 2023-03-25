@@ -125,24 +125,39 @@ def main():
     if development_mode:
         logger.info("开发者模式已开启，跳过Steam登录")
     else:
-        try:
-            logger.info("正在登录Steam...")
-            acc = json.loads(FileUtils.readfile('config/steamaccount.json'))
-            client = SteamClient(acc.get('api_key'))
-            SteamClient.login(client, acc.get('steam_username'), acc.get('steam_password'), 'config/steamaccount.json')
-            logger.info("登录完成！\n")
-        except FileNotFoundError:
-            logger.error(Fore.RED + '未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！' + Fore.RESET)
-            logger.info('点击任何键退出...')
-            input()
-            sys.exit()
-        except (SSLError, ConnectTimeout, TimeoutError):
-            logger.error(Fore.RED + '\n网络错误！请通过修改hosts/使用代理等方法代理Python解决问题。\n'
-                                    '注意：使用游戏加速器并不能解决问题。请尝试使用Proxifier及其类似软件代理Python.exe解决。' + Fore.RESET)
-            logger.info('点击任何键退出...')
-            input()
-            sys.exit()
-
+        relog = False
+        if not os.path.exists('steam_session.pkl'):
+            logger.info("未检测到steam_session.pkl文件存在")
+            relog = True
+        else:
+            logger.info("检测到缓存的steam_session.pkl文件存在，正在尝试登录")
+            with open('steam_session.pkl', 'rb') as f:
+                client = pickle.load(f)
+                if client.is_session_alive():
+                    logger.info("登录成功")
+                else:
+                    relog = True
+        if relog:
+            try:
+                logger.info("正在登录Steam...")
+                acc = json.loads(FileUtils.readfile('config/steamaccount.json'))
+                client = SteamClient(acc.get('api_key'))
+                SteamClient.login(client, acc.get('steam_username'), acc.get('steam_password'),
+                                  'config/steamaccount.json')
+                with open('steam_session.pkl', 'wb') as f:
+                    pickle.dump(client, f)
+                logger.info("登录完成！已经自动缓存session.\n")
+            except FileNotFoundError:
+                logger.error(Fore.RED + '未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！' + Fore.RESET)
+                logger.info('点击任何键退出...')
+                input()
+                sys.exit()
+            except (SSLError, ConnectTimeout, TimeoutError):
+                logger.error(Fore.RED + '\n网络错误！请通过修改hosts/使用代理等方法代理Python解决问题。\n'
+                                        '注意：使用游戏加速器并不能解决问题。请尝试使用Proxifier及其类似软件代理Python.exe解决。' + Fore.RESET)
+                logger.info('点击任何键退出...')
+                input()
+                sys.exit()
     while True:
         try:
             logger.info("正在检查Steam账户登录状态...")
