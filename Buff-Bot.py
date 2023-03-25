@@ -80,7 +80,6 @@ def main():
     protection_price_percentage = 0.9
     asset = AppriseAsset(plugin_paths=[__file__])
     os.system("title Buff-Bot https://github.com/jiajiaxd/Buff-Bot")
-
     logger.info("欢迎使用Buff-Bot Github:https://github.com/jiajiaxd/Buff-Bot")
     logger.info("正在初始化...")
     first_run = False
@@ -133,8 +132,12 @@ def main():
             logger.info("检测到缓存的steam_session.pkl文件存在，正在尝试登录")
             with open('steam_session.pkl', 'rb') as f:
                 client = pickle.load(f)
+                if json.loads(FileUtils.readfile('config/config.json'))['ignoreSSLError']:
+                    logger.warning(Fore.YELLOW+"警告：已经关闭SSL验证，账号可能存在安全问题"+Fore.RESET)
+                    client._session.verify = False
+                    requests.packages.urllib3.disable_warnings()
                 if client.is_session_alive():
-                    logger.info("登录成功")
+                    logger.info("登录成功\n")
                 else:
                     relog = True
         if relog:
@@ -142,6 +145,10 @@ def main():
                 logger.info("正在登录Steam...")
                 acc = json.loads(FileUtils.readfile('config/steamaccount.json'))
                 client = SteamClient(acc.get('api_key'))
+                if json.loads(FileUtils.readfile('config/config.json'))['ignoreSSLError']:
+                    logger.warning(Fore.YELLOW+"\n警告：已经关闭SSL验证，账号可能存在安全问题\n"+Fore.RESET)
+                    client._session.verify = False
+                    requests.packages.urllib3.disable_warnings()
                 SteamClient.login(client, acc.get('steam_username'), acc.get('steam_password'),
                                   'config/steamaccount.json')
                 with open('steam_session.pkl', 'wb') as f:
@@ -159,7 +166,8 @@ def main():
                 input()
                 sys.exit()
             except SSLError:
-                logger.error(Fore.RED + '登录失败。SSL证书验证错误！\n' + Fore.RESET)
+                logger.error(Fore.RED + '登录失败。SSL证书验证错误！'
+                                        '若您确定网络环境安全，可尝试将config.json中的ignoreSSLError设置为false\n' + Fore.RESET)
                 logger.info('点击回车键退出...')
                 input()
                 sys.exit()
