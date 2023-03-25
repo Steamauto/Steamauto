@@ -32,7 +32,7 @@ def checkaccountstate(dev=False):
                 if 'nickname' in response_json['data']:
                     return response_json['data']['nickname']
         logger.error('BUFF账户登录状态失效，请检查cookies.txt！')
-        logger.info('点击任何键继续...')
+        logger.info('点击回车键继续...')
         input()
         sys.exit()
 
@@ -90,7 +90,7 @@ def main():
             shutil.copy("config/config.example.json", "config/config.json")
     except FileNotFoundError:
         logger.error("未检测到config.example.json，请前往GitHub进行下载，并保证文件和程序在同一目录下。")
-        logger.info('点击任何键继续...')
+        logger.info('点击回车键继续...')
         sys.exit()
     if not os.path.exists("config/cookies.txt"):
         first_run = True
@@ -102,7 +102,7 @@ def main():
                                                                     "steam_username": "", "steam_password": ""}))
     if first_run:
         logger.info("检测到首次运行，已为您生成配置文件，请按照README提示填写配置文件！")
-        logger.info('点击任何键继续...')
+        logger.info('点击回车键继续...')
         input()
     config = json.loads(FileUtils.readfile("config/config.json"))
     ignoredoffer = []
@@ -149,18 +149,18 @@ def main():
                 logger.info("登录完成！已经自动缓存session.\n")
             except FileNotFoundError:
                 logger.error(Fore.RED + '未检测到steamaccount.json，请添加到steamaccount.json后再进行操作！' + Fore.RESET)
-                logger.info('点击任何键退出...')
+                logger.info('点击回车键退出...')
                 input()
                 sys.exit()
             except (ConnectTimeout, TimeoutError):
                 logger.error(Fore.RED + '\n网络错误！请通过修改hosts/使用代理等方法代理Python解决问题。\n'
                                         '注意：使用游戏加速器并不能解决问题。请尝试使用Proxifier及其类似软件代理Python.exe解决。' + Fore.RESET)
-                logger.info('点击任何键退出...')
+                logger.info('点击回车键退出...')
                 input()
                 sys.exit()
             except SSLError:
                 logger.error(Fore.RED + '登录失败。SSL证书验证错误！\n' + Fore.RESET)
-                logger.info('点击任何键退出...')
+                logger.info('点击回车键退出...')
                 input()
                 sys.exit()
     while True:
