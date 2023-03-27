@@ -8,6 +8,7 @@ import apprise
 from apprise.AppriseAsset import *
 from apprise.decorators import notify
 from steampy.client import SteamClient
+from steampy.exceptions import CaptchaRequired
 from requests.exceptions import SSLError, ConnectTimeout
 import requests
 import time
@@ -168,6 +169,11 @@ def main():
             except SSLError:
                 logger.error(Fore.RED + '登录失败。SSL证书验证错误！'
                                         '若您确定网络环境安全，可尝试将config.json中的ignoreSSLError设置为false\n' + Fore.RESET)
+                logger.info('点击回车键退出...')
+                input()
+                sys.exit()
+            except CaptchaRequired:
+                logger.error(Fore.RED + '登录失败。触发Steam风控，请尝试更换加速器节点。\n' + Fore.RESET)
                 logger.info('点击回车键退出...')
                 input()
                 sys.exit()
