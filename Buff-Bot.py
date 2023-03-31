@@ -168,7 +168,7 @@ def main():
                 sys.exit()
             except SSLError:
                 logger.error(Fore.RED + '登录失败。SSL证书验证错误！'
-                                        '若您确定网络环境安全，可尝试将config.json中的ignoreSSLError设置为false\n' + Fore.RESET)
+                                        '若您确定网络环境安全，可尝试将config.json中的ignoreSSLError设置为true\n' + Fore.RESET)
                 logger.info('点击回车键退出...')
                 input()
                 sys.exit()
