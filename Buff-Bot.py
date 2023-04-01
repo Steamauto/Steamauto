@@ -137,6 +137,8 @@ def main():
                     logger.warning(Fore.YELLOW+"警告：已经关闭SSL验证，账号可能存在安全问题"+Fore.RESET)
                     client._session.verify = False
                     requests.packages.urllib3.disable_warnings()
+                else:
+                    client._session.verify = True
                 if client.is_session_alive():
                     logger.info("登录成功\n")
                 else:
