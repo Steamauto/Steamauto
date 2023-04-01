@@ -2,6 +2,7 @@
   "dev": false,
   "sell_protection": false,
   "ignoreSSLError": false,
+  "no_pause": false,
   "protection_price": 30,
   "protection_price_percentage": 0.9,
   "sell_notification": {
