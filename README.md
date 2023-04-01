@@ -49,7 +49,7 @@ Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安
 在用户的电脑不被恶意软件入侵的情况下，账号不可能泄露  
 
 **5.protection_notification配置项说明**
-| Key | Value |
+| 配置项 | 描述 |
 | --- | --- |
 | sell_notification | 出售通知(如不需要可直接删除) |
 | title | 通知标题 |
