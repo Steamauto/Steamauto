@@ -20,7 +20,7 @@
 完美支持.
 
 **2. `config.json` 说明**  
-| 参数名 | 描述 | 
+| 配置项 | 描述 | 
 | ------ | ---- |
 | dev  | 是否开启开发者模式, 非开发者请勿开启, 具体效果请自行查看代码    |
 | ignoreSSLError   | 设置为true后，关闭SSL验证(请自行确保网络环境安全)   |
@@ -34,12 +34,14 @@
 | protection_notification         | 出售保护通知(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
 
 **3.`steamaccount.json`说明**  
-steamid:Steam的数字ID  
-shared_secret:Steam令牌参数  
-identity_secret:Steam令牌参数  
-api_key:Steam网页API密钥  
-steam_username:Steam登录时填写的用户名  
-steam_password:Steam登录时填写的密码  
+| 配置项              | 描述                                                         |
+|------------------|--------------------------------------------------------------|
+| steamid          | Steam 的数字 ID                                             |
+| shared_secret    | Steam 令牌参数                                               |
+| identity_secret  | Steam 令牌参数                                               |
+| api_key          | Steam 网页 API 密钥                                          |
+| steam_username   | Steam 登录时填写的用户名                                     |
+| steam_password   | Steam 登录时填写的密码                                       |
 **部分参数获取教程请查看附录**
 
 **4.账号安全问题?**  
@@ -47,14 +49,15 @@ Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安
 在用户的电脑不被恶意软件入侵的情况下，账号不可能泄露  
 
 **5.protection_notification配置项说明**
-sell_notification:出售通知(如不需要可直接删除)  
-title:通知标题  
-body:通知内容  
-protection_notification:出售保护通知(如不需要可直接删除)  
-title:通知标题  
-body:通知内容  
-servers:Apprise格式服务器列表 - 详见[Apprise](https://github.com/caronc/apprise)  
-- 额外支持 [Server酱](https://sct.ftqq.com/) 格式为`ftqq://<SENDKEY>`
+| Key | Value |
+| --- | --- |
+| sell_notification | 出售通知(如不需要可直接删除) |
+| title | 通知标题 |
+| body | 通知内容 |
+| protection_notification | 出售保护通知(如不需要可直接删除) |
+| title | 通知标题 |
+| body | 通知内容 |
+| servers   | Apprise格式服务器列表 - 详见[Apprise](https://github.com/caronc/apprise)<br>- 额外支持 [Server酱](https://sct.ftqq.com/) 格式为`ftqq://<SENDKEY>`    
 
 ## 附录
 关于`steamaccount.json`相关参数的获取教程都在下面, 请自行参阅  
