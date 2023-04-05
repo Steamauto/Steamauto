@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import shutil
@@ -304,6 +305,14 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
     s_handler = logging.StreamHandler()
     s_handler.setLevel(logging.INFO)
-    s_handler.setFormatter(logging.Formatter('[%(asctime)s] - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
+    log_formatter = logging.Formatter('[%(asctime)s] - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    s_handler.setFormatter(log_formatter)
     logger.addHandler(s_handler)
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+    f_handler = logging.FileHandler(os.path.join('logs', datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.log')
+                                    , encoding='utf-8')
+    f_handler.setLevel(logging.DEBUG)
+    f_handler.setFormatter(log_formatter)
+    logger.addHandler(f_handler)
     main()

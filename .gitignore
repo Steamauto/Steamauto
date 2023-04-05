@@ -3,3 +3,4 @@ steamaccount.txt
 config/steamaccount.json
 config/config.json
 dev/*
+logs
