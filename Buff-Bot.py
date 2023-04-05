@@ -85,8 +85,8 @@ def main():
     protection_price = 30
     protection_price_percentage = 0.9
     asset = AppriseAsset(plugin_paths=[__file__])
-    os.system("title Buff-Bot https://github.com/jiajiaxd/Buff-Bot")
-    logger.info("欢迎使用Buff-Bot Github:https://github.com/jiajiaxd/Buff-Bot")
+    logger.info("欢迎使用Buff-Bot Github仓库:https://github.com/jiajiaxd/Buff-Bot")
+    logger.info("若您觉得Buff-Bot好用，请给予Star支持，谢谢！")
     logger.info("正在初始化...")
     first_run = False
     try:
@@ -301,6 +301,6 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
     s_handler = logging.StreamHandler()
     s_handler.setLevel(logging.INFO)
-    s_handler.setFormatter(logging.Formatter('[%(asctime)s] - %(filename)s - %(levelname)s: %(message)s'))
+    s_handler.setFormatter(logging.Formatter('[%(asctime)s] - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
     logger.addHandler(s_handler)
     main()
