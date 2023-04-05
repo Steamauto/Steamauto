@@ -23,7 +23,7 @@ headers = {
 
 
 def pause():
-    if json.loads(FileUtils.readfile('config/config.json'))['no_pause']:
+    if not json.loads(FileUtils.readfile('config/config.json'))['no_pause']:
         logger.info('点击回车键继续...')
         input()
 
@@ -196,11 +196,14 @@ def main():
             else:
                 response = requests.get("https://buff.163.com/api/message/notification", headers=headers)
                 to_deliver_order = json.loads(response.text).get('data').get('to_deliver_order')
-            if int(to_deliver_order.get('csgo')) != 0 or int(to_deliver_order.get('dota2')) != 0:
-                logger.info("检测到" + str(
-                    int(to_deliver_order.get('csgo')) + int(to_deliver_order.get('dota2'))) + "个待发货请求！")
-                logger.info("CSGO待发货：" + str(int(to_deliver_order.get('csgo'))) + "个")
-                logger.info("DOTA2待发货：" + str(int(to_deliver_order.get('dota2'))) + "个")
+            try:
+                if int(to_deliver_order.get('csgo')) != 0 or int(to_deliver_order.get('dota2')) != 0:
+                    logger.info("检测到" + str(
+                        int(to_deliver_order.get('csgo')) + int(to_deliver_order.get('dota2'))) + "个待发货请求！")
+                    logger.info("CSGO待发货：" + str(int(to_deliver_order.get('csgo'))) + "个")
+                    logger.info("DOTA2待发货：" + str(int(to_deliver_order.get('dota2'))) + "个")
+            except TypeError:
+                logger.error('Buff接口返回数据异常！请检查网络连接或稍后再试！')
             if development_mode and os.path.exists("dev/steam_trade.json"):
                 logger.info("开发者模式已开启，使用本地待发货文件")
                 trade = json.loads(FileUtils.readfile("dev/steam_trade.json")).get('data')
@@ -289,7 +292,7 @@ def main():
                 sys.exit()
             except Exception as e:
                 logger.error(e, exc_info=True)
-                logger.info("出现错误，稍后再试！")
+                logger.info("出现未知错误，稍后再试！")
             time.sleep(180)
         except KeyboardInterrupt:
             logger.info("用户停止，程序退出...")
