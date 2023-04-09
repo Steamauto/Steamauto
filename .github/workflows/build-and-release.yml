@@ -1,4 +1,4 @@
-name: Build and publish
+name: Build & Publish
 on: 
   push:
     branches:
@@ -64,6 +64,10 @@ jobs:
           python action_zip.py Buff-Bot releases
           sudo timedatectl set-timezone "Asia/Shanghai"
           echo "DATE=$(date +"%Y%m%d-%H%M")" >> $GITHUB_ENV
+          cd releases
+          mv macOS-latest-dist.zip Buff-Bot_MacOS.zip
+          mv ubuntu-latest-dist.zip Buff-Bot_Linux_x86_64.zip
+          mv windows-latest-dist.zip Buff-Bot_Windows_x86_64.zip
       
       - name: Upload to Github Releases
         uses: ncipollo/release-action@v1.11.1
