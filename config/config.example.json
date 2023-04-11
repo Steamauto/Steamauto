@@ -1,5 +1,6 @@
 {
   "dev": false,
+  "interval": "180",
   "sell_protection": false,
   "ignoreSSLError": false,
   "no_pause": false,

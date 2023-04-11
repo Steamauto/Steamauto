@@ -112,6 +112,7 @@ def main():
     config = json.loads(FileUtils.readfile("config/config.json"))
     ignoredoffer = []
     orderinfo = {}
+    interval = int(json.loads(FileUtils.readfile('config/config.json'))['interval'])
     if 'dev' in config and config['dev']:
         development_mode = True
     if development_mode:
@@ -285,16 +286,16 @@ def main():
                                 logger.info("出现错误，稍后再试！")
                         else:
                             logger.info("该报价已经被处理过，跳过.\n")
-                    logger.info("暂无BUFF报价请求.将在180秒后再次检查BUFF交易信息！\n")
+                    logger.info("暂无BUFF报价请求.将在{0}秒后再次检查BUFF交易信息！\n".format(str(interval)))
                 else:
-                    logger.info("暂无BUFF报价请求.将在180秒后再次检查BUFF交易信息！\n")
+                    logger.info("暂无BUFF报价请求.将在{0}秒后再次检查BUFF交易信息！\n".format(str(interval)))
             except KeyboardInterrupt:
                 logger.info("用户停止，程序退出...")
                 sys.exit()
             except Exception as e:
                 logger.error(e, exc_info=True)
                 logger.info("出现未知错误，稍后再试！")
-            time.sleep(180)
+            time.sleep(interval)
         except KeyboardInterrupt:
             logger.info("用户停止，程序退出...")
             sys.exit()
