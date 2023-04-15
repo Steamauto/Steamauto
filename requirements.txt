@@ -1,4 +1,4 @@
-steampy-fixed
+steampy
 requests
 apprise
 colorama
