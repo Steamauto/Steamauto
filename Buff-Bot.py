@@ -88,6 +88,13 @@ def main():
     asset = AppriseAsset(plugin_paths=[__file__])
     logger.info("欢迎使用Buff-Bot Github仓库:https://github.com/jiajiaxd/Buff-Bot")
     logger.info("若您觉得Buff-Bot好用，请给予Star支持，谢谢！")
+    logger.info("正在检查更新...")
+    try:
+        response = requests.get('https://buffbot.jiajiaxd.com/latest', timeout=5)
+        data = response.json()
+        logger.info(f'最新版本日期：{data["date"]}\n内容：{data["message"]}\n请自行检查是否更新！')
+    except requests.exceptions.Timeout:
+        logger.info('检查更新超时，跳过检查更新')
     logger.info("正在初始化...")
     first_run = False
     try:
