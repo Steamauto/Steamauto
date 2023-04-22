@@ -6,6 +6,7 @@ import sys
 import json
 
 import apprise
+import uuyoupinapi
 from apprise.AppriseAsset import *
 from apprise.decorators import notify
 from steampy.client import SteamClient
@@ -39,7 +40,7 @@ def checkaccountstate(dev=False):
             if 'data' in response_json:
                 if 'nickname' in response_json['data']:
                     return response_json['data']['nickname']
-        logger.error('BUFF账户登录状态失效，请检查cookies.txt！')
+        logger.error('BUFF账户登录状态失效，请检查cookies.txt或稍后再试！')
         pause()
         sys.exit()
 
@@ -83,6 +84,7 @@ def main():
     client = None
     development_mode = False
     sell_protection = True
+    uuyoupin = None
     protection_price = 30
     protection_price_percentage = 0.9
     asset = AppriseAsset(plugin_paths=[__file__])
@@ -119,7 +121,7 @@ def main():
     config = json.loads(FileUtils.readfile("config/config.json"))
     ignoredoffer = []
     orderinfo = {}
-    interval = int(json.loads(FileUtils.readfile('config/config.json'))['interval'])
+    interval = int(config['interval'])
     if 'dev' in config and config['dev']:
         development_mode = True
     if development_mode:
@@ -130,6 +132,15 @@ def main():
         protection_price = config['protection_price']
     if 'protection_price_percentage' in config:
         protection_price_percentage = config['protection_price_percentage']
+    if config['uu_token'] != "disabled":
+        try:
+            uuyoupin = uuyoupinapi.UUAccount(config['uu_token'])
+            logger.info('悠悠有品登录完成，用户名：' + uuyoupin.get_user_nickname())
+        except Exception as e:
+            logger.error(
+                '悠悠有品登录失败！请检查token是否正确！如果不需要使用悠悠有品，请在配置内将uu_token设置为disabled')
+            pause()
+            sys.exit()
     logger.info("正在准备登录至BUFF...")
     headers['Cookie'] = FileUtils.readfile('config/cookies.txt')
     logger.info("已检测到cookies，尝试登录")
@@ -196,7 +207,7 @@ def main():
                     logger.error("Steam登录状态失效！程序退出...")
                     sys.exit()
             logger.info("Steam账户状态正常")
-            logger.info("正在进行待发货/待收货饰品检查...")
+            logger.info("正在进行BUFF待发货/待收货饰品检查...")
             checkaccountstate()
             if development_mode and os.path.exists("dev/message_notification.json"):
                 logger.info("开发者模式已开启，使用本地消息通知文件")
@@ -219,7 +230,7 @@ def main():
             else:
                 response = requests.get("https://buff.163.com/api/market/steam_trade", headers=headers)
                 trade = json.loads(response.text).get('data')
-            logger.info("查找到" + str(len(trade)) + "个待处理的交易报价请求！")
+            logger.info("查找到" + str(len(trade)) + "个待处理的BUFF未发货订单！")
             try:
                 if len(trade) != 0:
                     i = 0
@@ -293,9 +304,20 @@ def main():
                                 logger.info("出现错误，稍后再试！")
                         else:
                             logger.info("该报价已经被处理过，跳过.\n")
-                    logger.info("暂无BUFF报价请求.将在{0}秒后再次检查BUFF交易信息！\n".format(str(interval)))
-                else:
-                    logger.info("暂无BUFF报价请求.将在{0}秒后再次检查BUFF交易信息！\n".format(str(interval)))
+                if uuyoupin is not None:
+                    logger.info("正在检查悠悠有品待发货信息...")
+                    uu_wait_deliver_list = uuyoupin.get_wait_deliver_list()
+                    len_uu_wait_deliver_list = len(uu_wait_deliver_list)
+                    logger.info(str(len_uu_wait_deliver_list) + "个悠悠有品待发货订单")
+                    if len(uu_wait_deliver_list) != 0:
+                        for item in uu_wait_deliver_list:
+                            logger.info(
+                                f'正在接受悠悠有品待发货报价，商品名：{item["item_name"]}，报价ID：{item["offer_id"]}')
+                            if item["offer_id"] not in ignoredoffer:
+                                client.accept_trade_offer(str(item['offer_id']))
+                                ignoredoffer.append(item['offer_id'])
+                            logger.info("接受完成！已经将此交易报价加入忽略名单！")
+                logger.info("将在{0}秒后再次检查待发货订单信息！\n".format(str(interval)))
             except KeyboardInterrupt:
                 logger.info("用户停止，程序退出...")
                 sys.exit()

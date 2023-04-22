@@ -1,5 +1,6 @@
 {
   "dev": false,
+  "uu_token": "disabled",
   "interval": "180",
   "sell_protection": false,
   "ignoreSSLError": false,
