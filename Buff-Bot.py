@@ -41,8 +41,6 @@ def checkaccountstate(dev=False):
                 if 'nickname' in response_json['data']:
                     return response_json['data']['nickname']
         logger.error('BUFF账户登录状态失效，请检查cookies.txt或稍后再试！')
-        pause()
-        sys.exit()
 
 
 @notify(on="ftqq", name="Server酱通知插件")
@@ -299,11 +297,15 @@ def main():
                                         title=format_str(config['sell_notification']['title'], go),
                                         body=format_str(config['sell_notification']['body'], go),
                                     )
+                                if trade.index(go) != len(trade) - 1:
+                                    logger.info("为了避免频繁访问Steam接口，等待5秒后继续...")
+                                    time.sleep(5)
                             except Exception as e:
                                 logger.error(e, exc_info=True)
                                 logger.info("出现错误，稍后再试！")
                         else:
                             logger.info("该报价已经被处理过，跳过.\n")
+
                 if uuyoupin is not None:
                     logger.info("正在检查悠悠有品待发货信息...")
                     uu_wait_deliver_list = uuyoupin.get_wait_deliver_list()
@@ -317,6 +319,9 @@ def main():
                                 client.accept_trade_offer(str(item['offer_id']))
                                 ignoredoffer.append(item['offer_id'])
                             logger.info("接受完成！已经将此交易报价加入忽略名单！")
+                            if uu_wait_deliver_list.index(item) != len_uu_wait_deliver_list - 1:
+                                logger.info("为了避免频繁访问Steam接口，等待5秒后继续...")
+                                time.sleep(5)
                 logger.info("将在{0}秒后再次检查待发货订单信息！\n".format(str(interval)))
             except KeyboardInterrupt:
                 logger.info("用户停止，程序退出...")

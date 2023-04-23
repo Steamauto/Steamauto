@@ -2,3 +2,4 @@ steampy==0.80
 requests
 apprise
 colorama
+uuyoupinapi
