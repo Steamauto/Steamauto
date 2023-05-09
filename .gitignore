@@ -1,7 +1,4 @@
-config/buff_cookies.txt
-steamaccount.txt
-config/steam_account.json
-config/config.json
+config/*
 dev/*
 logs
 session
