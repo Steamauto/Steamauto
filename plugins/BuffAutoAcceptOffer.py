@@ -58,6 +58,7 @@ class BuffAutoAcceptOffer:
                     if 'nickname' in response_json['data']:
                         return response_json['data']['nickname']
             self.logger.error('[BuffAutoAcceptOffer] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ')
+            return ""
 
     def exec(self):
         try:
@@ -69,7 +70,7 @@ class BuffAutoAcceptOffer:
                              self.check_buff_account_state(dev=self.development_mode))
         except TypeError:
             self.logger.error('[BuffAutoAcceptOffer] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ')
-            sys.exit()
+            return
         ignored_offer = []
         order_info = {}
         sell_protection = self.config['buff_auto_accept_offer']['sell_protection']
@@ -82,10 +83,21 @@ class BuffAutoAcceptOffer:
                 if not self.development_mode:
                     if not self.steam_client.is_session_alive():
                         self.logger.error('[BuffAutoAcceptOffer] Steam登录状态失效! 程序退出...')
-                        sys.exit()
+                        return
                 self.logger.info('[BuffAutoAcceptOffer] Steam账户状态正常')
                 self.logger.info('[BuffAutoAcceptOffer] 正在进行BUFF待发货/待收货饰品检查...')
-                self.check_buff_account_state()
+                username = self.check_buff_account_state()
+                if username == "":
+                    self.logger.error('[BuffAutoAcceptOffer] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ')
+                    if 'buff_cookie_expired_notification' in self.config['buff_auto_accept_offer']:
+                        apprise_obj = apprise.Apprise()
+                        for server in self.config['buff_auto_accept_offer']['servers']:
+                            apprise_obj.add(server)
+                        apprise_obj.notify(self.config['buff_auto_accept_offer']
+                                             ['buff_cookie_expired_notification']['title'],
+                                           self.config['buff_auto_accept_offer']
+                                            ['buff_cookie_expired_notification']['body'])
+                    return
                 if self.development_mode and os.path.exists(MESSAGE_NOTIFICATION_DEV_FILE_PATH):
                     self.logger.info('[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地消息通知文件')
                     with open(MESSAGE_NOTIFICATION_DEV_FILE_PATH, 'r', encoding='utf-8') as f:
@@ -125,7 +137,7 @@ class BuffAutoAcceptOffer:
                         for go in trade:
                             i += 1
                             offer_id = go['tradeofferid']
-                            self.logger.info('[BuffAutoAcceptOffer] 正在处理第' + str(i) + '个交易报价 报价ID' + str(offer_id))
+                            self.logger.info('[BuffAutoAcceptOffer] 正在处理第 ' + str(i) + ' 个交易报价 报价ID' + str(offer_id))
                             if offer_id not in ignored_offer:
                                 try:
                                     if sell_protection:

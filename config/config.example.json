@@ -15,6 +15,10 @@
       "title": "{game}饰品: {item_name} 未自动接收报价, 价格与市场最低价相差过大",
       "body": "请自行至BUFF确认报价!"
     },
+    "buff_cookie_expired_notification": {
+      "title": "BUFF Cookie已过期, 请重新登录",
+      "body": "BUFF Cookie已过期, 请重新登录"
+    },
     "servers": [
       "tgram://bottoken/ChatID"
     ]
