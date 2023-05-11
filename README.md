@@ -16,10 +16,8 @@
 6. 打开`cookies.txt`, 填入[网易BUFF](https://buff.163.com)的cookie(包含session即可).如果要使用悠悠有品发货功能，你还需要编辑config.yml并填入悠悠有品的token(相关配置项见FAQ) 
 7. ~~给予本仓库一个star(手动狗头)~~
 ## FAQ
-**1.支持Linux?**  
-完美支持.
 
-**2. `config.json` 说明**  
+**1. `config.json` 说明**  
 | 配置项 | 描述 | 
 | ------ | ---- |
 | development_mode  | 是否开启开发者模式, 非开发者请勿开启, 具体效果请自行查看代码    |
@@ -37,7 +35,7 @@
 | uu_auto_accept_offer.enable  | 默认为disabled，填入悠悠有品token后可启用悠悠有品自动发货功能,token获取教程见FAQ    |
 | uu_auto_accept_offer.interval   | 每次检查是否有新报价间隔(轮询间隔)，单位为秒   |
 
-**3.`steamaccount.txt`说明**  
+**2.`steamaccount.txt`说明**  
 | 配置项              | 描述                                                         |
 |------------------|--------------------------------------------------------------|
 | steamid          | Steam 的数字 ID                                             |
@@ -48,11 +46,11 @@
 | steam_password   | Steam 登录时填写的密码                                       |
 **部分参数获取教程请查看附录**
 
-**4.账号安全问题?**  
+**3.账号安全问题?**  
 Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安全性  
 在用户的电脑不被恶意软件入侵的情况下，账号不可能泄露  
 
-**5.protection_notification配置项说明**
+**4.protection_notification配置项说明**
 | 配置项 | 描述 |
 | --- | --- |
 | sell_notification | 出售通知(如不需要可直接删除) |
@@ -63,10 +61,10 @@ Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安
 | body | 通知内容 |
 | servers   | Apprise格式服务器列表 - 详见[Apprise](https://github.com/caronc/apprise)<br>- 额外支持 [Server酱](https://sct.ftqq.com/) 格式为`ftqq://<SENDKEY>`    
 
-**6.悠悠有品token获取教程**  
+**5.悠悠有品token获取教程**  
 在安装好所有依赖后，直接运行`python get_uu_token.py`并按照提示操作即可
 
-**7.可否关闭Buff自动发货，只是有悠悠有品自动发货？**  
+**6.可否关闭Buff自动发货，只是有悠悠有品自动发货？**  
 由于本程序第一次编写时未考虑到支持其它平台，暂时无法关闭.后期会推出重写版本.
 ## 附录
 关于`steamaccount.json`相关参数的获取教程都在下面, 请自行参阅  
