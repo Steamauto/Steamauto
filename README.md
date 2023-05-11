@@ -6,7 +6,7 @@
 使用Python3和Requests库实现的网易BUFF饰品交易平台、悠悠有品饰品交易平台全自动发货/求购收货  
 **使用前请仔细阅读本文档！**  
 **欢迎有能力者提交PR来完善本程序。**  
-**请勿违反开源协议，包括但不限于倒卖此程序或修改后不进行开源等。**
+**请勿违反开源协议，包括但不限于闭源倒卖此程序或修改后不进行开源等。**
 
 ## 如何使用?
 1. 前往 [Github Releases](https://github.com/jiajiaxd/Buff-Bot/releases/latest) 下载适合自己系统的Buff-Bot
@@ -28,10 +28,12 @@
 | buff_auto_accept_offer.sell_protection  | 是否开启出售保护, 开启后将不会自动接收低于价格过低的出售请求      |
 | buff_auto_accept_offer.protection_price        | 出售保护价格, 若其他卖家最低价低于此价格, 则不会进行出售保护   |
 | buff_auto_accept_offer.protection_price_percentage    | 出售价格保护比例, 若出售价格低于此比例*其他卖家最低价格，则不会自动接收报价         |
-| buff_auto_accept_offer.sell_notification.title       | 出售通知标题(如不需要可直接删除)           |
-| buff_accept_offer.sell_notification.body          | 出售通知内容(如不需要可直接删除)       |
+| buff_auto_accept_offer.sell_notification.title       | 出售通知标题(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
+| buff_accept_offer.sell_notification.body          | 出售通知内容(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
 | buff_auto_accept_offer.protection_notification.title         | 出售保护通知标题(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
 | buff_auto_accept_offer.protection_notification.body         | 出售保护通知内容(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
+| buff_auto_accept_offer.buff_cookie_expired_notification.title         | BUFF Cookies失效通知标题(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
+| buff_auto_accept_offer.buff_cookie_expired_notification.body         | BUFF Cookies失效通知内容(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
 | buff_auto_accept_offer.servers         | 通知服务器，详见[Apprise](https://github.com/caronc/apprise)|
 | uu_auto_accept_offer.enable  | 默认为disabled，填入悠悠有品token后可启用悠悠有品自动发货功能,token获取教程见FAQ    |
 | uu_auto_accept_offer.interval   | 每次检查是否有新报价间隔(轮询间隔)，单位为秒   |
@@ -39,7 +41,7 @@
 **2.`steam_account_info.json`说明**  
 | 配置项              | 描述                                                         |
 |------------------|--------------------------------------------------------------|
-| steamid          | Steam 的数字 ID                                             |
+| steamid          | Steam 的数字 ID (字符串格式)                                |
 | shared_secret    | Steam 令牌参数                                               |
 | identity_secret  | Steam 令牌参数                                               |
 | api_key          | Steam 网页 API 密钥                                          |
@@ -51,13 +53,13 @@
 Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安全性  
 在用户的电脑不被恶意软件入侵的情况下，账号不可能泄露  
 
-**4.notification配置项说明**
+**4.notification相关配置项说明**
 | 配置项 | 描述 |
 | --- | --- |
 | sell_notification | 出售通知(如不需要可直接删除) |
-| title | 通知标题 |
-| body | 通知内容 |
 | protection_notification | 出售保护通知(如不需要可直接删除) |
+| buff_cookie_expired_notification | BUFF Cookies失效通知(如不需要可直接删除) |
+| --- | --- |
 | title | 通知标题 |
 | body | 通知内容 |
 | servers   | Apprise格式服务器列表 - 详见[Apprise](https://github.com/caronc/apprise)<br>- 额外支持 [Server酱](https://sct.ftqq.com/) 格式为`ftqq://<SENDKEY>`    
@@ -66,7 +68,8 @@ Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安
 在安装好所有依赖后，直接运行`python get_uu_token.py`并按照提示操作即可
 
 **6.可否关闭Buff自动发货，只是有悠悠有品自动发货？**  
-由于本程序第一次编写时未考虑到支持其它平台，暂时无法关闭.后期会推出重写版本.
+~~由于本程序第一次编写时未考虑到支持其它平台，暂时无法关闭.后期会推出重写版本.~~
+新版本已经支持关闭Buff自动发货功能，只需要将`buff_auto_accept_offer.enable`设置为false即可
 ## 附录
 关于`steam_account_info.json`相关参数的获取教程都在下面, 请自行参阅  
 个人推荐使用[ Watt Toolkit ](https://github.com/BeyondDimension/SteamTools)获取Steam令牌参数 操作非常简便
