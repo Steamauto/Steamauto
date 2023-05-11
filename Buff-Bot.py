@@ -1,23 +1,14 @@
-# =======================================
-# !!!屎山警告!!! 等待重写
-# =======================================
-
 import datetime
 import logging
-import os
 import shutil
 import sys
 import json
 import threading
 
-import apprise
-import uuyoupinapi
-from apprise.AppriseAsset import *
 from steampy.client import SteamClient
 from steampy.exceptions import CaptchaRequired
 from requests.exceptions import SSLError, ConnectTimeout
 import requests
-import time
 from colorama import Fore
 import pickle
 
