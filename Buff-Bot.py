@@ -29,12 +29,12 @@ def login_to_steam():
     global config
     steam_client = None
     if not os.path.exists(STEAM_SESSION_PATH):
-        logger.info('未检测到' + STEAM_SESSION_PATH + '文件存在')
+        logger.info('检测到首次登录Steam，正在尝试登录...登录完成后会自动缓存session')
     else:
-        logger.info('检测到缓存的' + STEAM_SESSION_PATH + '文件存在, 正在尝试登录')
+        logger.info('检测到缓存的steam_session, 正在尝试登录...')
         with open(STEAM_SESSION_PATH, 'rb') as f:
             client = pickle.load(f)
-            if config['ignoreSSLError']:
+            if config['steam_login_ignore_ssl_error']:
                 logger.warning(Fore.YELLOW + '警告: 已经关闭SSL验证, 账号可能存在安全问题' + Fore.RESET)
                 client._session.verify = False
                 requests.packages.urllib3.disable_warnings()
@@ -49,7 +49,7 @@ def login_to_steam():
             with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'r', encoding='utf-8') as f:
                 acc = json.load(f)
             client = SteamClient(acc.get('api_key'))
-            if config['ignoreSSLError']:
+            if config['steam_login_ignore_ssl_error']:
                 logger.warning(Fore.YELLOW + '\n警告: 已经关闭SSL验证, 账号可能存在安全问题\n' + Fore.RESET)
                 client._session.verify = False
                 requests.packages.urllib3.disable_warnings()
@@ -60,8 +60,9 @@ def login_to_steam():
             logger.info('登录完成! 已经自动缓存session.\n')
             steam_client = client
         except FileNotFoundError:
-            logger.error(Fore.RED + '未检测到' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请添加到' + STEAM_ACCOUNT_INFO_FILE_PATH +
-                         '后再进行操作! ' + Fore.RESET)
+            logger.error(
+                Fore.RED + '未检测到' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请添加到' + STEAM_ACCOUNT_INFO_FILE_PATH +
+                '后再进行操作! ' + Fore.RESET)
             pause()
             sys.exit()
         except (ConnectTimeout, TimeoutError):
@@ -71,7 +72,7 @@ def login_to_steam():
             sys.exit()
         except SSLError:
             logger.error(Fore.RED + '登录失败. SSL证书验证错误! '
-                                    '若您确定网络环境安全, 可尝试将config.json中的ignoreSSLError设置为true\n' + Fore.RESET)
+                                    '若您确定网络环境安全, 可尝试将config.json中的steam_login_ignore_ssl_error设置为true\n' + Fore.RESET)
             pause()
             sys.exit()
         except CaptchaRequired:
@@ -96,7 +97,8 @@ def main():
     logger.info('正在初始化...')
     if not os.path.exists(CONFIG_FILE_PATH):
         if not os.path.exists(EXAMPLE_CONFIG_FILE_PATH):
-            logger.error('未检测到' + EXAMPLE_CONFIG_FILE_PATH + ', 请前往GitHub进行下载, 并保证文件和程序在同一目录下. ')
+            logger.error(
+                '未检测到' + EXAMPLE_CONFIG_FILE_PATH + ', 请前往GitHub进行下载, 并保证文件和程序在同一目录下. ')
             pause()
             sys.exit()
         shutil.copy(EXAMPLE_CONFIG_FILE_PATH, CONFIG_FILE_PATH)
@@ -108,7 +110,8 @@ def main():
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'w', encoding='utf-8') as f:
             f.write(json.dumps({'steamid': '', 'shared_secret': '', 'identity_secret': '', 'api_key': '',
                                 'steam_username': '', 'steam_password': ''}, indent=4))
-            logger.info('检测到首次运行, 已为您生成' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请按照README提示填写配置文件! ')
+            logger.info(
+                '检测到首次运行, 已为您生成' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请按照README提示填写配置文件! ')
     if 'dev' in config and config['dev']:
         development_mode = True
     if development_mode:
@@ -163,7 +166,7 @@ if __name__ == '__main__':
     if not os.path.exists(LOGS_FOLDER):
         os.mkdir(LOGS_FOLDER)
     f_handler = logging.FileHandler(os.path.join(LOGS_FOLDER, datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') +
-                                                 '.log') , encoding='utf-8')
+                                                 '.log'), encoding='utf-8')
     f_handler.setLevel(logging.DEBUG)
     f_handler.setFormatter(log_formatter)
     logger.addHandler(f_handler)

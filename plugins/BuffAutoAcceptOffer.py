@@ -60,12 +60,16 @@ class BuffAutoAcceptOffer:
             self.logger.error('[BuffAutoAcceptOffer] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ')
 
     def exec(self):
-        self.logger.info('[BuffAutoAcceptOffer] 正在准备登录至BUFF...')
-        with open(BUFF_COOKIES_FILE_PATH, 'r', encoding='utf-8') as f:
-            self.buff_headers['Cookie'] = f.read()
-        self.logger.info('[BuffAutoAcceptOffer] 已检测到cookies, 尝试登录')
-        self.logger.info('[BuffAutoAcceptOffer] 已经登录至BUFF 用户名: ' +
-                         self.check_buff_account_state(dev=self.development_mode))
+        try:
+            self.logger.info('[BuffAutoAcceptOffer] 正在准备登录至BUFF...')
+            with open(BUFF_COOKIES_FILE_PATH, 'r', encoding='utf-8') as f:
+                self.buff_headers['Cookie'] = f.read()
+            self.logger.info('[BuffAutoAcceptOffer] 已检测到cookies, 尝试登录')
+            self.logger.info('[BuffAutoAcceptOffer] 已经登录至BUFF 用户名: ' +
+                             self.check_buff_account_state(dev=self.development_mode))
+        except TypeError:
+            self.logger.error('[BuffAutoAcceptOffer] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ')
+            sys.exit()
         ignored_offer = []
         order_info = {}
         sell_protection = self.config['buff_auto_accept_offer']['sell_protection']
