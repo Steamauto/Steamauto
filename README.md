@@ -22,20 +22,22 @@
 **2. `config.json` 说明**  
 | 配置项 | 描述 | 
 | ------ | ---- |
-| dev  | 是否开启开发者模式, 非开发者请勿开启, 具体效果请自行查看代码    |
-| uu_token  | 默认为disabled，填入悠悠有品token后可启用悠悠有品自动发货功能,token获取教程见FAQ    |
-| interval   | 每次检查是否有新报价间隔(轮询间隔)，单位为秒   |
-| ignoreSSLError   | 设置为true后，关闭SSL验证(请自行确保网络环境安全)   |
-| no_pause  | 设置为true后，所有按回车键继续的提示都会被取消     |
-| sell_protection      | 是否开启出售保护, 开启后将不会自动接收低于价格过低的出售请求      |
-| protection_price        | 出售保护价格, 若其他卖家最低价低于此价格, 则不会进行出售保护   |
-| protection_price_percentage    | 出售价格保护比例, 若出售价格低于此比例*其他卖家最低价格，则不会自动接收报价         |
-| sell_notification       | 出售通知(如不需要可直接删除)           |
-| title        | 通知标题           |
-| body          | 通知内容       |
-| protection_notification         | 出售保护通知(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
+| development_mode  | 是否开启开发者模式, 非开发者请勿开启, 具体效果请自行查看代码    |
+| steam_login_ignore_ssl_error  | 设置为true后，关闭SSL验证(请自行确保网络环境安全)   |
+| buff_auto_accept_offer.enable  | 设置为true后，启用BUFF自动接收报价功能 |
+| buff_auto_accept_offer.interval   | 每次检查是否有新报价间隔(轮询间隔)，单位为秒   |
+| buff_auto_accept_offer.sell_protection  | 是否开启出售保护, 开启后将不会自动接收低于价格过低的出售请求      |
+| buff_auto_accept_offer.protection_price        | 出售保护价格, 若其他卖家最低价低于此价格, 则不会进行出售保护   |
+| buff_auto_accept_offer.protection_price_percentage    | 出售价格保护比例, 若出售价格低于此比例*其他卖家最低价格，则不会自动接收报价         |
+| buff_auto_accept_offer.sell_notification.title       | 出售通知标题(如不需要可直接删除)           |
+| buff_accept_offer.sell_notification.body          | 出售通知内容(如不需要可直接删除)       |
+| buff_auto_accept_offer.protection_notification.title         | 出售保护通知标题(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
+| buff_auto_accept_offer.protection_notification.body         | 出售保护通知内容(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
+| buff_auto_accept_offer.servers         | 通知服务器，详见[Apprise](https://github.com/caronc/apprise)|
+| uu_auto_accept_offer.enable  | 默认为disabled，填入悠悠有品token后可启用悠悠有品自动发货功能,token获取教程见FAQ    |
+| uu_auto_accept_offer.interval   | 每次检查是否有新报价间隔(轮询间隔)，单位为秒   |
 
-**3.`steamaccount.json`说明**  
+**3.`steamaccount.txt`说明**  
 | 配置项              | 描述                                                         |
 |------------------|--------------------------------------------------------------|
 | steamid          | Steam 的数字 ID                                             |
