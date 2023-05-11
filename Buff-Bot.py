@@ -112,7 +112,7 @@ def main():
                                 'steam_username': '', 'steam_password': ''}, indent=4))
             logger.info(
                 '检测到首次运行, 已为您生成' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请按照README提示填写配置文件! ')
-    if 'dev' in config and config['dev']:
+    if 'development_mode' in config and config['development_mode']:
         development_mode = True
     if development_mode:
         logger.info('开发者模式已开启')

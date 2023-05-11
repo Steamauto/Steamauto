@@ -12,8 +12,8 @@
 2. 将所得文件解压缩
 3. 打开 `config` 文件夹
 4. 将 `config.example.json` 复制到 `config.json` 并修改配置(相关教程见FAQ)
-5. 打开`steamaccount.json`, 修改所有参数(相关教程见FAQ)
-6. 打开`cookies.txt`, 填入[网易BUFF](https://buff.163.com)的cookie(包含session即可).如果要使用悠悠有品发货功能，你还需要编辑config.yml并填入悠悠有品的token(相关配置项见FAQ) 
+5. 打开`steam_account_info.json`, 修改所有参数(相关教程见FAQ)
+6. 打开`buff_cookies.txt`, 填入[网易BUFF](https://buff.163.com)的cookie(包含session即可).如果要使用悠悠有品发货功能，你还需要编辑uu_token.txt并填入悠悠有品的token(相关配置项见FAQ) 
 7. ~~给予本仓库一个star(手动狗头)~~
 ## FAQ
 
@@ -35,7 +35,7 @@
 | uu_auto_accept_offer.enable  | 默认为disabled，填入悠悠有品token后可启用悠悠有品自动发货功能,token获取教程见FAQ    |
 | uu_auto_accept_offer.interval   | 每次检查是否有新报价间隔(轮询间隔)，单位为秒   |
 
-**2.`steamaccount.txt`说明**  
+**2.`steam_account_info.json`说明**  
 | 配置项              | 描述                                                         |
 |------------------|--------------------------------------------------------------|
 | steamid          | Steam 的数字 ID                                             |
@@ -50,7 +50,7 @@
 Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安全性  
 在用户的电脑不被恶意软件入侵的情况下，账号不可能泄露  
 
-**4.protection_notification配置项说明**
+**4.notification配置项说明**
 | 配置项 | 描述 |
 | --- | --- |
 | sell_notification | 出售通知(如不需要可直接删除) |
@@ -67,7 +67,7 @@ Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安
 **6.可否关闭Buff自动发货，只是有悠悠有品自动发货？**  
 由于本程序第一次编写时未考虑到支持其它平台，暂时无法关闭.后期会推出重写版本.
 ## 附录
-关于`steamaccount.json`相关参数的获取教程都在下面, 请自行参阅  
+关于`steam_account_info.json`相关参数的获取教程都在下面, 请自行参阅  
 个人推荐使用[ Watt Toolkit ](https://github.com/BeyondDimension/SteamTools)获取Steam令牌参数 操作非常简便
 
 [获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)  
