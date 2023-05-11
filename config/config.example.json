@@ -19,6 +19,9 @@
       "tgram://bottoken/ChatID"
     ]
   },
+  "buff_auto_on_sale": {
+    "enable": false
+  },
   "uu_auto_accept_offer": {
     "enable": false,
     "interval": 180

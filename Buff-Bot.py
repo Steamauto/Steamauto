@@ -13,6 +13,7 @@ from colorama import Fore
 import pickle
 
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
+from plugins.BuffAutoOnSale import BuffAutoOnSale
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from utils.static import *
 
@@ -55,7 +56,7 @@ def login_to_steam():
                 requests.packages.urllib3.disable_warnings()
             SteamClient.login(client, acc.get('steam_username'), acc.get('steam_password'),
                               STEAM_ACCOUNT_INFO_FILE_PATH)
-            with open('steam_session.pkl', 'wb') as f:
+            with open(STEAM_SESSION_PATH, 'wb') as f:
                 pickle.dump(client, f)
             logger.info('登录完成! 已经自动缓存session.\n')
             steam_client = client
@@ -126,6 +127,10 @@ def main():
             config['buff_auto_accept_offer']['enable']:
         buff_auto_accept_offer = BuffAutoAcceptOffer(logger, steam_client, config)
         plugins_enabled.append(buff_auto_accept_offer)
+    if 'buff_auto_on_sale' in config and 'enable' in config['buff_auto_on_sale'] and \
+            config['buff_auto_on_sale']['enable']:
+        buff_auto_on_sale = BuffAutoOnSale(logger, steam_client, config)
+        plugins_enabled.append(buff_auto_on_sale)
     if 'uu_auto_accept_offer' in config and 'enable' in config['uu_auto_accept_offer'] and \
             config['uu_auto_accept_offer']['enable']:
         uu_auto_accept_offer = UUAutoAcceptOffer(logger, steam_client, config)
