@@ -124,13 +124,21 @@ class BuffAutoAcceptOffer:
                     with open(STEAM_TRADE_DEV_FILE_PATH, 'r', encoding='utf-8') as f:
                         trade = json.load(f)['data']
                 else:
-                    response_json = requests.get('https://buff.163.com/api/market/steam_trade', headers=self.buff_headers)
+                    response_json = requests.get('https://buff.163.com/api/market/steam_trade',
+                                                 headers=self.buff_headers).json()
                     if self.development_mode:
                         self.logger.info('[BuffAutoAcceptOffer] 开发者模式, 保存待发货信息到本地')
                         with open(STEAM_TRADE_DEV_FILE_PATH, 'w', encoding='utf-8') as f:
-                            json.dump(response_json.json(), f)
-                    trade = json.loads(response_json.text)['data']
-                self.logger.info('[BuffAutoAcceptOffer] 查找到' + str(len(trade)) + '个待处理的BUFF未发货订单! ')
+                            json.dump(response_json, f)
+                    trade = response_json['data']
+                response_json = requests.get('https://buff.163.com/api/market/sell_order/to_deliver?game=csgo&appid=730',
+                                             headers=self.buff_headers).json()
+                trade_supply = response_json['data']['items']
+                trade_offer_to_confirm = []
+                for trade_offer in trade_supply:
+                    trade_offer_to_confirm.append(trade_offer['tradeofferid'])
+                self.logger.info('[BuffAutoAcceptOffer] 查找到 ' + str(len(trade)) + ' 个待处理的BUFF未发货订单! ')
+                self.logger.info('[BuffAutoAcceptOffer] 查找到 ' + str(len(trade_supply)) + ' 个待处理的BUFF待确认供应订单! ')
                 try:
                     if len(trade) != 0:
                         i = 0
@@ -201,6 +209,8 @@ class BuffAutoAcceptOffer:
                                     if self.development_mode:
                                         self.logger.info('[BuffAutoAcceptOffer] 开发者模式已开启, 跳过接受报价')
                                     else:
+                                        offer = self.steam_client.get_trade_offer(offer_id)
+                                        print(offer)
                                         self.steam_client.accept_trade_offer(offer_id)
                                     ignored_offer.append(offer_id)
                                     self.logger.info('[BuffAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! \n')
@@ -219,7 +229,23 @@ class BuffAutoAcceptOffer:
                                     self.logger.error(e, exc_info=True)
                                     self.logger.info('[BuffAutoAcceptOffer] 出现错误, 稍后再试! ')
                             else:
-                                self.logger.info('[BuffAutoAcceptOffer] 该报价已经被处理过, 跳过.\n')
+                                self.logger.info('[BuffAutoAcceptOffer] 该报价已经被处理过, 跳过.')
+                    for trade_offer_id in trade_offer_to_confirm:
+                        if trade_offer_id not in ignored_offer:
+                            offer = self.steam_client.get_trade_offer(trade_offer_id)
+                            if offer['response']['offer']['trade_offer_state'] == 9:
+                                self.steam_client._confirm_transaction(trade_offer_id)
+                                ignored_offer.append(trade_offer_id)
+                                self.logger.info('[BuffAutoAcceptOffer] 令牌完成! ( ' + trade_offer_id +
+                                                 ' ) 已经将此交易报价加入忽略名单!')
+                            else:
+                                self.logger.info('[BuffAutoAcceptOffer] 令牌未完成! ( ' + trade_offer_id + ' ), 报价状态异常 ('
+                                                 + str(offer['response']['offer']['trade_offer_state']) + ' )')
+                            if trade_offer_to_confirm.index(trade_offer_id) != len(trade_offer_to_confirm) - 1:
+                                self.logger.info('[BuffAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...')
+                                time.sleep(5)
+                        else:
+                            self.logger.info('[BuffAutoAcceptOffer] 该报价已经被处理过, 跳过.')
                 except Exception as e:
                     self.logger.error(e, exc_info=True)
                     self.logger.info('[BuffAutoAcceptOffer] 出现错误, 稍后再试! ')
