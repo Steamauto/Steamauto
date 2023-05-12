@@ -42,7 +42,7 @@ def login_to_steam():
             else:
                 client._session.verify = True
             if client.is_session_alive():
-                logger.info('登录成功\n')
+                logger.info('登录成功')
                 steam_client = client
     if steam_client is None:
         try:
@@ -58,7 +58,7 @@ def login_to_steam():
                               STEAM_ACCOUNT_INFO_FILE_PATH)
             with open(STEAM_SESSION_PATH, 'wb') as f:
                 pickle.dump(client, f)
-            logger.info('登录完成! 已经自动缓存session.\n')
+            logger.info('登录完成! 已经自动缓存session.')
             steam_client = client
         except FileNotFoundError:
             logger.error(
@@ -77,7 +77,7 @@ def login_to_steam():
             pause()
             sys.exit()
         except CaptchaRequired:
-            logger.error(Fore.RED + '登录失败. 触发Steam风控, 请尝试更换加速器节点. \n' + Fore.RESET)
+            logger.error(Fore.RED + '登录失败. 触发Steam风控, 请尝试更换加速器节点. ' + Fore.RESET)
             pause()
             sys.exit()
     return steam_client

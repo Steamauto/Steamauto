@@ -213,7 +213,7 @@ class BuffAutoAcceptOffer:
                                         print(offer)
                                         self.steam_client.accept_trade_offer(offer_id)
                                     ignored_offer.append(offer_id)
-                                    self.logger.info('[BuffAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! \n')
+                                    self.logger.info('[BuffAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! ')
                                     if 'sell_notification' in self.config['buff_auto_accept_offer']:
                                         apprise_obj = apprise.Apprise()
                                         for server in self.config['buff_auto_accept_offer']['servers']:
@@ -252,5 +252,5 @@ class BuffAutoAcceptOffer:
             except Exception as e:
                 self.logger.error(e, exc_info=True)
                 self.logger.info('[BuffAutoAcceptOffer] 出现未知错误, 稍后再试! ')
-            self.logger.info('[BuffAutoAcceptOffer] 将在{0}秒后再次检查待发货订单信息! \n'.format(str(interval)))
+            self.logger.info('[BuffAutoAcceptOffer] 将在{0}秒后再次检查待发货订单信息! '.format(str(interval)))
             time.sleep(interval)
