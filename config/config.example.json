@@ -24,7 +24,8 @@
     ]
   },
   "buff_auto_on_sale": {
-    "enable": false
+    "enable": false,
+    "interval": 1800
   },
   "uu_auto_accept_offer": {
     "enable": false,
