@@ -138,20 +138,29 @@ class BuffAutoOnSale:
         while True:
             try:
                 while True:
-                    self.logger.info('[BuffAutoOnSale] 正在检查BUFF商品库存...')
-                    inventory_json = self.get_buff_inventory(state='cansell', sort_by='price.desc')
-                    items = inventory_json['items']
-                    if len(items) == 0:
-                        self.logger.info('[BuffAutoOnSale] BUFF商品库存为空, 本批次上架结束!')
+                    items_count_this_loop = 0
+                    for game in SUPPORT_GAME_TYPES:
+                        self.logger.info('[BuffAutoOnSale] 正在检查 ' + game['game'] + ' 库存...')
+                        inventory_json = self.get_buff_inventory(state='cansell', sort_by='price.desc',
+                                                                 game=game['game'], app_id=game['app_id'])
+                        items = inventory_json['items']
+                        items_count_this_loop += len(items)
+                        if len(items) != 0:
+                            self.logger.info('[BuffAutoOnSale] 检查到 ' + game['game'] + ' 库存有 ' + str(len(items)) +
+                                             ' 件可出售商品, 正在上架...')
+                            items_to_sell = []
+                            for item in items:
+                                item['asset_info']['market_hash_name'] = item['market_hash_name']
+                                items_to_sell.append(item['asset_info'])
+                            self.put_item_on_sale(items=items_to_sell, price=-1)
+                            self.logger.info('[BuffAutoOnSale] BUFF商品上架成功! ')
+                        else:
+                            self.logger.info('[BuffAutoOnSale] 检查到 ' + game['game'] + ' 库存为空, 跳过上架')
+                        self.logger.info('[BuffAutoOnSale] 休眠30秒, 防止请求过快被封IP')
+                        time.sleep(30)
+                    if items_count_this_loop == 0:
+                        self.logger.info('[BuffAutoOnSale] 库存为空, 本批次上架结束!')
                         break
-                    items_to_sell = []
-                    for item in items:
-                        item['asset_info']['market_hash_name'] = item['market_hash_name']
-                        items_to_sell.append(item['asset_info'])
-                    self.put_item_on_sale(items=items_to_sell, price=-1)
-                    self.logger.info('[BuffAutoOnSale] BUFF商品上架成功! ')
-                    self.logger.info('[BuffAutoOnSale] 休眠30秒, 防止请求过快被封IP')
-                    time.sleep(30)
             except Exception as e:
                 self.logger.error('[BuffAutoOnSale] BUFF商品上架失败, 错误信息: ' + str(e), exc_info=True)
             self.logger.info('[BuffAutoOnSale] 休眠' + str(sleep_interval) + '秒')

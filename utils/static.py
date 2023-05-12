@@ -16,3 +16,4 @@ STEAM_TRADE_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, 'steam_trade.json')
 SELL_ORDER_HISTORY_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, 'sell_order_history.json')
 SHOP_LISTING_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, 'shop_listing.json')
 EXAMPLE_CONFIG_FILE_PATH = os.path.join(CONFIG_FOLDER, 'config.example.json')
+SUPPORT_GAME_TYPES = [{'game': 'csgo', 'app_id': 730}, {'game': 'dota2', 'app_id': 570}]

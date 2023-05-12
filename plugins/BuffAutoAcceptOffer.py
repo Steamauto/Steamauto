@@ -131,14 +131,18 @@ class BuffAutoAcceptOffer:
                         with open(STEAM_TRADE_DEV_FILE_PATH, 'w', encoding='utf-8') as f:
                             json.dump(response_json, f)
                     trade = response_json['data']
-                response_json = requests.get('https://buff.163.com/api/market/sell_order/to_deliver?game=csgo&appid=730',
-                                             headers=self.buff_headers).json()
-                trade_supply = response_json['data']['items']
                 trade_offer_to_confirm = []
-                for trade_offer in trade_supply:
-                    trade_offer_to_confirm.append(trade_offer['tradeofferid'])
+                for game in SUPPORT_GAME_TYPES:
+                    response_json = requests.get('https://buff.163.com/api/market/sell_order/to_deliver?game=' +
+                                                 game['game'] + '&appid=' + str(game['app_id']),
+                                                 headers=self.buff_headers).json()
+                    trade_supply = response_json['data']['items']
+                    for trade_offer in trade_supply:
+                        trade_offer_to_confirm.append(trade_offer['tradeofferid'])
+                    self.logger.info('[BuffAutoAcceptOffer] 休眠5秒...')
+                    time.sleep(5)
                 self.logger.info('[BuffAutoAcceptOffer] 查找到 ' + str(len(trade)) + ' 个待处理的BUFF未发货订单! ')
-                self.logger.info('[BuffAutoAcceptOffer] 查找到 ' + str(len(trade_supply)) + ' 个待处理的BUFF待确认供应订单! ')
+                self.logger.info('[BuffAutoAcceptOffer] 查找到 ' + str(len(trade_offer_to_confirm)) + ' 个待处理的BUFF待确认供应订单! ')
                 try:
                     if len(trade) != 0:
                         i = 0
@@ -210,7 +214,6 @@ class BuffAutoAcceptOffer:
                                         self.logger.info('[BuffAutoAcceptOffer] 开发者模式已开启, 跳过接受报价')
                                     else:
                                         offer = self.steam_client.get_trade_offer(offer_id)
-                                        print(offer)
                                         self.steam_client.accept_trade_offer(offer_id)
                                     ignored_offer.append(offer_id)
                                     self.logger.info('[BuffAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! ')
