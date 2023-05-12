@@ -1,11 +1,9 @@
 import json
-import sys
 import time
 
 import apprise
 import requests
 from apprise.AppriseAsset import AppriseAsset
-from colorama import Fore
 
 from utils.static import *
 
@@ -199,8 +197,7 @@ class BuffAutoAcceptOffer:
                                         other_lowest_price = float(resp_json['data']['items'][0]['price'])
                                         if price < other_lowest_price * protection_price_percentage and \
                                                 other_lowest_price > protection_price:
-                                            self.logger.error(Fore.RED + '[BuffAutoAcceptOffer] 交易金额过低, 跳过此交易报价' +
-                                                              Fore.RESET)
+                                            self.logger.error('[BuffAutoAcceptOffer] 交易金额过低, 跳过此交易报价')
                                             if 'protection_notification' in self.config['buff_auto_accept_offer']:
                                                 apprise_obj = apprise.Apprise()
                                                 for server in self.config['buff_auto_accept_offer']['servers']:

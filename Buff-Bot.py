@@ -4,13 +4,13 @@ import shutil
 import sys
 import json
 import threading
+import pickle
 
 from steampy.client import SteamClient
 from steampy.exceptions import CaptchaRequired
 from requests.exceptions import SSLError, ConnectTimeout
 import requests
-from colorama import Fore
-import pickle
+import colorlog
 
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
 from plugins.BuffAutoOnSale import BuffAutoOnSale
@@ -36,7 +36,7 @@ def login_to_steam():
         with open(STEAM_SESSION_PATH, 'rb') as f:
             client = pickle.load(f)
             if config['steam_login_ignore_ssl_error']:
-                logger.warning(Fore.YELLOW + '警告: 已经关闭SSL验证, 账号可能存在安全问题' + Fore.RESET)
+                logger.warning('警告: 已经关闭SSL验证, 账号可能存在安全问题')
                 client._session.verify = False
                 requests.packages.urllib3.disable_warnings()
             else:
@@ -51,7 +51,7 @@ def login_to_steam():
                 acc = json.load(f)
             client = SteamClient(acc.get('api_key'))
             if config['steam_login_ignore_ssl_error']:
-                logger.warning(Fore.YELLOW + '\n警告: 已经关闭SSL验证, 账号可能存在安全问题\n' + Fore.RESET)
+                logger.warning('警告: 已经关闭SSL验证, 账号可能存在安全问题')
                 client._session.verify = False
                 requests.packages.urllib3.disable_warnings()
             SteamClient.login(client, acc.get('steam_username'), acc.get('steam_password'),
@@ -61,23 +61,23 @@ def login_to_steam():
             logger.info('登录完成! 已经自动缓存session.')
             steam_client = client
         except FileNotFoundError:
-            logger.error(
-                Fore.RED + '未检测到' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请添加到' + STEAM_ACCOUNT_INFO_FILE_PATH +
-                '后再进行操作! ' + Fore.RESET)
+            logger.error('未检测到' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请添加到'
+                         + STEAM_ACCOUNT_INFO_FILE_PATH + '后再进行操作! ')
             pause()
             sys.exit()
         except (ConnectTimeout, TimeoutError):
-            logger.error(Fore.RED + '\n网络错误! 请通过修改hosts/使用代理等方法代理Python解决问题. \n'
-                                    '注意: 使用游戏加速器并不能解决问题. 请尝试使用Proxifier及其类似软件代理Python.exe解决. ' + Fore.RESET)
+            logger.error('\n网络错误! 请通过修改hosts/使用代理等方法代理Python解决问题. \n'
+                         '注意: 使用游戏加速器并不能解决问题. 请尝试使用Proxifier及其类似软件代理Python.exe解决. ')
             pause()
             sys.exit()
         except SSLError:
-            logger.error(Fore.RED + '登录失败. SSL证书验证错误! '
-                                    '若您确定网络环境安全, 可尝试将config.json中的steam_login_ignore_ssl_error设置为true\n' + Fore.RESET)
+            logger.error('登录失败. SSL证书验证错误! '
+                         '若您确定网络环境安全, 可尝试将config.json中的steam_login_ignore_ssl_error设置为true\n')
             pause()
             sys.exit()
         except CaptchaRequired:
-            logger.error(Fore.RED + '登录失败. 触发Steam风控, 请尝试更换加速器节点. ' + Fore.RESET)
+            logger.error('登录失败. 触发Steam风控, 请尝试更换加速器节点.\n'
+                         '若您不知道该使用什么加速器，推荐使用 Watt Toolkit 自带的免费Steam加速(请开启hosts代理模式).')
             pause()
             sys.exit()
     return steam_client
@@ -165,7 +165,15 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
     s_handler = logging.StreamHandler()
     s_handler.setLevel(logging.INFO)
-    log_formatter = logging.Formatter('[%(asctime)s] - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    log_formatter = colorlog.ColoredFormatter(fmt='%(log_color)s[%(asctime)s] - %(levelname)s: %(message)s',
+                                              datefmt='%Y-%m-%d %H:%M:%S',
+                                              log_colors={
+                                                  'DEBUG': 'cyan',
+                                                  'INFO': 'green',
+                                                  'WARNING': 'yellow',
+                                                  'ERROR': 'red',
+                                                  'CRITICAL': 'bold_red'
+                                              })
     s_handler.setFormatter(log_formatter)
     logger.addHandler(s_handler)
     if not os.path.exists(LOGS_FOLDER):

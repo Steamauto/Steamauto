@@ -1,12 +1,9 @@
-import json
-import sys
-import time
 import datetime
+import json
+import time
 
-import apprise
 import requests
 from apprise.AppriseAsset import AppriseAsset
-from colorama import Fore
 
 from utils.static import *
 

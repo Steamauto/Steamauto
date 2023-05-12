@@ -3,3 +3,4 @@ requests
 apprise
 colorama
 uuyoupinapi
+colorlog
