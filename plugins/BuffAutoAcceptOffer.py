@@ -149,6 +149,9 @@ class BuffAutoAcceptOffer:
                         for go in trade:
                             i += 1
                             offer_id = go['tradeofferid']
+                            while offer_id in trade_offer_to_confirm:
+                                trade_offer_to_confirm.remove(offer_id)
+                                # offer_id会同时在2个接口中出现, 移除重复的offer_id
                             self.logger.info('[BuffAutoAcceptOffer] 正在处理第 ' + str(i) + ' 个交易报价 报价ID' + str(offer_id))
                             if offer_id not in ignored_offer:
                                 try:
