@@ -3,7 +3,7 @@
 > 免费、开源的网易Buff及悠悠有品饰品交易平台自动收发货解决方案  
 > 杜绝收费、安全稳定
 
-使用Python3和Requests库实现的网易BUFF饰品交易平台、悠悠有品饰品交易平台全自动发货/求购收货  
+使用Python3和Requests库实现的网易BUFF饰品交易平台全自动发货/求购收货/供应求购确认报价/以最低价上架全部库存、悠悠有品饰品交易平台全自动发货/求购收货  
 **使用前请仔细阅读本文档！**  
 **欢迎有能力者提交PR来完善本程序。**  
 **请勿违反开源协议，包括但不限于闭源倒卖此程序或修改后不进行开源等。**
@@ -35,6 +35,8 @@
 | buff_auto_accept_offer.buff_cookie_expired_notification.title         | BUFF Cookies失效通知标题(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
 | buff_auto_accept_offer.buff_cookie_expired_notification.body         | BUFF Cookies失效通知内容(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)|
 | buff_auto_accept_offer.servers         | 通知服务器，详见[Apprise](https://github.com/caronc/apprise)|
+| buff_auto_on_sale.enable  | 设置为true后，启用BUFF自动以最低价上架所有库存 |
+| buff_auto_on_sale.interval  | 检查库存间隔时间 |
 | uu_auto_accept_offer.enable  | 默认为disabled，填入悠悠有品token后可启用悠悠有品自动发货功能,token获取教程见FAQ    |
 | uu_auto_accept_offer.interval   | 每次检查是否有新报价间隔(轮询间隔)，单位为秒   |
 
