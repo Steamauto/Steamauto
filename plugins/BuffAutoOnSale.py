@@ -124,6 +124,8 @@ class BuffAutoOnSale:
             return -1
 
     def exec(self):
+        self.logger.info('[BuffAutoOnSale] BUFF自动上架插件已启动, 休眠60秒, 与自动接收报价插件错开运行时间')
+        time.sleep(60)
         try:
             self.logger.info('[BuffAutoOnSale] 正在准备登录至BUFF...')
             with open(BUFF_COOKIES_FILE_PATH, 'r', encoding='utf-8') as f:
