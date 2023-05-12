@@ -1,4 +1,5 @@
 # Buff-Bot  
+![Buff-Bot](https://socialify.git.ci/jiajiaxd/Buff-Bot/image?description=1&forks=1&issues=1&language=1&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
 > 免费、开源的网易Buff及悠悠有品饰品交易平台自动收发货解决方案  
 > 杜绝收费、安全稳定
 
@@ -77,6 +78,7 @@ Buff-Bot所有源代码均开放在GitHub，可供所有人自行查看代码安
 
 ## 鸣谢
 感谢 [**@lupohan44**](https://github.com/lupohan44) 为本项目提交的大量代码！  
-特别感谢 [JetBrains](https://www.jetbrains.com/) 为开源项目提供免费的 [PyCharm](https://www.jetbrains.com/pycharm/) 等 IDE 的授权  
+
+## JetBrains
+感谢 [JetBrains](https://www.jetbrains.com/) 为开源项目提供免费的 [PyCharm](https://www.jetbrains.com/pycharm/) 等 IDE 的授权  
 [<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg" width="200"/>](https://jb.gg/OpenSourceSupport)
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/PyCharm_icon.svg" width="200"/>](https://jb.gg/OpenSourceSupport)
