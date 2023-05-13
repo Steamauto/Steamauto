@@ -26,7 +26,7 @@
 2. 将所得文件解压缩
 3. 打开 `config` 文件夹
 4. 将 `config.example.json` 复制到 `config.json` 并修改配置(相关教程见FAQ)
-5. 打开`steam_account_info.json`, 修改所有参数(相关教程见FAQ)
+5. 打开`steam_account_info.json`, 修改所有参数(相关教程见配置说明)
 6. **(若有需求Buff相关功能)** 打开`buff_cookies.txt`, 填入[网易BUFF](https://buff.163.com)的cookie(包含session即可)
 7. **(若有需求悠悠有品相关功能)** 打开`uu_token.txt`,填入[悠悠有品](https://www.youpin898.com/)的token(如何获取token,见FAQ) 
 8. ~~给予本仓库一个star(手动狗头)~~
