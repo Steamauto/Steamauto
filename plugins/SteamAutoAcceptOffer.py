@@ -9,7 +9,7 @@ class SteamAutoAcceptOffer:
         self.config = config
 
     def init(self):
-        pass
+        return False
 
     def exec(self):
         while True:
@@ -17,7 +17,7 @@ class SteamAutoAcceptOffer:
                 trade_summary = self.steam_client.get_trade_offers_summary()['response']
                 self.logger.debug(trade_summary)
                 if trade_summary['pending_received_count'] > 0:
-                    self.logger.info('[SteamAutoAcceptOffer] 检测到有%d个待接受的交易报价' % trade_summary['pending_received_count'])
+                    self.logger.info('[SteamAutoAcceptOffer] 检测到有%d个待处理的交易报价' % trade_summary['pending_received_count'])
                     trade_offers = self.steam_client.get_trade_offers(merge=False)['response']
                     if len(trade_offers['trade_offers_received']) > 0:
                         for trade_offer in trade_offers['trade_offers_received']:
@@ -32,10 +32,7 @@ class SteamAutoAcceptOffer:
                             else:
                                 self.logger.info(f'[SteamAutoAcceptOffer] 检测到报价[{trade_offer["tradeofferid"]}]'
                                                  f'需要支出物品，自动跳过处理')
-                time.sleep(self.config['steam_auto_accept_offer']['interval'])
-            except KeyboardInterrupt:
-                break
             except Exception as e:
                 self.logger.error("[SteamAutoAcceptOffer] 发生未知错误！稍后再试...")
                 self.logger.error(e)
-                time.sleep(self.config['steam_auto_accept_offer']['interval'])
+            time.sleep(self.config['steam_auto_accept_offer']['interval'])

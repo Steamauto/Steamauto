@@ -136,8 +136,8 @@ class BuffAutoAcceptOffer:
         return True
 
     def exec(self):
-        time.sleep(10)
         self.logger.info('[BuffAutoAcceptOffer] BUFF自动接受报价插件已启动, 休眠10秒, 避免BUFF API异常')
+        time.sleep(10)
         try:
             self.logger.info('[BuffAutoAcceptOffer] 正在准备登录至BUFF...')
             with open(BUFF_COOKIES_FILE_PATH, 'r', encoding='utf-8') as f:
@@ -215,7 +215,7 @@ class BuffAutoAcceptOffer:
                     trade_supply = response_json['data']['items']
                     for trade_offer in trade_supply:
                         trade_offer_to_confirm.append(trade_offer['tradeofferid'])
-                    self.logger.info('[BuffAutoAcceptOffer] 休眠5秒...')
+                    self.logger.info('[BuffAutoAcceptOffer] 为了避免访问接口过于频繁，休眠5秒...')
                     time.sleep(5)
                 self.logger.info('[BuffAutoAcceptOffer] 查找到 ' + str(len(trades)) + ' 个待处理的BUFF未发货订单! ')
                 self.logger.info('[BuffAutoAcceptOffer] 查找到 ' + str(
