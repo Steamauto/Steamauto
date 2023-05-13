@@ -2,4 +2,5 @@ steampy==0.80
 requests
 apprise
 colorama
-uuyoupinapi
+uuyoupinapi==0.0.3
+colorlog

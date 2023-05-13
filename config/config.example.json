@@ -1,21 +1,38 @@
 {
-  "dev": false,
-  "uu_token": "disabled",
-  "interval": "180",
-  "sell_protection": false,
-  "ignoreSSLError": false,
-  "no_pause": false,
-  "protection_price": 30,
-  "protection_price_percentage": 0.9,
-  "sell_notification": {
-    "title": "成功出售{game}饰品: {item_name}",
-    "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\nSteam价格(参考): {steam_price} USD\nSteam价格(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
+  "development_mode": false,
+  "steam_login_ignore_ssl_error": false,
+  "buff_auto_accept_offer": {
+    "enable": true,
+    "interval": 300,
+    "sell_protection": true,
+    "protection_price": 30,
+    "protection_price_percentage": 0.9,
+    "sell_notification": {
+      "title": "成功出售{game}饰品: {item_name}",
+      "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\nSteam价格(参考): {steam_price} USD\nSteam价格(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
+    },
+    "protection_notification": {
+      "title": "{game}饰品: {item_name} 未自动接收报价, 价格与市场最低价相差过大",
+      "body": "请自行至BUFF确认报价!"
+    },
+    "buff_cookie_expired_notification": {
+      "title": "BUFF Cookie已过期, 请重新登录",
+      "body": "BUFF Cookie已过期, 请重新登录"
+    },
+    "servers": [
+      "tgram://bottoken/ChatID"
+    ]
   },
-  "protection_notification": {
-    "title": "{game}饰品: {item_name} 未自动接收报价, 价格与市场最低价相差过大",
-    "body": "请自行至BUFF确认报价!"
+  "buff_auto_on_sale": {
+    "enable": false,
+    "interval": 1800
   },
-  "servers": [
-    "tgram://bottoken/ChatID"
-  ]
+  "uu_auto_accept_offer": {
+    "enable": false,
+    "interval": 300
+  },
+  "steam_auto_accept_offer": {
+    "enable": false,
+    "interval": 300
+  }
 }
