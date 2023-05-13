@@ -1,5 +1,5 @@
 # Steamauto  
-![Steamauto](https://socialify.git.ci/jiajiaxd/Buff-Bot/image?description=1&forks=1&issues=1&language=1&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
+![Steamauto](https://socialify.git.ci/jiajiaxd/Steamauto/image?description=1&forks=1&language=1&name=1&owner=1&stargazers=1&theme=Light)
 > 开源的 Steam 自动收发货解决方案  
 > 杜绝收费、安全稳定
 
