@@ -86,8 +86,8 @@ def login_to_steam():
 def main():
     global config
     development_mode = False
-    logger.info('欢迎使用Buff-Bot Github仓库:https://github.com/jiajiaxd/Buff-Bot')
-    logger.info('若您觉得Buff-Bot好用, 请给予Star支持, 谢谢! ')
+    logger.info('欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto')
+    logger.info('若您觉得Steamauto好用, 请给予Star支持, 谢谢! ')
     logger.info('正在检查更新...')
     try:
         response_json = requests.get('https://buffbot.jiajiaxd.com/latest', timeout=5)
@@ -161,7 +161,7 @@ def main():
 
 
 if __name__ == '__main__':
-    logger = logging.getLogger('Buff-Bot')
+    logger = logging.getLogger('Steamauto')
     logger.setLevel(logging.DEBUG)
     s_handler = logging.StreamHandler()
     s_handler.setLevel(logging.INFO)
