@@ -6,8 +6,11 @@ import json
 import threading
 import pickle
 
+import steampy.client
 from steampy.client import SteamClient
 from steampy.exceptions import CaptchaRequired
+from steampy.models import SteamUrl
+from steampy.login import InvalidCredentials
 from requests.exceptions import SSLError, ConnectTimeout
 import requests
 import colorlog
@@ -15,9 +18,27 @@ import colorlog
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
 from plugins.BuffAutoOnSale import BuffAutoOnSale
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
+from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from utils.static import *
 
 config = {}
+
+
+# 修复steampy.client.SteamClient的api_call方法, 使其能够按照session的verify属性来决定是否验证SSL证书
+class SteampyClientPatch(SteamClient):
+    def api_call(self, request_method: str, interface: str, api_method: str, version: str,
+                 params: dict = None) -> requests.Response:
+        url = '/'.join([SteamUrl.API_URL, interface, api_method, version])
+        if request_method == 'GET':
+            response = requests.get(url, params=params, verify=self._session.verify)
+        else:
+            response = requests.post(url, data=params, verify=self._session.verify)
+        if self.is_invalid_api_key(response):
+            raise InvalidCredentials('Invalid API key')
+        return response
+
+
+steampy.client.SteamClient = SteampyClientPatch
 
 
 def pause():
@@ -92,7 +113,7 @@ def main():
     try:
         response_json = requests.get('https://buffbot.jiajiaxd.com/latest', timeout=5)
         data = response_json.json()
-        logger.info(f"最新版本日期: {data['date']}\n内容: {data['message']}\n请自行检查是否更新! ")
+        logger.info(f"\n最新版本日期: {data['date']}\n{data['message']}\n请自行检查是否更新! ")
     except requests.exceptions.Timeout:
         logger.info('检查更新超时, 跳过检查更新')
     logger.info('正在初始化...')
@@ -135,6 +156,10 @@ def main():
             config['uu_auto_accept_offer']['enable']:
         uu_auto_accept_offer = UUAutoAcceptOffer(logger, steam_client, config)
         plugins_enabled.append(uu_auto_accept_offer)
+    if 'steam_auto_accept_offer' in config and 'enable' in config['steam_auto_accept_offer'] and \
+            config['steam_auto_accept_offer']['enable']:
+        steam_auto_accept_offer = SteamAutoAcceptOffer(logger, steam_client, config)
+        plugins_enabled.append(steam_auto_accept_offer)
     if len(plugins_enabled) == 0:
         logger.error('未启用任何插件, 请检查' + CONFIG_FILE_PATH + '是否正确! ')
         pause()
@@ -146,7 +171,8 @@ def main():
     if first_run:
         logger.info('首次运行, 请按照README提示填写配置文件! ')
         pause()
-    logger.info('初始化完成, 开始运行插件')
+    logger.info('初始化完成, 开始运行插件!')
+    print('\n')
     if len(plugins_enabled) == 1:
         plugins_enabled[0].exec()
     else:

@@ -11,12 +11,15 @@
 
 #### 在 [Buff饰品交易平台](https://buff.163.com) 上:
 - 自动发货
-- 自动求购收货
+- 自动求购收货(需要开启 自动接受礼物报价 功能)
 - 供应求购确认报价
 - 以最低价上架全部库存
 
 #### 在 [悠悠有品饰品交易平台](https://www.youpin898.com/) 上:
 - 自动发货出售商品
+
+#### 在 Steam 上:
+- 自动接受礼物报价(无需支出任何Steam库存中的物品的报价)
 
 ## 如何使用?
 1. 前往 [Github Releases](https://github.com/jiajiaxd/Steamauto/releases/latest) 下载适合自己系统的Steamauto
@@ -58,6 +61,8 @@
 | buff_auto_on_sale.interval                                    | 检查库存间隔时间                                                                                       |
 | uu_auto_accept_offer.enable                                   | 默认为disabled，填入悠悠有品token后可启用悠悠有品自动发货功能,token获取教程见FAQ                                            |
 | uu_auto_accept_offer.interval                                 | 每次检查是否有新报价间隔(轮询间隔)，单位为秒                                                                        |
+| steam_auto_accept_offer.enable                                | 是否开启自动接受Steam礼物报价(无需支出任何Steam库存中的物品的报价)                                                        |
+| steam_auto_accept_offer.interval                              | 每次检查报价列表间隔(轮询间隔)，单位为秒                                                                          |
 
 ##### `steam_account_info.json`
 | 配置项             | 描述                   |

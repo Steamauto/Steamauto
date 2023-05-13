@@ -60,7 +60,6 @@ class BuffAutoAcceptOffer:
             self.logger.error('[BuffAutoAcceptOffer] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ')
             return ""
 
-
     def should_accept_offer(self, trade, order_info):
         sell_protection = self.config['buff_auto_accept_offer']['sell_protection']
         protection_price_percentage = self.config['buff_auto_accept_offer']['protection_price_percentage']
@@ -169,9 +168,9 @@ class BuffAutoAcceptOffer:
                         for server in self.config['buff_auto_accept_offer']['servers']:
                             apprise_obj.add(server)
                         apprise_obj.notify(self.config['buff_auto_accept_offer']
-                                             ['buff_cookie_expired_notification']['title'],
+                                           ['buff_cookie_expired_notification']['title'],
                                            self.config['buff_auto_accept_offer']
-                                            ['buff_cookie_expired_notification']['body'])
+                                           ['buff_cookie_expired_notification']['body'])
                     return
                 if self.development_mode and os.path.exists(MESSAGE_NOTIFICATION_DEV_FILE_PATH):
                     self.logger.info('[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地消息通知文件')
@@ -190,8 +189,10 @@ class BuffAutoAcceptOffer:
                     if int(to_deliver_order['csgo']) != 0 or int(to_deliver_order['dota2']) != 0:
                         self.logger.info('[BuffAutoAcceptOffer] 检测到' + str(
                             int(to_deliver_order['csgo']) + int(to_deliver_order['dota2'])) + '个待发货请求! ')
-                        self.logger.info('[BuffAutoAcceptOffer] CSGO待发货: ' + str(int(to_deliver_order['csgo'])) + '个')
-                        self.logger.info('[BuffAutoAcceptOffer] DOTA2待发货: ' + str(int(to_deliver_order['dota2'])) + '个')
+                        self.logger.info(
+                            '[BuffAutoAcceptOffer] CSGO待发货: ' + str(int(to_deliver_order['csgo'])) + '个')
+                        self.logger.info(
+                            '[BuffAutoAcceptOffer] DOTA2待发货: ' + str(int(to_deliver_order['dota2'])) + '个')
                 except TypeError:
                     self.logger.error('[BuffAutoAcceptOffer] Buff接口返回数据异常! 请检查网络连接或稍后再试! ')
                 if self.development_mode and os.path.exists(STEAM_TRADE_DEV_FILE_PATH):
@@ -217,7 +218,8 @@ class BuffAutoAcceptOffer:
                     self.logger.info('[BuffAutoAcceptOffer] 休眠5秒...')
                     time.sleep(5)
                 self.logger.info('[BuffAutoAcceptOffer] 查找到 ' + str(len(trades)) + ' 个待处理的BUFF未发货订单! ')
-                self.logger.info('[BuffAutoAcceptOffer] 查找到 ' + str(len(trade_offer_to_confirm)) + ' 个待处理的BUFF待确认供应订单! ')
+                self.logger.info('[BuffAutoAcceptOffer] 查找到 ' + str(
+                    len(trade_offer_to_confirm)) + ' 个待处理的BUFF待确认供应订单! ')
                 try:
                     if len(trades) != 0:
                         i = 0
@@ -227,7 +229,8 @@ class BuffAutoAcceptOffer:
                             while offer_id in trade_offer_to_confirm:
                                 trade_offer_to_confirm.remove(offer_id)
                                 # offer_id会同时在2个接口中出现, 移除重复的offer_id
-                            self.logger.info('[BuffAutoAcceptOffer] 正在处理第 ' + str(i) + ' 个交易报价 报价ID' + str(offer_id))
+                            self.logger.info(
+                                '[BuffAutoAcceptOffer] 正在处理第 ' + str(i) + ' 个交易报价 报价ID' + str(offer_id))
                             if offer_id not in ignored_offer:
                                 try:
                                     if not self.should_accept_offer(trade, order_info):
@@ -245,11 +248,16 @@ class BuffAutoAcceptOffer:
                                         for server in self.config['buff_auto_accept_offer']['servers']:
                                             apprise_obj.add(server)
                                         apprise_obj.notify(
-                                            title=format_str(self.config['buff_auto_accept_offer']['sell_notification']['title'], trade),
-                                            body=format_str(self.config['buff_auto_accept_offer']['sell_notification']['body'], trade),
+                                            title=format_str(
+                                                self.config['buff_auto_accept_offer']['sell_notification']['title'],
+                                                trade),
+                                            body=format_str(
+                                                self.config['buff_auto_accept_offer']['sell_notification']['body'],
+                                                trade),
                                         )
                                     if trades.index(trade) != len(trades) - 1:
-                                        self.logger.info('[BuffAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...')
+                                        self.logger.info(
+                                            '[BuffAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...')
                                         time.sleep(5)
                                 except Exception as e:
                                     self.logger.error(e, exc_info=True)
@@ -265,8 +273,9 @@ class BuffAutoAcceptOffer:
                                 self.logger.info('[BuffAutoAcceptOffer] 令牌完成! ( ' + trade_offer_id +
                                                  ' ) 已经将此交易报价加入忽略名单!')
                             else:
-                                self.logger.info('[BuffAutoAcceptOffer] 令牌未完成! ( ' + trade_offer_id + ' ), 报价状态异常 ('
-                                                 + str(offer['response']['offer']['trade_offer_state']) + ' )')
+                                self.logger.info(
+                                    '[BuffAutoAcceptOffer] 令牌未完成! ( ' + trade_offer_id + ' ), 报价状态异常 ('
+                                    + str(offer['response']['offer']['trade_offer_state']) + ' )')
                             if trade_offer_to_confirm.index(trade_offer_id) != len(trade_offer_to_confirm) - 1:
                                 self.logger.info('[BuffAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...')
                                 time.sleep(5)

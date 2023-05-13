@@ -3,7 +3,7 @@
   "steam_login_ignore_ssl_error": false,
   "buff_auto_accept_offer": {
     "enable": true,
-    "interval": 180,
+    "interval": 300,
     "sell_protection": true,
     "protection_price": 30,
     "protection_price_percentage": 0.9,
@@ -29,6 +29,10 @@
   },
   "uu_auto_accept_offer": {
     "enable": false,
-    "interval": 180
+    "interval": 300
+  },
+  "steam_auto_accept_offer": {
+    "enable": false,
+    "interval": 300
   }
 }
