@@ -22,7 +22,7 @@ jobs:
         run: |
           pip install pyinstaller
           pip install -r requirements.txt
-          pyinstaller -F Buff-Bot.py --collect-all apprise --collect-all steampy-fixed --name Buff-Bot-${{ matrix.os }}
+          pyinstaller -F Steamauto.py --collect-all apprise --collect-all steampy-fixed --name Steamauto-${{ matrix.os }}
       
       - name: Copy config folder(Linux,macos)
         if: matrix.os != 'windows-latest'
@@ -55,19 +55,19 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3.0.2
         with:
-          path: ./Buff-Bot
+          path: ./Steamauto
       
       - name: Finalization
         run: |
           mkdir releases
           wget https://github.com/jiajiaxd/jiajiaxd/raw/main/action_zip.py
-          python action_zip.py Buff-Bot releases
+          python action_zip.py Steamauto releases
           sudo timedatectl set-timezone "Asia/Shanghai"
           echo "DATE=$(date +"%Y%m%d-%H%M")" >> $GITHUB_ENV
           cd releases
-          mv macOS-latest-dist.zip Buff-Bot_MacOS.zip
-          mv ubuntu-latest-dist.zip Buff-Bot_Linux_x86_64.zip
-          mv windows-latest-dist.zip Buff-Bot_Windows_x86_64.zip
+          mv macOS-latest-dist.zip Steamauto_MacOS.zip
+          mv ubuntu-latest-dist.zip Steamauto_Linux_x86_64.zip
+          mv windows-latest-dist.zip Steamauto_Windows_x86_64.zip
       
       - name: Upload to Github Releases
         uses: ncipollo/release-action@v1.11.1
