@@ -5,7 +5,7 @@
   "buff_auto_accept_offer": {
     "enable": true,
     "interval": 300,
-    "sell_protection": true,
+    "sell_protection": false,
     "protection_price": 30,
     "protection_price_percentage": 0.9,
     "sell_notification": {
