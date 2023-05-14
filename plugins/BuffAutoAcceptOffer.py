@@ -153,12 +153,6 @@ class BuffAutoAcceptOffer:
         interval = self.config['buff_auto_accept_offer']['interval']
         while True:
             try:
-                self.logger.info('[BuffAutoAcceptOffer] 正在检查Steam账户登录状态...')
-                if not self.development_mode:
-                    if not self.steam_client.is_session_alive():
-                        self.logger.error('[BuffAutoAcceptOffer] Steam登录状态失效! 程序退出...')
-                        return
-                self.logger.info('[BuffAutoAcceptOffer] Steam账户状态正常')
                 self.logger.info('[BuffAutoAcceptOffer] 正在进行BUFF待发货/待收货饰品检查...')
                 username = self.check_buff_account_state()
                 if username == "":

@@ -9,10 +9,10 @@ import signal
 
 import steampy.client
 from steampy.client import SteamClient
-from steampy.exceptions import CaptchaRequired
+from steampy.exceptions import CaptchaRequired, ApiException
 from steampy.models import SteamUrl
 from steampy.login import InvalidCredentials
-from requests.exceptions import SSLError, ConnectTimeout
+from requests.exceptions import SSLError
 import requests
 import colorlog
 
@@ -101,8 +101,8 @@ def login_to_steam():
                          '若您确定网络环境安全, 可尝试将config.json中的steam_login_ignore_ssl_error设置为true\n')
             pause()
             sys.exit()
-        except ValueError:
-            logger.error('登录失败. 请检查' + STEAM_ACCOUNT_INFO_FILE_PATH + '的格式是否合法!\n')
+        except (ValueError, ApiException):
+            logger.error('登录失败. 请检查' + STEAM_ACCOUNT_INFO_FILE_PATH + '的格式或内容是否正确!\n')
             pause()
             sys.exit()
         except CaptchaRequired:
@@ -180,6 +180,7 @@ def main():
     if first_run:
         logger.info('首次运行, 请按照README提示填写配置文件! ')
         pause()
+        sys.exit(0)
     logger.info('初始化完成, 开始运行插件!')
     print('\n')
     if len(plugins_enabled) == 1:
