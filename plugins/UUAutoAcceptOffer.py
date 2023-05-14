@@ -54,5 +54,5 @@ class UUAutoAcceptOffer:
                 except Exception as e:
                     self.logger.error(e, exc_info=True)
                     self.logger.info('[UUAutoAcceptOffer] 出现未知错误, 稍后再试! ')
-                self.logger.info('[UUAutoAcceptOffer] 将在{0}秒后再次检查待发货订单信息! \n'.format(str(interval)))
+                self.logger.info('[UUAutoAcceptOffer] 将在{0}秒后再次检查待发货订单信息!'.format(str(interval)))
                 time.sleep(interval)
