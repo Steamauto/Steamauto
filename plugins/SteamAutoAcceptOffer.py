@@ -15,9 +15,8 @@ class SteamAutoAcceptOffer:
         while True:
             try:
                 trade_summary = self.steam_client.get_trade_offers_summary()['response']
-                self.logger.debug(trade_summary)
+                self.logger.info('[SteamAutoAcceptOffer] 检测到有%d个待处理的交易报价' % trade_summary['pending_received_count'])
                 if trade_summary['pending_received_count'] > 0:
-                    self.logger.info('[SteamAutoAcceptOffer] 检测到有%d个待处理的交易报价' % trade_summary['pending_received_count'])
                     trade_offers = self.steam_client.get_trade_offers(merge=False)['response']
                     if len(trade_offers['trade_offers_received']) > 0:
                         for trade_offer in trade_offers['trade_offers_received']:
