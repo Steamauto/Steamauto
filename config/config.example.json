@@ -1,6 +1,7 @@
 {
   "development_mode": false,
   "steam_login_ignore_ssl_error": false,
+  "no_pause": false,
   "buff_auto_accept_offer": {
     "enable": true,
     "interval": 300,

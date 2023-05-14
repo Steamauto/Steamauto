@@ -98,6 +98,8 @@ def login_to_steam():
             sys.exit()
         except ValueError:
             logger.error('登录失败. 请检查' + STEAM_ACCOUNT_INFO_FILE_PATH + '的格式是否合法!\n')
+            pause()
+            sys.exit()
         except CaptchaRequired:
             logger.error('登录失败. 触发Steam风控, 请尝试更换加速器节点.\n'
                          '若您不知道该使用什么加速器，推荐使用 Watt Toolkit 自带的免费Steam加速(请开启hosts代理模式).')
