@@ -5,6 +5,7 @@ import sys
 import json
 import threading
 import pickle
+import signal
 
 import steampy.client
 from steampy.client import SteamClient
@@ -62,9 +63,13 @@ def login_to_steam():
                 requests.packages.urllib3.disable_warnings()
             else:
                 client._session.verify = True
-            if client.is_session_alive():
-                logger.info('登录成功')
-                steam_client = client
+            try:
+                if client.is_session_alive():
+                    logger.info('登录成功')
+                    steam_client = client
+            except requests.exceptions.ConnectionError:
+                logger.error('使用缓存的session登录失败!可能是网络异常.')
+                steam_client = None
     if steam_client is None:
         try:
             logger.info('正在登录Steam...')
@@ -86,7 +91,7 @@ def login_to_steam():
                          + STEAM_ACCOUNT_INFO_FILE_PATH + '后再进行操作! ')
             pause()
             sys.exit()
-        except (ConnectTimeout, TimeoutError):
+        except (requests.exceptions.ConnectionError, TimeoutError):
             logger.error('\n网络错误! 请通过修改hosts/使用代理等方法代理Python解决问题. \n'
                          '注意: 使用游戏加速器并不能解决问题. 请尝试使用Proxifier及其类似软件代理Python.exe解决. ')
             pause()
@@ -190,7 +195,13 @@ def main():
             thread.join()
 
 
+def exit_app(signal_, frame):
+    logger.info('正在退出...')
+    sys.exit()
+
+
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, exit_app)
     logger = logging.getLogger('Steamauto')
     logger.setLevel(logging.DEBUG)
     s_handler = logging.StreamHandler()

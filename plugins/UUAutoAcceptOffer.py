@@ -1,3 +1,4 @@
+import sys
 import time
 
 import uuyoupinapi
@@ -25,9 +26,10 @@ class UUAutoAcceptOffer:
             try:
                 uuyoupin = uuyoupinapi.UUAccount(f.read())
                 self.logger.info('[UUAutoAcceptOffer] 悠悠有品登录完成, 用户名: ' + uuyoupin.get_user_nickname())
-            except Exception as e:
+            except KeyError as e:
                 self.logger.error('[UUAutoAcceptOffer] 悠悠有品登录失败! 请检查token是否正确! ')
-                self.logger.error('[UUAutoAcceptOffer] 错误信息: ' + str(e))
+                self.logger.error('[UUAutoAcceptOffer] 由于登录失败，插件将自动退出')
+                sys.exit(1)
         ignored_offer = []
         interval = self.config['uu_auto_accept_offer']['interval']
         if uuyoupin is not None:

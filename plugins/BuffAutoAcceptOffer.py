@@ -1,5 +1,6 @@
 import datetime
 import json
+import sys
 import time
 
 import apprise
@@ -136,18 +137,17 @@ class BuffAutoAcceptOffer:
         return True
 
     def exec(self):
-        self.logger.info('[BuffAutoAcceptOffer] BUFF自动接受报价插件已启动, 休眠10秒, 避免BUFF API异常')
-        time.sleep(10)
-        try:
-            self.logger.info('[BuffAutoAcceptOffer] 正在准备登录至BUFF...')
-            with open(BUFF_COOKIES_FILE_PATH, 'r', encoding='utf-8') as f:
-                self.buff_headers['Cookie'] = f.read()
-            self.logger.info('[BuffAutoAcceptOffer] 已检测到cookies, 尝试登录')
-            self.logger.info('[BuffAutoAcceptOffer] 已经登录至BUFF 用户名: ' +
-                             self.check_buff_account_state(dev=self.development_mode))
-        except TypeError:
-            self.logger.error('[BuffAutoAcceptOffer] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ')
-            return
+        self.logger.info('[BuffAutoAcceptOffer] BUFF自动接受报价插件已启动.请稍候...')
+        time.sleep(5)
+        self.logger.info('[BuffAutoAcceptOffer] 正在准备登录至BUFF...')
+        with open(BUFF_COOKIES_FILE_PATH, 'r', encoding='utf-8') as f:
+            self.buff_headers['Cookie'] = f.read()
+        self.logger.info('[BuffAutoAcceptOffer] 已检测到cookies, 尝试登录')
+        user_name = self.check_buff_account_state(dev=self.development_mode)
+        if not user_name:
+            self.logger.error('[BuffAutoAcceptOffer] 由于登录失败,插件自动退出... ')
+            sys.exit(1)
+        self.logger.info('[BuffAutoAcceptOffer] 已经登录至BUFF 用户名: ' + user_name)
         ignored_offer = []
         order_info = {}
         interval = self.config['buff_auto_accept_offer']['interval']
