@@ -10,7 +10,7 @@
     "protection_price_percentage": 0.9,
     "sell_notification": {
       "title": "成功出售{game}饰品: {item_name}",
-      "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\nSteam价格(参考): {steam_price} USD\nSteam价格(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
+      "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\n出售价格: {buff_price}\nSteam价格(参考): {steam_price} USD\nSteam价格(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
     },
     "protection_notification": {
       "title": "{game}饰品: {item_name} 未自动接收报价, 价格与市场最低价相差过大",

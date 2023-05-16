@@ -10,14 +10,15 @@ from apprise.AppriseAsset import AppriseAsset
 from utils.static import *
 
 
-def format_str(text: str, trade):
+def format_str(text: str, trade, order_info):
     for good in trade['goods_infos']:
         good_item = trade['goods_infos'][good]
+        buff_price = float(order_info[trade['tradeofferid']]['price'])
         created_at_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(trade['created_at']))
         text = text.format(item_name=good_item['name'], steam_price=good_item['steam_price'],
                            steam_price_cny=good_item['steam_price_cny'], buyer_name=trade['bot_name'],
                            buyer_avatar=trade['bot_avatar'], order_time=created_at_time_str, game=good_item['game'],
-                           good_icon=good_item['original_icon_url'])
+                           good_icon=good_item['original_icon_url'], buff_price=buff_price)
     return text
 
 
@@ -129,9 +130,9 @@ class BuffAutoAcceptOffer:
                         apprise_obj.add(server)
                     apprise_obj.notify(
                         title=format_str(self.config['buff_auto_accept_offer']
-                                         ['protection_notification']['title'], trade),
+                                         ['protection_notification']['title'], trade, order_info),
                         body=format_str(self.config['buff_auto_accept_offer']
-                                        ['protection_notification']['body'], trade),
+                                        ['protection_notification']['body'], order_info),
                     )
                 return False
         return True
@@ -244,10 +245,10 @@ class BuffAutoAcceptOffer:
                                         apprise_obj.notify(
                                             title=format_str(
                                                 self.config['buff_auto_accept_offer']['sell_notification']['title'],
-                                                trade),
+                                                trade, order_info),
                                             body=format_str(
                                                 self.config['buff_auto_accept_offer']['sell_notification']['body'],
-                                                trade),
+                                                trade, order_info),
                                         )
                                     if trades.index(trade) != len(trades) - 1:
                                         self.logger.info(
