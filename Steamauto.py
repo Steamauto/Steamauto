@@ -55,21 +55,25 @@ def login_to_steam():
         logger.info('检测到首次登录Steam，正在尝试登录...登录完成后会自动缓存session')
     else:
         logger.info('检测到缓存的steam_session, 正在尝试登录...')
-        with open(STEAM_SESSION_PATH, 'rb') as f:
-            client = pickle.load(f)
-            if config['steam_login_ignore_ssl_error']:
-                logger.warning('警告: 已经关闭SSL验证, 账号可能存在安全问题')
-                client._session.verify = False
-                requests.packages.urllib3.disable_warnings()
-            else:
-                client._session.verify = True
-            try:
+        try:
+            with open(STEAM_SESSION_PATH, 'rb') as f:
+                client = pickle.load(f)
+                if config['steam_login_ignore_ssl_error']:
+                    logger.warning('警告: 已经关闭SSL验证, 账号可能存在安全问题')
+                    client._session.verify = False
+                    requests.packages.urllib3.disable_warnings()
+                else:
+                    client._session.verify = True
+
                 if client.is_session_alive():
                     logger.info('登录成功')
                     steam_client = client
-            except requests.exceptions.ConnectionError:
-                logger.error('使用缓存的session登录失败!可能是网络异常.')
-                steam_client = None
+        except requests.exceptions.ConnectionError:
+            logger.error('使用缓存的session登录失败!可能是网络异常.')
+            steam_client = None
+        except EOFError:
+            shutil.rmtree(SESSION_FOLDER)
+            steam_client = None
     if steam_client is None:
         try:
             logger.info('正在登录Steam...')
