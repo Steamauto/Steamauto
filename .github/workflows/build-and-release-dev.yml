@@ -1,8 +1,8 @@
-name: Build & Publish
+name: Build & Publish Dev
 on: 
   push:
     branches:
-      master
+      dev
 jobs:
   Build:
     runs-on: ${{ matrix.os }}
@@ -22,7 +22,7 @@ jobs:
         run: |
           pip install pyinstaller
           pip install -r requirements.txt
-          pyinstaller -F Steamauto.py --collect-all apprise --collect-all steampy-fixed --name Steamauto-${{ matrix.os }}
+          pyinstaller -F Steamauto.py --collect-all apprise --name Steamauto-${{ matrix.os }}
       
       - name: Copy config folder(Linux,macos)
         if: matrix.os != 'windows-latest'
@@ -72,7 +72,9 @@ jobs:
       - name: Upload to Github Releases
         uses: ncipollo/release-action@v1.11.1
         with:
-          commit: "master"
+          commit: "dev"
           tag: ${{ env.DATE }}
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: releases/*
+          prerelease: true
+          body: "警告：此构建为Dev分支构建，可能存在未知问题，仅供测试使用。正常用户请下载普通版本。"
