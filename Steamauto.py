@@ -60,7 +60,7 @@ def login_to_steam():
     if steam_client is None:
         try:
             logger.info('正在登录Steam...')
-            with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'r', encoding=get) as f:
+            with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'r', encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
                 try:
                     acc = json.load(f)
                 except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
@@ -146,7 +146,7 @@ def main():
             pause()
             sys.exit()
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
-        with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'w', encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
+        with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'w', encoding='utf-8') as f:
             f.write(DEFAULT_STEAM_ACCOUNT_JSON)
             logger.info(
                 '检测到首次运行, 已为您生成' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请按照README提示填写配置文件! ')
