@@ -6,12 +6,10 @@ import json
 import threading
 import pickle
 import signal
+import time
 
-import steampy.client
 from steampy.client import SteamClient
 from steampy.exceptions import CaptchaRequired, ApiException
-from steampy.models import SteamUrl
-from steampy.login import InvalidCredentials
 from requests.exceptions import SSLError
 import requests
 import colorlog
@@ -23,23 +21,6 @@ from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from utils.static import *
 
 config = {}
-
-
-# 修复steampy.client.SteamClient的api_call方法, 使其能够按照session的verify属性来决定是否验证SSL证书
-class SteampyClientPatch(SteamClient):
-    def api_call(self, request_method: str, interface: str, api_method: str, version: str,
-                 params: dict = None) -> requests.Response:
-        url = '/'.join([SteamUrl.API_URL, interface, api_method, version])
-        if request_method == 'GET':
-            response = requests.get(url, params=params, verify=self._session.verify)
-        else:
-            response = requests.post(url, data=params, verify=self._session.verify)
-        if self.is_invalid_api_key(response):
-            raise InvalidCredentials('Invalid API key')
-        return response
-
-
-steampy.client.SteamClient = SteampyClientPatch
 
 
 def pause():
@@ -187,6 +168,7 @@ def main():
         sys.exit(0)
     logger.info('初始化完成, 开始运行插件!')
     print('\n')
+    time.sleep(0.1)
     if len(plugins_enabled) == 1:
         plugins_enabled[0].exec()
     else:
