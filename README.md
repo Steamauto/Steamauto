@@ -163,7 +163,7 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 如果你的编辑器支持Json with comments，可以将配置文件类型改为Json with comments，即可避免提示语法错误
 
 ##### 如何获取悠悠有品token?
-使用`-uu`参数运行Steamauto程序,根据程序向导操作即可
+使用`-uu`参数运行Steamauto程序,根据程序向导操作即可  
 什么，你不会用参数运行程序？请查阅[这里](https://zhidao.baidu.com/question/221015240.html)
 
 ##### 可否关闭Buff自动发货，只是有悠悠有品自动发货？
