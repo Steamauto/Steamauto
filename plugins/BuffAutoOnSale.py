@@ -1,5 +1,5 @@
 import datetime
-import json
+import pyjson5 as json
 import time
 
 import requests

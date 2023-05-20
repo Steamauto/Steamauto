@@ -1,6 +1,6 @@
 import os
 import hmac
-import json
+import pyjson5 as json
 import struct
 from time import time
 from typing import Dict

@@ -2,7 +2,7 @@ import datetime
 import logging
 import shutil
 import sys
-import json
+import pyjson5 as json
 import threading
 import pickle
 import signal
@@ -20,14 +20,17 @@ from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from utils.static import *
 
-config = {}
-
+config = {'no_pause': False}
 
 def pause():
     if 'no_pause' in config and not config['no_pause']:
         logger.info('点击回车键继续...')
         input()
 
+def handle_global_exception(exc_type, exc_value, exc_traceback):
+    logger.exception("程序发生致命错误，请将此界面截图，并提交最新的log文件到https://github.com/jiajiaxd/Steamauto/issues", exc_info=(exc_type, exc_value, exc_traceback))
+    logger.error('由于出现致命错误，程序即将退出...')
+    pause()
 
 def login_to_steam():
     global config
@@ -55,11 +58,17 @@ def login_to_steam():
         except EOFError:
             shutil.rmtree(SESSION_FOLDER)
             steam_client = None
+            logger.error('session文件异常.已删除session文件夹.')
     if steam_client is None:
         try:
             logger.info('正在登录Steam...')
             with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'r', encoding='utf-8') as f:
-                acc = json.load(f)
+                try:
+                    acc = json.load(f)
+                except (json.Json5DecoderException, json.Json5IllegalCharacter):
+                    logger.error('检测到' + STEAM_ACCOUNT_INFO_FILE_PATH + '格式错误, 请检查配置文件格式是否正确! ')
+                    pause()
+                    sys.exit()
             client = SteamClient(acc.get('api_key'))
             if config['steam_login_ignore_ssl_error']:
                 logger.warning('警告: 已经关闭SSL验证, 账号可能存在安全问题')
@@ -111,23 +120,31 @@ def main():
     except requests.exceptions.Timeout:
         logger.info('检查更新超时, 跳过检查更新')
     logger.info('正在初始化...')
+    first_run = False
+    if not os.path.exists(CONFIG_FOLDER):
+        os.mkdir(CONFIG_FOLDER)
     if not os.path.exists(CONFIG_FILE_PATH):
         if not os.path.exists(EXAMPLE_CONFIG_FILE_PATH):
             logger.error(
                 '未检测到' + EXAMPLE_CONFIG_FILE_PATH + ', 请前往GitHub进行下载, 并保证文件和程序在同一目录下. ')
             pause()
             sys.exit()
-        shutil.copy(EXAMPLE_CONFIG_FILE_PATH, CONFIG_FILE_PATH)
-        logger.info('检测到首次运行, 已为您生成' + CONFIG_FILE_PATH + ', 请按照README提示填写配置文件! ')
-        pause()
+        else:
+            shutil.copy(EXAMPLE_CONFIG_FILE_PATH, CONFIG_FILE_PATH)
+            logger.info('检测到首次运行, 已为您生成' + CONFIG_FILE_PATH + ', 请按照README提示填写配置文件! ')
     with open(CONFIG_FILE_PATH, 'r', encoding='utf-8') as f:
-        config = json.load(f)
+        try:
+            config = json.load(f)
+        except (json.Json5DecoderException, json.Json5IllegalCharacter):
+            logger.error('检测到' + CONFIG_FILE_PATH + '格式错误, 请检查配置文件格式是否正确! ')
+            pause()
+            sys.exit()
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'w', encoding='utf-8') as f:
-            f.write(json.dumps({'steamid': '', 'shared_secret': '', 'identity_secret': '', 'api_key': '',
-                                'steam_username': '', 'steam_password': ''}, indent=4))
+            f.write(DEFAULT_STEAM_ACCOUNT_JSON)
             logger.info(
                 '检测到首次运行, 已为您生成' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请按照README提示填写配置文件! ')
+            first_run = True
     if 'development_mode' in config and config['development_mode']:
         development_mode = True
     if development_mode:
@@ -158,7 +175,6 @@ def main():
         logger.error('未启用任何插件, 请检查' + CONFIG_FILE_PATH + '是否正确! ')
         pause()
         sys.exit()
-    first_run = False
     for plugin in plugins_enabled:
         if plugin.init():
             first_run = True
@@ -188,6 +204,7 @@ def exit_app(signal_, frame):
 
 
 if __name__ == '__main__':
+    sys.excepthook = handle_global_exception
     signal.signal(signal.SIGINT, exit_app)
     logger = logging.getLogger('Steamauto')
     logger.setLevel(logging.DEBUG)
