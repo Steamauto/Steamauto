@@ -85,21 +85,25 @@ def login_to_steam():
                          + STEAM_ACCOUNT_INFO_FILE_PATH + '后再进行操作! ')
             pause()
             sys.exit()
-        except (requests.exceptions.ConnectionError, TimeoutError):
+        except (requests.exceptions.ConnectionError, TimeoutError) as e:
+            logger.debug(exc_info=(type(e), e, e.__traceback__))
             logger.error('\n网络错误! 请通过修改hosts/使用代理等方法代理Python解决问题. \n'
                          '注意: 使用游戏加速器并不能解决问题. 请尝试使用Proxifier及其类似软件代理Python.exe解决. ')
             pause()
             sys.exit()
-        except SSLError:
+        except SSLError as e:
+            logger.debug(exc_info=(type(e), e, e.__traceback__))
             logger.error('登录失败. SSL证书验证错误! '
                          '若您确定网络环境安全, 可尝试将config.json中的steam_login_ignore_ssl_error设置为true\n')
             pause()
             sys.exit()
-        except (ValueError, ApiException):
+        except (ValueError, ApiException) as e:
+            logger.debug(exc_info=(type(e), e, e.__traceback__))
             logger.error('登录失败. 请检查' + STEAM_ACCOUNT_INFO_FILE_PATH + '的格式或内容是否正确!\n')
             pause()
             sys.exit()
-        except CaptchaRequired:
+        except CaptchaRequired as e:
+            logger.debug(exc_info=(type(e), e, e.__traceback__))
             logger.error('登录失败. 触发Steam风控, 请尝试更换加速器节点.\n'
                          '若您不知道该使用什么加速器，推荐使用 Watt Toolkit 自带的免费Steam加速(请开启hosts代理模式).')
             pause()
