@@ -6,6 +6,8 @@ import requests
 from apprise.AppriseAsset import AppriseAsset
 
 from utils.static import *
+from utils.tools import *
+from Steamauto import handle_caught_exception
 
 
 def format_str(text: str, trade):
@@ -36,7 +38,7 @@ class BuffAutoOnSale:
 
     def init(self) -> bool:
         if not os.path.exists(BUFF_COOKIES_FILE_PATH):
-            with open(BUFF_COOKIES_FILE_PATH, 'w', encoding='utf-8') as f:
+            with open(BUFF_COOKIES_FILE_PATH, 'w', encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
                 f.write('session=')
             return True
         return False
@@ -44,7 +46,7 @@ class BuffAutoOnSale:
     def check_buff_account_state(self, dev=False):
         if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
             self.logger.info('[BuffAutoOnSale] 开发模式, 使用本地账号')
-            with open(BUFF_ACCOUNT_DEV_FILE_PATH, 'r', encoding='utf-8') as f:
+            with open(BUFF_ACCOUNT_DEV_FILE_PATH, 'r', encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
                 buff_account_data = json.load(f)
             return buff_account_data['data']['nickname']
         else:
@@ -52,7 +54,7 @@ class BuffAutoOnSale:
                 json()
             if dev:
                 self.logger.info('开发者模式, 保存账户信息到本地')
-                with open(BUFF_ACCOUNT_DEV_FILE_PATH, 'w', encoding='utf-8') as f:
+                with open(BUFF_ACCOUNT_DEV_FILE_PATH, 'w', encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
                     json.dump(response_json, f, indent=4)
             if response_json['code'] == 'OK':
                 if 'data' in response_json:
@@ -125,12 +127,13 @@ class BuffAutoOnSale:
         time.sleep(60)
         try:
             self.logger.info('[BuffAutoOnSale] 正在准备登录至BUFF...')
-            with open(BUFF_COOKIES_FILE_PATH, 'r', encoding='utf-8') as f:
+            with open(BUFF_COOKIES_FILE_PATH, 'r', encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
                 self.session.cookies['session'] = f.read().replace('session=', '').replace('\n', '')
             self.logger.info('[BuffAutoOnSale] 已检测到cookies, 尝试登录')
             self.logger.info('[BuffAutoOnSale] 已经登录至BUFF 用户名: ' +
                              self.check_buff_account_state(dev=self.development_mode))
-        except TypeError:
+        except TypeError as e:
+            handle_caught_exception(e)
             self.logger.error('[BuffAutoOnSale] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ')
             return
         sleep_interval = int(self.config['buff_auto_on_sale']['interval'])

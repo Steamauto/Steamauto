@@ -19,6 +19,7 @@ from plugins.BuffAutoOnSale import BuffAutoOnSale
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from utils.static import *
+from utils.tools import *
 
 config = {'no_pause': False}
 
@@ -31,6 +32,9 @@ def handle_global_exception(exc_type, exc_value, exc_traceback):
     logger.exception("程序发生致命错误，请将此界面截图，并提交最新的log文件到https://github.com/jiajiaxd/Steamauto/issues", exc_info=(exc_type, exc_value, exc_traceback))
     logger.error('由于出现致命错误，程序即将退出...')
     pause()
+    
+def handle_caught_exception(e: Exception):
+    logger.debug('出现已被捕获的错误.正常情况下请不要向开发者反馈该错误,且该错误仅可见于log文件.',exc_info=(type(e), e, e.__traceback__))
 
 def login_to_steam():
     global config
@@ -52,20 +56,23 @@ def login_to_steam():
                 if client.is_session_alive():
                     logger.info('登录成功')
                     steam_client = client
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as e:
+            handle_caught_exception(e)
             logger.error('使用缓存的session登录失败!可能是网络异常.')
             steam_client = None
-        except EOFError:
+        except EOFError as e:
+            handle_caught_exception(e)
             shutil.rmtree(SESSION_FOLDER)
             steam_client = None
             logger.error('session文件异常.已删除session文件夹.')
     if steam_client is None:
         try:
             logger.info('正在登录Steam...')
-            with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'r', encoding='utf-8') as f:
+            with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'r', encoding=get) as f:
                 try:
                     acc = json.load(f)
-                except (json.Json5DecoderException, json.Json5IllegalCharacter):
+                except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
+                    handle_caught_exception(e)
                     logger.error('检测到' + STEAM_ACCOUNT_INFO_FILE_PATH + '格式错误, 请检查配置文件格式是否正确! ')
                     pause()
                     sys.exit()
@@ -80,30 +87,31 @@ def login_to_steam():
                 pickle.dump(client, f)
             logger.info('登录完成! 已经自动缓存session.')
             steam_client = client
-        except FileNotFoundError:
+        except FileNotFoundError as e:
+            handle_caught_exception(e)
             logger.error('未检测到' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请添加到'
                          + STEAM_ACCOUNT_INFO_FILE_PATH + '后再进行操作! ')
             pause()
             sys.exit()
         except (requests.exceptions.ConnectionError, TimeoutError) as e:
-            logger.debug(exc_info=(type(e), e, e.__traceback__))
+            handle_caught_exception(e)
             logger.error('\n网络错误! 请通过修改hosts/使用代理等方法代理Python解决问题. \n'
                          '注意: 使用游戏加速器并不能解决问题. 请尝试使用Proxifier及其类似软件代理Python.exe解决. ')
             pause()
             sys.exit()
         except SSLError as e:
-            logger.debug(exc_info=(type(e), e, e.__traceback__))
+            handle_caught_exception(e)
             logger.error('登录失败. SSL证书验证错误! '
                          '若您确定网络环境安全, 可尝试将config.json中的steam_login_ignore_ssl_error设置为true\n')
             pause()
             sys.exit()
         except (ValueError, ApiException) as e:
-            logger.debug(exc_info=(type(e), e, e.__traceback__))
+            handle_caught_exception(e)
             logger.error('登录失败. 请检查' + STEAM_ACCOUNT_INFO_FILE_PATH + '的格式或内容是否正确!\n')
             pause()
             sys.exit()
         except CaptchaRequired as e:
-            logger.debug(exc_info=(type(e), e, e.__traceback__))
+            handle_caught_exception(e)
             logger.error('登录失败. 触发Steam风控, 请尝试更换加速器节点.\n'
                          '若您不知道该使用什么加速器，推荐使用 Watt Toolkit 自带的免费Steam加速(请开启hosts代理模式).')
             pause()
@@ -121,7 +129,8 @@ def main():
         response_json = requests.get('https://buffbot.jiajiaxd.com/latest', timeout=5)
         data = response_json.json()
         logger.info(f"\n最新版本日期: {data['date']}\n{data['message']}\n请自行检查是否更新! ")
-    except requests.exceptions.Timeout:
+    except requests.exceptions.Timeout as e:
+        handle_caught_exception(e)
         logger.info('检查更新超时, 跳过检查更新')
     logger.info('正在初始化...')
     first_run = False
@@ -136,15 +145,16 @@ def main():
         else:
             shutil.copy(EXAMPLE_CONFIG_FILE_PATH, CONFIG_FILE_PATH)
             logger.info('检测到首次运行, 已为您生成' + CONFIG_FILE_PATH + ', 请按照README提示填写配置文件! ')
-    with open(CONFIG_FILE_PATH, 'r', encoding='utf-8') as f:
+    with open(CONFIG_FILE_PATH, 'r', encoding=get_encoding(CONFIG_FILE_PATH)) as f:
         try:
             config = json.load(f)
-        except (json.Json5DecoderException, json.Json5IllegalCharacter):
+        except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
+            handle_caught_exception(e)
             logger.error('检测到' + CONFIG_FILE_PATH + '格式错误, 请检查配置文件格式是否正确! ')
             pause()
             sys.exit()
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
-        with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'w', encoding='utf-8') as f:
+        with open(STEAM_ACCOUNT_INFO_FILE_PATH, 'w', encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
             f.write(DEFAULT_STEAM_ACCOUNT_JSON)
             logger.info(
                 '检测到首次运行, 已为您生成' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请按照README提示填写配置文件! ')

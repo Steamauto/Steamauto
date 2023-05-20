@@ -8,6 +8,8 @@ import requests
 from apprise.AppriseAsset import AppriseAsset
 
 from utils.static import *
+from utils.tools import *
+from Steamauto import handle_caught_exception
 
 
 def format_str(text: str, trade):
@@ -37,7 +39,7 @@ class BuffAutoAcceptOffer:
 
     def init(self) -> bool:
         if not os.path.exists(BUFF_COOKIES_FILE_PATH):
-            with open(BUFF_COOKIES_FILE_PATH, 'w', encoding='utf-8') as f:
+            with open(BUFF_COOKIES_FILE_PATH, 'w', encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
                 f.write('session=')
             return True
         return False
@@ -45,14 +47,14 @@ class BuffAutoAcceptOffer:
     def check_buff_account_state(self, dev=False):
         if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
             self.logger.info('[BuffAutoAcceptOffer] 开发模式, 使用本地账号')
-            with open(BUFF_ACCOUNT_DEV_FILE_PATH, 'r', encoding='utf-8') as f:
+            with open(BUFF_ACCOUNT_DEV_FILE_PATH, 'r', encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
                 buff_account_data = json.load(f)
             return buff_account_data['data']['nickname']
         else:
             response_json = requests.get('https://buff.163.com/account/api/user/info', headers=self.buff_headers).json()
             if dev:
                 self.logger.info('开发者模式, 保存账户信息到本地')
-                with open(BUFF_ACCOUNT_DEV_FILE_PATH, 'w', encoding='utf-8') as f:
+                with open(BUFF_ACCOUNT_DEV_FILE_PATH, 'w', encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
                     json.dump(response_json, f, indent=4)
             if response_json['code'] == 'OK':
                 if 'data' in response_json:
@@ -80,7 +82,7 @@ class BuffAutoAcceptOffer:
                 if trade['tradeofferid'] not in order_info:
                     if self.development_mode and os.path.exists(SELL_ORDER_HISTORY_DEV_FILE_PATH):
                         self.logger.info('[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地数据')
-                        with open(SELL_ORDER_HISTORY_DEV_FILE_PATH, 'r', encoding='utf-8') as f:
+                        with open(SELL_ORDER_HISTORY_DEV_FILE_PATH, 'r', encoding=get_encoding(SELL_ORDER_HISTORY_DEV_FILE_PATH)) as f:
                             resp_json = json.load(f)
                     else:
                         time.sleep(5)
@@ -91,7 +93,7 @@ class BuffAutoAcceptOffer:
                         resp_json = resp.json()
                         if self.development_mode:
                             self.logger.info('[BuffAutoAcceptOffer] 开发者模式, 保存交易历史信息到本地')
-                            with open(SELL_ORDER_HISTORY_DEV_FILE_PATH, 'w', encoding='utf-8') as f:
+                            with open(SELL_ORDER_HISTORY_DEV_FILE_PATH, 'w', encoding=get_encoding(SELL_ORDER_HISTORY_DEV_FILE_PATH)) as f:
                                 json.dump(resp_json, f)
                     if resp_json['code'] == 'OK':
                         for sell_item in resp_json['data']['items']:
@@ -102,7 +104,7 @@ class BuffAutoAcceptOffer:
                     return False
                 if self.development_mode and os.path.exists(SHOP_LISTING_DEV_FILE_PATH):
                     self.logger.info('[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地价格数据')
-                    with open(SHOP_LISTING_DEV_FILE_PATH, 'r', encoding='utf-8') as f:
+                    with open(SHOP_LISTING_DEV_FILE_PATH, 'r', encoding=get_encoding(SHOP_LISTING_DEV_FILE_PATH)) as f:
                         resp_json = json.load(f)
                 else:
                     time.sleep(5)
@@ -113,7 +115,7 @@ class BuffAutoAcceptOffer:
                     resp_json = resp.json()
                     if self.development_mode:
                         self.logger.info('[BuffAutoAcceptOffer] 开发者模式, 保存价格信息到本地')
-                        with open(SHOP_LISTING_DEV_FILE_PATH, 'w', encoding='utf-8') as f:
+                        with open(SHOP_LISTING_DEV_FILE_PATH, 'w', encoding=get_encoding(SHOP_LISTING_DEV_FILE_PATH)) as f:
                             json.dump(resp_json, f)
                 other_lowest_price = float(resp_json['data']['items'][0]['price'])
                 self.lowest_on_sale_price_cache[goods_id] = {
@@ -140,7 +142,7 @@ class BuffAutoAcceptOffer:
         self.logger.info('[BuffAutoAcceptOffer] BUFF自动接受报价插件已启动.请稍候...')
         time.sleep(5)
         self.logger.info('[BuffAutoAcceptOffer] 正在准备登录至BUFF...')
-        with open(BUFF_COOKIES_FILE_PATH, 'r', encoding='utf-8') as f:
+        with open(BUFF_COOKIES_FILE_PATH, 'r', encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
             self.buff_headers['Cookie'] = f.read()
         self.logger.info('[BuffAutoAcceptOffer] 已检测到cookies, 尝试登录')
         user_name = self.check_buff_account_state(dev=self.development_mode)
@@ -168,7 +170,7 @@ class BuffAutoAcceptOffer:
                     return
                 if self.development_mode and os.path.exists(MESSAGE_NOTIFICATION_DEV_FILE_PATH):
                     self.logger.info('[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地消息通知文件')
-                    with open(MESSAGE_NOTIFICATION_DEV_FILE_PATH, 'r', encoding='utf-8') as f:
+                    with open(MESSAGE_NOTIFICATION_DEV_FILE_PATH, 'r', encoding=get_encoding(MESSAGE_NOTIFICATION_DEV_FILE_PATH)) as f:
                         message_notification = json.load(f)
                         to_deliver_order = message_notification['data']['to_deliver_order']
                 else:
@@ -176,7 +178,7 @@ class BuffAutoAcceptOffer:
                                                  headers=self.buff_headers).json()
                     if self.development_mode:
                         self.logger.info('[BuffAutoAcceptOffer] 开发者模式, 保存发货信息到本地')
-                        with open(MESSAGE_NOTIFICATION_DEV_FILE_PATH, 'w', encoding='utf-8') as f:
+                        with open(MESSAGE_NOTIFICATION_DEV_FILE_PATH, 'w', encoding=get_encoding(MESSAGE_NOTIFICATION_DEV_FILE_PATH)) as f:
                             json.dump(response_json, f)
                     to_deliver_order = response_json['data']['to_deliver_order']
                 try:
@@ -187,18 +189,19 @@ class BuffAutoAcceptOffer:
                             '[BuffAutoAcceptOffer] CSGO待发货: ' + str(int(to_deliver_order['csgo'])) + '个')
                         self.logger.info(
                             '[BuffAutoAcceptOffer] DOTA2待发货: ' + str(int(to_deliver_order['dota2'])) + '个')
-                except TypeError:
+                except TypeError as e:
+                    handle_caught_exception(e)
                     self.logger.error('[BuffAutoAcceptOffer] Buff接口返回数据异常! 请检查网络连接或稍后再试! ')
                 if self.development_mode and os.path.exists(STEAM_TRADE_DEV_FILE_PATH):
                     self.logger.info('[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地待发货文件')
-                    with open(STEAM_TRADE_DEV_FILE_PATH, 'r', encoding='utf-8') as f:
+                    with open(STEAM_TRADE_DEV_FILE_PATH, 'r', encoding=get_encoding(STEAM_TRADE_DEV_FILE_PATH)) as f:
                         trades = json.load(f)['data']
                 else:
                     response_json = requests.get('https://buff.163.com/api/market/steam_trade',
                                                  headers=self.buff_headers).json()
                     if self.development_mode:
                         self.logger.info('[BuffAutoAcceptOffer] 开发者模式, 保存待发货信息到本地')
-                        with open(STEAM_TRADE_DEV_FILE_PATH, 'w', encoding='utf-8') as f:
+                        with open(STEAM_TRADE_DEV_FILE_PATH, 'w', encoding=get_encoding(STEAM_TRADE_DEV_FILE_PATH)) as f:
                             json.dump(response_json, f)
                     trades = response_json['data']
                 trade_offer_to_confirm = []

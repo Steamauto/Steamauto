@@ -32,6 +32,6 @@ class SteamAutoAcceptOffer:
                                 self.logger.info(f'[SteamAutoAcceptOffer] 检测到报价[{trade_offer["tradeofferid"]}]'
                                                  f'需要支出物品，自动跳过处理')
             except Exception as e:
+                self.logger.error(e,exc_info=True)
                 self.logger.error("[SteamAutoAcceptOffer] 发生未知错误！稍后再试...")
-                self.logger.error(e)
             time.sleep(self.config['steam_auto_accept_offer']['interval'])

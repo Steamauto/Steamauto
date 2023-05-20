@@ -5,4 +5,5 @@ uuyoupinapi==0.1.0
 colorlog
 pyjson5
 beautifulsoup4
+chardet
 rsa
