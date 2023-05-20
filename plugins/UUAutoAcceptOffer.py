@@ -4,6 +4,7 @@ import time
 import uuyoupinapi
 
 from utils.static import *
+from utils.tools import *
 
 
 class UUAutoAcceptOffer:
@@ -22,7 +23,7 @@ class UUAutoAcceptOffer:
 
     def exec(self):
         uuyoupin = None
-        with open(UU_TOKEN_FILE_PATH, 'r', encoding='utf-8') as f:
+        with open(UU_TOKEN_FILE_PATH, 'r', encoding=get_encoding(UU_TOKEN_FILE_PATH)) as f:
             try:
                 uuyoupin = uuyoupinapi.UUAccount(f.read())
                 self.logger.info('[UUAutoAcceptOffer] 悠悠有品登录完成, 用户名: ' + uuyoupin.get_user_nickname())
