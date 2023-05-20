@@ -30,8 +30,8 @@ if '-uu' in sys.argv:
         os.mkdir(CONFIG_FOLDER)
     with open(UU_TOKEN_FILE_PATH, 'w', encoding='utf-8') as f:
         f.write(token)
-    logger.info(f'已自动获取悠悠有品token,并写入{UU_TOKEN_FILE_PATH}.请重启Steamauto.')
-    logger.info('按回车键继续...')
+    logger.info(f'已自动获取悠悠有品token,并写入{UU_TOKEN_FILE_PATH}.')
+    logger.info('按回车键继续启动Steamauto...')
     input()
     
 
