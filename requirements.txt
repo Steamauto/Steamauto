@@ -1,7 +1,7 @@
 requests
 apprise
 colorama
-uuyoupinapi==0.1.0
+uuyoupinapi==0.1.1
 colorlog
 pyjson5
 beautifulsoup4
