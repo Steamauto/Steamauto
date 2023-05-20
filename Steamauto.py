@@ -151,6 +151,7 @@ def main():
             logger.info(
                 '检测到首次运行, 已为您生成' + STEAM_ACCOUNT_INFO_FILE_PATH + ', 请按照README提示填写配置文件! ')
             first_run = True
+    
     if 'development_mode' in config and config['development_mode']:
         development_mode = True
     if development_mode:
@@ -158,7 +159,7 @@ def main():
     steam_client = None
     if development_mode:
         logger.info('开发者模式已开启, 跳过Steam登录')
-    else:
+    elif not first_run:
         steam_client = login_to_steam()
     plugins_enabled = []
     if 'buff_auto_accept_offer' in config and 'enable' in config['buff_auto_accept_offer'] and \
