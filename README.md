@@ -41,7 +41,7 @@
 | `config.json`             | 主配置文件，可以修改程序的大多数设置                        |
 | `steam_account_info.json` | 用于填入Steam账户相关信息                           |
 | `buff_cookies.txt`        | **启用网易Buff相关功能后才会创建** 用于填入网易BUFF的Cookie信息 |
-| `uu_token.txt`            | **启用悠悠有品相关功能后才会创建** 用于填入网易BUFF的Cookie信息   |
+| `uu_token.txt`            | **启用悠悠有品相关功能后才会创建** 用于填入悠悠有品的Cookie信息(悠悠有品token获取方法见FAQ)   |
 ##### `config.json` 
 ```json with comments
 {
@@ -163,7 +163,8 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 如果你的编辑器支持Json with comments，可以将配置文件类型改为Json with comments，即可避免提示语法错误
 
 ##### 如何获取悠悠有品token?
-在安装好所有依赖后，直接运行`python get_uu_token.py`并按照提示操作即可
+使用`-uu`参数运行Steamauto程序,根据程序向导操作即可
+什么，你不会用参数运行程序？请查阅[这里](https://zhidao.baidu.com/question/221015240.html)
 
 ##### 可否关闭Buff自动发货，只是有悠悠有品自动发货？
 将`config.json`中`buff_auto_accept_offer.enable`设置为false即可

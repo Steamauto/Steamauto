@@ -19,6 +19,21 @@ from utils.logger import get_logger, handle_caught_exception
 from utils.tools import *
 from utils.static import *
 
+if '-uu' in sys.argv:
+    import uuyoupinapi
+    logger.info('你使用了-uu参数启动Steamauto,这代表着Steamauto会引导你获取悠悠有品的token')
+    logger.info('如果无需获取悠悠有品的token,请删除-uu参数后重启Steamauto')
+    logger.info('按回车键继续...')
+    input()
+    token = uuyoupinapi.UUAccount.get_token_automatically()
+    if not os.path.exists(CONFIG_FOLDER):
+        os.mkdir(CONFIG_FOLDER)
+    with open(UU_TOKEN_FILE_PATH, 'w', encoding='utf-8') as f:
+        f.write(token)
+    logger.info(f'已自动获取悠悠有品token,并写入{UU_TOKEN_FILE_PATH}.请重启Steamauto.')
+    logger.info('按回车键继续...')
+    input()
+    
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
     logger.exception(
