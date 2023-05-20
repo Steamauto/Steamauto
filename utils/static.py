@@ -1,5 +1,7 @@
 import os
 
+config = {'no_pause': False}
+
 APPRISE_ASSET_FOLDER = 'Apprise'
 LOGS_FOLDER = 'logs'
 CONFIG_FOLDER = 'config'

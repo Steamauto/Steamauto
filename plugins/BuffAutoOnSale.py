@@ -7,7 +7,7 @@ from apprise.AppriseAsset import AppriseAsset
 
 from utils.static import *
 from utils.tools import *
-from Steamauto import handle_caught_exception
+from utils.logger import handle_caught_exception
 
 
 def format_str(text: str, trade):

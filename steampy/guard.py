@@ -19,7 +19,7 @@ def load_steam_guard(steam_guard: str) -> Dict[str, str]:
         Dict[str, str]: Parsed json data as a dictionary of strings (both key and value).
     """
     if os.path.isfile(steam_guard):
-        with open(steam_guard, 'r',encoding=get_encoding(steam_guard)) as f:
+        with open(steam_guard, 'r', encoding=get_encoding(steam_guard)) as f:
             return json.loads(f.read(), parse_int=str)
     else:
         return json.loads(steam_guard, parse_int=str)

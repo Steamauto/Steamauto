@@ -1,40 +1,32 @@
-import datetime
-import logging
-import shutil
-import sys
-import pyjson5 as json
-import threading
 import pickle
+import shutil
 import signal
+import sys
+import threading
 import time
 
-from steampy.client import SteamClient
-from steampy.exceptions import CaptchaRequired, ApiException
-from requests.exceptions import SSLError
+import pyjson5 as json
 import requests
-import colorlog
+from requests.exceptions import SSLError
 
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
 from plugins.BuffAutoOnSale import BuffAutoOnSale
-from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
-from utils.static import *
+from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
+from steampy.client import SteamClient
+from steampy.exceptions import CaptchaRequired, ApiException
+from utils.logger import get_logger, handle_caught_exception
 from utils.tools import *
+from utils.static import *
 
-config = {'no_pause': False}
-
-def pause():
-    if 'no_pause' in config and not config['no_pause']:
-        logger.info('点击回车键继续...')
-        input()
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
-    logger.exception("程序发生致命错误，请将此界面截图，并提交最新的log文件到https://github.com/jiajiaxd/Steamauto/issues", exc_info=(exc_type, exc_value, exc_traceback))
+    logger.exception(
+        "程序发生致命错误，请将此界面截图，并提交最新的log文件到https://github.com/jiajiaxd/Steamauto/issues",
+        exc_info=(exc_type, exc_value, exc_traceback))
     logger.error('由于出现致命错误，程序即将退出...')
     pause()
-    
-def handle_caught_exception(e: Exception):
-    logger.debug('出现已被捕获的错误.正常情况下请不要向开发者反馈该错误,且该错误仅可见于log文件.',exc_info=(type(e), e, e.__traceback__))
+
 
 def login_to_steam():
     global config
@@ -220,28 +212,7 @@ def exit_app(signal_, frame):
 if __name__ == '__main__':
     sys.excepthook = handle_global_exception
     signal.signal(signal.SIGINT, exit_app)
-    logger = logging.getLogger('Steamauto')
-    logger.setLevel(logging.DEBUG)
-    s_handler = logging.StreamHandler()
-    s_handler.setLevel(logging.INFO)
-    log_formatter = colorlog.ColoredFormatter(fmt='%(log_color)s[%(asctime)s] - %(levelname)s: %(message)s',
-                                              datefmt='%Y-%m-%d %H:%M:%S',
-                                              log_colors={
-                                                  'DEBUG': 'cyan',
-                                                  'INFO': 'green',
-                                                  'WARNING': 'yellow',
-                                                  'ERROR': 'red',
-                                                  'CRITICAL': 'bold_red'
-                                              })
-    s_handler.setFormatter(log_formatter)
-    logger.addHandler(s_handler)
-    if not os.path.exists(LOGS_FOLDER):
-        os.mkdir(LOGS_FOLDER)
-    f_handler = logging.FileHandler(os.path.join(LOGS_FOLDER, datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') +
-                                                 '.log'), encoding='utf-8')
-    f_handler.setLevel(logging.DEBUG)
-    f_handler.setFormatter(log_formatter)
-    logger.addHandler(f_handler)
+    logger = get_logger()
     if not os.path.exists(DEV_FILE_FOLDER):
         os.mkdir(DEV_FILE_FOLDER)
     if not os.path.exists(SESSION_FOLDER):
