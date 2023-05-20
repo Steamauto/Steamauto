@@ -38,7 +38,7 @@ class BuffAutoOnSale:
 
     def init(self) -> bool:
         if not os.path.exists(BUFF_COOKIES_FILE_PATH):
-            with open(BUFF_COOKIES_FILE_PATH, 'w', encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
+            with open(BUFF_COOKIES_FILE_PATH, 'w', encoding='utf-8') as f:
                 f.write('session=')
             return True
         return False
