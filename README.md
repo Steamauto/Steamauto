@@ -38,11 +38,11 @@
 ##### 在正确运行本程序后，config文件夹应包含以下文件
 | 文件名                       | 描述                                        | 
 |---------------------------|-------------------------------------------|
-| `config.json`             | 主配置文件，可以修改程序的大多数设置                        |
-| `steam_account_info.json` | 用于填入Steam账户相关信息                           |
+| `config.json5`             | 主配置文件，可以修改程序的大多数设置                        |
+| `steam_account_info.json5` | 用于填入Steam账户相关信息                           |
 | `buff_cookies.txt`        | **启用网易Buff相关功能后才会创建** 用于填入网易BUFF的Cookie信息 |
 | `uu_token.txt`            | **启用悠悠有品相关功能后才会创建** 用于填入悠悠有品的Cookie信息(悠悠有品token获取方法见FAQ)   |
-##### `config.json` 
+##### `config.json5` 
 ```json with comments
 {
     // 是否开启SSL验证
@@ -119,7 +119,7 @@
   
 ```
 
-##### `steam_account_info.json`
+##### `steam_account_info.json5`
 ```Json with comments
 {
   // Steam 的数字 ID（字符串格式）
