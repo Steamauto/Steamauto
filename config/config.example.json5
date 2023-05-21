@@ -16,7 +16,7 @@
         // 出售通知标题（如不需要可直接删除）
         "title": "成功出售{game}饰品: {item_name}",
         // 出售通知内容（如不需要可直接删除）
-        "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\nSteam价格(参考): {steam_price} USD\nSteam价格(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
+        "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\n出售价格: {buff_price}\nSteam价格(参考): {steam_price} USD\nSteam价格(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
       },
       // 出售保护通知配置
       "protection_notification": {

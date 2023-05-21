@@ -95,7 +95,7 @@ def login_to_steam():
                     handle_caught_exception(e)
                     logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
                     pause()
-                    sys.exit()
+                    return None
             client = SteamClient(acc.get("api_key"))
             if config["steam_login_ignore_ssl_error"]:
                 logger.warning("警告: 已经关闭SSL验证, 账号可能存在安全问题")
@@ -110,29 +110,29 @@ def login_to_steam():
             handle_caught_exception(e)
             logger.error("未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加到" + STEAM_ACCOUNT_INFO_FILE_PATH + "后再进行操作! ")
             pause()
-            sys.exit()
+            return None
         except (requests.exceptions.ConnectionError, TimeoutError) as e:
             handle_caught_exception(e)
             logger.error(
                 "\n网络错误! 请通过修改hosts/使用代理等方法代理Python解决问题. \n" "注意: 使用游戏加速器并不能解决问题. 请尝试使用Proxifier及其类似软件代理Python.exe解决. "
             )
             pause()
-            sys.exit()
+            return None
         except SSLError as e:
             handle_caught_exception(e)
             logger.error("登录失败. SSL证书验证错误! " "若您确定网络环境安全, 可尝试将config.json中的steam_login_ignore_ssl_error设置为true\n")
             pause()
-            sys.exit()
+            return None
         except (ValueError, ApiException) as e:
             handle_caught_exception(e)
             logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
             pause()
-            sys.exit()
+            return None
         except CaptchaRequired as e:
             handle_caught_exception(e)
             logger.error("登录失败. 触发Steam风控, 请尝试更换加速器节点.\n" "若您不知道该使用什么加速器，推荐使用 Watt Toolkit 自带的免费Steam加速(请开启hosts代理模式).")
             pause()
-            sys.exit()
+            return None
     return steam_client
 
 
@@ -157,7 +157,7 @@ def main():
         if not os.path.exists(EXAMPLE_CONFIG_FILE_PATH):
             logger.error("未检测到" + EXAMPLE_CONFIG_FILE_PATH + ", 请前往GitHub进行下载, 并保证文件和程序在同一目录下. ")
             pause()
-            sys.exit()
+            return 0
         else:
             shutil.copy(EXAMPLE_CONFIG_FILE_PATH, CONFIG_FILE_PATH)
             logger.info("检测到首次运行, 已为您生成" + CONFIG_FILE_PATH + ", 请按照README提示填写配置文件! ")
@@ -168,7 +168,7 @@ def main():
             handle_caught_exception(e)
             logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
             pause()
-            sys.exit()
+            return 0
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
             f.write(DEFAULT_STEAM_ACCOUNT_JSON)
@@ -184,6 +184,8 @@ def main():
         logger.info("开发者模式已开启, 跳过Steam登录")
     elif not first_run:
         steam_client = login_to_steam()
+        if steam_client is None:
+            return 1
     plugins_enabled = []
     if (
         "buff_auto_accept_offer" in config
@@ -212,14 +214,14 @@ def main():
     if len(plugins_enabled) == 0:
         logger.error("未启用任何插件, 请检查" + CONFIG_FILE_PATH + "是否正确! ")
         pause()
-        sys.exit()
+        return 2
     for plugin in plugins_enabled:
         if plugin.init():
             first_run = True
     if first_run:
         logger.info("首次运行, 请按照README提示填写配置文件! ")
         pause()
-        sys.exit(0)
+        return 0
     logger.info("初始化完成, 开始运行插件!")
     print("\n")
     time.sleep(0.1)
@@ -248,4 +250,8 @@ if __name__ == "__main__":
         os.mkdir(DEV_FILE_FOLDER)
     if not os.path.exists(SESSION_FOLDER):
         os.mkdir(SESSION_FOLDER)
-    main()
+    exit_code = main()
+    if exit_code is not None:
+        sys.exit(exit_code)
+    else:
+        sys.exit()
