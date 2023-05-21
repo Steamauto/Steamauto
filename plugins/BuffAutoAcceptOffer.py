@@ -25,7 +25,8 @@ from utils.logger import handle_caught_exception
 def format_str(text: str, trade, order_info):
     for good in trade["goods_infos"]:
         good_item = trade["goods_infos"][good]
-        buff_price = float(order_info[trade['tradeofferid']]['price'])
+        # buff_price = float(order_info[trade['tradeofferid']]['price'])
+        buff_price = 'UNKNOWN'
         created_at_time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(trade["created_at"]))
         text = text.format(
             item_name=good_item["name"],
