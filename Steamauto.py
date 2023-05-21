@@ -17,7 +17,7 @@ from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from steampy.client import SteamClient
 from steampy.exceptions import CaptchaRequired, ApiException
 from utils.logger import handle_caught_exception
-from utils.tools import get_encoding, pause, logger
+from utils.tools import get_encoding, pause, logger, compare_version
 from utils.static import (
     CONFIG_FOLDER,
     CONFIG_FILE_PATH,
@@ -141,14 +141,31 @@ def main():
     development_mode = False
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! ")
-    logger.info("正在检查更新...")
-    try:
-        response_json = requests.get("https://buffbot.jiajiaxd.com/latest", timeout=5)
-        data = response_json.json()
-        logger.info(f"\n最新版本日期: {data['date']}\n{data['message']}\n请自行检查是否更新! ")
-    except requests.exceptions.Timeout as e:
-        handle_caught_exception(e)
-        logger.info("检查更新超时, 跳过检查更新")
+    if os.path.exists("version.json"):
+        with open("version.json", "r", encoding="utf-8") as f:
+            try:
+                current_version = json.load(f)['this_version']
+                logger.info(f"当前版本: {current_version}")
+                logger.info("正在检查更新...")
+                try:
+                    response_json = requests.get("https://steamauto.jiajiaxd.com/latest", timeout=5)
+                    data = response_json.json()
+                    latest_version = data["latest_version"]
+                    if compare_version(current_version, latest_version) == -1:
+                        logger.info(f"检测到新版本: {latest_version}")
+                        changelog_to_output = str()
+                        for version in latest_version['history_versions']:
+                            if compare_version(current_version, version['version']) == -1:
+                                changelog_to_output += f"版本: {version['version']}\n更新日志: {version['changelog']}\n"
+                        logger.info(f"更新日志:\n{changelog_to_output}")
+                except requests.exceptions.Timeout as e:
+                    handle_caught_exception(e)
+                    logger.info("检查更新超时, 跳过检查更新")
+            except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
+                handle_caught_exception(e)
+                logger.warning('检测到version.json格式错误,将会跳过检查更新')
+    else:
+        logger.debug("未检测到version.json,将会跳过检查更新")
     logger.info("正在初始化...")
     first_run = False
     if not os.path.exists(CONFIG_FOLDER):
