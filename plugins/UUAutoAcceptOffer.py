@@ -1,10 +1,12 @@
+import os
 import sys
 import time
 
 import uuyoupinapi
 
-from utils.static import *
-from utils.tools import *
+from utils.logger import handle_caught_exception
+from utils.static import UU_TOKEN_FILE_PATH
+from utils.tools import get_encoding
 
 
 class UUAutoAcceptOffer:
@@ -28,6 +30,7 @@ class UUAutoAcceptOffer:
                 uuyoupin = uuyoupinapi.UUAccount(f.read())
                 self.logger.info('[UUAutoAcceptOffer] 悠悠有品登录完成, 用户名: ' + uuyoupin.get_user_nickname())
             except KeyError as e:
+                handle_caught_exception(e)
                 self.logger.error('[UUAutoAcceptOffer] 悠悠有品登录失败! 请检查token是否正确! ')
                 self.logger.error('[UUAutoAcceptOffer] 由于登录失败，插件将自动退出')
                 sys.exit(1)
