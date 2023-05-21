@@ -22,9 +22,10 @@ from utils.tools import get_encoding
 from utils.logger import handle_caught_exception
 
 
-def format_str(text: str, trade):
+def format_str(text: str, trade, order_info):
     for good in trade["goods_infos"]:
         good_item = trade["goods_infos"][good]
+        buff_price = float(order_info[trade['tradeofferid']]['price'])
         created_at_time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(trade["created_at"]))
         text = text.format(
             item_name=good_item["name"],
@@ -35,6 +36,7 @@ def format_str(text: str, trade):
             order_time=created_at_time_str,
             game=good_item["game"],
             good_icon=good_item["original_icon_url"],
+            buff_price=buff_price
         )
     return text
 
@@ -50,7 +52,7 @@ class BuffAutoAcceptOffer:
         self.steam_client = steam_client
         self.config = config
         self.development_mode = self.config["development_mode"]
-        AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
+        self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
         self.lowest_on_sale_price_cache = {}
 
     def init(self) -> bool:
@@ -146,12 +148,14 @@ class BuffAutoAcceptOffer:
             if price < other_lowest_price * protection_price_percentage and other_lowest_price > protection_price:
                 self.logger.error("[BuffAutoAcceptOffer] 交易金额过低, 跳过此交易报价")
                 if "protection_notification" in self.config["buff_auto_accept_offer"]:
-                    apprise_obj = apprise.Apprise()
+                    apprise_obj = apprise.Apprise(asset=self.asset)
                     for server in self.config["buff_auto_accept_offer"]["servers"]:
                         apprise_obj.add(server)
                     apprise_obj.notify(
-                        title=format_str(self.config["buff_auto_accept_offer"]["protection_notification"]["title"], trade),
-                        body=format_str(self.config["buff_auto_accept_offer"]["protection_notification"]["body"], trade),
+                        title=format_str(self.config["buff_auto_accept_offer"]["protection_notification"]["title"],
+                                         trade, order_info),
+                        body=format_str(self.config["buff_auto_accept_offer"]["protection_notification"]["body"],
+                                        trade, order_info),
                     )
                 return False
         return True
@@ -273,10 +277,12 @@ class BuffAutoAcceptOffer:
                                             apprise_obj.add(server)
                                         apprise_obj.notify(
                                             title=format_str(
-                                                self.config["buff_auto_accept_offer"]["sell_notification"]["title"], trade
+                                                self.config["buff_auto_accept_offer"]["sell_notification"]["title"],
+                                                trade, order_info
                                             ),
                                             body=format_str(
-                                                self.config["buff_auto_accept_offer"]["sell_notification"]["body"], trade
+                                                self.config["buff_auto_accept_offer"]["sell_notification"]["body"],
+                                                trade, order_info
                                             ),
                                         )
                                     if trades.index(trade) != len(trades) - 1:
