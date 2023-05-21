@@ -1,3 +1,5 @@
+
+
 # Steamauto  
 ![Steamauto](https://socialify.git.ci/jiajiaxd/Steamauto/image?description=1&forks=1&language=1&logo=https%3A%2F%2Ficons.bootcss.com%2Fassets%2Ficons%2Fsteam.svg&name=1&owner=1&stargazers=1&theme=Light)
 > 开源的 Steam 自动收发货解决方案  
@@ -39,40 +41,106 @@
 | `config.json`             | 主配置文件，可以修改程序的大多数设置                        |
 | `steam_account_info.json` | 用于填入Steam账户相关信息                           |
 | `buff_cookies.txt`        | **启用网易Buff相关功能后才会创建** 用于填入网易BUFF的Cookie信息 |
-| `uu_token.txt`            | **启用悠悠有品相关功能后才会创建** 用于填入网易BUFF的Cookie信息   |
+| `uu_token.txt`            | **启用悠悠有品相关功能后才会创建** 用于填入悠悠有品的Cookie信息(悠悠有品token获取方法见FAQ)   |
 ##### `config.json` 
-| 配置项                                                           | 描述                                                                                             | 
-|---------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| development_mode                                              | 是否开启开发者模式, 非开发者请勿开启, 具体效果请自行查看代码                                                               |
-| steam_login_ignore_ssl_error                                  | 设置为true后，关闭SSL验证(请自行确保网络环境安全)                                                                  |
-| buff_auto_accept_offer.enable                                 | 设置为true后，启用BUFF自动接收报价功能                                                                        |
-| buff_auto_accept_offer.interval                               | 每次检查是否有新报价间隔(轮询间隔)，单位为秒                                                                        |
-| buff_auto_accept_offer.sell_protection                        | 是否开启出售保护, 开启后将不会自动接收低于价格过低的出售请求                                                                |
-| buff_auto_accept_offer.protection_price                       | 出售保护价格, 若其他卖家最低价低于此价格, 则不会进行出售保护                                                               |
-| buff_auto_accept_offer.protection_price_percentage            | 出售价格保护比例, 若出售价格低于此比例*其他卖家最低价格，则不会自动接收报价                                                        |
-| buff_auto_accept_offer.sell_notification.title                | 出售通知标题(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)                           |
-| buff_accept_offer.sell_notification.body                      | 出售通知内容(如不需要可直接删除)，详见FAQ和[Apprise](https://github.com/caronc/apprise)                           |
-| buff_auto_accept_offer.protection_notification.title          | 出售保护通知标题(如不需要可直接删除)，详见notification配置项说明和[Apprise](https://github.com/caronc/apprise)           |
-| buff_auto_accept_offer.protection_notification.body           | 出售保护通知内容(如不需要可直接删除)，详见notification配置项说明和[Apprise](https://github.com/caronc/apprise)           |
-| buff_auto_accept_offer.buff_cookie_expired_notification.title | BUFF Cookies失效通知标题(如不需要可直接删除)，详见notification配置项说明和[Apprise](https://github.com/caronc/apprise) |
-| buff_auto_accept_offer.buff_cookie_expired_notification.body  | BUFF Cookies失效通知内容(如不需要可直接删除)，详见notification配置项说明和[Apprise](https://github.com/caronc/apprise) |
-| buff_auto_accept_offer.servers                                | 通知服务器，详见[Apprise](https://github.com/caronc/apprise)                                           |
-| buff_auto_on_sale.enable                                      | 设置为true后，启用BUFF自动以最低价上架所有库存                                                                    |
-| buff_auto_on_sale.interval                                    | 检查库存间隔时间                                                                                       |
-| uu_auto_accept_offer.enable                                   | 默认为disabled，填入悠悠有品token后可启用悠悠有品自动发货功能,token获取教程见FAQ                                            |
-| uu_auto_accept_offer.interval                                 | 每次检查是否有新报价间隔(轮询间隔)，单位为秒                                                                        |
-| steam_auto_accept_offer.enable                                | 是否开启自动接受Steam礼物报价(无需支出任何Steam库存中的物品的报价)                                                        |
-| steam_auto_accept_offer.interval                              | 每次检查报价列表间隔(轮询间隔)，单位为秒                                                                          |
+```json with comments
+{
+    // 是否开启SSL验证
+    "steam_login_ignore_ssl_error": false,
+
+    // 填写为true后，程序在出现错误后就会直接停止运行。如果你是小白，请不要将它设置为true
+    "no_pause": false,
+
+    // BUFF 自动收货插件配置
+    "buff_auto_accept_offer": {
+      // 是否启用BUFF自动接收报价功能
+      "enable": true,
+      // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
+      "interval": 300,
+      // 是否开启出售保护
+      "sell_protection": false,
+      // 出售保护价格，若其他卖家最低价低于此价格，则不会进行出售保护
+      "protection_price": 30,
+      // 出售价格保护比例，若出售价格低于此比例乘以其他卖家最低价格，则不会自动接收报价
+      "protection_price_percentage": 0.9,
+      // 出售通知配置
+      "sell_notification": {
+        // 出售通知标题（如不需要可直接删除）
+        "title": "成功出售{game}饰品: {item_name}",
+        // 出售通知内容（如不需要可直接删除）
+        "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\nSteam价格(参考): {steam_price} USD\nSteam价格(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
+      },
+      // 出售保护通知配置
+      "protection_notification": {
+        // 出售保护通知标题（如不需要可直接删除）
+        "title": "{game}饰品: {item_name} 未自动接收报价, 价格与市场最低价相差过大",
+        // 出售保护通知内容（如不需要可直接删除）
+        "body": "请自行至BUFF确认报价!"
+      },
+      // BUFF Cookies失效通知配置
+      "buff_cookie_expired_notification": {
+        // BUFF Cookies失效通知标题（如不需要可直接删除）
+        "title": "BUFF Cookie已过期, 请重新登录",
+        // BUFF Cookies失效通知内容（如不需要可直接删除）
+        "body": "BUFF Cookie已过期, 请重新登录"
+      },
+      // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
+      "servers": [
+        "tgram://bottoken/ChatID"
+      ]
+    },
+
+    // BUFF 自动上架插件配置
+    "buff_auto_on_sale": {
+      // 是否启用BUFF自动以最低价上架所有库存
+      "enable": false,
+      // 检查库存间隔时间
+      "interval": 1800
+    },
+
+    // 悠悠有品自动发货插件配置
+    "uu_auto_accept_offer": {
+      // 悠悠有品自动发货功能是否启用，默认为disabled
+      "enable": false,
+      // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
+      "interval": 300
+    },
+
+    // Steam 自动接受礼物报价插件配置
+    "steam_auto_accept_offer": {
+      // 是否开启自动接受Steam礼物报价（无需支出任何Steam库存中的物品的报价）
+      "enable": false,
+      // 每次检查报价列表的间隔（轮询间隔），单位为秒
+      "interval": 300
+    },
+    // 是否开启开发者模式
+    "development_mode": false
+  }
+  
+```
 
 ##### `steam_account_info.json`
-| 配置项             | 描述                   |
-|-----------------|----------------------|
-| steamid         | Steam 的数字 ID (字符串格式) |
-| shared_secret   | Steam 令牌参数           |
-| identity_secret | Steam 令牌参数           |
-| api_key         | Steam 网页 API 密钥      |
-| steam_username  | Steam 登录时填写的用户名      |
-| steam_password  | Steam 登录时填写的密码       |
+```Json with comments
+{
+  // Steam 的数字 ID（字符串格式）
+  "steamid": "",
+
+  // Steam 令牌参数（用于身份验证）
+  "shared_secret": "",
+
+  // Steam 令牌参数（用于身份验证）
+  "identity_secret": "",
+
+  // Steam 网页 API 密钥（用于访问 Steam API）
+  "api_key": "",
+
+  // Steam 登录时填写的用户名
+  "steam_username": "",
+
+  // Steam 登录时填写的密码
+  "steam_password": ""
+}
+```
 
 ##### `notification`相关配置项说明
 | 配置项                              | 描述                                                                                                                               |
@@ -90,8 +158,13 @@
 Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代码安全性  
 在用户的电脑不被恶意软件入侵的情况下，账号不可能泄露  
 
+##### 为什么我打开配置文件后，编辑器提示该文件有语法错误？
+本程序使用的配置文件类型为Json with comments，因此在编辑器中会提示语法错误，但实际上并不影响程序的运行
+如果你的编辑器支持Json with comments，可以将配置文件类型改为Json with comments，即可避免提示语法错误
+
 ##### 如何获取悠悠有品token?
-在安装好所有依赖后，直接运行`python get_uu_token.py`并按照提示操作即可
+使用`-uu`参数运行Steamauto程序,根据程序向导操作即可  
+什么，你不会用参数运行程序？请查阅[这里](https://zhidao.baidu.com/question/221015240.html)
 
 ##### 可否关闭Buff自动发货，只是有悠悠有品自动发货？
 将`config.json`中`buff_auto_accept_offer.enable`设置为false即可

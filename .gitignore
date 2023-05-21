@@ -1,4 +1,7 @@
 config/*
+!config/config.example.json
 dev/*
 logs
 session
+**/__pycache__
+.idea
