@@ -196,10 +196,12 @@ class BuffAutoAcceptOffer:
                             f.write(json.dumps(response_json, indent=4))
                     to_deliver_order = response_json["data"]["to_deliver_order"]
                 try:
-                    if int(to_deliver_order["csgo"]) != 0 or int(to_deliver_order["dota2"]) != 0:
+                    if ("csgo" in to_deliver_order and int(to_deliver_order["csgo"]) != 0) or \
+                            ("dota2" in to_deliver_order and int(to_deliver_order["dota2"]) != 0):
                         self.logger.info(
                             "[BuffAutoAcceptOffer] 检测到"
-                            + str(int(to_deliver_order["csgo"]) + int(to_deliver_order["dota2"]))
+                            + str((0 if "csgo" not in to_deliver_order else int(to_deliver_order["csgo"])) +
+                                  (0 if "dota2" not in to_deliver_order else int(to_deliver_order["dota2"])))
                             + "个待发货请求! "
                         )
                         self.logger.info(
