@@ -30,7 +30,7 @@ from utils.static import (
     UU_TOKEN_FILE_PATH,
 )
 
-current_version = "3.0.3"
+current_version = "3.0.4"
 
 if "-uu" in sys.argv:
     import uuyoupinapi
@@ -193,9 +193,7 @@ def main():
     if development_mode:
         logger.info("开发者模式已开启")
     steam_client = None
-    if development_mode:
-        logger.info("开发者模式已开启, 跳过Steam登录")
-    elif not first_run:
+    if not first_run:
         steam_client = login_to_steam()
         if steam_client is None:
             return 1

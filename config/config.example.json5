@@ -11,19 +11,26 @@
       "protection_price": 30,
       // 出售价格保护比例，若出售价格低于此比例乘以其他卖家最低价格，则不会自动接收报价
       "protection_price_percentage": 0.9,
-      // 出售通知配置
+      // 出售通知配置(如不需要可直接删除)
       "sell_notification": {
-        // 出售通知标题（如不需要可直接删除）
-        "title": "成功出售{game}饰品: {item_name}",
-        // 出售通知内容（如不需要可直接删除）
-        "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\n出售价格: {buff_price} RMB\nSteam价格(参考): {steam_price} USD\nSteam价格(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
+        // 出售通知标题
+        "title": "成功出售{game}饰品: {item_name} * {sold_count}",
+        // 出售通知内容
+        "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\n出售单价: {buff_price} RMB\nSteam单价(参考): {steam_price} USD\nSteam单价(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
       },
-      // 出售保护通知配置
+      // 出售保护通知配置(如不需要可直接删除)
       "protection_notification": {
         // 出售保护通知标题（如不需要可直接删除）
         "title": "{game}饰品: {item_name} 未自动接收报价, 价格与市场最低价相差过大",
         // 出售保护通知内容（如不需要可直接删除）
         "body": "请自行至BUFF确认报价!"
+      },
+      // 报价与BUFF出售商品不匹配通知配置(如不需要可直接删除)
+      "item_mismatch_notification": {
+        // 报价与BUFF出售商品不匹配通知标题
+        "title": "BUFF出售饰品与Steam报价饰品不匹配",
+        // 报价与BUFF出售商品不匹配通知内容
+        "body": "请自行至BUFF确认报价!(Offer: {offer_id})"
       },
       // BUFF Cookies失效通知配置
       "buff_cookie_expired_notification": {
