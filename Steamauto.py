@@ -30,7 +30,7 @@ from utils.static import (
     UU_TOKEN_FILE_PATH,
 )
 
-current_version = "3.0.2"
+current_version = "3.0.3"
 
 if "-uu" in sys.argv:
     import uuyoupinapi
