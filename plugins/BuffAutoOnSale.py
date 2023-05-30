@@ -68,7 +68,8 @@ class BuffAutoOnSale:
                         return response_json["data"]["nickname"]
             self.logger.error("[BuffAutoOnSale] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
 
-    def get_buff_inventory(self, page_num=1, page_size=60, sort_by="time.desc", state="all", force=0, force_wear=0, game="csgo", app_id=730):
+    def get_buff_inventory(self, page_num=1, page_size=60, sort_by="time.desc", state="all", force=0, force_wear=0,
+                           game="csgo", app_id=730):
         url = "https://buff.163.com/api/market/steam_inventory"
         params = {
             "page_num": page_num,
@@ -174,7 +175,7 @@ class BuffAutoOnSale:
                     for game in SUPPORT_GAME_TYPES:
                         self.logger.info("[BuffAutoOnSale] 正在检查 " + game["game"] + " 库存...")
                         inventory_json = self.get_buff_inventory(
-                            state="cansell", sort_by="price.desc", game=game["game"], app_id=game["app_id"]
+                            state="cansell", sort_by="price.desc", game=game["game"], app_id=game["app_id"], force=1
                         )
                         items = inventory_json["items"]
                         items_count_this_loop += len(items)
