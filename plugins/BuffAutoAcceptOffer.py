@@ -340,16 +340,25 @@ class BuffAutoAcceptOffer:
                                 self.logger.info("[BuffAutoAcceptOffer] 开发者模式已开启, 跳过令牌确认")
                             else:
                                 offer = self.steam_client.get_trade_offer(trade_offer_id)
-                                if offer["response"]["offer"]["trade_offer_state"] == 9:
-                                    self.steam_client._confirm_transaction(trade_offer_id)
-                                    ignored_offer.append(trade_offer_id)
-                                    self.logger.info(
-                                        "[BuffAutoAcceptOffer] 令牌完成! ( " + trade_offer_id + " ) 已经将此交易报价加入忽略名单!")
+                                if "offer" in offer["response"] and "trade_offer_state" in offer["response"]["offer"]:
+                                    if offer["response"]["offer"]["trade_offer_state"] == 9:
+                                        self.steam_client._confirm_transaction(trade_offer_id)
+                                        ignored_offer.append(trade_offer_id)
+                                        self.logger.info(
+                                            "[BuffAutoAcceptOffer] 令牌完成! ( " + trade_offer_id + " ) 已经将此交易报价加入忽略名单!")
+                                    else:
+                                        self.logger.info(
+                                            "[BuffAutoAcceptOffer] 令牌未完成! ( "
+                                            + trade_offer_id
+                                            + " ), 报价状态异常 ("
+                                            + str(offer["response"]["offer"]["trade_offer_state"])
+                                            + " )"
+                                        )
                                 else:
                                     self.logger.info(
                                         "[BuffAutoAcceptOffer] 令牌未完成! ( "
                                         + trade_offer_id
-                                        + " ), 报价状态异常 ("
+                                        + " ), 报价返回异常 ("
                                         + str(offer["response"]["offer"]["trade_offer_state"])
                                         + " )"
                                     )
