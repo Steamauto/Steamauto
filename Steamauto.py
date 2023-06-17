@@ -1,10 +1,11 @@
+import os
 import pickle
 import shutil
 import signal
 import sys
 import threading
 import time
-import os
+from ssl import SSLCertVerificationError
 
 import pyjson5 as json
 import requests
@@ -15,20 +16,20 @@ from plugins.BuffAutoOnSale import BuffAutoOnSale
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from steampy.client import SteamClient
-from steampy.exceptions import CaptchaRequired, ApiException
+from steampy.exceptions import ApiException, CaptchaRequired
 from utils.logger import handle_caught_exception
-from utils.tools import get_encoding, pause, logger, compare_version
 from utils.static import (
-    CONFIG_FOLDER,
     CONFIG_FILE_PATH,
-    EXAMPLE_CONFIG_FILE_PATH,
+    CONFIG_FOLDER,
     DEFAULT_STEAM_ACCOUNT_JSON,
+    DEV_FILE_FOLDER,
+    EXAMPLE_CONFIG_FILE_PATH,
+    SESSION_FOLDER,
     STEAM_ACCOUNT_INFO_FILE_PATH,
     STEAM_SESSION_PATH,
-    DEV_FILE_FOLDER,
-    SESSION_FOLDER,
     UU_TOKEN_FILE_PATH,
 )
+from utils.tools import accelerator, compare_version, get_encoding, logger, pause
 
 current_version = "3.0.4"
 
@@ -69,24 +70,27 @@ def login_to_steam():
             with open(STEAM_SESSION_PATH, "rb") as f:
                 client = pickle.load(f)
                 if config["steam_login_ignore_ssl_error"]:
-                    logger.warning("警告: 已经关闭SSL验证, 账号可能存在安全问题")
+                    logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
                     client._session.verify = False
                     requests.packages.urllib3.disable_warnings()
                 else:
                     client._session.verify = True
+                if config["steam_local_accelerate"]:
+                    logger.info("已经启用Steamauto内置加速")
+                    client._session.auth = accelerator()
 
                 if client.is_session_alive():
                     logger.info("登录成功")
                     steam_client = client
         except requests.exceptions.ConnectionError as e:
             handle_caught_exception(e)
-            logger.error("使用缓存的session登录失败!可能是网络异常.")
+            logger.error("使用缓存的session登录失败!可能是网络异常")
             steam_client = None
         except EOFError as e:
             handle_caught_exception(e)
             shutil.rmtree(SESSION_FOLDER)
             steam_client = None
-            logger.error("session文件异常.已删除session文件夹.")
+            logger.error("session文件异常.已删除session文件夹")
     if steam_client is None:
         try:
             logger.info("正在登录Steam...")
@@ -100,9 +104,13 @@ def login_to_steam():
                     return None
             client = SteamClient(acc.get("api_key"))
             if config["steam_login_ignore_ssl_error"]:
-                logger.warning("警告: 已经关闭SSL验证, 账号可能存在安全问题")
+                logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
                 client._session.verify = False
                 requests.packages.urllib3.disable_warnings()
+            if config["steam_local_accelerate"]:
+                logger.info("已经启用Steamauto内置加速")
+                client._session.auth = accelerator()
+            logger.info("正在登录...")
             SteamClient.login(client, acc.get("steam_username"), acc.get("steam_password"), STEAM_ACCOUNT_INFO_FILE_PATH)
             with open(STEAM_SESSION_PATH, "wb") as f:
                 pickle.dump(client, f)
@@ -113,16 +121,19 @@ def login_to_steam():
             logger.error("未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加到" + STEAM_ACCOUNT_INFO_FILE_PATH + "后再进行操作! ")
             pause()
             return None
+        except (SSLCertVerificationError, SSLError) as e:
+            handle_caught_exception(e)
+            if config["steam_local_accelerate"]:
+                logger.error('登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true')
+            else:
+                logger.error("登录失败. SSL证书验证错误! " "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n")
+            pause()
+            return None
         except (requests.exceptions.ConnectionError, TimeoutError) as e:
             handle_caught_exception(e)
             logger.error(
-                "\n网络错误! 请通过修改hosts/使用代理等方法代理Python解决问题. \n" "注意: 使用游戏加速器并不能解决问题. 请尝试使用Proxifier及其类似软件代理Python.exe解决. "
+                "网络错误! \n强烈建议使用Steamauto内置加速，仅需在配置文件中将steam_login_ignore_ssl_error和steam_local_accelerate设置为true即可使用 \n注意: 使用游戏加速器并不能解决问题. 请尝试使用Proxifier及其类似软件代理Python进程解决"
             )
-            pause()
-            return None
-        except SSLError as e:
-            handle_caught_exception(e)
-            logger.error("登录失败. SSL证书验证错误! " "若您确定网络环境安全, 可尝试将config.json中的steam_login_ignore_ssl_error设置为true\n")
             pause()
             return None
         except (ValueError, ApiException) as e:
@@ -132,7 +143,10 @@ def login_to_steam():
             return None
         except CaptchaRequired as e:
             handle_caught_exception(e)
-            logger.error("登录失败. 触发Steam风控, 请尝试更换加速器节点.\n" "若您不知道该使用什么加速器，推荐使用 Watt Toolkit 自带的免费Steam加速(请开启hosts代理模式).")
+            logger.error(
+                "登录失败. 触发Steam风控, 请尝试更换加速器节点.\n"
+                "强烈建议使用Steamauto内置加速，仅需在配置文件中将steam_login_ignore_ssl_error和steam_local_accelerate设置为true即可使用"
+            )
             pause()
             return None
     return steam_client
@@ -155,7 +169,7 @@ def main():
             for version in data["history_versions"]:
                 if compare_version(current_version, version["version"]) == -1:
                     changelog_to_output += f"版本: {version['version']}\n更新日志: {version['changelog']}\n\n"
-                    
+
             logger.info(f"\n{changelog_to_output}")
         else:
             logger.info("当前版本已经是最新版本")

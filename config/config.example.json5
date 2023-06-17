@@ -1,78 +1,79 @@
 {
-    // BUFF 自动收货插件配置
-    "buff_auto_accept_offer": {
-      // 是否启用BUFF自动接收报价功能
-      "enable": true,
-      // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
-      "interval": 300,
-      // 是否开启出售保护(自动发货前检查其他卖家最低价，若低于保护价格则不会自动接收报价s)
-      "sell_protection": false,
-      // 出售保护价格，若其他卖家最低价低于此价格，则不会进行出售保护
-      "protection_price": 30,
-      // 出售价格保护比例，若出售价格低于此比例乘以其他卖家最低价格，则不会自动接收报价
-      "protection_price_percentage": 0.9,
-      // 出售通知配置(如不需要可直接删除)
-      "sell_notification": {
-        // 出售通知标题
-        "title": "成功出售{game}饰品: {item_name} * {sold_count}",
-        // 出售通知内容
-        "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\n出售单价: {buff_price} RMB\nSteam单价(参考): {steam_price} USD\nSteam单价(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
-      },
-      // 出售保护通知配置(如不需要可直接删除)
-      "protection_notification": {
-        // 出售保护通知标题（如不需要可直接删除）
-        "title": "{game}饰品: {item_name} 未自动接收报价, 价格与市场最低价相差过大",
-        // 出售保护通知内容（如不需要可直接删除）
-        "body": "请自行至BUFF确认报价!"
-      },
-      // 报价与BUFF出售商品不匹配通知配置(如不需要可直接删除)
-      "item_mismatch_notification": {
-        // 报价与BUFF出售商品不匹配通知标题
-        "title": "BUFF出售饰品与Steam报价饰品不匹配",
-        // 报价与BUFF出售商品不匹配通知内容
-        "body": "请自行至BUFF确认报价!(Offer: {offer_id})"
-      },
-      // BUFF Cookies失效通知配置
-      "buff_cookie_expired_notification": {
-        // BUFF Cookies失效通知标题（如不需要可直接删除）
-        "title": "BUFF Cookie已过期, 请重新登录",
-        // BUFF Cookies失效通知内容（如不需要可直接删除）
-        "body": "BUFF Cookie已过期, 请重新登录"
-      },
-      // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
-      "servers": [
-        "tgram://bottoken/ChatID"
-      ]
-    },
 
-    // BUFF 自动上架插件配置
-    "buff_auto_on_sale": {
-      // 是否启用BUFF自动以最低价上架所有库存
-      "enable": false,
-      // 检查库存间隔时间
-      "interval": 1800
-    },
+  // 登录Steam时是否开启SSL验证，正常情况下不建议关闭SSL验证
+  "steam_login_ignore_ssl_error": false,
+  // 是否开启本地加速功能(测试)
+  // 请注意：开启此功能必须关闭SSL验证，即steam_login_ignore_ssl_error必须设置为true
+  "steam_local_accelerate": false,
+  // 填写为true后，程序在出现错误后就会直接停止运行。如果你是小白，请不要将它设置为true
+  "no_pause": false,
 
-    // 悠悠有品自动发货插件配置
-    "uu_auto_accept_offer": {
-      // 悠悠有品自动发货功能是否启用，默认为false
-      "enable": false,
-      // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
-      "interval": 300
+  // BUFF 自动收货插件配置
+  "buff_auto_accept_offer": {
+    // 是否启用BUFF自动接收报价功能
+    "enable": true,
+    // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
+    "interval": 300,
+    // 是否开启出售保护(自动发货前检查其他卖家最低价，若低于保护价格则不会自动接收报价s)
+    "sell_protection": false,
+    // 出售保护价格，若其他卖家最低价低于此价格，则不会进行出售保护
+    "protection_price": 30,
+    // 出售价格保护比例，若出售价格低于此比例乘以其他卖家最低价格，则不会自动接收报价
+    "protection_price_percentage": 0.9,
+    // 出售通知配置(如不需要可直接删除)
+    "sell_notification": {
+      // 出售通知标题
+      "title": "成功出售{game}饰品: {item_name} * {sold_count}",
+      // 出售通知内容
+      "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\n出售单价: {buff_price} RMB\nSteam单价(参考): {steam_price} USD\nSteam单价(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
     },
-
-    // Steam 自动接受礼物报价插件配置
-    "steam_auto_accept_offer": {
-      // 是否开启自动接受Steam礼物报价（无需支出任何Steam库存中的物品的报价）
-      "enable": false,
-      // 每次检查报价列表的间隔（轮询间隔），单位为秒
-      "interval": 300
+    // 出售保护通知配置(如不需要可直接删除)
+    "protection_notification": {
+      // 出售保护通知标题（如不需要可直接删除）
+      "title": "{game}饰品: {item_name} 未自动接收报价, 价格与市场最低价相差过大",
+      // 出售保护通知内容（如不需要可直接删除）
+      "body": "请自行至BUFF确认报价!"
     },
-    // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启
-    "development_mode": false,
-    // 登录Steam时是否开启SSL验证，正常情况下不建议关闭SSL验证
-    "steam_login_ignore_ssl_error": false,
-    // 填写为true后，程序在出现错误后就会直接停止运行。如果你是小白，请不要将它设置为true
-    "no_pause": false
-  }
-  
+    // 报价与BUFF出售商品不匹配通知配置(如不需要可直接删除)
+    "item_mismatch_notification": {
+      // 报价与BUFF出售商品不匹配通知标题
+      "title": "BUFF出售饰品与Steam报价饰品不匹配",
+      // 报价与BUFF出售商品不匹配通知内容
+      "body": "请自行至BUFF确认报价!(Offer: {offer_id})"
+    },
+    // BUFF Cookies失效通知配置
+    "buff_cookie_expired_notification": {
+      // BUFF Cookies失效通知标题（如不需要可直接删除）
+      "title": "BUFF Cookie已过期, 请重新登录",
+      // BUFF Cookies失效通知内容（如不需要可直接删除）
+      "body": "BUFF Cookie已过期, 请重新登录"
+    },
+    // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
+    "servers": [
+      "tgram://bottoken/ChatID"
+    ]
+  },
+  // BUFF 自动上架插件配置
+  "buff_auto_on_sale": {
+    // 是否启用BUFF自动以最低价上架所有库存
+    "enable": false,
+    // 检查库存间隔时间
+    "interval": 1800
+  },
+  // 悠悠有品自动发货插件配置
+  "uu_auto_accept_offer": {
+    // 悠悠有品自动发货功能是否启用，默认为false
+    "enable": false,
+    // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
+    "interval": 300
+  },
+  // Steam 自动接受礼物报价插件配置
+  "steam_auto_accept_offer": {
+    // 是否开启自动接受Steam礼物报价（无需支出任何Steam库存中的物品的报价）
+    "enable": false,
+    // 每次检查报价列表的间隔（轮询间隔），单位为秒
+    "interval": 300
+  },
+  // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！
+  "development_mode": false
+}
