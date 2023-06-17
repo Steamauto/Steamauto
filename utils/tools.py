@@ -1,4 +1,5 @@
 import os
+import re
 
 import chardet
 
@@ -9,7 +10,7 @@ from utils.static import config
 # 用于解决读取文件时的编码问题
 def get_encoding(file_path):
     if not os.path.exists(file_path):
-        return 'utf-8'
+        return "utf-8"
     with open(file_path, "rb") as f:
         data = f.read()
         charset = chardet.detect(data)["encoding"]
@@ -23,8 +24,8 @@ def pause():
 
 
 def compare_version(ver1, ver2):
-    version1_parts = ver1.split('.')
-    version2_parts = ver2.split('.')
+    version1_parts = ver1.split(".")
+    version2_parts = ver2.split(".")
 
     for i in range(max(len(version1_parts), len(version2_parts))):
         v1 = int(version1_parts[i]) if i < len(version1_parts) else 0
@@ -36,3 +37,11 @@ def compare_version(ver1, ver2):
             return 1
 
     return 0
+
+
+class accelerator:
+    def __call__(self, r):
+        domain = re.search(r"(https?://)([^/\s]+)", r.url).group(2)
+        r.headers["Host"] = domain
+        r.url = re.sub(r"(https?://)([^/\s]+)(.*)", r"\1whatismyip.akamai.com\3", r.url)
+        return r
