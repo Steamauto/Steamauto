@@ -362,7 +362,7 @@ class BuffAutoAcceptOffer:
                                         + str(offer["response"]["offer"]["trade_offer_state"])
                                         + " )"
                                     )
-                            if trade_offer_to_confirm.index(trade_offer_id) != len(trade_offer_to_confirm) - 1:
+                            if list(trade_offer_to_confirm).index(trade_offer_id) != len(trade_offer_to_confirm) - 1:
                                 self.logger.info("[BuffAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...")
                                 time.sleep(5)
                         else:
