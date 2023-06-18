@@ -43,5 +43,5 @@ class accelerator:
     def __call__(self, r):
         domain = re.search(r"(https?://)([^/\s]+)", r.url).group(2)
         r.headers["Host"] = domain
-        r.url = re.sub(r"(https?://)([^/\s]+)(.*)", r"\1whatismyip.akamai.com\3", r.url)
+        r.url = re.sub(r"(https?://)([^/\s]+)(.*)", r"\1steamcommunity-a.akamaihd.net\3", r.url)
         return r
