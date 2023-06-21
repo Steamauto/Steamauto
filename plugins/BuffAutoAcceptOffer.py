@@ -360,7 +360,7 @@ class BuffAutoAcceptOffer:
                                         "[BuffAutoAcceptOffer] 令牌未完成! ( "
                                         + (trade_offer_id if trade_offer_id else "None")
                                         + " ), 报价返回异常 ("
-                                        + str(offer["response"]["offer"]["trade_offer_state"])
+                                        + str(offer["response"])
                                         + " )"
                                     )
                             if list(trade_offer_to_confirm).index(trade_offer_id) != len(trade_offer_to_confirm) - 1:
