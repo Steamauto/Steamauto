@@ -250,7 +250,8 @@ class BuffAutoAcceptOffer:
                                 f.write(json.dumps(response_json, indent=4))
                         trade_supply[game['game']] = response_json["data"]["items"]
                         for trade_offer in trade_supply[game['game']]:
-                            trade_offer_to_confirm.add(trade_offer["tradeofferid"])
+                            if trade_offer["tradeofferid"] is not None and trade_offer["tradeofferid"] != "":
+                                trade_offer_to_confirm.add(trade_offer["tradeofferid"])
                         self.logger.info("[BuffAutoAcceptOffer] 为了避免访问接口过于频繁，休眠5秒...")
                         time.sleep(5)
                 self.logger.info("[BuffAutoAcceptOffer] 查找到 " + str(len(trades)) + " 个待处理的BUFF未发货订单! ")
@@ -357,7 +358,7 @@ class BuffAutoAcceptOffer:
                                 else:
                                     self.logger.info(
                                         "[BuffAutoAcceptOffer] 令牌未完成! ( "
-                                        + trade_offer_id
+                                        + (trade_offer_id if trade_offer_id else "None")
                                         + " ), 报价返回异常 ("
                                         + str(offer["response"]["offer"]["trade_offer_state"])
                                         + " )"
