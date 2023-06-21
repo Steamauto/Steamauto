@@ -23,7 +23,7 @@ jobs:
         run: |
           pip install pyinstaller
           pip install -r requirements.txt
-          pyinstaller -F Steamauto.py --collect-all apprise --collect-all steampy-fixed --name Steamauto-${{ matrix.os }}
+          pyinstaller -F Steamauto.py --collect-all apprise --name Steamauto-${{ matrix.os }}
       
       - name: Copy config folder(Linux,macos)
         if: matrix.os != 'windows-latest'
