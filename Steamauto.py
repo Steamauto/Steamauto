@@ -251,8 +251,9 @@ def main():
     print("\n")
     time.sleep(0.1)
     if len(plugins_enabled) == 1:
-        plugins_enabled[0].exec()
+        sys.exit(plugins_enabled[0].exec())
     else:
+        # TODO: 多线程无法使用ctrl+C正常退出, 必须使用ctrl+D, 暂不处理插件返回值
         threads = []
         for plugin in plugins_enabled:
             threads.append(threading.Thread(target=plugin.exec))

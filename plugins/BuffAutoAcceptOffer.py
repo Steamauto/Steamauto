@@ -156,7 +156,7 @@ class BuffAutoAcceptOffer:
         user_name = self.check_buff_account_state(dev=self.development_mode)
         if not user_name:
             self.logger.error("[BuffAutoAcceptOffer] 由于登录失败,插件自动退出... ")
-            sys.exit(1)
+            return 1
         self.logger.info("[BuffAutoAcceptOffer] 已经登录至BUFF 用户名: " + user_name)
         ignored_offer = []
         interval = self.config["buff_auto_accept_offer"]["interval"]
