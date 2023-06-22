@@ -2,7 +2,7 @@
 name: 报告bug
 about: 反馈程序运行bug
 title: ''
-labels: 功能增强, 程序问题
+labels: 程序问题
 assignees: ''
 
 ---
