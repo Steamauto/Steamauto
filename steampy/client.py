@@ -200,7 +200,10 @@ class SteamClient:
 
     def _fetch_trade_partner_id(self, trade_offer_id: str) -> str:
         url = self._get_trade_offer_url(trade_offer_id)
-        offer_response_text = self._session.get(url).text
+        api_response = self._session.get(url, allow_redirects=False)
+        while api_response.status_code == 302:
+            api_response = self._session.get(api_response.headers['Location'], allow_redirects=False)
+        offer_response_text = api_response.text
         if 'You have logged in from a new device. In order to protect the items' in offer_response_text:
             raise SevenDaysHoldException("Account has logged in a new device and can't trade for 7 days")
         return text_between(offer_response_text, "var g_ulTradePartnerSteamID = '", "';")
@@ -219,7 +222,7 @@ class SteamClient:
         url = 'https://steamcommunity.com/tradeoffer/' + trade_offer_id + '/cancel'
         response = self._session.post(url, data={'sessionid': self._get_session_id()}).json()
         return response
-    
+
     @login_required
     def make_offer(self, items_from_me: List[Asset], items_from_them: List[Asset], partner_steam_id: str,
                    message: str = '') -> dict:
