@@ -8,6 +8,7 @@ import apprise
 import requests
 from apprise.AppriseAsset import AppriseAsset
 
+import utils.static
 from utils.static import (
     APPRISE_ASSET_FOLDER,
     BUFF_ACCOUNT_DEV_FILE_PATH,
@@ -278,6 +279,22 @@ class BuffAutoAcceptOffer:
                                     self.logger.info("[BuffAutoAcceptOffer] 正在检查报价物品...")
                                     if not self.development_mode:
                                         offer = self.steam_client.get_trade_offer(offer_id)
+                                        if 'offer' not in offer['response']:
+                                            api_key_in_config = ""
+                                            with open(utils.static.STEAM_ACCOUNT_INFO_FILE_PATH, 'r',
+                                                      encoding=get_encoding(utils.static.STEAM_ACCOUNT_INFO_FILE_PATH))\
+                                                    as f:
+                                                api_key_in_config = json.load(f)['api_key']
+                                            if api_key_in_config == self.steam_client.steam_guard["api_key"]:
+                                                self.logger.error("[BuffAutoAcceptOffer] api_key错误, 请检查 " +
+                                                                  utils.static.STEAM_ACCOUNT_INFO_FILE_PATH +
+                                                                  " 中的api_key是否正确")
+                                            else:
+                                                self.logger.error("[BuffAutoAcceptOffer] Session中缓存的api_key与 " +
+                                                                  utils.static.STEAM_ACCOUNT_INFO_FILE_PATH +
+                                                                  " 中的api_key不一致, 请删除 " +
+                                                                  utils.static.STEAM_SESSION_PATH)
+                                            return 1
                                         for item in offer['response']['offer']['items_to_give']:
                                             match = False
                                             for item_in_trade in trade['items_to_trade']:
