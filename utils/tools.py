@@ -1,4 +1,5 @@
 import os
+import random
 import re
 
 import chardet
@@ -41,7 +42,14 @@ def compare_version(ver1, ver2):
 
 class accelerator:
     def __call__(self, r):
+        domain_list = [
+            "steamuserimages-a.akamaihd.net",
+            "steamstore-a.akamaihd.net",
+            "steamcommunity-a.akamaihd.net",
+            "eaassets-a.akamaihd.net",
+            "humblebundle-a.akamaihd.net",
+        ]
         domain = re.search(r"(https?://)([^/\s]+)", r.url).group(2)
         r.headers["Host"] = domain
-        r.url = re.sub(r"(https?://)([^/\s]+)(.*)", r"\1steamcommunity-a.akamaihd.net\3", r.url)
+        r.url = re.sub(r"(https?://)([^/\s]+)(.*)", r"\1" + random.choice(domain_list) + r"\3", r.url)
         return r

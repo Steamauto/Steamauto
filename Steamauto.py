@@ -91,6 +91,12 @@ def login_to_steam():
             shutil.rmtree(SESSION_FOLDER)
             steam_client = None
             logger.error("session文件异常.已删除session文件夹")
+        except AssertionError as e:
+            handle_caught_exception(e)
+            if config["steam_local_accelerate"]:
+                logger.error('由于内置加速问题,暂时无法登录.请稍等10分钟后再进行登录,或者关闭内置加速功能！')
+            else:
+                logger.error('未知登录错误,可能是由于网络问题?')
     if steam_client is None:
         try:
             logger.info("正在登录Steam...")
