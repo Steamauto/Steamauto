@@ -1,7 +1,11 @@
 
 
 # Steamauto  
-![Steamauto](https://socialify.git.ci/jiajiaxd/Steamauto/image?description=1&forks=1&language=1&logo=https%3A%2F%2Ficons.bootcss.com%2Fassets%2Ficons%2Fsteam.svg&name=1&owner=1&stargazers=1&theme=Light)
+![Steamauto](https://socialify.git.ci/jiajiaxd/Steamauto/image?description=1&language=1&logo=https%3A%2F%2Ficons.bootcss.com%2Fassets%2Ficons%2Fsteam.svg&name=1&owner=1&theme=Light)
+![QQ Group](https://img.shields.io/badge/%E5%AE%98%E6%96%B9QQ%E7%BE%A4-425721057-brightgreen?logo=TencentQQ&link=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3F_wv%3D1027%26k%3DTMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj%26authKey%3DVAgXngXUeaHBfGwY2uNzE%252F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz%26noverify%3D0%26group_code%3D425721057)
+![GitHub Repo stars](https://img.shields.io/github/stars/jiajiaxd/Steamauto?logo=github)
+![GitHub forks](https://img.shields.io/github/forks/jiajiaxd/Steamauto?logo=github)
+
 > 开源的 Steam 自动收发货解决方案  
 > 杜绝收费、安全稳定
 
