@@ -49,7 +49,7 @@ class BuffAutoAcceptOffer:
     def check_buff_account_state(self, dev=False):
         if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
             self.logger.info("[BuffAutoAcceptOffer] 开发模式, 使用本地账号")
-            with open(BUFF_ACCOUNT_DEV_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
+            with open(BUFF_ACCOUNT_DEV_FILE_PATH, "r", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
                 buff_account_data = json.load(f)
             return buff_account_data["data"]["nickname"]
         else:
@@ -152,7 +152,7 @@ class BuffAutoAcceptOffer:
         time.sleep(5)
         self.logger.info("[BuffAutoAcceptOffer] 正在准备登录至BUFF...")
         with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
-            self.buff_headers["Cookie"] = f.read()
+            self.buff_headers["Cookie"] = f.read().replace("\n", "").split(";")[0]
         self.logger.info("[BuffAutoAcceptOffer] 已检测到cookies, 尝试登录")
         user_name = self.check_buff_account_state(dev=self.development_mode)
         if not user_name:
