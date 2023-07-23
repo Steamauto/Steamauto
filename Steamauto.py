@@ -162,6 +162,7 @@ def main():
     global config
     development_mode = False
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
+    logger.info('欢迎加入Steamauto 官方QQ群 群号:425721057')
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! ")
     logger.info(f"当前版本: {current_version}")
     logger.info("正在检查更新...")
