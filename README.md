@@ -1,10 +1,10 @@
-
-
 # Steamauto  
 ![Steamauto](https://socialify.git.ci/jiajiaxd/Steamauto/image?description=1&language=1&logo=https%3A%2F%2Ficons.bootcss.com%2Fassets%2Ficons%2Fsteam.svg&name=1&owner=1&theme=Light)
 <div align="center">
-      <a href="https://github.com/badges/shields/graphs/contributors" alt="QQ Group">
+      <a href="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=TMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj&authKey=VAgXngXUeaHBfGwY2uNzE%2F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz&noverify=0&group_code=425721057" alt="QQ Group">
         <img src="https://img.shields.io/badge/%E5%AE%98%E6%96%B9QQ%E7%BE%A4-425721057-brightgreen?logo=TencentQQ&link=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3F_wv%3D1027%26k%3DTMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj%26authKey%3DVAgXngXUeaHBfGwY2uNzE%252F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz%26noverify%3D0%26group_code%3D425721057" /></a>
+      <a href="https://www.bilibili.com/video/BV1ph4y1y7mz/" alt="Video tutorial">
+        <img src="https://img.shields.io/badge/%E8%A7%86%E9%A2%91%E6%95%99%E7%A8%8B-%E7%82%B9%E5%87%BB%E8%A7%82%E7%9C%8B-brightgreen?logo=bilibili" /></a>
       <a href="https://github.com/jiajiaxd/Steamauto/stargazers" alt="GitHub Repo stars">
         <img src="https://img.shields.io/github/stars/jiajiaxd/Steamauto?logo=github" /></a>
       <a href="https://github.com/jiajiaxd/Steamauto/forks" alt="GitHub forks">
@@ -35,6 +35,7 @@
 - 自动接受礼物报价(无需支出任何Steam库存中的物品的报价)
 
 ## 如何使用?
+[推荐观看视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz)
 1. 前往 [Github Releases](https://github.com/jiajiaxd/Steamauto/releases/latest) 下载适合自己系统的Steamauto
 2. 将所得文件解压缩
 3. 打开 `config` 文件夹
@@ -190,10 +191,9 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 将`config.json`中`buff_auto_accept_offer.enable`设置为false即可
 ## 附录
 关于`steam_account_info.json`相关参数的获取教程都在下面, 请自行参阅  
-个人推荐使用[ Watt Toolkit ](https://github.com/BeyondDimension/SteamTools)获取Steam令牌参数 操作非常简便
-
-[获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)  
-[buffhelp 网易buff自动发货-哔哩哔哩(请查看P2-P7)](https://www.bilibili.com/video/BV1DT4y1P7Dx)  
+个人推荐使用[ SteamDesktopAuthenticator ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便  
+[官方视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz/)  
+[获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)   
 [Obtaining SteamGuard from mobile device]( https://github.com/SteamTimeIdler/stidler/wiki/Getting-your-%27shared_secret%27-code-for-use-with-Auto-Restarter-on-Mobile-Authentication )  
 [Obtaining SteamGuard using Android emulation]( https://github.com/codepath/android_guides/wiki/Genymotion-2.0-Emulators-with-Google-Play-support)
 
