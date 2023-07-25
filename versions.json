@@ -1,9 +1,13 @@
 {
     "latest_version": {
-        "version": "3.1.2",
-        "changelog": "\n=================================\nSteamauto \u5b98\u65b9QQ\u7fa4  \u7fa4\u53f7:425721057\n=================================\n3.1.2\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u5b8c\u5584\u9519\u8bef\u63d0\u793a\n2.\u4fee\u590d\u6f5c\u5728\u7684\u5185\u7f6e\u52a0\u901fBUG\n"
+        "version": "3.2.0",
+        "changelog": "\n=================================\nSteamauto \u5b98\u65b9QQ\u7fa4  \u7fa4\u53f7:425721057\n=================================\n3.2.0\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u4fee\u590d\u60a0\u60a0\u6709\u54c1\u65e0\u6cd5\u6b63\u5e38\u53d1\u8d27\n2.\u5e76\u5165uuyoupinapi\u4ed3\u5e93\n"
     },
     "history_versions": [
+        {
+            "version": "3.2.0",
+            "changelog": "\n=================================\nSteamauto \u5b98\u65b9QQ\u7fa4  \u7fa4\u53f7:425721057\n=================================\n3.2.0\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u4fee\u590d\u60a0\u60a0\u6709\u54c1\u65e0\u6cd5\u6b63\u5e38\u53d1\u8d27\n2.\u5e76\u5165uuyoupinapi\u4ed3\u5e93\n"
+        },
         {
             "version": "3.1.2",
             "changelog": "\n=================================\nSteamauto \u5b98\u65b9QQ\u7fa4  \u7fa4\u53f7:425721057\n=================================\n3.1.2\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u5b8c\u5584\u9519\u8bef\u63d0\u793a\n2.\u4fee\u590d\u6f5c\u5728\u7684\u5185\u7f6e\u52a0\u901fBUG\n"
