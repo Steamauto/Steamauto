@@ -50,12 +50,21 @@ class UUAutoAcceptOffer:
                             if item["offer_id"] not in ignored_offer:
                                 self.steam_client.accept_trade_offer(str(item["offer_id"]))
                                 ignored_offer.append(item["offer_id"])
-                            self.logger.info("[UUAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! ")
+                                self.logger.info("[UUAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! ")
+                            else:
+                                self.logger.info("[UUAutoAcceptOffer] 此交易报价已经在忽略名单中, 跳过此报价! ")
                             if uu_wait_deliver_list.index(item) != len_uu_wait_deliver_list - 1:
                                 self.logger.info("[UUAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...")
                                 time.sleep(5)
                 except Exception as e:
                     self.logger.error(e, exc_info=True)
                     self.logger.info("[UUAutoAcceptOffer] 出现未知错误, 稍后再试! ")
+                    try:
+                        uuyoupin.get_user_nickname()
+                    except KeyError as e:
+                        handle_caught_exception(e)
+                        self.logger.error("[UUAutoAcceptOffer] 检测到悠悠有品登录已经失效,请重新登录")
+                        self.logger.error("[UUAutoAcceptOffer] 由于登录失败，插件将自动退出")
+                        sys.exit(1)
                 self.logger.info("[UUAutoAcceptOffer] 将在{0}秒后再次检查待发货订单信息!".format(str(interval)))
                 time.sleep(interval)

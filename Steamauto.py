@@ -31,7 +31,7 @@ from utils.static import (
 )
 from utils.tools import accelerator, compare_version, get_encoding, logger, pause
 
-current_version = "3.1.2"
+current_version = "3.2"
 
 if "-uu" in sys.argv:
     import uuyoupinapi
