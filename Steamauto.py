@@ -45,7 +45,7 @@ if "-uu" in sys.argv:
         os.mkdir(CONFIG_FOLDER)
     with open(UU_TOKEN_FILE_PATH, "w", encoding="utf-8") as f:
         f.write(token)
-    logger.info(f"已自动获取悠悠有品token,并写入{UU_TOKEN_FILE_PATH}.")
+    logger.info(f"已成功获取悠悠有品token,并写入{UU_TOKEN_FILE_PATH}中!")
     logger.info("按回车键继续启动Steamauto...")
     input()
 
@@ -150,8 +150,9 @@ def login_to_steam():
         except CaptchaRequired as e:
             handle_caught_exception(e)
             logger.error(
-                "登录失败. 触发Steam风控, 请尝试更换加速器节点.\n"
-                "强烈建议使用Steamauto内置加速，仅需在配置文件中将steam_login_ignore_ssl_error和steam_local_accelerate设置为true即可使用"
+                "登录失败. 触发Steam风控, 请尝试更换加速器节点或使用手机热点等其它网络环境重试.\n"
+                "强烈建议使用Steamauto内置加速，仅需在配置文件中将steam_login_ignore_ssl_error和steam_local_accelerate设置为true即可使用.\n"
+                "这并不是一个程序问题, 请勿提交相关issue!(即使你已经开启Steamauto内置加速) "
             )
             pause()
             return None
@@ -178,6 +179,7 @@ def main():
                     changelog_to_output += f"版本: {version['version']}\n更新日志: {version['changelog']}\n\n"
 
             logger.info(f"\n{changelog_to_output}")
+            logger.warning("当前版本不是最新版本,为了您的使用体验,请及时更新!")
         else:
             logger.info("当前版本已经是最新版本")
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
