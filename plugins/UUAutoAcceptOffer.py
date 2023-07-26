@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 
 import uuyoupinapi
@@ -28,6 +27,7 @@ class UUAutoAcceptOffer:
             try:
                 uuyoupin = uuyoupinapi.UUAccount(f.read())
                 self.logger.info("[UUAutoAcceptOffer] 悠悠有品登录完成, 用户名: " + uuyoupin.get_user_nickname())
+                uuyoupin.send_device_info()
             except KeyError as e:
                 handle_caught_exception(e)
                 self.logger.error("[UUAutoAcceptOffer] 悠悠有品登录失败! 请检查token是否正确! ")
@@ -37,6 +37,7 @@ class UUAutoAcceptOffer:
         if uuyoupin is not None:
             while True:
                 try:
+                    uuyoupin.send_device_info()
                     self.logger.info("[UUAutoAcceptOffer] 正在检查悠悠有品待发货信息...")
                     uu_wait_deliver_list = uuyoupin.get_wait_deliver_list()
                     len_uu_wait_deliver_list = len(uu_wait_deliver_list)

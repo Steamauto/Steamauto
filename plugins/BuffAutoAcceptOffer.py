@@ -1,6 +1,5 @@
 import datetime
 import pyjson5 as json
-import sys
 import time
 import os
 
@@ -13,7 +12,6 @@ from utils.static import (
     APPRISE_ASSET_FOLDER,
     BUFF_ACCOUNT_DEV_FILE_PATH,
     BUFF_COOKIES_FILE_PATH,
-    SELL_ORDER_HISTORY_DEV_FILE_PATH,
     SHOP_LISTING_DEV_FILE_PATH,
     STEAM_TRADE_DEV_FILE_PATH,
     SUPPORT_GAME_TYPES,
@@ -21,7 +19,6 @@ from utils.static import (
 )
 from utils.tools import get_encoding
 from utils.logger import handle_caught_exception
-
 
 
 class BuffAutoAcceptOffer:

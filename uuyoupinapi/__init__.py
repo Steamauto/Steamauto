@@ -1,4 +1,16 @@
 import requests
+import string
+import random
+
+
+def generate_random_string(length):
+    """
+    生成指定长度的字符串，包含 A-Z, a-z 和数字
+    :param length: 字符串长度
+    :return: 随机字符串
+    """
+    letters_and_digits = string.ascii_letters + string.digits
+    return "".join(random.choice(letters_and_digits) for i in range(length))
 
 
 class UUAccount:
@@ -7,13 +19,24 @@ class UUAccount:
         :param token: 通过抓包获得的token
         """
         self.session = requests.Session()
+        random.seed(token)
+        self.device_info = {
+            "deviceId": generate_random_string(24),
+            "deviceType": generate_random_string(6),
+            "hasSteamApp": 0,
+            "systemName ": "Android",
+            "systemVersion": "13",
+        }
         self.session.headers.update(
             {
                 "authorization": "Bearer " + token,
                 "content-type": "application/json; charset=utf-8",
                 "user-agent": "okhttp/3.14.9",
-                "app-version": "5.0.5",
+                "app-version": "5.4.1",
                 "apptype": "4",
+                "devicetoken": self.device_info["deviceId"],
+                "deviceid": self.device_info["deviceId"],
+                "platform": "android",
             }
         )
 
@@ -72,6 +95,16 @@ class UUAccount:
 
     def get_user_nickname(self):
         return self.call_api("GET", "/api/user/Account/getUserInfo").json()["Data"]["NickName"]
+
+    def send_device_info(self):
+        return self.call_api(
+            "GET",
+            "/api/common/ClientInfo/AndroidInfo",
+            data={
+                "DeviceToken": self.device_info["deviceId"],
+                "Sessionid": self.device_info["deviceId"],
+            },
+        )
 
     def call_api(self, method, path, data=None):
         """
