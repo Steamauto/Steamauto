@@ -123,7 +123,7 @@ class UUAccount:
         ).json()["data"]
         data_to_return = []
         for order in data["orderList"]:
-            if int(order["offerType"]) == 1:
+            if int(order["offerType"]) == 2:
                 if order["tradeOfferId"] is not None:
                     data_to_return.append(
                         {
