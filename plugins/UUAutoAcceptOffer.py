@@ -32,7 +32,6 @@ class UUAutoAcceptOffer:
                 handle_caught_exception(e)
                 self.logger.error("[UUAutoAcceptOffer] 悠悠有品登录失败! 请检查token是否正确! ")
                 self.logger.error("[UUAutoAcceptOffer] 由于登录失败，插件将自动退出")
-                sys.exit(1)
         ignored_offer = []
         interval = self.config["uu_auto_accept_offer"]["interval"]
         if uuyoupin is not None:
@@ -48,7 +47,7 @@ class UUAutoAcceptOffer:
                                 f"[UUAutoAcceptOffer] 正在接受悠悠有品待发货报价, 商品名: {item['item_name']}, " f"报价ID: {item['offer_id']}"
                             )
                             if item["offer_id"] is None:
-                                self.logger.info("[UUAutoAcceptOffer] 此订单为需要手动发货的订单, 无法处理, 跳过此订单! ")
+                                self.logger.warning("[UUAutoAcceptOffer] 此订单为需要手动发货的订单, 无法处理, 跳过此订单! ")
                             elif item["offer_id"] not in ignored_offer:
                                 try:
                                     self.steam_client.accept_trade_offer(str(item["offer_id"]))
@@ -71,6 +70,5 @@ class UUAutoAcceptOffer:
                         handle_caught_exception(e)
                         self.logger.error("[UUAutoAcceptOffer] 检测到悠悠有品登录已经失效,请重新登录")
                         self.logger.error("[UUAutoAcceptOffer] 由于登录失败，插件将自动退出")
-                        sys.exit(1)
                 self.logger.info("[UUAutoAcceptOffer] 将在{0}秒后再次检查待发货订单信息!".format(str(interval)))
                 time.sleep(interval)
