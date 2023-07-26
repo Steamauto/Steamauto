@@ -328,7 +328,11 @@ class BuffAutoAcceptOffer:
                                     if self.development_mode:
                                         self.logger.info("[BuffAutoAcceptOffer] 开发者模式已开启, 跳过接受报价")
                                     else:
-                                        self.steam_client.accept_trade_offer(offer_id)
+                                        try:
+                                            self.steam_client.accept_trade_offer(offer_id)
+                                        except KeyError as e:
+                                            handle_caught_exception(e)
+                                            self.logger.error("[BuffAutoAcceptOffer] Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
                                     ignored_offer.append(offer_id)
                                     self.logger.info("[BuffAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! ")
                                     if "sell_notification" in self.config["buff_auto_accept_offer"]:

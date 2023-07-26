@@ -47,8 +47,14 @@ class UUAutoAcceptOffer:
                             self.logger.info(
                                 f"[UUAutoAcceptOffer] 正在接受悠悠有品待发货报价, 商品名: {item['item_name']}, " f"报价ID: {item['offer_id']}"
                             )
-                            if item["offer_id"] not in ignored_offer:
-                                self.steam_client.accept_trade_offer(str(item["offer_id"]))
+                            if item["offer_id"] is None:
+                                self.logger.info("[UUAutoAcceptOffer] 此订单为需要手动发货的订单, 无法处理, 跳过此订单! ")
+                            elif item["offer_id"] not in ignored_offer:
+                                try:
+                                    self.steam_client.accept_trade_offer(str(item["offer_id"]))
+                                except KeyError as e:
+                                    handle_caught_exception(e)
+                                    self.logger.error("[UUAutoAcceptOffer] Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
                                 ignored_offer.append(item["offer_id"])
                                 self.logger.info("[UUAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! ")
                             else:

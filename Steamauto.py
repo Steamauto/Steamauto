@@ -31,7 +31,7 @@ from utils.static import (
 )
 from utils.tools import accelerator, compare_version, get_encoding, logger, pause
 
-current_version = "3.2.0"
+current_version = "3.2.1"
 
 if "-uu" in sys.argv:
     import uuyoupinapi
@@ -163,7 +163,7 @@ def main():
     global config
     development_mode = False
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
-    logger.info('欢迎加入Steamauto 官方QQ群 群号:425721057')
+    logger.info('欢迎加入Steamauto 官方QQ群 群号: 425721057')
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! ")
     logger.info(f"当前版本: {current_version}")
     logger.info("正在检查更新...")

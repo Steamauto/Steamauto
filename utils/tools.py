@@ -43,11 +43,7 @@ def compare_version(ver1, ver2):
 class accelerator:
     def __call__(self, r):
         domain_list = [
-            "steamuserimages-a.akamaihd.net",
-            "steamstore-a.akamaihd.net",
             "steamcommunity-a.akamaihd.net",
-            "eaassets-a.akamaihd.net",
-            "humblebundle-a.akamaihd.net",
         ]
         domain = re.search(r"(https?://)([^/\s]+)", r.url).group(2)
         r.headers["Host"] = domain
