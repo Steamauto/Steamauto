@@ -1,4 +1,5 @@
 import time
+from utils.logger import handle_caught_exception
 
 
 class SteamAutoAcceptOffer:
@@ -28,7 +29,11 @@ class SteamAutoAcceptOffer:
                                 self.logger.info(
                                     f'[SteamAutoAcceptOffer] 检测到报价[{trade_offer["tradeofferid"]}]' f"属于礼物报价，正在接受报价..."
                                 )
-                                self.steam_client.accept_trade_offer(trade_offer["tradeofferid"])
+                                try:
+                                    self.steam_client.accept_trade_offer(trade_offer["tradeofferid"])
+                                except Exception as e:
+                                    handle_caught_exception(e)
+                                    self.logger.error("[SteamAutoAcceptOffer] Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
                                 self.logger.info(f'[SteamAutoAcceptOffer] 报价[{trade_offer["tradeofferid"]}]接受成功！')
                             else:
                                 self.logger.info(

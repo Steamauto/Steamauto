@@ -7,6 +7,20 @@ import chardet
 from utils.logger import logger
 from utils.static import config
 
+exit_code = 0
+
+
+class exit_code:
+    @staticmethod
+    def set(code):
+        global exit_code
+        exit_code = code
+
+    @staticmethod
+    def get():
+        global exit_code
+        return exit_code
+
 
 # 用于解决读取文件时的编码问题
 def get_encoding(file_path):

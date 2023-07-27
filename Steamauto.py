@@ -29,7 +29,7 @@ from utils.static import (
     STEAM_SESSION_PATH,
     UU_TOKEN_FILE_PATH,
 )
-from utils.tools import accelerator, compare_version, get_encoding, logger, pause
+from utils.tools import accelerator, compare_version, get_encoding, logger, pause, exit_code
 
 current_version = "3.2.1"
 
@@ -57,6 +57,11 @@ def handle_global_exception(exc_type, exc_value, exc_traceback):
     )
     logger.error("由于出现致命错误，程序即将退出...")
     pause()
+
+
+def set_exit_code(code):
+    global exit_code
+    exit_code = code
 
 
 def login_to_steam():
@@ -94,9 +99,9 @@ def login_to_steam():
         except AssertionError as e:
             handle_caught_exception(e)
             if config["steam_local_accelerate"]:
-                logger.error('由于内置加速问题,暂时无法登录.请稍等10分钟后再进行登录,或者关闭内置加速功能！')
+                logger.error("由于内置加速问题,暂时无法登录.请稍等10分钟后再进行登录,或者关闭内置加速功能！")
             else:
-                logger.error('未知登录错误,可能是由于网络问题?')
+                logger.error("未知登录错误,可能是由于网络问题?")
     if steam_client is None:
         try:
             logger.info("正在登录Steam...")
@@ -130,7 +135,7 @@ def login_to_steam():
         except (SSLCertVerificationError, SSLError) as e:
             handle_caught_exception(e)
             if config["steam_local_accelerate"]:
-                logger.error('登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true')
+                logger.error("登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true")
             else:
                 logger.error("登录失败. SSL证书验证错误! " "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n")
             pause()
@@ -163,7 +168,7 @@ def main():
     global config
     development_mode = False
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
-    logger.info('欢迎加入Steamauto 官方QQ群 群号: 425721057')
+    logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! ")
     logger.info(f"当前版本: {current_version}")
     logger.info("正在检查更新...")
@@ -260,9 +265,8 @@ def main():
     print("\n")
     time.sleep(0.1)
     if len(plugins_enabled) == 1:
-        sys.exit(plugins_enabled[0].exec())
+        exit_code.set(plugins_enabled[0].exec())
     else:
-        # TODO: 多线程无法使用ctrl+C正常退出, 必须使用ctrl+D, 暂不处理插件返回值
         threads = []
         for plugin in plugins_enabled:
             threads.append(threading.Thread(target=plugin.exec))
@@ -271,6 +275,11 @@ def main():
             thread.start()
         for thread in threads:
             thread.join()
+    if exit_code.get() == 1:
+        logger.warning("所有插件都已经退出！这不是一个正常情况，请检查配置文件.")
+    logger.info("由于所有插件已经关闭,程序即将退出...")
+    pause()
+    sys.exit(exit_code.get())
 
 
 def exit_app(signal_, frame):
@@ -285,8 +294,8 @@ if __name__ == "__main__":
         os.mkdir(DEV_FILE_FOLDER)
     if not os.path.exists(SESSION_FOLDER):
         os.mkdir(SESSION_FOLDER)
-    exit_code = main()
+    exit_code.set(main())
     if exit_code is not None:
-        sys.exit(exit_code)
+        sys.exit(exit_code.get())
     else:
         sys.exit()

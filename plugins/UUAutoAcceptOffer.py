@@ -5,7 +5,7 @@ import uuyoupinapi
 
 from utils.logger import handle_caught_exception
 from utils.static import UU_TOKEN_FILE_PATH
-from utils.tools import get_encoding
+from utils.tools import get_encoding, exit_code
 
 
 class UUAutoAcceptOffer:
@@ -32,6 +32,8 @@ class UUAutoAcceptOffer:
                 handle_caught_exception(e)
                 self.logger.error("[UUAutoAcceptOffer] 悠悠有品登录失败! 请检查token是否正确! ")
                 self.logger.error("[UUAutoAcceptOffer] 由于登录失败，插件将自动退出")
+                exit_code.set(1)
+                return 1
         ignored_offer = []
         interval = self.config["uu_auto_accept_offer"]["interval"]
         if uuyoupin is not None:
@@ -52,7 +54,7 @@ class UUAutoAcceptOffer:
                             elif item["offer_id"] not in ignored_offer:
                                 try:
                                     self.steam_client.accept_trade_offer(str(item["offer_id"]))
-                                except KeyError as e:
+                                except Exception as e:
                                     handle_caught_exception(e)
                                     self.logger.error("[UUAutoAcceptOffer] Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
                                 ignored_offer.append(item["offer_id"])
@@ -71,5 +73,7 @@ class UUAutoAcceptOffer:
                         handle_caught_exception(e)
                         self.logger.error("[UUAutoAcceptOffer] 检测到悠悠有品登录已经失效,请重新登录")
                         self.logger.error("[UUAutoAcceptOffer] 由于登录失败，插件将自动退出")
+                        exit_code.set(1)
+                        return 1
                 self.logger.info("[UUAutoAcceptOffer] 将在{0}秒后再次检查待发货订单信息!".format(str(interval)))
                 time.sleep(interval)
