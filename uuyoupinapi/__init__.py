@@ -90,7 +90,8 @@ class UUAccount:
         :return:
         """
         return requests.post(
-            "https://api.youpin898.com/api/user/Auth/SmsSignIn", json={"Code": code, "Sessionid": session, "Mobile": phone}
+            "https://api.youpin898.com/api/user/Auth/SmsSignIn",
+            json={"Code": code, "SessionId": session, "Mobile": phone, "TenDay": 1},
         ).json()
 
     def get_user_nickname(self):
