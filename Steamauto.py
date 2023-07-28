@@ -16,7 +16,7 @@ from plugins.BuffAutoOnSale import BuffAutoOnSale
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from steampy.client import SteamClient
-from steampy.exceptions import ApiException, CaptchaRequired
+from steampy.exceptions import ApiException, CaptchaRequired, InvalidCredentials
 from utils.logger import handle_caught_exception
 from utils.static import (
     CONFIG_FILE_PATH,
@@ -161,6 +161,9 @@ def login_to_steam():
             )
             pause()
             return None
+        except InvalidCredentials as e:
+            handle_caught_exception(e)
+            logger.error("登录失败(账号或密码错误). 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "中的账号密码是否正确\n")
     return steam_client
 
 
