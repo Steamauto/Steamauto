@@ -1,6 +1,9 @@
 import os
 import time
 
+from requests.exceptions import ProxyError
+from steampy.exceptions import InvalidCredentials
+
 import uuyoupinapi
 
 from utils.logger import handle_caught_exception
@@ -64,6 +67,17 @@ class UUAutoAcceptOffer:
                             if uu_wait_deliver_list.index(item) != len_uu_wait_deliver_list - 1:
                                 self.logger.info("[UUAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...")
                                 time.sleep(5)
+                except ProxyError:
+                    self.logger.error('代理异常, 本软件可不需要代理或任何VPN')
+                    self.logger.error('可以尝试关闭代理或VPN后重启软件')
+                except (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError):
+                    self.logger.error('网络异常, 请检查网络连接')
+                    self.logger.error('这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN')
+                    self.logger.error('如果你正在使用代理或VPN, 请尝试关闭后重启软件')
+                    self.logger.error('如果你没有使用代理或VPN, 请检查网络连接')
+                except InvalidCredentials as e:
+                    self.logger.error('mafile有问题, 请检查mafile是否正确(尤其是identity_secret)')
+                    self.logger.error(str(e))
                 except Exception as e:
                     self.logger.error(e, exc_info=True)
                     self.logger.info("[UUAutoAcceptOffer] 出现未知错误, 稍后再试! ")
