@@ -53,8 +53,8 @@
 |---------------------------|-------------------------------------------|
 | `config.json5`             | 主配置文件，可以修改程序的大多数设置                        |
 | `steam_account_info.json5` | 用于填入Steam账户相关信息                           |
-| `buff_cookies.txt`        | **启用网易Buff相关功能后才会创建** 用于填入网易BUFF的Cookie信息 |
-| `uu_token.txt`            | **启用悠悠有品相关功能后才会创建** 用于填入悠悠有品的Cookie信息(悠悠有品token获取方法见FAQ)   |
+| `buff_cookies.txt`        | **启用网易Buff相关插件后才会创建** 用于填入网易BUFF的Cookie信息 |
+| `uu_token.txt`            | **启用悠悠有品相关插件后才会创建** 用于填入悠悠有品的Cookie信息(悠悠有品token获取方法见FAQ)   |
 ##### [config.json5](config/config.json5) (仅供参考 以实际文件为主)
 ```json5
 {
