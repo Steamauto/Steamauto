@@ -49,6 +49,7 @@ class UUAutoAcceptOffer:
                     self.logger.info("[UUAutoAcceptOffer] " + str(len_uu_wait_deliver_list) + "个悠悠有品待发货订单")
                     if len(uu_wait_deliver_list) != 0:
                         for item in uu_wait_deliver_list:
+                            accepted = False
                             self.logger.info(
                                 f"[UUAutoAcceptOffer] 正在接受悠悠有品待发货报价, 商品名: {item['item_name']}, " f"报价ID: {item['offer_id']}"
                             )
@@ -57,27 +58,28 @@ class UUAutoAcceptOffer:
                             elif item["offer_id"] not in ignored_offer:
                                 try:
                                     self.steam_client.accept_trade_offer(str(item["offer_id"]))
+                                    ignored_offer.append(item["offer_id"])
+                                    self.logger.info(f'[UUAutoAcceptOffer] 接受报价[{str(item["offer_id"])}]完成!')
+                                    accepted = True
+                                except ProxyError:
+                                    self.logger.error('代理异常, 本软件可不需要代理或任何VPN')
+                                    self.logger.error('可以尝试关闭代理或VPN后重启软件')
+                                except (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError):
+                                    self.logger.error('网络异常, 请检查网络连接')
+                                    self.logger.error('这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN')
+                                    self.logger.error('如果你正在使用代理或VPN, 请尝试关闭后重启软件')
+                                    self.logger.error('如果你没有使用代理或VPN, 请检查网络连接')
+                                except InvalidCredentials as e:
+                                    self.logger.error('mafile有问题, 请检查mafile是否正确(尤其是identity_secret)')
+                                    self.logger.error(str(e))
                                 except Exception as e:
                                     handle_caught_exception(e)
-                                    self.logger.error("[UUAutoAcceptOffer] Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
-                                ignored_offer.append(item["offer_id"])
-                                self.logger.info("[UUAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! ")
+                                    self.logger.error("[UUAutoAcceptOffer] Steam异常, 暂时无法接受报价, 请稍后再试! ")
                             else:
-                                self.logger.info("[UUAutoAcceptOffer] 此交易报价已经在忽略名单中, 跳过此报价! ")
-                            if uu_wait_deliver_list.index(item) != len_uu_wait_deliver_list - 1:
+                                self.logger.info("[UUAutoAcceptOffer] 此交易报价已经被Steamauto处理过, 出现此提示的原因是悠悠系统延迟或者该订单为批量购买订单.这不是一个报错!")
+                            if (uu_wait_deliver_list.index(item) != len_uu_wait_deliver_list - 1) and accepted:
                                 self.logger.info("[UUAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...")
                                 time.sleep(5)
-                except ProxyError:
-                    self.logger.error('代理异常, 本软件可不需要代理或任何VPN')
-                    self.logger.error('可以尝试关闭代理或VPN后重启软件')
-                except (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError):
-                    self.logger.error('网络异常, 请检查网络连接')
-                    self.logger.error('这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN')
-                    self.logger.error('如果你正在使用代理或VPN, 请尝试关闭后重启软件')
-                    self.logger.error('如果你没有使用代理或VPN, 请检查网络连接')
-                except InvalidCredentials as e:
-                    self.logger.error('mafile有问题, 请检查mafile是否正确(尤其是identity_secret)')
-                    self.logger.error(str(e))
                 except Exception as e:
                     self.logger.error(e, exc_info=True)
                     self.logger.info("[UUAutoAcceptOffer] 出现未知错误, 稍后再试! ")

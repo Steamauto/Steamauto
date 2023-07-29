@@ -32,7 +32,7 @@ from utils.static import (
 )
 from utils.tools import accelerator, compare_version, get_encoding, logger, pause, exit_code
 
-current_version = "3.2.2"
+current_version = "3.2.3"
 
 if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
     import uuyoupinapi
