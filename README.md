@@ -181,22 +181,20 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 ##### 为什么我打开配置文件后，编辑器提示该文件有语法错误？
 本程序使用的配置文件类型为json5，因此在不受支持编辑器中会提示语法错误，但实际上并不影响程序的运行  
 
-
 ##### 如何获取悠悠有品token?
 使用`-uu`参数运行Steamauto程序,根据程序向导操作即可  
 
 ##### 是否支持多开？  
 支持。但是需要复制多份程序，分别在不同的文件夹内运行
 
-##### 可否关闭Buff自动发货，只使用悠悠有品自动发货？
+##### 可否关闭Buff自动发货？
 将`config.json`中`buff_auto_accept_offer.enable`设置为false即可
 ## 附录
 关于`steam_account_info.json`相关参数的获取教程都在下面, 请自行参阅  
-个人推荐使用[ SteamDesktopAuthenticator ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便  
+个人推荐使用[ SteamDesktopAuthenticator ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便(请勿使用1.0.13版本,存在无法获取的问题)  
 [官方视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz/)  
 [获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)   
-[Obtaining SteamGuard from mobile device]( https://github.com/SteamTimeIdler/stidler/wiki/Getting-your-%27shared_secret%27-code-for-use-with-Auto-Restarter-on-Mobile-Authentication )  
-[Obtaining SteamGuard using Android emulation]( https://github.com/codepath/android_guides/wiki/Genymotion-2.0-Emulators-with-Google-Play-support)
+[已Root安卓手机获取新版Steam手机令牌教程](https://github.com/BeyondDimension/SteamTools/issues/2598)
 
 ## 鸣谢
 感谢 [**@lupohan44**](https://github.com/lupohan44) 为本项目提交的大量代码！  
