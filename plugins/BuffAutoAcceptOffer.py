@@ -166,9 +166,9 @@ class BuffAutoAcceptOffer:
                 with self.steam_client_mutex:
                     if not self.steam_client.is_session_alive():
                         self.logger.info("[BuffAutoAcceptOffer] Steam会话已过期, 正在重新登录...")
-                    self.steam_client.login(self.steam_client.username, self.steam_client._password,
-                                            json.dumps(self.steam_client.steam_guard))
-                    self.logger.info("[BuffAutoAcceptOffer] Steam会话已更新")
+                        self.steam_client.login(self.steam_client.username, self.steam_client._password,
+                                                json.dumps(self.steam_client.steam_guard))
+                        self.logger.info("[BuffAutoAcceptOffer] Steam会话已更新")
                 self.logger.info("[BuffAutoAcceptOffer] 正在进行BUFF待发货/待收货饰品检查...")
                 username = self.check_buff_account_state()
                 if username == "":

@@ -47,9 +47,9 @@ class UUAutoAcceptOffer:
                     with self.steam_client_mutex:
                         if not self.steam_client.is_session_alive():
                             self.logger.info("[UUAutoAcceptOffer] Steam会话已过期, 正在重新登录...")
-                        self.steam_client.login(self.steam_client.username, self.steam_client._password,
-                                                json.dumps(self.steam_client.steam_guard))
-                        self.logger.info("[UUAutoAcceptOffer] Steam会话已更新")
+                            self.steam_client.login(self.steam_client.username, self.steam_client._password,
+                                                    json.dumps(self.steam_client.steam_guard))
+                            self.logger.info("[UUAutoAcceptOffer] Steam会话已更新")
                     uuyoupin.send_device_info()
                     self.logger.info("[UUAutoAcceptOffer] 正在检查悠悠有品待发货信息...")
                     uu_wait_deliver_list = uuyoupin.get_wait_deliver_list()
