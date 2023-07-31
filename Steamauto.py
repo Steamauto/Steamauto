@@ -283,7 +283,7 @@ def main():
             thread.start()
         for thread in threads:
             thread.join()
-    if exit_code.get() == 1:
+    if exit_code.get() != 0:
         logger.warning("所有插件都已经退出！这不是一个正常情况，请检查配置文件.")
     logger.info("由于所有插件已经关闭,程序即将退出...")
     pause()
