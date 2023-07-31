@@ -1,12 +1,13 @@
 {
-
   // 登录Steam时是否开启SSL验证，正常情况下不建议关闭SSL验证
   "steam_login_ignore_ssl_error": false,
-  // 是否开启本地加速功能(测试) 本地加速功能并非100%可用, 若开启后仍然无法正常连接Steam属于正常情况
-  // 最优解决方案是使用海外服务器
-  // 请注意：开启此功能必须关闭SSL验证，即steam_login_ignore_ssl_error必须设置为true
+  
+  // 是否开启本地加速功能
+  // 本地加速功能并非100%可用, 若开启后仍然无法正常连接Steam属于正常情况, 最优解决方案是使用海外服务器
+  // 请注意：开启此功能必须关闭Steam登录SSL验证，即steam_login_ignore_ssl_error必须设置为true
   "steam_local_accelerate": false,
-  // 填写为true后，程序在出现错误后就会直接停止运行。如果你是小白，请不要将它设置为true
+  
+  // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
 
   // BUFF 自动收货插件配置

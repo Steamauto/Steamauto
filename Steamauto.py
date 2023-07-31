@@ -195,7 +195,7 @@ def main():
             logger.warning("当前版本不是最新版本,为了您的使用体验,请及时更新!")
         else:
             logger.info("当前版本已经是最新版本")
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+    except Exception as e:
         handle_caught_exception(e)
         logger.info("检查更新失败, 跳过检查更新")
     logger.info("正在初始化...")
