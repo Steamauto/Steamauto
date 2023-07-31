@@ -18,7 +18,6 @@ STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.j
 if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
     STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
 SESSION_FOLDER = "session"
-STEAM_SESSION_PATH = os.path.join(SESSION_FOLDER, "steam_session.pkl")
 DEV_FILE_FOLDER = "dev"
 BUFF_ACCOUNT_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "buff_account.json")
 MESSAGE_NOTIFICATION_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "message_notification.json")

@@ -26,7 +26,6 @@ from utils.static import (
     EXAMPLE_CONFIG_FILE_PATH,
     SESSION_FOLDER,
     STEAM_ACCOUNT_INFO_FILE_PATH,
-    STEAM_SESSION_PATH,
     UU_TOKEN_FILE_PATH,
     UU_ARG_FILE_PATH,
 )
@@ -72,12 +71,21 @@ def set_exit_code(code):
 def login_to_steam():
     global config
     steam_client = None
-    if not os.path.exists(STEAM_SESSION_PATH):
+    with open(STEAM_ACCOUNT_INFO_FILE_PATH, "r", encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
+        try:
+            acc = json.load(f)
+        except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
+            handle_caught_exception(e)
+            logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
+            pause()
+            return None
+    steam_session_path = os.path.join(SESSION_FOLDER, acc.get("steam_username").lower() + ".pkl")
+    if not os.path.exists(steam_session_path):
         logger.info("检测到首次登录Steam，正在尝试登录...登录完成后会自动缓存session")
     else:
         logger.info("检测到缓存的steam_session, 正在尝试登录...")
         try:
-            with open(STEAM_SESSION_PATH, "rb") as f:
+            with open(steam_session_path, "rb") as f:
                 client = pickle.load(f)
                 if config["steam_login_ignore_ssl_error"]:
                     logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
@@ -110,14 +118,6 @@ def login_to_steam():
     if steam_client is None:
         try:
             logger.info("正在登录Steam...")
-            with open(STEAM_ACCOUNT_INFO_FILE_PATH, "r", encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
-                try:
-                    acc = json.load(f)
-                except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
-                    handle_caught_exception(e)
-                    logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
-                    pause()
-                    return None
             client = SteamClient(acc.get("api_key"))
             if config["steam_login_ignore_ssl_error"]:
                 logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
@@ -128,7 +128,7 @@ def login_to_steam():
                 client._session.auth = accelerator()
             logger.info("正在登录...")
             SteamClient.login(client, acc.get("steam_username"), acc.get("steam_password"), STEAM_ACCOUNT_INFO_FILE_PATH)
-            with open(STEAM_SESSION_PATH, "wb") as f:
+            with open(steam_session_path, "wb") as f:
                 pickle.dump(client, f)
             logger.info("登录完成! 已经自动缓存session.")
             steam_client = client
@@ -239,8 +239,22 @@ def main():
         steam_client = login_to_steam()
         if steam_client is None:
             return 1
-    plugins_enabled = []
     steam_client_mutex = threading.Lock()
+    with open(
+            STEAM_ACCOUNT_INFO_FILE_PATH, "r",
+            encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH),
+    ) as f:
+        api_key_in_config = json.load(f)["api_key"]
+    with steam_client_mutex:
+        if api_key_in_config != steam_client.steam_guard["api_key"]:
+            logger.error(
+                "[BuffAutoAcceptOffer] Session中缓存的api_key与 "
+                + STEAM_ACCOUNT_INFO_FILE_PATH
+                + " 中的api_key不一致, 请删除session文件"
+            )
+            pause()
+            return 1
+    plugins_enabled = []
     if (
         "buff_auto_accept_offer" in config
         and "enable" in config["buff_auto_accept_offer"]
