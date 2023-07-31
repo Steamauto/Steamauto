@@ -229,6 +229,10 @@ def main():
     if development_mode:
         logger.info("开发者模式已开启")
     steam_client = None
+    if "steam_login_ignore_ssl_error" not in config:
+        config["steam_login_ignore_ssl_error"] = False
+    if "steam_local_accelerate" not in config:
+        config["steam_local_accelerate"] = False
     if not first_run:
         steam_client = login_to_steam()
         if steam_client is None:
