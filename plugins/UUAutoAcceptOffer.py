@@ -1,3 +1,4 @@
+import json
 import os
 import time
 
@@ -12,9 +13,10 @@ from utils.tools import get_encoding, exit_code
 
 
 class UUAutoAcceptOffer:
-    def __init__(self, logger, steam_client, config):
+    def __init__(self, logger, steam_client, steam_client_mutex, config):
         self.logger = logger
         self.steam_client = steam_client
+        self.steam_client_mutex = steam_client_mutex
         self.config = config
 
     def init(self) -> bool:
@@ -42,6 +44,12 @@ class UUAutoAcceptOffer:
         if uuyoupin is not None:
             while True:
                 try:
+                    with self.steam_client_mutex:
+                        if not self.steam_client.is_session_alive():
+                            self.logger.info("[UUAutoAcceptOffer] Steam会话已过期, 正在重新登录...")
+                        self.steam_client.login(self.steam_client.username, self.steam_client._password,
+                                                json.dumps(self.steam_client.steam_guard))
+                        self.logger.info("[UUAutoAcceptOffer] Steam会话已更新")
                     uuyoupin.send_device_info()
                     self.logger.info("[UUAutoAcceptOffer] 正在检查悠悠有品待发货信息...")
                     uu_wait_deliver_list = uuyoupin.get_wait_deliver_list()
@@ -57,7 +65,8 @@ class UUAutoAcceptOffer:
                                 self.logger.warning("[UUAutoAcceptOffer] 此订单为需要手动发货的订单, 无法处理, 跳过此订单! ")
                             elif item["offer_id"] not in ignored_offer:
                                 try:
-                                    self.steam_client.accept_trade_offer(str(item["offer_id"]))
+                                    with self.steam_client_mutex:
+                                        self.steam_client.accept_trade_offer(str(item["offer_id"]))
                                     ignored_offer.append(item["offer_id"])
                                     self.logger.info(f'[UUAutoAcceptOffer] 接受报价[{str(item["offer_id"])}]完成!')
                                     accepted = True

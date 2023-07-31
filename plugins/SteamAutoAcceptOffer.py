@@ -1,3 +1,4 @@
+import json
 import time
 
 from requests.exceptions import ProxyError
@@ -5,9 +6,10 @@ from steampy.exceptions import InvalidCredentials
 
 
 class SteamAutoAcceptOffer:
-    def __init__(self, logger, steam_client, config):
+    def __init__(self, logger, steam_client, steam_client_mutex, config):
         self.logger = logger
         self.steam_client = steam_client
+        self.steam_client_mutex = steam_client_mutex
         self.config = config
 
     def init(self):
@@ -16,10 +18,18 @@ class SteamAutoAcceptOffer:
     def exec(self):
         while True:
             try:
-                trade_summary = self.steam_client.get_trade_offers_summary()["response"]
+                with self.steam_client_mutex:
+                    if not self.steam_client.is_session_alive():
+                        self.logger.info("[SteamAutoAcceptOffer] Steam会话已过期, 正在重新登录...")
+                    self.steam_client.login(self.steam_client.username, self.steam_client._password,
+                                            json.dumps(self.steam_client.steam_guard))
+                    self.logger.info("[SteamAutoAcceptOffer] Steam会话已更新")
+                with self.steam_client_mutex:
+                    trade_summary = self.steam_client.get_trade_offers_summary()["response"]
                 self.logger.info("[SteamAutoAcceptOffer] 检测到有%d个待处理的交易报价" % trade_summary["pending_received_count"])
                 if trade_summary["pending_received_count"] > 0:
-                    trade_offers = self.steam_client.get_trade_offers(merge=False)["response"]
+                    with self.steam_client_mutex:
+                        trade_offers = self.steam_client.get_trade_offers(merge=False)["response"]
                     if len(trade_offers["trade_offers_received"]) > 0:
                         for trade_offer in trade_offers["trade_offers_received"]:
                             self.logger.debug(
@@ -32,7 +42,8 @@ class SteamAutoAcceptOffer:
                                     f'[SteamAutoAcceptOffer] 检测到报价[{trade_offer["tradeofferid"]}]' f"属于礼物报价，正在接受报价..."
                                 )
                                 try:
-                                    self.steam_client.accept_trade_offer(trade_offer["tradeofferid"])
+                                    with self.steam_client_mutex:
+                                        self.steam_client.accept_trade_offer(trade_offer["tradeofferid"])
                                 except ProxyError:
                                     self.logger.error('[SteamAutoAcceptOffer] 代理异常, 本软件可不需要代理或任何VPN')
                                     self.logger.error('[SteamAutoAcceptOffer] 可以尝试关闭代理或VPN后重启软件')
