@@ -174,12 +174,6 @@ class BuffAutoOnSale:
         while True:
             try:
                 while True:
-                    with self.steam_client_mutex:
-                        if not self.steam_client.is_session_alive():
-                            self.logger.info("[BuffAutoOnSale] Steam会话已过期, 正在重新登录...")
-                        self.steam_client.login(self.steam_client.username, self.steam_client._password,
-                                                json.dumps(self.steam_client.steam_guard))
-                        self.logger.info("[BuffAutoOnSale] Steam会话已更新")
                     items_count_this_loop = 0
                     for game in SUPPORT_GAME_TYPES:
                         self.logger.info("[BuffAutoOnSale] 正在检查 " + game["game"] + " 库存...")
