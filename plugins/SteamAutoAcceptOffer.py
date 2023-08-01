@@ -2,7 +2,7 @@ import json
 import time
 
 from requests.exceptions import ProxyError
-from steampy.exceptions import InvalidCredentials
+from steampy.exceptions import InvalidCredentials, ConfirmationExpected
 
 
 class SteamAutoAcceptOffer:
@@ -21,8 +21,9 @@ class SteamAutoAcceptOffer:
                 with self.steam_client_mutex:
                     if not self.steam_client.is_session_alive():
                         self.logger.info("[SteamAutoAcceptOffer] Steam会话已过期, 正在重新登录...")
-                        self.steam_client.login(self.steam_client.username, self.steam_client._password,
-                                                json.dumps(self.steam_client.steam_guard))
+                        self.steam_client.login(
+                            self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
+                        )
                         self.logger.info("[SteamAutoAcceptOffer] Steam会话已更新")
                 with self.steam_client_mutex:
                     trade_summary = self.steam_client.get_trade_offers_summary()["response"]
@@ -45,17 +46,18 @@ class SteamAutoAcceptOffer:
                                     with self.steam_client_mutex:
                                         self.steam_client.accept_trade_offer(trade_offer["tradeofferid"])
                                 except ProxyError:
-                                    self.logger.error('[SteamAutoAcceptOffer] 代理异常, 本软件可不需要代理或任何VPN')
-                                    self.logger.error('[SteamAutoAcceptOffer] 可以尝试关闭代理或VPN后重启软件')
+                                    self.logger.error("[SteamAutoAcceptOffer] 代理异常, 本软件可不需要代理或任何VPN")
+                                    self.logger.error("[SteamAutoAcceptOffer] 可以尝试关闭代理或VPN后重启软件")
                                 except (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError):
-                                    self.logger.error('[SteamAutoAcceptOffer] 网络异常, 请检查网络连接')
-                                    self.logger.error('[SteamAutoAcceptOffer] 这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN')
-                                    self.logger.error('[SteamAutoAcceptOffer] 如果你正在使用代理或VPN, 请尝试关闭后重启软件')
-                                    self.logger.error('[SteamAutoAcceptOffer] 如果你没有使用代理或VPN, 请检查网络连接')
+                                    self.logger.error("[SteamAutoAcceptOffer] 网络异常, 请检查网络连接")
+                                    self.logger.error("[SteamAutoAcceptOffer] 这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN")
+                                    self.logger.error("[SteamAutoAcceptOffer] 如果你正在使用代理或VPN, 请尝试关闭后重启软件")
+                                    self.logger.error("[SteamAutoAcceptOffer] 如果你没有使用代理或VPN, 请检查网络连接")
                                 except InvalidCredentials as e:
-                                    self.logger.error('[SteamAutoAcceptOffer] mafile有问题, 请检查mafile是否正确'
-                                                      '(尤其是identity_secret)')
+                                    self.logger.error("[SteamAutoAcceptOffer] mafile有问题, 请检查mafile是否正确" "(尤其是identity_secret)")
                                     self.logger.error(str(e))
+                                except ConfirmationExpected:
+                                    self.logger.error("[UUAutoAcceptOffer] Steam Session已经过期, 请删除session文件夹并重启Steamauto")
                                 except Exception as e:
                                     self.logger.error(e, exc_info=True)
                                     self.logger.error("[SteamAutoAcceptOffer] Steam异常! 稍后再试...")
