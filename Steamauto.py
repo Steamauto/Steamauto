@@ -245,15 +245,6 @@ def main():
             encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH),
     ) as f:
         api_key_in_config = json.load(f)["api_key"]
-    with steam_client_mutex:
-        if api_key_in_config != steam_client.steam_guard["api_key"]:
-            logger.error(
-                "[BuffAutoAcceptOffer] Session中缓存的api_key与 "
-                + STEAM_ACCOUNT_INFO_FILE_PATH
-                + " 中的api_key不一致, 请删除session文件"
-            )
-            pause()
-            return 1
     plugins_enabled = []
     if (
         "buff_auto_accept_offer" in config
@@ -291,6 +282,15 @@ def main():
         logger.info("首次运行, 请按照README提示填写配置文件! ")
         pause()
         return 0
+    with steam_client_mutex:
+        if api_key_in_config != steam_client.steam_guard["api_key"]:
+            logger.error(
+                "[BuffAutoAcceptOffer] Session中缓存的api_key与 "
+                + STEAM_ACCOUNT_INFO_FILE_PATH
+                + " 中的api_key不一致, 请删除session文件"
+            )
+            pause()
+            return 1
     logger.info("初始化完成, 开始运行插件!")
     print("\n")
     time.sleep(0.1)
