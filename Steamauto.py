@@ -174,6 +174,9 @@ def login_to_steam():
 
 def main():
     global config
+    if config["steam_local_accelerate_use_proxy"]:
+        os.environ["http_proxy"] = config["steam_local_accelerate_proxy_address"]
+        os.environ["https_proxy"] = config["steam_local_accelerate_proxy_address"]
     development_mode = False
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
@@ -318,11 +321,6 @@ def exit_app(signal_, frame):
 
 
 if __name__ == "__main__":
-    global config
-    if config["steam_local_accelerate_use_proxy"]:
-        os.environ["http_proxy"] = config["steam_local_accelerate_proxy_address"]
-        os.environ["https_proxy"] = config["steam_local_accelerate_proxy_address"]
-
     sys.excepthook = handle_global_exception
     signal.signal(signal.SIGINT, exit_app)
     if not os.path.exists(DEV_FILE_FOLDER):
