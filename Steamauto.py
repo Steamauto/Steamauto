@@ -17,6 +17,7 @@ from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from steampy.client import SteamClient
 from steampy.exceptions import ApiException, CaptchaRequired, InvalidCredentials
+from steampy.utils import ping_proxy
 from utils.logger import handle_caught_exception
 from utils.static import (
     CONFIG_FILE_PATH,
@@ -35,6 +36,7 @@ current_version = "3.2.3"
 
 if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
     import uuyoupinapi
+
     if os.path.exists('uu.txt'):
         logger.info("检测到uu.txt文件,已经自动使用-uu参数启动Steamauto")
         logger.info('已经自动删除uu.txt文件')
@@ -118,7 +120,27 @@ def login_to_steam():
     if steam_client is None:
         try:
             logger.info("正在登录Steam...")
-            client = SteamClient(acc.get("api_key"))
+            if "use_proxies" not in config:
+                config["use_proxies"] = False
+            if config["use_proxies"]:
+                if "proxies" not in config:
+                    config["proxies"] = {}
+
+                if not isinstance(config["proxies"], dict):
+                    logger.error("proxies格式错误，请检查配置文件")
+                    pause()
+                    return None
+
+                proxy_status = ping_proxy(config["proxies"])
+                if proxy_status is False:
+                    logger.error("代理服务器不可用，请检查配置文件")
+                    pause()
+                    return None
+
+                client = SteamClient(api_key=acc.get("api_key"), proxies=config["proxies"])
+
+            else:
+                client = SteamClient(api_key=acc.get("api_key"))
             if config["steam_login_ignore_ssl_error"]:
                 logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
                 client._session.verify = False
@@ -174,9 +196,6 @@ def login_to_steam():
 
 def main():
     global config
-    if config["steam_local_accelerate_use_proxy"]:
-        os.environ["http_proxy"] = config["steam_local_accelerate_proxy_address"]
-        os.environ["https_proxy"] = config["steam_local_accelerate_proxy_address"]
     development_mode = False
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
@@ -250,9 +269,9 @@ def main():
         api_key_in_config = json.load(f)["api_key"]
     plugins_enabled = []
     if (
-        "buff_auto_accept_offer" in config
-        and "enable" in config["buff_auto_accept_offer"]
-        and config["buff_auto_accept_offer"]["enable"]
+            "buff_auto_accept_offer" in config
+            and "enable" in config["buff_auto_accept_offer"]
+            and config["buff_auto_accept_offer"]["enable"]
     ):
         buff_auto_accept_offer = BuffAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_accept_offer)
@@ -261,16 +280,16 @@ def main():
         buff_auto_on_sale = BuffAutoOnSale(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_on_sale)
     if (
-        "uu_auto_accept_offer" in config
-        and "enable" in config["uu_auto_accept_offer"]
-        and config["uu_auto_accept_offer"]["enable"]
+            "uu_auto_accept_offer" in config
+            and "enable" in config["uu_auto_accept_offer"]
+            and config["uu_auto_accept_offer"]["enable"]
     ):
         uu_auto_accept_offer = UUAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(uu_auto_accept_offer)
     if (
-        "steam_auto_accept_offer" in config
-        and "enable" in config["steam_auto_accept_offer"]
-        and config["steam_auto_accept_offer"]["enable"]
+            "steam_auto_accept_offer" in config
+            and "enable" in config["steam_auto_accept_offer"]
+            and config["steam_auto_accept_offer"]["enable"]
     ):
         steam_auto_accept_offer = SteamAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(steam_auto_accept_offer)

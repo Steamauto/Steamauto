@@ -65,6 +65,16 @@
   // 本地加速功能并非100%可用, 若开启后仍然无法正常连接Steam属于正常情况, 最优解决方案是使用海外服务器
   // 请注意：开启此功能必须关闭Steam登录SSL验证，即steam_login_ignore_ssl_error必须设置为true
   "steam_local_accelerate": false,
+    
+   // 是否使用本地加速功能（win+i下的网络设置中的代理设置）
+  "use_proxies": true,
+
+  //本地代理地址
+  //这里以clash为例，clash默认监听7890端口，如果你使用的是其他代理软件，请自行修改端口
+  "proxies": {
+    "http": "http://127.0.0.1:7890",
+    "https": "http://127.0.0.1:7890"
+  },
 
   // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
@@ -206,6 +216,17 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 
 ##### 可否关闭Buff自动发货？
 将`config.json`中`buff_auto_accept_offer.enable`设置为false即可
+
+##### 使用`proxies`配置运行源码时出现代理错误但本地代理没问题
+
+该错误在特定`urllib`下会出现，安装特定版本可以解决
+
+```
+pip install urllib3==1.25.11
+```
+
+`steampy/client.py` 44-48行注释掉的代码解除注释后若出现报错则说明是此问题
+
 ## 附录
 关于`steam_account_info.json`相关参数的获取教程都在下面, 请自行参阅  
 个人推荐使用[ SteamDesktopAuthenticator ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便(请勿使用1.0.13版本,存在无法获取的问题)  
