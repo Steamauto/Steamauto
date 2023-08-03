@@ -6,6 +6,13 @@
   // 本地加速功能并非100%可用, 若开启后仍然无法正常连接Steam属于正常情况, 最优解决方案是使用海外服务器
   // 请注意：开启此功能必须关闭Steam登录SSL验证，即steam_login_ignore_ssl_error必须设置为true
   "steam_local_accelerate": false,
+
+  // 是否使用本地加速功能（win+i下的网络设置中的代理设置）
+  "steam_local_accelerate_use_proxy": false,
+
+  //本地代理地址
+  //这里以clash为例，clash默认监听7890端口，如果你使用的是其他代理软件，请自行修改端口
+  "steam_local_accelerate_proxy_address": "http://127.0.0.1:7890",
   
   // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
