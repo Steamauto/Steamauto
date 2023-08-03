@@ -1,5 +1,6 @@
 import datetime
 import os
+import random
 import time
 
 import pyjson5 as json
@@ -165,20 +166,50 @@ class BuffAutoOnSale:
             with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
                 self.session.cookies["session"] = f.read().replace("session=", "").replace("\n", "").split(";")[0]
             self.logger.info("[BuffAutoOnSale] 已检测到cookies, 尝试登录")
-            self.logger.info("[BuffAutoOnSale] 已经登录至BUFF 用户名: " + self.check_buff_account_state(dev=self.development_mode))
+            self.logger.info("[BuffAutoOnSale] 已经登录至BUFF 用户名: " +
+                             self.check_buff_account_state(dev=self.development_mode))
         except TypeError as e:
             handle_caught_exception(e)
             self.logger.error("[BuffAutoOnSale] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
             return
         sleep_interval = int(self.config["buff_auto_on_sale"]["interval"])
+        black_list_time = []
+        if 'black_list_time' in self.config["buff_auto_on_sale"]:
+            black_list_time = self.config["buff_auto_on_sale"]["black_list_time"]
+        white_list_time = []
+        if 'white_list_time' in self.config["buff_auto_on_sale"]:
+            white_list_time = self.config["buff_auto_on_sale"]["white_list_time"]
+        random_chance = 100
+        if 'random_chance' in self.config["buff_auto_on_sale"]:
+            random_chance = self.config["buff_auto_on_sale"]["random_chance"] * 100
+        force_refresh = 0
+        if 'force_refresh' in self.config["buff_auto_on_sale"] and self.config["buff_auto_on_sale"]["force_refresh"]:
+            force_refresh = 1
+        description = ''
+        if 'description' in self.config["buff_auto_on_sale"]:
+            description = self.config["buff_auto_on_sale"]["description"]
         while True:
+            now = datetime.datetime.now()
+            if now.hour in black_list_time:
+                self.logger.info("[BuffAutoOnSale] 现在时间在黑名单时间内, 休眠" + str(sleep_interval) + "秒")
+                time.sleep(sleep_interval)
+                continue
+            if len(white_list_time) != 0 and now.hour not in white_list_time:
+                self.logger.info("[BuffAutoOnSale] 现在时间不在白名单时间内, 休眠" + str(sleep_interval) + "秒")
+                time.sleep(sleep_interval)
+                continue
+            if random.randint(1, 100) > random_chance:
+                self.logger.info("[BuffAutoOnSale] 未命中随机概率, 休眠" + str(sleep_interval) + "秒")
+                time.sleep(sleep_interval)
+                continue
             try:
                 while True:
                     items_count_this_loop = 0
                     for game in SUPPORT_GAME_TYPES:
                         self.logger.info("[BuffAutoOnSale] 正在检查 " + game["game"] + " 库存...")
                         inventory_json = self.get_buff_inventory(
-                            state="cansell", sort_by="price.desc", game=game["game"], app_id=game["app_id"], force=1
+                            state="cansell", sort_by="price.desc", game=game["game"], app_id=game["app_id"],
+                            force=force_refresh
                         )
                         items = inventory_json["items"]
                         items_count_this_loop += len(items)
@@ -190,7 +221,7 @@ class BuffAutoOnSale:
                             for item in items:
                                 item["asset_info"]["market_hash_name"] = item["market_hash_name"]
                                 items_to_sell.append(item["asset_info"])
-                            self.put_item_on_sale(items=items_to_sell, price=-1)
+                            self.put_item_on_sale(items=items_to_sell, price=-1, description=description)
                             self.logger.info("[BuffAutoOnSale] BUFF商品上架成功! ")
                         else:
                             self.logger.info("[BuffAutoOnSale] 检查到 " + game["game"] + " 库存为空, 跳过上架")

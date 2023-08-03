@@ -58,13 +58,15 @@
 ##### [config.json5](config/config.json5) (仅供参考 以实际文件为主)
 ```json5
 {
-
   // 登录Steam时是否开启SSL验证，正常情况下不建议关闭SSL验证
   "steam_login_ignore_ssl_error": false,
-  // 是否开启本地加速功能(测试)
-  // 请注意：开启此功能必须关闭SSL验证，即steam_login_ignore_ssl_error必须设置为true
+
+  // 是否开启本地加速功能
+  // 本地加速功能并非100%可用, 若开启后仍然无法正常连接Steam属于正常情况, 最优解决方案是使用海外服务器
+  // 请注意：开启此功能必须关闭Steam登录SSL验证，即steam_login_ignore_ssl_error必须设置为true
   "steam_local_accelerate": false,
-  // 填写为true后，程序在出现错误后就会直接停止运行。如果你是小白，请不要将它设置为true
+
+  // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
 
   // BUFF 自动收货插件配置
@@ -116,6 +118,16 @@
   "buff_auto_on_sale": {
     // 是否启用BUFF自动以最低价上架所有库存
     "enable": false,
+    // 每次检查库存强制刷新BUFF库存, 若为否, 刷新不一定会加载最新库存
+    "force_refresh": true,
+    // 黑名单时间, 为小时, int格式, 空为不启用黑名单, 当前小时如果等于黑名单时间, 则不会自动上架
+    "blacklist_time": [],
+    // 白名单时间, 为小时, int格式, 空为不启用白名单, 当前小时如果不等于白名单时间, 则不会自动上架
+    "whitelist_time": [],
+    // 随机上架几率, 为整数, 1~100, 100为100%上架, 1为1%上架, 0为不上架
+    "random_chance": 100,
+    // 商品上架描述, 为字符串, 为空则不填写描述
+    "description": "",
     // 检查库存间隔时间
     "interval": 1800
   },
