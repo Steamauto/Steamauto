@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 from ssl import SSLCertVerificationError
+from multiprocessing import  Process
 
 import pyjson5 as json
 import requests
@@ -17,6 +18,7 @@ from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from steampy.client import SteamClient
 from steampy.exceptions import ApiException, CaptchaRequired, InvalidCredentials
+from steampy.utils import ping_proxy
 from utils.logger import handle_caught_exception
 from utils.static import (
     CONFIG_FILE_PATH,
@@ -35,10 +37,11 @@ current_version = "3.2.3"
 
 if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
     import uuyoupinapi
-    if os.path.exists('uu.txt'):
+
+    if os.path.exists("uu.txt"):
         logger.info("检测到uu.txt文件,已经自动使用-uu参数启动Steamauto")
-        logger.info('已经自动删除uu.txt文件')
-        os.remove('uu.txt')
+        logger.info("已经自动删除uu.txt文件")
+        os.remove("uu.txt")
     logger.info("你使用了-uu参数启动Steamauto,这代表着Steamauto会引导你获取悠悠有品的token")
     logger.info("如果无需获取悠悠有品的token,请删除-uu参数后重启Steamauto")
     logger.info("按回车键继续...")
@@ -49,7 +52,7 @@ if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
     with open(UU_TOKEN_FILE_PATH, "w", encoding="utf-8") as f:
         f.write(token)
     logger.info(f"已成功获取悠悠有品token,并写入{UU_TOKEN_FILE_PATH}中!")
-    logger.info('需要注意的是, 你需要在配置文件中将uu_auto_accept_offer.enable设置为true才能使用悠悠有品的自动发货功能')
+    logger.info("需要注意的是, 你需要在配置文件中将uu_auto_accept_offer.enable设置为true才能使用悠悠有品的自动发货功能")
     logger.info("按回车键继续启动Steamauto...")
     input()
 
@@ -118,7 +121,31 @@ def login_to_steam():
     if steam_client is None:
         try:
             logger.info("正在登录Steam...")
-            client = SteamClient(acc.get("api_key"))
+            if "use_proxies" not in config:
+                config["use_proxies"] = False
+            if config["use_proxies"]:
+                logger.info("已经启用Steam代理")
+                if "proxies" not in config:
+                    config["proxies"] = {}
+
+                if not isinstance(config["proxies"], dict):
+                    logger.error("proxies格式错误，请检查配置文件")
+                    pause()
+                    return None
+                logger.info("正在检查代理服务器可用性...")
+                proxy_status = ping_proxy(config["proxies"])
+                if proxy_status is False:
+                    logger.error("代理服务器不可用，请检查配置文件")
+                    pause()
+                    return None
+                else:
+                    logger.info("代理服务器可用")
+                    logger.warning("警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动")
+
+                client = SteamClient(api_key=acc.get("api_key"), proxies=config["proxies"])
+
+            else:
+                client = SteamClient(api_key=acc.get("api_key"))
             if config["steam_login_ignore_ssl_error"]:
                 logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
                 client._session.verify = False
@@ -241,8 +268,9 @@ def main():
             return 1
     steam_client_mutex = threading.Lock()
     with open(
-            STEAM_ACCOUNT_INFO_FILE_PATH, "r",
-            encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH),
+        STEAM_ACCOUNT_INFO_FILE_PATH,
+        "r",
+        encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH),
     ) as f:
         api_key_in_config = json.load(f)["api_key"]
     plugins_enabled = []
@@ -253,8 +281,7 @@ def main():
     ):
         buff_auto_accept_offer = BuffAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_accept_offer)
-    if "buff_auto_on_sale" in config and "enable" in config["buff_auto_on_sale"] and \
-            config["buff_auto_on_sale"]["enable"]:
+    if "buff_auto_on_sale" in config and "enable" in config["buff_auto_on_sale"] and config["buff_auto_on_sale"]["enable"]:
         buff_auto_on_sale = BuffAutoOnSale(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_on_sale)
     if (
@@ -285,9 +312,7 @@ def main():
     with steam_client_mutex:
         if api_key_in_config != steam_client.steam_guard["api_key"]:
             logger.error(
-                "[BuffAutoAcceptOffer] Session中缓存的api_key与 "
-                + STEAM_ACCOUNT_INFO_FILE_PATH
-                + " 中的api_key不一致, 请删除session文件"
+                "[BuffAutoAcceptOffer] Session中缓存的api_key与 " + STEAM_ACCOUNT_INFO_FILE_PATH + " 中的api_key不一致, 请删除session文件"
             )
             pause()
             return 1
@@ -297,14 +322,14 @@ def main():
     if len(plugins_enabled) == 1:
         exit_code.set(plugins_enabled[0].exec())
     else:
-        threads = []
+        process_list = []
         for plugin in plugins_enabled:
-            threads.append(threading.Thread(target=plugin.exec))
-        for thread in threads:
-            thread.daemon = True
-            thread.start()
-        for thread in threads:
-            thread.join()
+            p = Process(target=plugin.exec, args=('Python',))
+            p.start()
+            process_list.append(p)
+
+        for p in process_list:
+            p.join()
     if exit_code.get() != 0:
         logger.warning("所有插件都已经退出！这不是一个正常情况，请检查配置文件.")
     logger.info("由于所有插件已经关闭,程序即将退出...")
