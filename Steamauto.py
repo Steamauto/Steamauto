@@ -140,6 +140,7 @@ def login_to_steam():
                     return None
                 else:
                     logger.info("代理服务器可用")
+                    logger.warning("警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动")
 
                 client = SteamClient(api_key=acc.get("api_key"), proxies=config["proxies"])
 
