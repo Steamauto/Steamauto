@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 from ssl import SSLCertVerificationError
+from multiprocessing import  Process
 
 import pyjson5 as json
 import requests
@@ -319,14 +320,14 @@ def main():
     if len(plugins_enabled) == 1:
         exit_code.set(plugins_enabled[0].exec())
     else:
-        threads = []
+        process_list = []
         for plugin in plugins_enabled:
-            threads.append(threading.Thread(target=plugin.exec))
-        for thread in threads:
-            thread.daemon = True
-            thread.start()
-        for thread in threads:
-            thread.join()
+            p = Process(target=plugin.exec, args=('Python',))
+            p.start()
+            process_list.append(p)
+
+        for p in process_list:
+            p.join()
     if exit_code.get() != 0:
         logger.warning("所有插件都已经退出！这不是一个正常情况，请检查配置文件.")
     logger.info("由于所有插件已经关闭,程序即将退出...")
