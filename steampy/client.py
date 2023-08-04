@@ -48,7 +48,11 @@ class SteamClient:
             # print("Using proxies: {}".format(proxies))
 
     def login(self, username: str, password: str, steam_guard: str) -> None:
-        self.steam_guard = guard.load_steam_guard(steam_guard)
+        guard_list = guard.load_steam_guard(steam_guard)
+        for g in guard_list:
+            if g['steam_username'] == username:
+                self.steam_guard = g
+                break
         self.username = username
         self._password = password
         LoginExecutor(username, password, self.steam_guard['shared_secret'], self._session).login()

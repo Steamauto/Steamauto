@@ -158,7 +158,6 @@ class BuffAutoAcceptOffer:
             cookie = "session=" + cookies_map[self.steam_client.username]
             if cookie:
                 self.buff_headers["Cookie"] = cookie
-                print(cookie)
                 self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 已检测到cookies, 尝试登录")
             else:
                 self.logger.error(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 未检测到cookies,插件自动退出")

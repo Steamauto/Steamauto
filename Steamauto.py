@@ -5,6 +5,7 @@ import signal
 import sys
 import threading
 import time
+from multiprocessing import Process
 from ssl import SSLCertVerificationError
 
 import pyjson5 as json
@@ -349,11 +350,11 @@ def get_steam_api_keys():
     return api_keys
 
 
-# def get_steam_client_mutexs(num):
-#     steam_client_mutexs = []
-#     for i in range(num):
-#         steam_client_mutexs.append(threading.Lock())
-#     return steam_client_mutexs
+def get_steam_client_mutexs(num):
+    steam_client_mutexs = []
+    for i in range(num):
+        steam_client_mutexs.append(threading.Lock())
+    return steam_client_mutexs
 
 
 def init_plugins_and_start(index, steam_client, steam_client_mutex, api_key_in_config):
@@ -415,13 +416,27 @@ def main():
             logger.error("存在steam账号登录失败, 请检查steam账号信息是否正确! ")
             return 1
 
+        steam_account_num = len(steam_clients)
         api_keys_in_config = get_steam_api_keys()
-        steam_client_mutexs = threading.Lock()
+        steam_client_mutexs = get_steam_client_mutexs(steam_account_num)
 
-        if len(steam_clients) > 1:
+        if steam_account_num > 1:
             logger.warning("检测到steam账号数量多余1个，请注意uu插件只会给steam_account_info.json中的第一个账号提供服务")
-        for i in range(len(steam_clients)):
-            init_plugins_and_start(i, steam_clients[i], steam_client_mutexs, api_keys_in_config[i])
+
+        if steam_account_num > 1:
+            threads = []
+            for i in range(steam_account_num):
+                threads.append(threading.Thread(target=init_plugins_and_start,
+                                                args=(
+                                                i, steam_clients[i], steam_client_mutexs[i], api_keys_in_config[i])))
+            for thread in threads:
+                thread.daemon = True
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+        else:
+            exit_code.set(init_plugins_and_start(0, steam_clients[0], steam_client_mutexs[0], api_keys_in_config[0]))
 
     logger.info("所有插件已经关闭,程序即将退出...")
     pause()
