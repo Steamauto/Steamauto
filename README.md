@@ -235,7 +235,8 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 使用`-uu`参数运行Steamauto程序,根据程序向导操作即可  
 
 ##### 是否支持多开？  
-支持。但是需要复制多份程序，分别在不同的文件夹内运行
+支持。但是需要复制多份程序，分别在不同的文件夹内运行  
+如果你只需要Buff自动发货多开，你也可以尝试[支持多账户的Fork版本](https://github.com/ZWN2001/Steamauto)  
 
 ##### 可否关闭Buff自动发货？
 将`config.json`中`buff_auto_accept_offer.enable`设置为false即可
