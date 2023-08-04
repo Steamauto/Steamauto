@@ -1,3 +1,4 @@
+import ast
 import datetime
 import os
 import random
@@ -159,18 +160,21 @@ class BuffAutoOnSale:
             return -1
 
     def exec(self):
-        self.logger.info("[BuffAutoOnSale] BUFF自动上架插件已启动, 休眠120秒, 与自动接收报价插件错开运行时间")
+        steam_username = self.steam_client.username
+        self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： BUFF自动上架插件已启动, 休眠120秒, 与自动接收报价插件错开运行时间")
         time.sleep(120)
         try:
-            self.logger.info("[BuffAutoOnSale] 正在准备登录至BUFF...")
+            self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 正在准备登录至BUFF...")
             with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
-                self.session.cookies["session"] = f.read().replace("session=", "").replace("\n", "").split(";")[0]
-            self.logger.info("[BuffAutoOnSale] 已检测到cookies, 尝试登录")
-            self.logger.info("[BuffAutoOnSale] 已经登录至BUFF 用户名: " +
+                cookies_map = ast.literal_eval(f.read())
+                self.session.cookies["session"] = "session=" + cookies_map[self.steam_client.username]
+
+            self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 已检测到cookies, 尝试登录")
+            self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 已经登录至BUFF 用户名: " +
                              self.check_buff_account_state(dev=self.development_mode))
         except TypeError as e:
             handle_caught_exception(e)
-            self.logger.error("[BuffAutoOnSale] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
+            self.logger.error(f"[BuffAutoOnSale] Steam账号{steam_username}： BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
             return
         sleep_interval = int(self.config["buff_auto_on_sale"]["interval"])
         black_list_time = []
@@ -191,22 +195,22 @@ class BuffAutoOnSale:
         while True:
             now = datetime.datetime.now()
             if now.hour in black_list_time:
-                self.logger.info("[BuffAutoOnSale] 现在时间在黑名单时间内, 休眠" + str(sleep_interval) + "秒")
+                self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 现在时间在黑名单时间内, 休眠" + str(sleep_interval) + "秒")
                 time.sleep(sleep_interval)
                 continue
             if len(white_list_time) != 0 and now.hour not in white_list_time:
-                self.logger.info("[BuffAutoOnSale] 现在时间不在白名单时间内, 休眠" + str(sleep_interval) + "秒")
+                self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 现在时间不在白名单时间内, 休眠" + str(sleep_interval) + "秒")
                 time.sleep(sleep_interval)
                 continue
             if random.randint(1, 100) > random_chance:
-                self.logger.info("[BuffAutoOnSale] 未命中随机概率, 休眠" + str(sleep_interval) + "秒")
+                self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 未命中随机概率, 休眠" + str(sleep_interval) + "秒")
                 time.sleep(sleep_interval)
                 continue
             try:
                 while True:
                     items_count_this_loop = 0
                     for game in SUPPORT_GAME_TYPES:
-                        self.logger.info("[BuffAutoOnSale] 正在检查 " + game["game"] + " 库存...")
+                        self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 正在检查 " + game["game"] + " 库存...")
                         inventory_json = self.get_buff_inventory(
                             state="cansell", sort_by="price.desc", game=game["game"], app_id=game["app_id"],
                             force=force_refresh
@@ -215,20 +219,20 @@ class BuffAutoOnSale:
                         items_count_this_loop += len(items)
                         if len(items) != 0:
                             self.logger.info(
-                                "[BuffAutoOnSale] 检查到 " + game["game"] + " 库存有 " + str(len(items)) + " 件可出售商品, 正在上架..."
+                                f"[BuffAutoOnSale] Steam账号{steam_username}： 检查到 " + game["game"] + " 库存有 " + str(len(items)) + " 件可出售商品, 正在上架..."
                             )
                             items_to_sell = []
                             for item in items:
                                 item["asset_info"]["market_hash_name"] = item["market_hash_name"]
                                 items_to_sell.append(item["asset_info"])
                             self.put_item_on_sale(items=items_to_sell, price=-1, description=description)
-                            self.logger.info("[BuffAutoOnSale] BUFF商品上架成功! ")
+                            self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： BUFF商品上架成功! ")
                         else:
-                            self.logger.info("[BuffAutoOnSale] 检查到 " + game["game"] + " 库存为空, 跳过上架")
-                        self.logger.info("[BuffAutoOnSale] 休眠30秒, 防止请求过快被封IP")
+                            self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 检查到 " + game["game"] + " 库存为空, 跳过上架")
+                        self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 休眠30秒, 防止请求过快被封IP")
                         time.sleep(30)
                     if items_count_this_loop == 0:
-                        self.logger.info("[BuffAutoOnSale] 库存为空, 本批次上架结束!")
+                        self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 库存为空, 本批次上架结束!")
                         break
             except ProxyError:
                 self.logger.error('[BuffAutoOnSale] 代理异常, 本软件可不需要代理或任何VPN')
@@ -239,9 +243,9 @@ class BuffAutoOnSale:
                 self.logger.error('[BuffAutoOnSale] 如果你正在使用代理或VPN, 请尝试关闭后重启软件')
                 self.logger.error('[BuffAutoOnSale] 如果你没有使用代理或VPN, 请检查网络连接')
             except InvalidCredentials as e:
-                self.logger.error('[BuffAutoOnSale] mafile有问题, 请检查mafile是否正确(尤其是identity_secret)')
+                self.logger.error(f'[BuffAutoOnSale] Steam账号{steam_username}： mafile有问题, 请检查mafile是否正确(尤其是identity_secret)')
                 self.logger.error(str(e))
             except Exception as e:
-                self.logger.error("[BuffAutoOnSale] BUFF商品上架失败, 错误信息: " + str(e), exc_info=True)
-            self.logger.info("[BuffAutoOnSale] 休眠" + str(sleep_interval) + "秒")
+                self.logger.error(f"[BuffAutoOnSale] Steam账号{steam_username}： BUFF商品上架失败, 错误信息: " + str(e), exc_info=True)
+            self.logger.info(f"[BuffAutoOnSale] Steam账号{steam_username}： 休眠" + str(sleep_interval) + "秒")
             time.sleep(sleep_interval)

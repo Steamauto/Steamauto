@@ -1,3 +1,4 @@
+import ast
 import datetime
 import pyjson5 as json
 import time
@@ -144,35 +145,44 @@ class BuffAutoAcceptOffer:
         return True
 
     def exec(self):
-        self.logger.info("[BuffAutoAcceptOffer] BUFF接受报价插件已启动, 休眠60秒, 与自动接收报价插件错开运行时间")
+        steam_username = self.steam_client.username
+        self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 的BUFF接受报价插件已启动, 休眠60秒, 与自动接收报价插件错开运行时间")
         time.sleep(60)
-        self.logger.info("[BuffAutoAcceptOffer] BUFF自动接受报价插件已启动.请稍候...")
+        self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 的BUFF自动接受报价插件已启动.请稍候...")
         time.sleep(5)
-        self.logger.info("[BuffAutoAcceptOffer] 正在准备登录至BUFF...")
+        self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 正在准备登录至BUFF...")
         with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
-            self.buff_headers["Cookie"] = f.read().replace("\n", "").split(";")[0]
-        self.logger.info("[BuffAutoAcceptOffer] 已检测到cookies, 尝试登录")
+            cookies_map = ast.literal_eval(f.read())
+            cookie = "session=" + cookies_map[self.steam_client.username]
+            if cookie:
+                self.buff_headers["Cookie"] = cookie
+                print(cookie)
+                self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 已检测到cookies, 尝试登录")
+            else:
+                self.logger.error(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 未检测到cookies,插件自动退出")
+                exit_code.set(1)
+                return 1
         user_name = self.check_buff_account_state(dev=self.development_mode)
         if not user_name:
-            self.logger.error("[BuffAutoAcceptOffer] 由于登录失败,插件自动退出")
+            self.logger.error(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 由于BUFF登录失败,插件自动退出")
             exit_code.set(1)
             return 1
-        self.logger.info("[BuffAutoAcceptOffer] 已经登录至BUFF 用户名: " + user_name)
+        self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 已经登录至BUFF 用户名: " + user_name)
         ignored_offer = []
         interval = self.config["buff_auto_accept_offer"]["interval"]
         while True:
             try:
                 with self.steam_client_mutex:
                     if not self.steam_client.is_session_alive():
-                        self.logger.info("[BuffAutoAcceptOffer] Steam会话已过期, 正在重新登录...")
+                        self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} Steam会话已过期, 正在重新登录...")
                         self.steam_client.login(
                             self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
                         )
-                        self.logger.info("[BuffAutoAcceptOffer] Steam会话已更新")
-                self.logger.info("[BuffAutoAcceptOffer] 正在进行BUFF待发货/待收货饰品检查...")
+                        self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} Steam会话已更新")
+                self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 正在进行BUFF待发货/待收货饰品检查...")
                 username = self.check_buff_account_state()
                 if username == "":
-                    self.logger.error("[BuffAutoAcceptOffer] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
+                    self.logger.error(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 的BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
                     if "buff_cookie_expired_notification" in self.config["buff_auto_accept_offer"]:
                         apprise_obj = apprise.Apprise()
                         for server in self.config["buff_auto_accept_offer"]["servers"]:
@@ -205,18 +215,18 @@ class BuffAutoAcceptOffer:
                         "dota2" in to_deliver_order and int(to_deliver_order["dota2"]) != 0
                     ):
                         self.logger.info(
-                            "[BuffAutoAcceptOffer] 检测到"
+                            f"[BuffAutoAcceptOffer] Steam账号{steam_username} 检测到"
                             + str(
                                 (0 if "csgo" not in to_deliver_order else int(to_deliver_order["csgo"]))
                                 + (0 if "dota2" not in to_deliver_order else int(to_deliver_order["dota2"]))
                             )
                             + "个待发货请求! "
                         )
-                        self.logger.info("[BuffAutoAcceptOffer] CSGO待发货: " + str(int(to_deliver_order["csgo"])) + "个")
-                        self.logger.info("[BuffAutoAcceptOffer] DOTA2待发货: " + str(int(to_deliver_order["dota2"])) + "个")
+                        self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} CSGO待发货: " + str(int(to_deliver_order["csgo"])) + "个")
+                        self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} DOTA2待发货: " + str(int(to_deliver_order["dota2"])) + "个")
                 except TypeError as e:
                     handle_caught_exception(e)
-                    self.logger.error("[BuffAutoAcceptOffer] Buff接口返回数据异常! 请检查网络连接或稍后再试! ")
+                    self.logger.error(f"[BuffAutoAcceptOffer] Steam账号{steam_username} Buff接口返回数据异常! 请检查网络连接或稍后再试! ")
                 trade_supply = {}
                 if self.development_mode and os.path.exists(STEAM_TRADE_DEV_FILE_PATH):
                     self.logger.info("[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地待发货文件")
@@ -265,9 +275,9 @@ class BuffAutoAcceptOffer:
                                 trade_offer_to_confirm.add(trade_offer["tradeofferid"])
                         self.logger.info("[BuffAutoAcceptOffer] 为了避免访问接口过于频繁，休眠5秒...")
                         time.sleep(5)
-                self.logger.info("[BuffAutoAcceptOffer] 查找到 " + str(len(trades)) + " 个待处理的BUFF未发货订单! ")
+                self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 查找到 " + str(len(trades)) + " 个待处理的BUFF未发货订单! ")
                 self.logger.info(
-                    "[BuffAutoAcceptOffer] 查找到 " + str(len(trade_offer_to_confirm) - len(trades)) + " 个待处理的BUFF待确认供应订单! "
+                    f"[BuffAutoAcceptOffer] Steam账号{steam_username} 查找到 " + str(len(trade_offer_to_confirm) - len(trades)) + " 个待处理的BUFF待确认供应订单! "
                 )
                 for game in trade_supply:
                     for trade in trade_supply[game]:
@@ -281,12 +291,12 @@ class BuffAutoAcceptOffer:
                             while offer_id in trade_offer_to_confirm:
                                 trade_offer_to_confirm.remove(offer_id)
                                 # offer_id会同时在2个接口中出现, 移除重复的offer_id
-                            self.logger.info("[BuffAutoAcceptOffer] 正在处理第 " + str(i) + " 个交易报价 报价ID" + str(offer_id))
+                            self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 正在处理第 " + str(i) + " 个交易报价 报价ID" + str(offer_id))
                             if offer_id not in ignored_offer:
                                 try:
                                     if not self.should_accept_offer(trade):
                                         continue
-                                    self.logger.info("[BuffAutoAcceptOffer] 正在检查报价物品...")
+                                    self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 正在检查报价物品...")
                                     if not self.development_mode:
                                         with self.steam_client_mutex:
                                             offer = self.steam_client.get_trade_offer(offer_id)
@@ -305,7 +315,7 @@ class BuffAutoAcceptOffer:
                                                 match = True
                                                 break
                                             if not match:
-                                                self.logger.error("[BuffAutoAcceptOffer] 报价中的物品不在待发货列表中, 跳过接受报价")
+                                                self.logger.error(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 报价中的物品不在待发货列表中, 跳过接受报价")
                                                 if "item_mismatch_notification" in self.config["buff_auto_accept_offer"]:
                                                     apprise_obj = apprise.Apprise()
                                                     for server in self.config["buff_auto_accept_offer"]["servers"]:
@@ -339,9 +349,9 @@ class BuffAutoAcceptOffer:
                                                 self.steam_client.accept_trade_offer(offer_id)
                                         except KeyError as e:
                                             handle_caught_exception(e)
-                                            self.logger.error("[BuffAutoAcceptOffer] Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
+                                            self.logger.error(f"[BuffAutoAcceptOffer] Steam账号{steam_username} Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
                                     ignored_offer.append(offer_id)
-                                    self.logger.info("[BuffAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! ")
+                                    self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 接受完成! 已经将此交易报价加入忽略名单! ")
                                     if "sell_notification" in self.config["buff_auto_accept_offer"]:
                                         apprise_obj = apprise.Apprise()
                                         for server in self.config["buff_auto_accept_offer"]["servers"]:
@@ -359,9 +369,9 @@ class BuffAutoAcceptOffer:
                                         time.sleep(5)
                                 except Exception as e:
                                     self.logger.error(e, exc_info=True)
-                                    self.logger.info("[BuffAutoAcceptOffer] 出现错误, 稍后再试! ")
+                                    self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 出现错误, 稍后再试! ")
                             else:
-                                self.logger.info("[BuffAutoAcceptOffer] 该报价已经被处理过, 跳过.")
+                                self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username}： 该报价已经被处理过, 跳过.")
                     for trade_offer_id in trade_offer_to_confirm:
                         if trade_offer_id not in ignored_offer:
                             if self.development_mode:
@@ -375,11 +385,11 @@ class BuffAutoAcceptOffer:
                                             self.steam_client._confirm_transaction(trade_offer_id)
                                         ignored_offer.append(trade_offer_id)
                                         self.logger.info(
-                                            "[BuffAutoAcceptOffer] 令牌完成! ( " + trade_offer_id + " ) 已经将此交易报价加入忽略名单!"
+                                            f"[BuffAutoAcceptOffer] Steam账号{steam_username}： 令牌完成! ( " + trade_offer_id + " ) 已经将此交易报价加入忽略名单!"
                                         )
                                     else:
                                         self.logger.info(
-                                            "[BuffAutoAcceptOffer] 令牌未完成! ( "
+                                            f"[BuffAutoAcceptOffer] Steam账号{steam_username}： 令牌未完成! ( "
                                             + trade_offer_id
                                             + " ), 报价状态异常 ("
                                             + str(offer["response"]["offer"]["trade_offer_state"])
@@ -387,17 +397,17 @@ class BuffAutoAcceptOffer:
                                         )
                                 else:
                                     self.logger.info(
-                                        "[BuffAutoAcceptOffer] 令牌未完成! ( "
+                                        f"[BuffAutoAcceptOffer] Steam账号{steam_username}： 令牌未完成! ( "
                                         + (trade_offer_id if trade_offer_id else "None")
                                         + " ), 报价返回异常 ("
                                         + str(offer["response"])
                                         + " )"
                                     )
                             if list(trade_offer_to_confirm).index(trade_offer_id) != len(trade_offer_to_confirm) - 1:
-                                self.logger.info("[BuffAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...")
+                                self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username}： 为了避免频繁访问Steam接口, 等待5秒后继续...")
                                 time.sleep(5)
                         else:
-                            self.logger.info("[BuffAutoAcceptOffer] 该报价已经被处理过, 跳过.")
+                            self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username}： 该报价已经被处理过, 跳过.")
                 except ProxyError:
                     self.logger.error("[BuffAutoAcceptOffer] 代理异常, 本软件可不需要代理或任何VPN")
                     self.logger.error("[BuffAutoAcceptOffer] 可以尝试关闭代理或VPN后重启软件")
@@ -407,15 +417,15 @@ class BuffAutoAcceptOffer:
                     self.logger.error("[BuffAutoAcceptOffer] 如果你正在使用代理或VPN, 请尝试关闭后重启软件")
                     self.logger.error("[BuffAutoAcceptOffer] 如果你没有使用代理或VPN, 请检查网络连接")
                 except InvalidCredentials as e:
-                    self.logger.error("[BuffAutoAcceptOffer] mafile有问题, 请检查mafile是否正确(尤其是identity_secret)")
+                    self.logger.error(f"[BuffAutoAcceptOffer] Steam账号{steam_username} mafile有问题, 请检查mafile是否正确(尤其是identity_secret)")
                     self.logger.error(str(e))
                 except ConfirmationExpected:
-                    self.logger.error("[UUAutoAcceptOffer] Steam Session已经过期, 请删除session文件夹并重启Steamauto")
+                    self.logger.error(f"[BuffAutoAcceptOffer] Steam账号{steam_username} Steam Session已经过期, 请删除session文件夹并重启Steamauto")
                 except Exception as e:
                     self.logger.error(e, exc_info=True)
-                    self.logger.info("[BuffAutoAcceptOffer] 出现错误, 稍后再试! ")
+                    self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 出现错误, 稍后再试! ")
             except Exception as e:
                 self.logger.error(e, exc_info=True)
-                self.logger.info("[BuffAutoAcceptOffer] 出现未知错误, 稍后再试! ")
-            self.logger.info("[BuffAutoAcceptOffer] 将在{0}秒后再次检查待发货订单信息! ".format(str(interval)))
+                self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 出现未知错误, 稍后再试! ")
+            self.logger.info(f"[BuffAutoAcceptOffer] Steam账号{steam_username} 将在{str(interval)}秒后再次检查待发货订单信息! ")
             time.sleep(interval)
