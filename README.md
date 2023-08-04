@@ -15,10 +15,22 @@
 > 杜绝收费、安全稳定
 
 **使用前请仔细阅读本文档！**  
+
 **欢迎有能力者提交PR来完善本程序。**  
+
 **请勿违反开源协议，包括但不限于闭源倒卖此程序或修改后不进行开源等。**  
+
 **[欢迎加入Steamauto 官方QQ群:425721057](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=TMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj&authKey=VAgXngXUeaHBfGwY2uNzE%2F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz&noverify=0&group_code=425721057)**
+
 **网络不好的可以加QQ群在群文件内下载最新构建**
+
+&nbsp;
+
+## 相比原仓库新增功能
+
+- 支持多个Steam使用多个对应的BUFF插件
+
+&nbsp;
 
 ## 它能做什么？  
 
@@ -35,7 +47,10 @@
 - 内置Steam加速器
 - 自动接受礼物报价(无需支出任何Steam库存中的物品的报价)
 
+&nbsp;
+
 ## 如何使用?
+
 [推荐观看视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz)
 1. 前往 [Github Releases](https://github.com/jiajiaxd/Steamauto/releases/latest) 下载适合自己系统的Steamauto
 2. 将所得文件解压缩
@@ -46,7 +61,10 @@
 7. **(若有需求悠悠有品相关功能)** 打开`uu_token.txt`,填入[悠悠有品](https://www.youpin898.com/)的token(如何获取token,见FAQ) 
 8. ~~给予本仓库一个star(手动狗头)~~
 
+&nbsp;
+
 ## 配置说明
+
 **部分配置项数据(如获取Steam账户信息、Buff的cookie等)在附录中，请自行查阅！**
 ##### 在正确运行本程序后，config文件夹应包含以下文件
 | 文件名                       | 描述                                        | 
@@ -218,7 +236,10 @@
 | body                             | 通知内容                                                                                                                             |
 | servers                          | Apprise格式服务器列表 - 详见[Apprise](https://github.com/caronc/apprise)<br>- 额外支持 [Server酱](https://sct.ftqq.com/) 格式为`ftqq://<SENDKEY>` |
 
+&nbsp;
+
 ## FAQ
+
 ##### 账号安全问题?
 Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代码安全性  
 在用户的电脑不被恶意软件入侵的情况下，账号不可能泄露  
@@ -250,7 +271,10 @@ pip install urllib3==1.25.11
 
 `steampy/client.py` 44-48行注释掉的代码解除注释后若出现报错则说明是此问题
 
+&nbsp;
+
 ## 附录
+
 关于`steam_account_info.json`相关参数的获取教程都在下面, 请自行参阅  
 个人推荐使用[ SteamDesktopAuthenticator ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便(请勿使用1.0.13版本,存在无法获取的问题)  
 [官方视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz/)  
