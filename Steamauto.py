@@ -37,10 +37,10 @@ current_version = "3.2.3"
 if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
     import uuyoupinapi
 
-    if os.path.exists('uu.txt'):
+    if os.path.exists("uu.txt"):
         logger.info("检测到uu.txt文件,已经自动使用-uu参数启动Steamauto")
-        logger.info('已经自动删除uu.txt文件')
-        os.remove('uu.txt')
+        logger.info("已经自动删除uu.txt文件")
+        os.remove("uu.txt")
     logger.info("你使用了-uu参数启动Steamauto,这代表着Steamauto会引导你获取悠悠有品的token")
     logger.info("如果无需获取悠悠有品的token,请删除-uu参数后重启Steamauto")
     logger.info("按回车键继续...")
@@ -51,7 +51,7 @@ if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
     with open(UU_TOKEN_FILE_PATH, "w", encoding="utf-8") as f:
         f.write(token)
     logger.info(f"已成功获取悠悠有品token,并写入{UU_TOKEN_FILE_PATH}中!")
-    logger.info('需要注意的是, 你需要在配置文件中将uu_auto_accept_offer.enable设置为true才能使用悠悠有品的自动发货功能')
+    logger.info("需要注意的是, 你需要在配置文件中将uu_auto_accept_offer.enable设置为true才能使用悠悠有品的自动发货功能")
     logger.info("按回车键继续启动Steamauto...")
     input()
 
@@ -123,6 +123,7 @@ def login_to_steam():
             if "use_proxies" not in config:
                 config["use_proxies"] = False
             if config["use_proxies"]:
+                logger.info("已经启用Steam代理")
                 if "proxies" not in config:
                     config["proxies"] = {}
 
@@ -130,12 +131,14 @@ def login_to_steam():
                     logger.error("proxies格式错误，请检查配置文件")
                     pause()
                     return None
-
+                logger.info("正在检查代理服务器可用性...")
                 proxy_status = ping_proxy(config["proxies"])
                 if proxy_status is False:
                     logger.error("代理服务器不可用，请检查配置文件")
                     pause()
                     return None
+                else:
+                    logger.info("代理服务器可用")
 
                 client = SteamClient(api_key=acc.get("api_key"), proxies=config["proxies"])
 
@@ -263,33 +266,33 @@ def main():
             return 1
     steam_client_mutex = threading.Lock()
     with open(
-            STEAM_ACCOUNT_INFO_FILE_PATH, "r",
-            encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH),
+        STEAM_ACCOUNT_INFO_FILE_PATH,
+        "r",
+        encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH),
     ) as f:
         api_key_in_config = json.load(f)["api_key"]
     plugins_enabled = []
     if (
-            "buff_auto_accept_offer" in config
-            and "enable" in config["buff_auto_accept_offer"]
-            and config["buff_auto_accept_offer"]["enable"]
+        "buff_auto_accept_offer" in config
+        and "enable" in config["buff_auto_accept_offer"]
+        and config["buff_auto_accept_offer"]["enable"]
     ):
         buff_auto_accept_offer = BuffAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_accept_offer)
-    if "buff_auto_on_sale" in config and "enable" in config["buff_auto_on_sale"] and \
-            config["buff_auto_on_sale"]["enable"]:
+    if "buff_auto_on_sale" in config and "enable" in config["buff_auto_on_sale"] and config["buff_auto_on_sale"]["enable"]:
         buff_auto_on_sale = BuffAutoOnSale(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_on_sale)
     if (
-            "uu_auto_accept_offer" in config
-            and "enable" in config["uu_auto_accept_offer"]
-            and config["uu_auto_accept_offer"]["enable"]
+        "uu_auto_accept_offer" in config
+        and "enable" in config["uu_auto_accept_offer"]
+        and config["uu_auto_accept_offer"]["enable"]
     ):
         uu_auto_accept_offer = UUAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(uu_auto_accept_offer)
     if (
-            "steam_auto_accept_offer" in config
-            and "enable" in config["steam_auto_accept_offer"]
-            and config["steam_auto_accept_offer"]["enable"]
+        "steam_auto_accept_offer" in config
+        and "enable" in config["steam_auto_accept_offer"]
+        and config["steam_auto_accept_offer"]["enable"]
     ):
         steam_auto_accept_offer = SteamAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(steam_auto_accept_offer)
@@ -307,9 +310,7 @@ def main():
     with steam_client_mutex:
         if api_key_in_config != steam_client.steam_guard["api_key"]:
             logger.error(
-                "[BuffAutoAcceptOffer] Session中缓存的api_key与 "
-                + STEAM_ACCOUNT_INFO_FILE_PATH
-                + " 中的api_key不一致, 请删除session文件"
+                "[BuffAutoAcceptOffer] Session中缓存的api_key与 " + STEAM_ACCOUNT_INFO_FILE_PATH + " 中的api_key不一致, 请删除session文件"
             )
             pause()
             return 1
