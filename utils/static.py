@@ -52,8 +52,9 @@ DEFAULT_STEAM_ACCOUNT_JSON = """
 
 DEFAULT_BUFF_ACCOUNT_JSON = """
 {
-  // 格式如下，其中 steam_username为steam_account_info中steam账号的steam_username参数，buff_cookie 为登录 buff 的 Cookie
+  // 格式如下，其中 steam_username为steam_account_info.json中steam账号的steam_username参数，buff_cookie 为登录 buff 的 Cookie
   //若有多个可按照以下格式添加，注意使用英文逗号分割，若仅有一个请将多余的样例删除
+  //请确保cookie对应的steam_username1在steam_account_info.json已存在
   "steam_username1": "buff_cookie1",
   "steam_username2": "buff_cookie2",
 }

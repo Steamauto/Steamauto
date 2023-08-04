@@ -19,6 +19,7 @@ from utils.static import (
     SUPPORT_GAME_TYPES,
     MESSAGE_NOTIFICATION_DEV_FILE_PATH,
     TO_DELIVER_DEV_FILE_PATH,
+    DEFAULT_BUFF_ACCOUNT_JSON
 )
 from utils.tools import get_encoding, exit_code
 from utils.logger import handle_caught_exception
@@ -43,7 +44,8 @@ class BuffAutoAcceptOffer:
     def init(self) -> bool:
         if not os.path.exists(BUFF_COOKIES_FILE_PATH):
             with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
-                f.write("session=")
+                f.write(DEFAULT_BUFF_ACCOUNT_JSON)
+                self.logger.info("[BuffAutoAcceptOffer] 首次运行，请填写buff_cookies.txt中的账号信息")
             return True
         return False
 

@@ -11,7 +11,7 @@ from requests.exceptions import ProxyError
 from steampy.exceptions import InvalidCredentials
 
 from utils.logger import handle_caught_exception
-from utils.static import APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH, BUFF_COOKIES_FILE_PATH, SUPPORT_GAME_TYPES
+from utils.static import APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH, BUFF_COOKIES_FILE_PATH, SUPPORT_GAME_TYPES,DEFAULT_BUFF_ACCOUNT_JSON
 from utils.tools import get_encoding
 
 
@@ -51,7 +51,8 @@ class BuffAutoOnSale:
     def init(self) -> bool:
         if not os.path.exists(BUFF_COOKIES_FILE_PATH):
             with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
-                f.write("session=")
+                f.write(DEFAULT_BUFF_ACCOUNT_JSON)
+                self.logger.info("[BuffAutoOnSale] 首次运行，请填写buff_cookies.txt中的账号信息")
             return True
         return False
 

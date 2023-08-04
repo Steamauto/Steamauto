@@ -395,37 +395,35 @@ def main():
     else:
         first_run = False
 
-    steam_clients = []
-    # 非首次运行，登录steam
     if not first_run:
+        # 仅用于获取启用的插件
+        plugins_enabled = get_plugins_enabled(0, None, None)
+        # 检查插件是否正确初始化
+        while True:
+            plugins_check_status = plugins_check(plugins_enabled)
+            if plugins_check_status == 0:
+                logger.info("存在插件首次运行, 程序暂停，请按照README提示填写config文件夹下新增的配置文件后按回车继续 ")
+                pause()
+            elif plugins_check_status == 2:
+                pause()
+                return 2
+            else:
+                break
+
         steam_clients = get_steam_clients()
         if not steam_clients_verify(steam_clients):
             logger.error("存在steam账号登录失败, 请检查steam账号信息是否正确! ")
             return 1
 
-    # 仅用于获取启用的插件
-    plugins_enabled = get_plugins_enabled(0, None, None)
-    # 检查插件是否正确初始化
-    while True:
-        plugins_check_status = plugins_check(plugins_enabled)
-        if plugins_check_status == 0:
-            logger.info("存在插件首次运行, 程序暂停，请按照README提示填写config文件夹下新增的配置文件后按回车继续 ")
-            pause()
-        elif plugins_check_status == 2:
-            pause()
-            return 2
-        else:
-            break
+        api_keys_in_config = get_steam_api_keys()
+        steam_client_mutexs = threading.Lock()
 
-    api_keys_in_config = get_steam_api_keys()
-    steam_client_mutexs = threading.Lock()
+        if len(steam_clients) > 1:
+            logger.warning("检测到steam账号数量多余1个，请注意uu插件只会给steam_account_info.json中的第一个账号提供服务")
+        for i in range(len(steam_clients)):
+            init_plugins_and_start(i, steam_clients[i], steam_client_mutexs, api_keys_in_config[i])
 
-    if len(steam_clients) > 1:
-        logger.warning("检测到steam账号数量多余1个，请注意uu插件只会给steam_account_info.json中的第一个账号提供服务")
-    for i in range(len(steam_clients)):
-        init_plugins_and_start(i, steam_clients[i], steam_client_mutexs, api_keys_in_config[i])
-
-    logger.info("由于所有插件已经关闭,程序即将退出...")
+    logger.info("所有插件已经关闭,程序即将退出...")
     pause()
     sys.exit(exit_code.get())
 
