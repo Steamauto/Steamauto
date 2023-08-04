@@ -198,7 +198,8 @@ def login_to_steam():
     return steam_client
 
 
-def main():
+# 文件缺失或格式错误返回0，首次运行返回1，非首次运行返回2
+def init_files_and_params() -> int:
     global config
     development_mode = False
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
@@ -231,7 +232,6 @@ def main():
     if not os.path.exists(CONFIG_FILE_PATH):
         if not os.path.exists(EXAMPLE_CONFIG_FILE_PATH):
             logger.error("未检测到" + EXAMPLE_CONFIG_FILE_PATH + ", 请前往GitHub进行下载, 并保证文件和程序在同一目录下. ")
-            pause()
             return 0
         else:
             shutil.copy(EXAMPLE_CONFIG_FILE_PATH, CONFIG_FILE_PATH)
@@ -242,7 +242,6 @@ def main():
         except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
             handle_caught_exception(e)
             logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
-            pause()
             return 0
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
@@ -260,54 +259,64 @@ def main():
         development_mode = True
     if development_mode:
         logger.info("开发者模式已开启")
-    steam_client = None
-    if not first_run:
-        steam_client = login_to_steam()
-        if steam_client is None:
-            return 1
-    steam_client_mutex = threading.Lock()
-    with open(
-        STEAM_ACCOUNT_INFO_FILE_PATH,
-        "r",
-        encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH),
-    ) as f:
-        api_key_in_config = json.load(f)["api_key"]
+
+    if first_run:
+        return 1
+    else:
+        return 2
+
+
+def get_plugins_enabled(steam_client, steam_client_mutex):
+    global config
     plugins_enabled = []
     if (
-        "buff_auto_accept_offer" in config
-        and "enable" in config["buff_auto_accept_offer"]
-        and config["buff_auto_accept_offer"]["enable"]
+            "buff_auto_accept_offer" in config
+            and "enable" in config["buff_auto_accept_offer"]
+            and config["buff_auto_accept_offer"]["enable"]
     ):
         buff_auto_accept_offer = BuffAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_accept_offer)
-    if "buff_auto_on_sale" in config and "enable" in config["buff_auto_on_sale"] and config["buff_auto_on_sale"]["enable"]:
+    if "buff_auto_on_sale" in config and "enable" in config["buff_auto_on_sale"] and config["buff_auto_on_sale"][
+        "enable"]:
         buff_auto_on_sale = BuffAutoOnSale(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_on_sale)
     if (
-        "uu_auto_accept_offer" in config
-        and "enable" in config["uu_auto_accept_offer"]
-        and config["uu_auto_accept_offer"]["enable"]
+            "uu_auto_accept_offer" in config
+            and "enable" in config["uu_auto_accept_offer"]
+            and config["uu_auto_accept_offer"]["enable"]
     ):
         uu_auto_accept_offer = UUAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(uu_auto_accept_offer)
     if (
-        "steam_auto_accept_offer" in config
-        and "enable" in config["steam_auto_accept_offer"]
-        and config["steam_auto_accept_offer"]["enable"]
+            "steam_auto_accept_offer" in config
+            and "enable" in config["steam_auto_accept_offer"]
+            and config["steam_auto_accept_offer"]["enable"]
     ):
         steam_auto_accept_offer = SteamAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(steam_auto_accept_offer)
+
+    return plugins_enabled
+
+
+def plugins_check(plugins_enabled):
     if len(plugins_enabled) == 0:
         logger.error("未启用任何插件, 请检查" + CONFIG_FILE_PATH + "是否正确! ")
-        pause()
         return 2
     for plugin in plugins_enabled:
         if plugin.init():
-            first_run = True
-    if first_run:
-        logger.info("首次运行, 请按照README提示填写配置文件! ")
-        pause()
-        return 0
+            return 0
+    return 1
+
+
+def get_steam_client_mutexs(num):
+    steam_client_mutexs = []
+    for i in range(num):
+        steam_client_mutexs.append(threading.Lock())
+    return steam_client_mutexs
+
+
+def init_plugins_and_start(steam_client, steam_client_mutex, api_key_in_config):
+    plugins_enabled = get_plugins_enabled(steam_client, steam_client_mutex)
     with steam_client_mutex:
         if api_key_in_config != steam_client.steam_guard["api_key"]:
             logger.error(
@@ -331,6 +340,47 @@ def main():
             thread.join()
     if exit_code.get() != 0:
         logger.warning("所有插件都已经退出！这不是一个正常情况，请检查配置文件.")
+
+
+def main():
+    global config
+    # 初始化
+    init_status = init_files_and_params()
+    if init_status == 0:
+        pause()
+        return 0
+    elif init_status == 1:
+        first_run = True
+    else:
+        first_run = False
+
+    steam_client = None
+    if not first_run:
+        # 登录Steam
+        steam_client = login_to_steam()
+        if steam_client is None:
+            return 1
+
+    # 仅用于获取启用的插件
+    plugins_enabled = get_plugins_enabled(None, None)
+    # 检查插件是否正确初始化
+    plugins_check_status = plugins_check(plugins_enabled)
+    if plugins_check_status == 0:
+        logger.info("存在插件首次运行, 请按照README提示填写配置文件! ")
+        pause()
+        return 1
+
+    with open(
+            STEAM_ACCOUNT_INFO_FILE_PATH,
+            "r",
+            encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH),
+    ) as f:
+        api_key_in_config = json.load(f)["api_key"]
+
+    steam_client_mutex = threading.Lock()
+    if steam_client is not None:
+        init_plugins_and_start(steam_client, steam_client_mutex, api_key_in_config)
+
     logger.info("由于所有插件已经关闭,程序即将退出...")
     pause()
     sys.exit(exit_code.get())
