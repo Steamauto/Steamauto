@@ -200,6 +200,10 @@
 Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代码安全性  
 在用户的电脑不被恶意软件入侵的情况下，账号不可能泄露  
 
+##### SDA报错`未将对象引用设置到对象的实例`?  
+![报错如图](https://github.com/jiajiaxd/Steamauto/assets/51043917/b1282372-11f6-4649-be5f-7bc52faf4c16)  
+请先移除手机令牌再使用SDA
+
 ##### 为什么我打开配置文件后，编辑器提示该文件有语法错误？
 本程序使用的配置文件类型为json5，因此在不受支持编辑器中会提示语法错误，但实际上并不影响程序的运行  
 
@@ -230,7 +234,7 @@ pip install urllib3==1.25.11
 
 ## 附录
 关于`steam_account_info.json`相关参数的获取教程都在下面, 请自行参阅  
-个人推荐使用[ SteamDesktopAuthenticator ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便(请勿使用1.0.13版本,存在无法获取的问题)  
+个人推荐使用[ SteamDesktopAuthenticator(简称SDA) ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便(请勿使用1.0.13版本,存在无法获取的问题)  
 [官方视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz/)  
 [获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)   
 [已Root安卓手机获取新版Steam手机令牌教程](https://github.com/BeyondDimension/SteamTools/issues/2598)
