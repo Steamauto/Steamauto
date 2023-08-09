@@ -97,6 +97,11 @@ class UUAutoAcceptOffer:
                             if (uu_wait_deliver_list.index(item) != len_uu_wait_deliver_list - 1) and accepted:
                                 self.logger.info("[UUAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...")
                                 time.sleep(5)
+                except TypeError as e:
+                    handle_caught_exception(e)
+                    self.logger.error("[UUAutoAcceptOffer] 悠悠有品待发货信息获取失败, 请检查账号是否正确! 插件将自动退出")
+                    exit_code.set(1)
+                    return 1
                 except Exception as e:
                     self.logger.error(e, exc_info=True)
                     self.logger.info("[UUAutoAcceptOffer] 出现未知错误, 稍后再试! ")

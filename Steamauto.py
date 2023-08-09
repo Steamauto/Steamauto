@@ -138,7 +138,7 @@ def login_to_steam():
                     pause()
                     return None
                 else:
-                    logger.info("代理服务器可用")
+                    # logger.info("代理服务器可用")
                     logger.warning("警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动")
 
                 client = SteamClient(api_key=acc.get("api_key"), proxies=config["proxies"])
@@ -181,6 +181,11 @@ def login_to_steam():
         except (ValueError, ApiException) as e:
             handle_caught_exception(e)
             logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
+            pause()
+            return None
+        except (TypeError, AttributeError) as e:
+            handle_caught_exception(e)
+            logger.error("登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录")
             pause()
             return None
         except CaptchaRequired as e:
