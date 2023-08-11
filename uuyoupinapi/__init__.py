@@ -2,6 +2,8 @@ import requests
 import string
 import random
 
+from utils.logger import logger
+
 
 def generate_random_string(length):
     """
@@ -154,7 +156,12 @@ class UUAccount:
             "POST",
             "/api/youpin/bff/trade/sale/v1/sell/list",
             data={"keys": "", "orderStatus": "140", "pageIndex": 1, "pageSize": 100},
-        ).json()["data"]
+        )
+        if data is None:
+            logger.error("待发货列表获取失败")
+            return []
+        else:
+            data = data.json()["data"]
         data_to_return = []
         for order in data["orderList"]:
             if int(order["offerType"]) == 2:
