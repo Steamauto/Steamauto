@@ -175,10 +175,10 @@ class BuffAutoOnSale:
         sleep_interval = int(self.config["buff_auto_on_sale"]["interval"])
         black_list_time = []
         if 'black_list_time' in self.config["buff_auto_on_sale"]:
-            black_list_time = self.config["buff_auto_on_sale"]["black_list_time"]
+            black_list_time = self.config["buff_auto_on_sale"]["blacklist_time"]
         white_list_time = []
         if 'white_list_time' in self.config["buff_auto_on_sale"]:
-            white_list_time = self.config["buff_auto_on_sale"]["white_list_time"]
+            white_list_time = self.config["buff_auto_on_sale"]["whitelist_time"]
         random_chance = 100
         if 'random_chance' in self.config["buff_auto_on_sale"]:
             random_chance = self.config["buff_auto_on_sale"]["random_chance"] * 100
