@@ -16,6 +16,8 @@ class SteamAutoAcceptOffer:
         return False
 
     def exec(self):
+        self.logger.info("[SteamAutoAcceptOffer] Steam自动接受礼物报价插件已启动, 休眠30秒, 与自动接收报价插件错开运行时间")
+        time.sleep(30)
         while True:
             try:
                 with self.steam_client_mutex:

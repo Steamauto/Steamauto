@@ -5,3 +5,6 @@ logs
 session
 **/__pycache__
 .idea
+bin
+lib
+pyvenv.cfg

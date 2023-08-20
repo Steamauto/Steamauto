@@ -144,10 +144,7 @@ class BuffAutoAcceptOffer:
         return True
 
     def exec(self):
-        self.logger.info("[BuffAutoAcceptOffer] BUFF接受报价插件已启动, 休眠60秒, 与自动接收报价插件错开运行时间")
-        time.sleep(60)
         self.logger.info("[BuffAutoAcceptOffer] BUFF自动接受报价插件已启动.请稍候...")
-        time.sleep(5)
         self.logger.info("[BuffAutoAcceptOffer] 正在准备登录至BUFF...")
         with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
             self.buff_headers["Cookie"] = f.read().replace("\n", "").split(";")[0]
