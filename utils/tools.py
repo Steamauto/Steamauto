@@ -34,7 +34,7 @@ def get_encoding(file_path):
 
 def pause():
     if "no_pause" in config and not config["no_pause"]:
-        logger.info("点击回车键继续...")
+        logger.info("按下回车键继续...")
         input()
 
 

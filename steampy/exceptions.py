@@ -24,3 +24,7 @@ class CaptchaRequired(Exception):
 
 class ConfirmationExpected(Exception):
     pass
+
+
+class ProxyConnectionError(Exception):
+    pass

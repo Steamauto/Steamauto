@@ -5,11 +5,14 @@ import copy
 import struct
 import urllib.parse as urlparse
 import re
+
+import requests
 from requests.structures import CaseInsensitiveDict
 from typing import List
 
 from bs4 import BeautifulSoup, Tag
 
+from steampy.exceptions import ProxyConnectionError
 from steampy.models import GameOptions
 
 
@@ -163,7 +166,7 @@ def get_description_key(item: dict) -> str:
     return item['classid'] + '_' + item['instanceid']
 
 
-def get_key_value_from_url(url: str, key: str, case_sensitive: bool=True) -> str:
+def get_key_value_from_url(url: str, key: str, case_sensitive: bool = True) -> str:
     params = urlparse.urlparse(url).query
     if case_sensitive:
         return urlparse.parse_qs(params)[key][0]
@@ -182,3 +185,12 @@ class Credentials:
         self.login = login
         self.password = password
         self.api_key = api_key
+
+
+def ping_proxy(proxies: dict):
+    try:
+        requests.get('https://steamcommunity.com/login/dologin', proxies=proxies)
+        return True
+    except (requests.exceptions.ConnectionError, TimeoutError) as e:
+        return False
+

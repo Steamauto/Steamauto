@@ -15,10 +15,22 @@
 > 杜绝收费、安全稳定
 
 **使用前请仔细阅读本文档！**  
+
 **欢迎有能力者提交PR来完善本程序。**  
+
 **请勿违反开源协议，包括但不限于闭源倒卖此程序或修改后不进行开源等。**  
+
 **[欢迎加入Steamauto 官方QQ群:425721057](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=TMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj&authKey=VAgXngXUeaHBfGwY2uNzE%2F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz&noverify=0&group_code=425721057)**
+
 **网络不好的可以加QQ群在群文件内下载最新构建**
+
+&nbsp;
+
+## 相比原仓库新增功能
+
+- 支持多个Steam使用多个对应的BUFF插件
+
+&nbsp;
 
 ## 它能做什么？  
 
@@ -35,7 +47,10 @@
 - 内置Steam加速器
 - 自动接受礼物报价(无需支出任何Steam库存中的物品的报价)
 
+&nbsp;
+
 ## 如何使用?
+
 [推荐观看视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz)
 1. 前往 [Github Releases](https://github.com/jiajiaxd/Steamauto/releases/latest) 下载适合自己系统的Steamauto
 2. 将所得文件解压缩
@@ -46,7 +61,10 @@
 7. **(若有需求悠悠有品相关功能)** 打开`uu_token.txt`,填入[悠悠有品](https://www.youpin898.com/)的token(如何获取token,见FAQ) 
 8. ~~给予本仓库一个star(手动狗头)~~
 
+&nbsp;
+
 ## 配置说明
+
 **部分配置项数据(如获取Steam账户信息、Buff的cookie等)在附录中，请自行查阅！**
 ##### 在正确运行本程序后，config文件夹应包含以下文件
 | 文件名                       | 描述                                        | 
@@ -58,13 +76,25 @@
 ##### [config.json5](config/config.json5) (仅供参考 以实际文件为主)
 ```json5
 {
-
   // 登录Steam时是否开启SSL验证，正常情况下不建议关闭SSL验证
   "steam_login_ignore_ssl_error": false,
-  // 是否开启本地加速功能(测试)
-  // 请注意：开启此功能必须关闭SSL验证，即steam_login_ignore_ssl_error必须设置为true
+
+  // 是否开启本地加速功能
+  // 本地加速功能并非100%可用, 若开启后仍然无法正常连接Steam属于正常情况, 最优解决方案是使用海外服务器
+  // 请注意：开启此功能必须关闭Steam登录SSL验证，即steam_login_ignore_ssl_error必须设置为true
   "steam_local_accelerate": false,
-  // 填写为true后，程序在出现错误后就会直接停止运行。如果你是小白，请不要将它设置为true
+    
+   // 是否使用本地加速功能（win+i下的网络设置中的代理设置）
+  "use_proxies": true,
+
+  //本地代理地址
+  //这里以clash为例，clash默认监听7890端口，如果你使用的是其他代理软件，请自行修改端口
+  "proxies": {
+    "http": "http://127.0.0.1:7890",
+    "https": "http://127.0.0.1:7890"
+  },
+
+  // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
 
   // BUFF 自动收货插件配置
@@ -116,6 +146,16 @@
   "buff_auto_on_sale": {
     // 是否启用BUFF自动以最低价上架所有库存
     "enable": false,
+    // 每次检查库存强制刷新BUFF库存, 若为否, 刷新不一定会加载最新库存
+    "force_refresh": true,
+    // 黑名单时间, 为小时, int格式, 空为不启用黑名单, 当前小时如果等于黑名单时间, 则不会自动上架
+    "blacklist_time": [],
+    // 白名单时间, 为小时, int格式, 空为不启用白名单, 当前小时如果不等于白名单时间, 则不会自动上架
+    "whitelist_time": [],
+    // 随机上架几率, 为整数, 1~100, 100为100%上架, 1为1%上架, 0为不上架
+    "random_chance": 100,
+    // 商品上架描述, 为字符串, 为空则不填写描述
+    "description": "",
     // 检查库存间隔时间
     "interval": 1800
   },
@@ -140,25 +180,48 @@
 
 ##### `steam_account_info.json5`
 ```json5
-{
-  // Steam 的数字 ID（字符串格式）
-  "steamid": "",
+[
+    //账号1
+    {
+         // Steam 的数字 ID（字符串格式）
+  		"steamid": "",
 
-  // Steam 令牌参数（用于身份验证）
-  "shared_secret": "",
+  		// Steam 令牌参数（用于身份验证）
+  		"shared_secret": "",
 
-  // Steam 令牌参数（用于身份验证）
-  "identity_secret": "",
+  		// Steam 令牌参数（用于身份验证）
+  		"identity_secret": "",
 
-  // Steam 网页 API 密钥（用于访问 Steam API）
-  "api_key": "",
+  		// Steam 网页 API 密钥（用于访问 Steam API）
+  		"api_key": "",
 
-  // Steam 登录时填写的用户名
-  "steam_username": "",
+  		// Steam 登录时填写的用户名
+  		"steam_username": "",
 
-  // Steam 登录时填写的密码
-  "steam_password": ""
-}
+  		// Steam 登录时填写的密码
+  		"steam_password": ""
+    },
+        //账号2
+    {
+         // Steam 的数字 ID（字符串格式）
+  		"steamid": "",
+
+  		// Steam 令牌参数（用于身份验证）
+  		"shared_secret": "",
+
+  		// Steam 令牌参数（用于身份验证）
+  		"identity_secret": "",
+
+  		// Steam 网页 API 密钥（用于访问 Steam API）
+  		"api_key": "",
+
+  		// Steam 登录时填写的用户名
+  		"steam_username": "",
+
+  		// Steam 登录时填写的密码
+  		"steam_password": ""
+    }
+]
 ```
 
 ##### `notification`相关配置项说明
@@ -173,7 +236,10 @@
 | body                             | 通知内容                                                                                                                             |
 | servers                          | Apprise格式服务器列表 - 详见[Apprise](https://github.com/caronc/apprise)<br>- 额外支持 [Server酱](https://sct.ftqq.com/) 格式为`ftqq://<SENDKEY>` |
 
+&nbsp;
+
 ## FAQ
+
 ##### 账号安全问题?
 Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代码安全性  
 在用户的电脑不被恶意软件入侵的情况下，账号不可能泄露  
@@ -181,22 +247,40 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 ##### 为什么我打开配置文件后，编辑器提示该文件有语法错误？
 本程序使用的配置文件类型为json5，因此在不受支持编辑器中会提示语法错误，但实际上并不影响程序的运行  
 
+##### 能否处理卖家发起报价的情况？
+不支持，但是有以下解决方案。
+在BUFF上，你可以打开[BUFF网页版的个人设置页面](https://buff.163.com/user-center/profile)，并勾上偏好设置中的`出售限定买家先发报价`  
+在悠悠有品上，暂无解决方案，你需要手动处理  
 
 ##### 如何获取悠悠有品token?
 使用`-uu`参数运行Steamauto程序,根据程序向导操作即可  
 
 ##### 是否支持多开？  
-支持。但是需要复制多份程序，分别在不同的文件夹内运行
+支持。但是需要复制多份程序，分别在不同的文件夹内运行  
+如果你只需要Buff自动发货多开，你也可以尝试[支持多账户的Fork版本](https://github.com/ZWN2001/Steamauto)  
 
-##### 可否关闭Buff自动发货，只使用悠悠有品自动发货？
+##### 可否关闭Buff自动发货？
 将`config.json`中`buff_auto_accept_offer.enable`设置为false即可
+
+##### 使用`proxies`配置运行源码时出现代理错误但本地代理没问题
+
+该错误在特定`urllib`下会出现，安装特定版本可以解决
+
+```
+pip install urllib3==1.25.11
+```
+
+`steampy/client.py` 44-48行注释掉的代码解除注释后若出现报错则说明是此问题
+
+&nbsp;
+
 ## 附录
+
 关于`steam_account_info.json`相关参数的获取教程都在下面, 请自行参阅  
-个人推荐使用[ SteamDesktopAuthenticator ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便  
+个人推荐使用[ SteamDesktopAuthenticator ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便(请勿使用1.0.13版本,存在无法获取的问题)  
 [官方视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz/)  
 [获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)   
-[Obtaining SteamGuard from mobile device]( https://github.com/SteamTimeIdler/stidler/wiki/Getting-your-%27shared_secret%27-code-for-use-with-Auto-Restarter-on-Mobile-Authentication )  
-[Obtaining SteamGuard using Android emulation]( https://github.com/codepath/android_guides/wiki/Genymotion-2.0-Emulators-with-Google-Play-support)
+[已Root安卓手机获取新版Steam手机令牌教程](https://github.com/BeyondDimension/SteamTools/issues/2598)
 
 ## 鸣谢
 感谢 [**@lupohan44**](https://github.com/lupohan44) 为本项目提交的大量代码！  
