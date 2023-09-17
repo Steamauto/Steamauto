@@ -408,6 +408,9 @@ class BuffAutoAcceptOffer:
                     self.logger.error(str(e))
                 except ConfirmationExpected:
                     self.logger.error("[UUAutoAcceptOffer] Steam Session已经过期, 请删除session文件夹并重启Steamauto")
+                except ValueError as e:
+                    self.logger.error("[BuffAutoAcceptOffer] Steam 宵禁限制, 请稍后再试!")
+                    handle_caught_exception(e)
                 except Exception as e:
                     self.logger.error(e, exc_info=True)
                     self.logger.info("[BuffAutoAcceptOffer] 出现错误, 稍后再试! ")
