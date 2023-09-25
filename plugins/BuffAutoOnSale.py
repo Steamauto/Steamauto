@@ -221,7 +221,8 @@ class BuffAutoOnSale:
                             for item in items:
                                 item["asset_info"]["market_hash_name"] = item["market_hash_name"]
                                 items_to_sell.append(item["asset_info"])
-                            self.put_item_on_sale(items=items_to_sell, price=-1, description=description)
+                            self.put_item_on_sale(items=items_to_sell, price=-1, description=description,
+                                                  game=game["game"], app_id=game["app_id"])
                             self.logger.info("[BuffAutoOnSale] BUFF商品上架成功! ")
                         else:
                             self.logger.info("[BuffAutoOnSale] 检查到 " + game["game"] + " 库存为空, 跳过上架")
