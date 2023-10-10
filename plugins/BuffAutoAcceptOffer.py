@@ -209,8 +209,12 @@ class BuffAutoAcceptOffer:
                             )
                             + "个待发货请求! "
                         )
-                        self.logger.info("[BuffAutoAcceptOffer] CSGO待发货: " + str(int(to_deliver_order["csgo"])) + "个")
-                        self.logger.info("[BuffAutoAcceptOffer] DOTA2待发货: " + str(int(to_deliver_order["dota2"])) + "个")
+                        self.logger.info("[BuffAutoAcceptOffer] CSGO待发货: " +
+                                         str((0 if "csgo" not in to_deliver_order
+                                              else int(to_deliver_order["csgo"]))) + "个")
+                        self.logger.info("[BuffAutoAcceptOffer] DOTA2待发货: " +
+                                         str(0 if "dota2" not in to_deliver_order
+                                             else int(to_deliver_order["dota2"])) + "个")
                 except TypeError as e:
                     handle_caught_exception(e)
                     self.logger.error("[BuffAutoAcceptOffer] Buff接口返回数据异常! 请检查网络连接或稍后再试! ")
