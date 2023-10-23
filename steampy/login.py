@@ -55,7 +55,7 @@ class LoginExecutor:
     def set_sessionid_cookies(self):
         community_domain = SteamUrl.COMMUNITY_URL[8:]
         store_domain = SteamUrl.STORE_URL[8:]
-        for name in ['steamxLoginSecure', 'sessionid', 'steamRefresh_steam', 'steamCountry']:
+        for name in ['steamLoginSecure', 'sessionid', 'steamRefresh_steam', 'steamCountry']:
             cookie = self.session.cookies.get_dict()[name]
             community_cookie = self._create_cookie(name, cookie, community_domain)
             store_cookie = self._create_cookie(name, cookie, store_domain)
