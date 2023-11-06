@@ -1,8 +1,11 @@
 import json
+import os
+import pickle
 import time
 
 from requests.exceptions import ProxyError
 from steampy.exceptions import InvalidCredentials, ConfirmationExpected
+from utils.static import SESSION_FOLDER
 
 
 class SteamAutoAcceptOffer:
@@ -27,6 +30,9 @@ class SteamAutoAcceptOffer:
                             self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
                         )
                         self.logger.info("[SteamAutoAcceptOffer] Steam会话已更新")
+                        steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
+                        with open(steam_session_path, "wb") as f:
+                            pickle.dump(self.steam_client.session, f)
                 with self.steam_client_mutex:
                     trade_summary = self.steam_client.get_trade_offers_summary()["response"]
                 self.logger.info("[SteamAutoAcceptOffer] 检测到有%d个待处理的交易报价" % trade_summary["pending_received_count"])

@@ -1,5 +1,6 @@
 import json
 import os
+import pickle
 import time
 
 from requests.exceptions import ProxyError
@@ -8,7 +9,7 @@ from steampy.exceptions import InvalidCredentials, ConfirmationExpected
 import uuyoupinapi
 
 from utils.logger import handle_caught_exception
-from utils.static import UU_TOKEN_FILE_PATH
+from utils.static import UU_TOKEN_FILE_PATH, SESSION_FOLDER
 from utils.tools import get_encoding, exit_code
 
 
@@ -53,6 +54,9 @@ class UUAutoAcceptOffer:
                                 json.dumps(self.steam_client.steam_guard),
                             )
                             self.logger.info("[UUAutoAcceptOffer] Steam会话已更新")
+                            steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
+                            with open(steam_session_path, "wb") as f:
+                                pickle.dump(self.steam_client.session, f)
                     uuyoupin.send_device_info()
                     self.logger.info("[UUAutoAcceptOffer] 正在检查悠悠有品待发货信息...")
                     uu_wait_deliver_list = uuyoupin.get_wait_deliver_list()

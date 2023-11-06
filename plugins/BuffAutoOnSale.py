@@ -1,5 +1,6 @@
 import datetime
 import os
+import pickle
 import random
 import time
 
@@ -10,7 +11,8 @@ from requests.exceptions import ProxyError
 from steampy.exceptions import InvalidCredentials
 
 from utils.logger import handle_caught_exception
-from utils.static import APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH, BUFF_COOKIES_FILE_PATH, SUPPORT_GAME_TYPES
+from utils.static import APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH, BUFF_COOKIES_FILE_PATH, SUPPORT_GAME_TYPES, \
+    SESSION_FOLDER
 from utils.tools import get_encoding
 
 
@@ -189,6 +191,16 @@ class BuffAutoOnSale:
         if 'description' in self.config["buff_auto_on_sale"]:
             description = self.config["buff_auto_on_sale"]["description"]
         while True:
+            with self.steam_client_mutex:
+                if not self.steam_client.is_session_alive():
+                    self.logger.info("[BuffAutoOnSale] Steam会话已过期, 正在重新登录...")
+                    self.steam_client.login(
+                        self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
+                    )
+                    self.logger.info("[BuffAutoOnSale] Steam会话已更新")
+                    steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
+                    with open(steam_session_path, "wb") as f:
+                        pickle.dump(self.steam_client.session, f)
             now = datetime.datetime.now()
             if now.hour in black_list_time:
                 self.logger.info("[BuffAutoOnSale] 现在时间在黑名单时间内, 休眠" + str(sleep_interval) + "秒")

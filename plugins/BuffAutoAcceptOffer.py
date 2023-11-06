@@ -1,4 +1,6 @@
 import datetime
+import pickle
+
 import pyjson5 as json
 import time
 import os
@@ -17,7 +19,7 @@ from utils.static import (
     STEAM_TRADE_DEV_FILE_PATH,
     SUPPORT_GAME_TYPES,
     MESSAGE_NOTIFICATION_DEV_FILE_PATH,
-    TO_DELIVER_DEV_FILE_PATH,
+    TO_DELIVER_DEV_FILE_PATH, SESSION_FOLDER,
 )
 from utils.tools import get_encoding, exit_code
 from utils.logger import handle_caught_exception
@@ -166,6 +168,9 @@ class BuffAutoAcceptOffer:
                             self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
                         )
                         self.logger.info("[BuffAutoAcceptOffer] Steam会话已更新")
+                        steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
+                        with open(steam_session_path, "wb") as f:
+                            pickle.dump(self.steam_client.session, f)
                 self.logger.info("[BuffAutoAcceptOffer] 正在进行BUFF待发货/待收货饰品检查...")
                 username = self.check_buff_account_state()
                 if username == "":
