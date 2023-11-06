@@ -39,9 +39,6 @@ DEFAULT_STEAM_ACCOUNT_JSON = """
   // Steam 令牌参数（用于身份验证）
   "identity_secret": "",
 
-  // Steam 网页 API 密钥（用于访问 Steam API）
-  "api_key": "",
-
   // Steam 登录时填写的用户名
   "steam_username": "",
 

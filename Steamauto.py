@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 import shutil
 import signal
 import sys
@@ -9,6 +10,7 @@ from ssl import SSLCertVerificationError
 
 import pyjson5 as json
 import requests
+from bs4 import BeautifulSoup
 from requests.exceptions import SSLError
 
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
@@ -68,6 +70,23 @@ def handle_global_exception(exc_type, exc_value, exc_traceback):
 def set_exit_code(code):
     global exit_code
     exit_code = code
+
+
+def get_api_key(steam_client):
+    resp = steam_client._session.get('https://steamcommunity.com/dev/apikey')
+    soup = BeautifulSoup(resp.text, 'html.parser')
+    api_key = soup.find(id='bodyContents_ex').find('p').text.split(' ')[-1]
+    regex = re.compile(r'[a-zA-Z0-9]{32}')
+    if regex.match(api_key):
+        return api_key
+    else:
+        resp = steam_client._session.post('https://steamcommunity.com/dev/registerkey',
+                                          data={'domain': 'localhost', 'agreeToTerms': 'agreed',
+                                                'sessionid': steam_client._session.cookies.get_dict()['sessionid'],
+                                                'Submit': '注册'})
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        api_key = soup.find(id='bodyContents_ex').find('p').text.split(' ')[-1]
+        return api_key
 
 
 def login_to_steam():
@@ -141,10 +160,10 @@ def login_to_steam():
                     # logger.info("代理服务器可用")
                     logger.warning("警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动")
 
-                client = SteamClient(api_key=acc.get("api_key"), proxies=config["proxies"])
+                client = SteamClient(api_key="", proxies=config["proxies"])
 
             else:
-                client = SteamClient(api_key=acc.get("api_key"))
+                client = SteamClient(api_key="")
             if config["steam_login_ignore_ssl_error"]:
                 logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
                 client._session.verify = False
@@ -200,6 +219,7 @@ def login_to_steam():
         except InvalidCredentials as e:
             handle_caught_exception(e)
             logger.error("登录失败(账号或密码错误). 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "中的账号密码是否正确\n")
+    steam_client._api_key = get_api_key(steam_client)
     return steam_client
 
 
@@ -320,15 +340,8 @@ def get_steam_client_mutexs(num):
     return steam_client_mutexs
 
 
-def init_plugins_and_start(steam_client, steam_client_mutex, api_key_in_config):
+def init_plugins_and_start(steam_client, steam_client_mutex):
     plugins_enabled = get_plugins_enabled(steam_client, steam_client_mutex)
-    with steam_client_mutex:
-        if api_key_in_config != steam_client.steam_guard["api_key"]:
-            logger.error(
-                "[BuffAutoAcceptOffer] Session中缓存的api_key与 " + STEAM_ACCOUNT_INFO_FILE_PATH + " 中的api_key不一致, 请删除session文件"
-            )
-            pause()
-            return 1
     logger.info("初始化完成, 开始运行插件!")
     print("\n")
     time.sleep(0.1)
@@ -375,16 +388,9 @@ def main():
         pause()
         return 1
 
-    with open(
-            STEAM_ACCOUNT_INFO_FILE_PATH,
-            "r",
-            encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH),
-    ) as f:
-        api_key_in_config = json.load(f)["api_key"]
-
     steam_client_mutex = threading.Lock()
     if steam_client is not None:
-        init_plugins_and_start(steam_client, steam_client_mutex, api_key_in_config)
+        init_plugins_and_start(steam_client, steam_client_mutex)
 
     logger.info("由于所有插件已经关闭,程序即将退出...")
     pause()
