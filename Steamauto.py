@@ -389,9 +389,9 @@ def main():
         steam_client = login_to_steam()
         if steam_client is None:
             return 1
-
+    steam_client_mutex = threading.Lock()
     # 仅用于获取启用的插件
-    plugins_enabled = get_plugins_enabled(None, None)
+    plugins_enabled = get_plugins_enabled(steam_client, steam_client_mutex)
     # 检查插件是否正确初始化
     plugins_check_status = plugins_check(plugins_enabled)
     if plugins_check_status == 0:
@@ -399,7 +399,6 @@ def main():
         pause()
         return 1
 
-    steam_client_mutex = threading.Lock()
     if steam_client is not None:
         init_plugins_and_start(steam_client, steam_client_mutex)
 

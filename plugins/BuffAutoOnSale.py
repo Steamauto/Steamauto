@@ -9,6 +9,7 @@ import requests
 from apprise.AppriseAsset import AppriseAsset
 from requests.exceptions import ProxyError
 from steampy.exceptions import InvalidCredentials
+from utils.buff_helper import get_valid_session_for_buff
 
 from utils.logger import handle_caught_exception
 from utils.static import APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH, BUFF_COOKIES_FILE_PATH, SUPPORT_GAME_TYPES, \
@@ -50,9 +51,7 @@ class BuffAutoOnSale:
         self.lowest_price_cache = {}
 
     def init(self) -> bool:
-        if not os.path.exists(BUFF_COOKIES_FILE_PATH):
-            with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
-                f.write("session=")
+        if get_valid_session_for_buff(self.steam_client, self.logger) == "":
             return True
         return False
 
