@@ -10,6 +10,7 @@ import requests
 from apprise.AppriseAsset import AppriseAsset
 from requests.exceptions import ProxyError
 from steampy.exceptions import InvalidCredentials, ConfirmationExpected
+from utils.buff_helper import get_openid_params
 
 from utils.static import (
     APPRISE_ASSET_FOLDER,
@@ -42,6 +43,7 @@ class BuffAutoAcceptOffer:
         self.order_info = {}
 
     def init(self) -> bool:
+        print(get_openid_params())
         if not os.path.exists(BUFF_COOKIES_FILE_PATH):
             with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
                 f.write("session=")

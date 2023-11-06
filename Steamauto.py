@@ -75,18 +75,20 @@ def set_exit_code(code):
 def get_api_key(steam_client):
     resp = steam_client._session.get('https://steamcommunity.com/dev/apikey')
     soup = BeautifulSoup(resp.text, 'html.parser')
-    api_key = soup.find(id='bodyContents_ex').find('p').text.split(' ')[-1]
-    regex = re.compile(r'[a-zA-Z0-9]{32}')
-    if regex.match(api_key):
-        return api_key
-    else:
-        resp = steam_client._session.post('https://steamcommunity.com/dev/registerkey',
-                                          data={'domain': 'localhost', 'agreeToTerms': 'agreed',
-                                                'sessionid': steam_client._session.cookies.get_dict()['sessionid'],
-                                                'Submit': '注册'})
-        soup = BeautifulSoup(resp.text, 'html.parser')
+    if soup.find(id='bodyContents_ex') is not None:
         api_key = soup.find(id='bodyContents_ex').find('p').text.split(' ')[-1]
-        return api_key
+        regex = re.compile(r'[a-zA-Z0-9]{32}')
+        if regex.match(api_key):
+            return api_key
+    resp = steam_client._session.post('https://steamcommunity.com/dev/registerkey',
+                                      data={'domain': 'localhost', 'agreeToTerms': 'agreed',
+                                            'sessionid': steam_client._session.cookies.get_dict()['sessionid'],
+                                            'Submit': '注册'})
+    soup = BeautifulSoup(resp.text, 'html.parser')
+    if soup.find(id='bodyContents_ex') is None:
+        return ''
+    api_key = soup.find(id='bodyContents_ex').find('p').text.split(' ')[-1]
+    return api_key
 
 
 def login_to_steam():
