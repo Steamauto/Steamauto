@@ -30,9 +30,6 @@ UU_ARG_FILE_PATH = "uu.txt"
 
 DEFAULT_STEAM_ACCOUNT_JSON = """
 {
-  // Steam 的数字 ID（字符串格式）
-  "steamid": "",
-
   // Steam 令牌参数（用于身份验证）
   "shared_secret": "",
 
