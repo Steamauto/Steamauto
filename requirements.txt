@@ -6,3 +6,4 @@ pyjson5
 beautifulsoup4
 chardet
 rsa
+qrcode[pil]
