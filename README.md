@@ -37,14 +37,13 @@
 
 ## 如何使用?
 [推荐观看视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz)
+0. ~~给予本仓库一个star(手动狗头)~~
 1. 前往 [Github Releases](https://github.com/jiajiaxd/Steamauto/releases/latest) 下载适合自己系统的Steamauto
-2. 将所得文件解压缩
-3. 打开 `config` 文件夹
-4. 将 `config.example.json5` 复制到 `config.json5` 并修改配置(相关教程见FAQ)
-5. 打开`steam_account_info.json5`, 修改所有参数(相关教程见配置说明)
-6. **(若有需求Buff相关功能)** 打开`buff_cookies.txt`, 填入[网易BUFF](https://buff.163.com)的cookie(包含session即可)
-7. **(若有需求悠悠有品相关功能)** 打开`uu_token.txt`,填入[悠悠有品](https://www.youpin898.com/)的token(如何获取token,见FAQ) 
-8. ~~给予本仓库一个star(手动狗头)~~
+2. 运行一次程序，程序会释放配置文件
+3. 编辑`config`文件夹下的`config.json5`(相关教程见FAQ)  
+4. 修改`config`文件夹下的`steam_account_info.json5`中所有的参数(相关教程见配置说明)  
+5. **(若有需求Buff相关功能)** 在`config.json5`中启用BUFF相关功能并直接运行程序(程序会自动填写buff_cookies.txt)  
+6. **(若有需求悠悠有品相关功能)** 打开`uu_token.txt`,填入[悠悠有品](https://www.youpin898.com/)的token(如何获取token,见FAQ) 
 
 ## 配置说明
 **部分配置项数据(如获取Steam账户信息、Buff的cookie等)在附录中，请自行查阅！**
@@ -53,8 +52,8 @@
 |---------------------------|-------------------------------------------|
 | `config.json5`             | 主配置文件，可以修改程序的大多数设置                        |
 | `steam_account_info.json5` | 用于填入Steam账户相关信息                           |
-| `buff_cookies.txt`        | **启用网易Buff相关插件后才会创建** 用于填入网易BUFF的Cookie信息 |
-| `uu_token.txt`            | **启用悠悠有品相关插件后才会创建** 用于填入悠悠有品的Cookie信息(悠悠有品token获取方法见FAQ)   |
+| `buff_cookies.txt`        | **启用网易Buff相关插件后才会创建** 用于存取网易BUFF的Cookie信息 |
+| `uu_token.txt`            | **启用悠悠有品相关插件后才会创建** 用于存取悠悠有品的Cookie信息(悠悠有品token获取方法见FAQ)   |
 ##### [config.json5](config/config.json5) (仅供参考 以实际文件为主)
 ```json5
 {
@@ -212,7 +211,7 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 在悠悠有品上，暂无解决方案，你需要手动处理  
 
 ##### 如何获取悠悠有品token?
-使用`-uu`参数运行Steamauto程序,根据程序向导操作即可  
+使用`-uu`参数或者在程序所在目录下创建`uu.txt`(无需填入任何内容),运行Steamauto程序,根据程序向导操作即可  
 
 ##### 是否支持多开？  
 支持。但是需要复制多份程序，分别在不同的文件夹内运行  

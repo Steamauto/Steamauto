@@ -40,7 +40,7 @@ current_version = "3.3.0"
 if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
     import uuyoupinapi
 
-    if os.path.exists("uu.txt"):
+    if os.path.exists("uu.txt") or os.path.exists("uu.txt.txt"):
         logger.info("检测到uu.txt文件,已经自动使用-uu参数启动Steamauto")
         logger.info("已经自动删除uu.txt文件")
         os.remove("uu.txt")
