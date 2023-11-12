@@ -30,6 +30,11 @@ UU_ARG_FILE_PATH = "uu.txt"
 
 DEFAULT_STEAM_ACCOUNT_JSON = """
 {
+
+  // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
+  // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
+  // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
+
   // Steam 令牌参数（用于身份验证）
   "shared_secret": "",
 
