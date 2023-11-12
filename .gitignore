@@ -1,5 +1,4 @@
 config/*
-!config/config.example.json5
 dev/*
 logs
 session
