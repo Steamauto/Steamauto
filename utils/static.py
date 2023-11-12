@@ -1,6 +1,7 @@
 import os
 
-config = {"no_pause": False}
+global no_pause
+no_pause = False
 
 VERSION_FILE = "version.json"
 APPRISE_ASSET_FOLDER = "Apprise"
@@ -48,3 +49,13 @@ DEFAULT_STEAM_ACCOUNT_JSON = """
   "steam_password": ""
 }
 """
+
+
+def set_no_pause(no_pause_):
+    global no_pause
+    no_pause = no_pause_
+
+
+def get_no_pause():
+    global no_pause
+    return no_pause

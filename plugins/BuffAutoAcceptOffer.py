@@ -10,7 +10,7 @@ import requests
 from apprise.AppriseAsset import AppriseAsset
 from requests.exceptions import ProxyError
 from steampy.exceptions import InvalidCredentials, ConfirmationExpected
-from utils.buff_helper import *
+from utils.buff_helper import get_valid_session_for_buff
 
 from utils.static import (
     APPRISE_ASSET_FOLDER,
