@@ -60,36 +60,36 @@
 {
   // 登录Steam时是否开启SSL验证，正常情况下不建议关闭SSL验证
   "steam_login_ignore_ssl_error": false,
-
+  
   // 是否开启本地加速功能
   // 本地加速功能并非100%可用, 若开启后仍然无法正常连接Steam属于正常情况, 最优解决方案是使用海外服务器
   // 请注意：开启此功能必须关闭Steam登录SSL验证，即steam_login_ignore_ssl_error必须设置为true
   "steam_local_accelerate": false,
-    
-   // 是否使用本地加速功能（win+i下的网络设置中的代理设置）
-  "use_proxies": true,
 
-  //本地代理地址
-  //这里以clash为例，clash默认监听7890端口，如果你使用的是其他代理软件，请自行修改端口
+  // 是否使用Steam代理功能(该功能只会代理Steam)
+  "use_proxies": false,
+
+  // 本地代理地址, 使用前需要确保use_proxies已经设置为true
+  // 这里以clash为例，clash默认监听7890端口，如果你使用的是其他代理软件，请自行修改端口
   "proxies": {
     "http": "http://127.0.0.1:7890",
     "https": "http://127.0.0.1:7890"
   },
-
+  
   // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
 
-  // BUFF 自动收货插件配置
+  // BUFF 自动发货插件配置
   "buff_auto_accept_offer": {
-    // 是否启用BUFF自动接收报价功能
+    // 是否启用BUFF自动发货报价功能
     "enable": true,
     // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
     "interval": 300,
-    // 是否开启出售保护(自动发货前检查其他卖家最低价，若低于保护价格则不会自动接收报价s)
+    // 是否开启出售保护(自动发货前检查其他卖家最低价，若低于保护价格则不会自动接受报价s)
     "sell_protection": false,
     // 出售保护价格，若其他卖家最低价低于此价格，则不会进行出售保护
     "protection_price": 30,
-    // 出售价格保护比例，若出售价格低于此比例乘以其他卖家最低价格，则不会自动接收报价
+    // 出售价格保护比例，若出售价格低于此比例乘以其他卖家最低价格，则不会自动接受报价
     "protection_price_percentage": 0.9,
     // 出售通知配置(如不需要可直接删除)
     "sell_notification": {
@@ -101,7 +101,7 @@
     // 出售保护通知配置(如不需要可直接删除)
     "protection_notification": {
       // 出售保护通知标题（如不需要可直接删除）
-      "title": "{game}饰品: {item_name} 未自动接收报价, 价格与市场最低价相差过大",
+      "title": "{game}饰品: {item_name} 未自动接受报价, 价格与市场最低价相差过大",
       // 出售保护通知内容（如不需要可直接删除）
       "body": "请自行至BUFF确认报价!"
     },
@@ -157,23 +157,22 @@
   },
   // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！
   "development_mode": false
-}  
+}
 ```
 
 ##### `steam_account_info.json5`
 ```json5
 {
-  // Steam 的数字 ID（字符串格式）
-  "steamid": "",
+
+  // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
+  // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
+  // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
 
   // Steam 令牌参数（用于身份验证）
   "shared_secret": "",
 
   // Steam 令牌参数（用于身份验证）
   "identity_secret": "",
-
-  // Steam 网页 API 密钥（用于访问 Steam API）
-  "api_key": "",
 
   // Steam 登录时填写的用户名
   "steam_username": "",
