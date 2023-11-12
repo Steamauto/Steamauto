@@ -1,8 +1,7 @@
 name: Build & Publish
-on: 
+on:
   push:
-    branches:
-      master
+    branches: [master]
   workflow_dispatch:
 jobs:
   Build:
@@ -10,30 +9,20 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macOS-latest]
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4.5.0
         with:
-          python-version: '3.10'
-          
+          python-version: "3.10"
+
       - name: Install requirements and build
         run: |
           pip install pyinstaller
           pip install -r requirements.txt
           pyinstaller -F Steamauto.py --collect-all apprise --name Steamauto-${{ matrix.os }}
-      
-      - name: Copy config folder(Linux,macos)
-        if: matrix.os != 'windows-latest'
-        run: |
-          cp -R config dist/
-    
-      - name: Copy config folder(windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          Copy-Item config dist -Recurse
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3.1.2
@@ -41,35 +30,24 @@ jobs:
           name: ${{ matrix.os }}-dist
           path: dist
 
-      
   Publish:
     needs: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4.5.0
-        with:
-          python-version: '3.10'
-
       - name: Download artifacts
         uses: actions/download-artifact@v3.0.2
         with:
           path: ./Steamauto
-      
+
       - name: Finalization
         run: |
-          mkdir releases
-          wget https://github.com/jiajiaxd/jiajiaxd/raw/main/action_zip.py
-          python action_zip.py Steamauto releases
           sudo timedatectl set-timezone "Asia/Shanghai"
           echo "DATE=$(date +"%Y%m%d-%H%M")" >> $GITHUB_ENV
-          cd releases
-          mv macOS-latest-dist.zip Steamauto_MacOS.zip
-          mv ubuntu-latest-dist.zip Steamauto_Linux_x86_64.zip
-          mv windows-latest-dist.zip Steamauto_Windows_x86_64.zip
-      
+          mkdir releases
+          mv Steamauto/windows-latest-dist/* releases/
+          mv Steamauto/ubuntu-latest-dist/* releases/
+          mv Steamauto/macOS-latest-dist/* releases/
+
       - name: Upload to Github Releases
         uses: ncipollo/release-action@v1.11.1
         with:

@@ -13,6 +13,18 @@ import requests
 from bs4 import BeautifulSoup
 from requests.exceptions import SSLError
 
+from utils.static import (
+    CONFIG_FILE_PATH,
+    CONFIG_FOLDER,
+    DEFAULT_STEAM_ACCOUNT_JSON,
+    DEV_FILE_FOLDER,
+    SESSION_FOLDER,
+    STEAM_ACCOUNT_INFO_FILE_PATH,
+    UU_TOKEN_FILE_PATH,
+    UU_ARG_FILE_PATH,
+    DEFAULT_CONFIG_JSON,
+    set_no_pause,
+)
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
 from plugins.BuffAutoOnSale import BuffAutoOnSale
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
@@ -21,18 +33,6 @@ from steampy.client import SteamClient
 from steampy.exceptions import ApiException, CaptchaRequired, InvalidCredentials
 from steampy.utils import ping_proxy
 from utils.logger import handle_caught_exception
-from utils.static import (
-    CONFIG_FILE_PATH,
-    CONFIG_FOLDER,
-    DEFAULT_STEAM_ACCOUNT_JSON,
-    DEV_FILE_FOLDER,
-    EXAMPLE_CONFIG_FILE_PATH,
-    SESSION_FOLDER,
-    STEAM_ACCOUNT_INFO_FILE_PATH,
-    UU_TOKEN_FILE_PATH,
-    UU_ARG_FILE_PATH,
-    set_no_pause,
-)
 from utils.tools import accelerator, compare_version, get_encoding, logger, pause, exit_code
 
 current_version = "3.3.0"
@@ -272,37 +272,37 @@ def init_files_and_params() -> int:
     if not os.path.exists(CONFIG_FOLDER):
         os.mkdir(CONFIG_FOLDER)
     if not os.path.exists(CONFIG_FILE_PATH):
-        if not os.path.exists(EXAMPLE_CONFIG_FILE_PATH):
-            logger.error("未检测到" + EXAMPLE_CONFIG_FILE_PATH + ", 请前往GitHub进行下载, 并保证文件和程序在同一目录下. ")
-            return 0
-        else:
-            shutil.copy(EXAMPLE_CONFIG_FILE_PATH, CONFIG_FILE_PATH)
-            logger.info("检测到首次运行, 已为您生成" + CONFIG_FILE_PATH + ", 请按照README提示填写配置文件! ")
-    with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
-        try:
-            config = json.load(f)
-        except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
-            handle_caught_exception(e)
-            logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
-            return 0
+        with open(CONFIG_FILE_PATH, "w", encoding="utf-8") as f:
+            f.write(DEFAULT_CONFIG_JSON)
+        logger.info("检测到首次运行, 已为您生成" + CONFIG_FILE_PATH + ", 请按照README提示填写配置文件! ")
+        first_run = True
+    else:
+        with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
+            try:
+                config = json.load(f)
+            except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
+                handle_caught_exception(e)
+                logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
+                return 0
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
             f.write(DEFAULT_STEAM_ACCOUNT_JSON)
             logger.info("检测到首次运行, 已为您生成" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请按照README提示填写配置文件! ")
             first_run = True
 
-    if "no_pause" in config:
-        set_no_pause(config["no_pause"])
-    if "development_mode" not in config:
-        config["development_mode"] = False
-    if "steam_login_ignore_ssl_error" not in config:
-        config["steam_login_ignore_ssl_error"] = False
-    if "steam_local_accelerate" not in config:
-        config["steam_local_accelerate"] = False
-    if "development_mode" in config and config["development_mode"]:
-        development_mode = True
-    if development_mode:
-        logger.info("开发者模式已开启")
+    if not first_run:
+        if "no_pause" in config:
+            set_no_pause(config["no_pause"])
+        if "development_mode" not in config:
+            config["development_mode"] = False
+        if "steam_login_ignore_ssl_error" not in config:
+            config["steam_login_ignore_ssl_error"] = False
+        if "steam_local_accelerate" not in config:
+            config["steam_local_accelerate"] = False
+        if "development_mode" in config and config["development_mode"]:
+            development_mode = True
+        if development_mode:
+            logger.info("开发者模式已开启")
 
     if first_run:
         return 1
@@ -384,18 +384,15 @@ def main():
     init_status = init_files_and_params()
     if init_status == 0:
         pause()
-        return 0
+        return 1
     elif init_status == 1:
-        first_run = True
-    else:
-        first_run = False
+        pause()
+        return 0
 
     steam_client = None
-    if not first_run:
-        # 登录Steam
-        steam_client = login_to_steam()
-        if steam_client is None:
-            return 1
+    steam_client = login_to_steam()
+    if steam_client is None:
+        return 1
     steam_client_mutex = threading.Lock()
     # 仅用于获取启用的插件
     plugins_enabled = get_plugins_enabled(steam_client, steam_client_mutex)
