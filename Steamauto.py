@@ -290,18 +290,19 @@ def init_files_and_params() -> int:
             logger.info("检测到首次运行, 已为您生成" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请按照README提示填写配置文件! ")
             first_run = True
 
-    if "no_pause" in config:
-        set_no_pause(config["no_pause"])
-    if "development_mode" not in config:
-        config["development_mode"] = False
-    if "steam_login_ignore_ssl_error" not in config:
-        config["steam_login_ignore_ssl_error"] = False
-    if "steam_local_accelerate" not in config:
-        config["steam_local_accelerate"] = False
-    if "development_mode" in config and config["development_mode"]:
-        development_mode = True
-    if development_mode:
-        logger.info("开发者模式已开启")
+    if not first_run:
+        if "no_pause" in config:
+            set_no_pause(config["no_pause"])
+        if "development_mode" not in config:
+            config["development_mode"] = False
+        if "steam_login_ignore_ssl_error" not in config:
+            config["steam_login_ignore_ssl_error"] = False
+        if "steam_local_accelerate" not in config:
+            config["steam_local_accelerate"] = False
+        if "development_mode" in config and config["development_mode"]:
+            development_mode = True
+        if development_mode:
+            logger.info("开发者模式已开启")
 
     if first_run:
         return 1
