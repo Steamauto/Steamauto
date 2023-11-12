@@ -7,3 +7,4 @@ beautifulsoup4
 chardet
 rsa
 qrcode[pil]
+qrcode_terminal
