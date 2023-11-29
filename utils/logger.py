@@ -6,7 +6,7 @@ import colorlog
 
 from utils.static import LOGS_FOLDER
 
-logger = logging.getLogger("Steamauto")
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 s_handler = logging.StreamHandler()
 s_handler.setLevel(logging.INFO)
