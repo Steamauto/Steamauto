@@ -193,6 +193,7 @@ class BuffAutoOnSale:
             with self.steam_client_mutex:
                 if not self.steam_client.is_session_alive():
                     self.logger.info("[BuffAutoOnSale] Steam会话已过期, 正在重新登录...")
+                    self.steam_client._session.cookies.clear()
                     self.steam_client.login(
                         self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
                     )
