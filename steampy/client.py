@@ -143,7 +143,7 @@ class SteamClient:
         offers_response['response']['trade_offers_received'] = list(
             filter(lambda offer: offer['trade_offer_state'] == TradeOfferState.Active, offers_received))
         offers_response['response']['trade_offers_sent'] = list(
-            filter(lambda offer: offer['trade_offer_state'] == TradeOfferState.Active, offers_sent))
+            filter(lambda offer: offer['trade_offer_state'] == TradeOfferState.ConfirmationNeed, offers_sent))
         return offers_response
 
     def get_trade_offer(self, trade_offer_id: str, merge: bool = True) -> dict:
