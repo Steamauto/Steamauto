@@ -173,15 +173,18 @@ class UUAccount:
                         }
                     )
                 else:
-                    response = self.call_api(
-                        "GET", "/api/trade/Order/OrderPagedDetail", data={"orderNo": order["orderNo"]}
-                    ).json()
-                    data_to_return.append(
-                        {
-                            "offer_id": response["Data"]["SteamOfferId"],
-                            "item_name": order["productDetail"]["commodityName"],
-                        }
-                    )
+                    try:
+                        response = self.call_api(
+                            "GET", "/api/trade/Order/OrderPagedDetail", data={"orderNo": order["orderNo"]}
+                        ).json()
+                        data_to_return.append(
+                            {
+                                "offer_id": response["Data"]["SteamOfferId"],
+                                "item_name": order["productDetail"]["commodityName"],
+                            }
+                        )
+                    except:
+                        continue 
             else:
                 data_to_return.append(
                     {

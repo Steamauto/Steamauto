@@ -105,6 +105,19 @@ class UUAutoAcceptOffer:
                             if (uu_wait_deliver_list.index(item) != len_uu_wait_deliver_list - 1) and accepted:
                                 self.logger.info("[UUAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...")
                                 time.sleep(5)
+                                
+                    if self.config["uu_auto_accept_offer"].get("auto_confirm", False) == True:
+                        with self.steam_client_mutex:
+                            trade_summary = self.steam_client.get_trade_offers_summary()["response"]
+                        self.logger.info("[UUAutoAcceptOffer] 检测到有%d个待确认的发送交易报价" % trade_summary["pending_sent_count"])
+                        if trade_summary["pending_sent_count"] > 0:
+                            trade_offers = self.steam_client.get_trade_offers(merge=False)["response"]
+                            if len(trade_offers["trade_offers_sent"]) > 0:
+                                for trade_offer in trade_offers["trade_offers_sent"]:
+                                    self.steam_client._confirm_transaction(trade_offer["tradeofferid"])
+                                    self.logger.info(f'[UUAutoAcceptOffer] 确认发送报价[{str(trade_offer["tradeofferid"])}]完成!')
+                                    ignored_offer.append(trade_offer["tradeofferid"])
+                                    time.sleep(5)
                 except TypeError as e:
                     handle_caught_exception(e)
                     self.logger.error("[UUAutoAcceptOffer] 悠悠有品待发货信息获取失败, 请检查账号是否正确! 插件将自动退出")
