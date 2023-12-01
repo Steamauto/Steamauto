@@ -105,7 +105,8 @@ class UUAutoAcceptOffer:
                             if (uu_wait_deliver_list.index(item) != len_uu_wait_deliver_list - 1) and accepted:
                                 self.logger.info("[UUAutoAcceptOffer] 为了避免频繁访问Steam接口, 等待5秒后继续...")
                                 time.sleep(5)
-                    if self.config["uu_auto_accept_offer"]["auto_confirm"] == True:
+                                
+                    if self.config["uu_auto_accept_offer"].get("auto_confirm", False) == True:
                         with self.steam_client_mutex:
                             trade_summary = self.steam_client.get_trade_offers_summary()["response"]
                         self.logger.info("[UUAutoAcceptOffer] 检测到有%d个待确认的发送交易报价" % trade_summary["pending_sent_count"])
