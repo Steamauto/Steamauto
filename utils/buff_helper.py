@@ -2,8 +2,8 @@ import os
 import time
 from typing import Dict
 
-import qrcode_terminal
 import qrcode
+import qrcode_terminal
 import requests
 from bs4 import BeautifulSoup
 
@@ -111,7 +111,6 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
         logger.info("[BuffLoginSolver] 尝试通过Steam登录至BUFF")
         got_cookies = login_to_buff_by_steam(steam_client)
         if "session" not in got_cookies or not is_session_has_enough_permission(got_cookies["session"]):
-            logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
             logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
         else:
             logger.info('[BuffLoginSolver] 使用Steam登录至BUFF成功')
