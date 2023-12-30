@@ -62,6 +62,12 @@ class BuffAutoAcceptOffer:
             if response_json["code"] == "OK":
                 if "data" in response_json:
                     if "nickname" in response_json["data"]:
+                        steam_trade_response_json = requests.get(
+                            "https://buff.163.com/api/market/steam_trade", headers=self.buff_headers
+                        ).json()
+                        if 'data' not in steam_trade_response_json or steam_trade_response_json['data'] is None:
+                            self.logger.error("[BuffAutoAcceptOffer] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
+                            return ""
                         return response_json["data"]["nickname"]
             self.logger.error("[BuffAutoAcceptOffer] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
             return ""
