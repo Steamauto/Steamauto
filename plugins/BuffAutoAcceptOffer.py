@@ -180,16 +180,18 @@ class BuffAutoAcceptOffer:
                 self.logger.info("[BuffAutoAcceptOffer] 正在进行BUFF待发货/待收货饰品检查...")
                 username = self.check_buff_account_state()
                 if username == "":
-                    self.logger.error("[BuffAutoAcceptOffer] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
-                    if "buff_cookie_expired_notification" in self.config["buff_auto_accept_offer"]:
-                        apprise_obj = apprise.Apprise()
-                        for server in self.config["buff_auto_accept_offer"]["servers"]:
-                            apprise_obj.add(server)
-                        apprise_obj.notify(
-                            self.config["buff_auto_accept_offer"]["buff_cookie_expired_notification"]["title"],
-                            self.config["buff_auto_accept_offer"]["buff_cookie_expired_notification"]["body"],
-                        )
-                    return
+                    self.logger.info('[BuffAutoAcceptOffer] BUFF账户登录状态失效, 尝试重新登录...')
+                    if get_valid_session_for_buff(self.steam_client, self.logger) == "":
+                        self.logger.error("[BuffAutoAcceptOffer] BUFF账户登录状态失效, 无法自动重新登录! ")
+                        if "buff_cookie_expired_notification" in self.config["buff_auto_accept_offer"]:
+                            apprise_obj = apprise.Apprise()
+                            for server in self.config["buff_auto_accept_offer"]["servers"]:
+                                apprise_obj.add(server)
+                            apprise_obj.notify(
+                                self.config["buff_auto_accept_offer"]["buff_cookie_expired_notification"]["title"],
+                                self.config["buff_auto_accept_offer"]["buff_cookie_expired_notification"]["body"],
+                            )
+                        return
                 if self.development_mode and os.path.exists(MESSAGE_NOTIFICATION_DEV_FILE_PATH):
                     self.logger.info("[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地消息通知文件")
                     with open(
