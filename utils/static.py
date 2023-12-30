@@ -113,7 +113,6 @@ DEFAULT_CONFIG_JSON = r"""
     },
     // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
     "servers": [
-      "tgram://bottoken/ChatID"
     ]
   },
   // BUFF 自动上架插件配置
