@@ -2,13 +2,16 @@ import os
 import time
 from typing import Dict
 
+import apprise
+import json5
 import qrcode
 import qrcode_terminal
 import requests
+from apprise.AppriseAttachment import AppriseAttachment
 from bs4 import BeautifulSoup
 
 from steampy.client import SteamClient
-from utils.static import BUFF_COOKIES_FILE_PATH
+from utils.static import BUFF_COOKIES_FILE_PATH, CONFIG_FILE_PATH
 from utils.tools import get_encoding, logger
 
 
@@ -54,6 +57,20 @@ def login_to_buff_by_qrcode() -> str:
     qrcode_terminal.draw(qr_code_url)
     img = qrcode.make(qr_code_url)
     img.save("qrcode.png")
+    config = {}
+    try:
+        with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
+            config = json5.load(f)
+    except:
+        pass
+    if "buff_login_notification" in config["buff_auto_accept_offer"]:
+        apprise_obj = apprise.Apprise()
+        for server in config["buff_auto_accept_offer"]["servers"]:
+            apprise_obj.add(server)
+        apprise_obj.notify(
+            config["buff_auto_accept_offer"]["buff_login_notification"]["title"],
+            attach=AppriseAttachment("qrcode.png"),
+        )
     logger.info("请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描")
     status = 0
     scanned = False

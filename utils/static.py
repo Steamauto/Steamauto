@@ -106,6 +106,11 @@ DEFAULT_CONFIG_JSON = r"""
       // BUFF Cookies失效通知内容（如不需要可直接删除）
       "body": "BUFF Cookie已过期, 请重新登录"
     },
+    // 二维码登录BUFF通知配置
+    "buff_login_notification": {
+      // 二维码登录BUFF通知标题（如不需要可直接删除）
+      "title": "请扫描二维码登录BUFF"
+    },
     // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
     "servers": [
       "tgram://bottoken/ChatID"
