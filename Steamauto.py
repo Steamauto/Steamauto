@@ -8,7 +8,7 @@ import threading
 import time
 from ssl import SSLCertVerificationError
 
-import pyjson5 as json
+import json5 as json
 import requests
 from bs4 import BeautifulSoup
 from requests.exceptions import SSLError

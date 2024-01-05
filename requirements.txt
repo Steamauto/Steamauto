@@ -2,7 +2,7 @@ requests
 apprise
 colorama
 colorlog
-pyjson5
+json5
 beautifulsoup4
 chardet
 rsa
