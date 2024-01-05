@@ -123,7 +123,6 @@ DEFAULT_CONFIG_JSON = r"""
     "force_refresh": true,
     // 使用磨损区间最低价上架, 若为否, 则使用类型最低价上架
     // 注意: 该功能会导致增加更多的请求, 请谨慎开启
-    // 警告: 该功能尚未测试, 可能存在BUG
     "use_range_price": false,
     // 黑名单时间, 为小时, int格式, 空为不启用黑名单, 当前小时如果等于黑名单时间, 则不会自动上架
     "blacklist_time": [],
@@ -134,7 +133,19 @@ DEFAULT_CONFIG_JSON = r"""
     // 商品上架描述, 为字符串, 为空则不填写描述
     "description": "",
     // 检查库存间隔时间
-    "interval": 1800
+    "interval": 1800,
+    // 每个请求间隔时间 (秒) - 用于防止被BUFF封禁
+    "sleep_seconds_to_prevent_buff_ban": 10,
+    // 上架通知配置(如不需要可直接删除)
+    "on_sale_notification": {
+        // 上架通知标题
+        "title": "游戏 {game} 成功上架 {sold_count} 件饰品",
+        // 上架通知内容
+        "body": "上架详情:\n{item_list}"
+    },
+    // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
+    "servers": [
+    ]
   },
   // 悠悠有品自动发货插件配置
   "uu_auto_accept_offer": {

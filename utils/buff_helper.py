@@ -7,11 +7,12 @@ import json5
 import qrcode
 import qrcode_terminal
 import requests
+from apprise.AppriseAsset import AppriseAsset
 from apprise.AppriseAttachment import AppriseAttachment
 from bs4 import BeautifulSoup
 
 from steampy.client import SteamClient
-from utils.static import BUFF_COOKIES_FILE_PATH, CONFIG_FILE_PATH
+from utils.static import BUFF_COOKIES_FILE_PATH, CONFIG_FILE_PATH, APPRISE_ASSET_FOLDER
 from utils.tools import get_encoding, logger
 
 
@@ -64,7 +65,8 @@ def login_to_buff_by_qrcode() -> str:
     except:
         pass
     if "buff_login_notification" in config["buff_auto_accept_offer"]:
-        apprise_obj = apprise.Apprise()
+        asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
+        apprise_obj = apprise.Apprise(asset=asset)
         for server in config["buff_auto_accept_offer"]["servers"]:
             apprise_obj.add(server)
         apprise_obj.notify(

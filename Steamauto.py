@@ -280,7 +280,7 @@ def init_files_and_params() -> int:
         with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
             try:
                 config = json.load(f)
-            except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
+            except Exception as e:
                 handle_caught_exception(e)
                 logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
                 return 0
