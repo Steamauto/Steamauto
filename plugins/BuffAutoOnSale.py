@@ -106,6 +106,7 @@ class BuffAutoOnSale:
                        {'min': 0.03, 'max': 0.04},
                        {'min': 0.04, 'max': 0.07},
                        {'min': 0.07, 'max': 0.08},
+                       {'min': 0.08, 'max': 0.09},
                        {'min': 0.09, 'max': 0.10},
                        {'min': 0.10, 'max': 0.11},
                        {'min': 0.11, 'max': 0.15},
@@ -202,6 +203,10 @@ class BuffAutoOnSale:
                                 max_paint_wear = wear_range['max']
                                 done = True
                                 break
+                        self.logger.error("[BuffAutoOnSale] 代码出现错误, 无法解析磨损: " + paint_wear)
+                        self.logger.error("[BuffAutoOnSale] 使用同类型最低价上架")
+                        done = True
+                        break
                     else:
                         if not has_requested_refresh:
                             has_requested_refresh = True
