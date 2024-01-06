@@ -185,6 +185,15 @@ class BuffAutoOnSale:
                     response_data = response_json["data"]
                     bs = BeautifulSoup(response_data, "html.parser")
                     paint_wear_p = bs.find("p", {"class": "paint-wear"})
+                    bs_span = bs.find("span", {"class": "custom-currency"})
+                    try:
+                        suggested_price = int(bs.find("span", {"class": "custom-currency"}).attrs.get("data-price"))
+                    except Exception:
+                        suggested_price = -1
+                    if suggested_price != -1 and suggested_price < 10:
+                        self.logger.info("[BuffAutoOnSale] 商品价格低于10, 使用同类型最低价上架")
+                        done = True
+                        break
                     if paint_wear_p is not None:
                         paint_wear = paint_wear_p.text.replace("磨损:", "").replace(" ", "").replace("\n", "")
                         for wear_range in wear_ranges:
