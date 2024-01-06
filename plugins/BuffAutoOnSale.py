@@ -312,6 +312,13 @@ class BuffAutoOnSale:
         )
         response_json = self.session.get(url, headers=self.buff_headers).json()
         if response_json["code"] == "OK":
+            if len(response_json["data"]["items"]) == 0:  # 无商品
+                if min_paint_wear != 0 or max_paint_wear != 1.0:
+                    self.logger.info("[BuffAutoOnSale] 无商品, 重试使用同类型最低价上架")
+                    return self.get_lowest_price(goods_id, game, app_id, 0, 1.0)
+                else:
+                    self.logger.info("[BuffAutoOnSale] 无商品")
+                    return -1
             lowest_price = float(response_json["data"]["items"][0]["price"])
             self.lowest_price_cache[goods_key] = {"lowest_price": lowest_price, "cache_time": datetime.datetime.now()}
             return lowest_price
@@ -397,9 +404,12 @@ class BuffAutoOnSale:
                             for item in items:
                                 item["asset_info"]["market_hash_name"] = item["market_hash_name"]
                                 items_to_sell.append(item["asset_info"])
-                            self.put_item_on_sale(items=items_to_sell, price=-1, description=description,
-                                                  game=game["game"], app_id=game["app_id"],
-                                                  use_range_price=use_range_price)
+                            # 5个一组上架
+                            items_to_sell_group = [items_to_sell[i:i + 5] for i in range(0, len(items_to_sell), 5)]
+                            for items_to_sell in items_to_sell_group:
+                                self.put_item_on_sale(items=items_to_sell, price=-1, description=description,
+                                                      game=game["game"], app_id=game["app_id"],
+                                                      use_range_price=use_range_price)
                             self.logger.info("[BuffAutoOnSale] BUFF商品上架成功! ")
                         else:
                             self.logger.info("[BuffAutoOnSale] 检查到 " + game["game"] + " 库存为空, 跳过上架")
