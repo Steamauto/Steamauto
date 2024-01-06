@@ -375,28 +375,34 @@ class BuffAutoOnSale:
         if 'use_range_price' in self.config["buff_auto_on_sale"]:
             use_range_price = self.config["buff_auto_on_sale"]["use_range_price"]
         while True:
-            with self.steam_client_mutex:
-                if not self.steam_client.is_session_alive():
-                    self.logger.info("[BuffAutoOnSale] Steam会话已过期, 正在重新登录...")
-                    self.steam_client._session.cookies.clear()
-                    self.steam_client.login(
-                        self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
-                    )
-                    self.logger.info("[BuffAutoOnSale] Steam会话已更新")
-                    steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
-                    with open(steam_session_path, "wb") as f:
-                        pickle.dump(self.steam_client.session, f)
-            now = datetime.datetime.now()
-            if now.hour in black_list_time:
-                self.logger.info("[BuffAutoOnSale] 现在时间在黑名单时间内, 休眠" + str(sleep_interval) + "秒")
-                time.sleep(sleep_interval)
-                continue
-            if len(white_list_time) != 0 and now.hour not in white_list_time:
-                self.logger.info("[BuffAutoOnSale] 现在时间不在白名单时间内, 休眠" + str(sleep_interval) + "秒")
-                time.sleep(sleep_interval)
-                continue
-            if random.randint(1, 100) > random_chance:
-                self.logger.info("[BuffAutoOnSale] 未命中随机概率, 休眠" + str(sleep_interval) + "秒")
+            try:
+                with self.steam_client_mutex:
+                    if not self.steam_client.is_session_alive():
+                        self.logger.info("[BuffAutoOnSale] Steam会话已过期, 正在重新登录...")
+                        self.steam_client._session.cookies.clear()
+                        self.steam_client.login(
+                            self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
+                        )
+                        self.logger.info("[BuffAutoOnSale] Steam会话已更新")
+                        steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
+                        with open(steam_session_path, "wb") as f:
+                            pickle.dump(self.steam_client.session, f)
+                now = datetime.datetime.now()
+                if now.hour in black_list_time:
+                    self.logger.info("[BuffAutoOnSale] 现在时间在黑名单时间内, 休眠" + str(sleep_interval) + "秒")
+                    time.sleep(sleep_interval)
+                    continue
+                if len(white_list_time) != 0 and now.hour not in white_list_time:
+                    self.logger.info("[BuffAutoOnSale] 现在时间不在白名单时间内, 休眠" + str(sleep_interval) + "秒")
+                    time.sleep(sleep_interval)
+                    continue
+                if random.randint(1, 100) > random_chance:
+                    self.logger.info("[BuffAutoOnSale] 未命中随机概率, 休眠" + str(sleep_interval) + "秒")
+                    time.sleep(sleep_interval)
+                    continue
+            except Exception as e:
+                self.logger.error("[BuffAutoOnSale] 出现错误, 错误信息: " + str(e), exc_info=True)
+                self.logger.info("[BuffAutoOnSale] 休眠" + str(sleep_interval) + "秒")
                 time.sleep(sleep_interval)
                 continue
             try:
