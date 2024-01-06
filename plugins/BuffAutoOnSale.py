@@ -203,10 +203,11 @@ class BuffAutoOnSale:
                                 max_paint_wear = wear_range['max']
                                 done = True
                                 break
-                        self.logger.error("[BuffAutoOnSale] 代码出现错误, 无法解析磨损: " + paint_wear)
-                        self.logger.error("[BuffAutoOnSale] 使用同类型最低价上架")
-                        done = True
-                        break
+                        if not done:
+                            self.logger.error("[BuffAutoOnSale] 代码出现错误, 无法解析磨损: " + paint_wear)
+                            self.logger.error("[BuffAutoOnSale] 使用同类型最低价上架")
+                            done = True
+                            break
                     else:
                         if not has_requested_refresh:
                             has_requested_refresh = True
@@ -343,7 +344,7 @@ class BuffAutoOnSale:
 
     def exec(self):
         self.logger.info("[BuffAutoOnSale] BUFF自动上架插件已启动, 休眠30秒, 与自动接收报价插件错开运行时间")
-        time.sleep(30)
+        # time.sleep(30)
         try:
             self.logger.info("[BuffAutoOnSale] 正在准备登录至BUFF...")
             with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
