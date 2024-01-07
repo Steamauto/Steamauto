@@ -143,6 +143,13 @@ DEFAULT_CONFIG_JSON = r"""
         // 上架通知内容
         "body": "上架详情:\n{item_list}"
     },
+    // 出现验证码通知配置(如不需要可直接删除)
+    "captcha_notification": {
+        // 出现验证码通知标题
+        "title": "上架饰品时出现验证码",
+        // 出现验证码通知内容
+        "body": "使用session={session}并使用浏览器打开以下链接并完成验证:\n{captcha_url}"
+    },
     // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
     "servers": [
     ]

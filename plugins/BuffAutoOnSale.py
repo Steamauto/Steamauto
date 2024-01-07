@@ -289,9 +289,9 @@ class BuffAutoOnSale:
                     apprise_obj.add(server)
                 apprise_obj.notify(
                     title=self.config["buff_auto_on_sale"]["on_sale_notification"]["title"].format(
-                        game=game, sold_count=len(items)),
+                        game=game, sold_count=len(assets)),
                     body=self.config["buff_auto_on_sale"]["on_sale_notification"]["body"].format(
-                        game=game, sold_count=len(items), item_list=item_list)
+                        game=game, sold_count=len(assets), item_list=item_list)
                     )
             return response_json["data"]
         else:
@@ -347,9 +347,25 @@ class BuffAutoOnSale:
             self.lowest_price_cache[goods_key] = {"lowest_price": lowest_price, "cache_time": datetime.datetime.now()}
             return lowest_price
         else:
-            self.logger.error(response_json)
-            self.logger.error("[BuffAutoOnSale] 获取BUFF商品最低价失败, 请检查buff_cookies.txt或稍后再试! ")
-            return -1
+            if response_json["code"] == "Captcha Validate Required":
+                captcha_url = response_json["confirm_entry"]["entry"]["url"]
+                session = self.session.cookies.get("session")
+                self.logger.error("[BuffAutoOnSale] 需要验证码, 请使用session " + session + " 打开以下链接, 并完成验证")
+                self.logger.error("[BuffAutoOnSale] " + captcha_url)
+                if "captcha_notification" in self.config["buff_auto_on_sale"]:
+                    apprise_obj = apprise.Apprise(asset=self.asset)
+                    for server in self.config["buff_auto_on_sale"]["servers"]:
+                        apprise_obj.add(server)
+                    apprise_obj.notify(
+                        title=self.config["buff_auto_on_sale"]["captcha_notification"]["title"],
+                        body=self.config["buff_auto_on_sale"]["captcha_notification"]["body"].format(
+                            captcha_url=captcha_url, session=session)
+                    )
+                return -1
+            else:
+                self.logger.error(response_json)
+                self.logger.error("[BuffAutoOnSale] 获取BUFF商品最低价失败, 请检查buff_cookies.txt或稍后再试! ")
+                return -1
 
     def exec(self):
         self.logger.info("[BuffAutoOnSale] BUFF自动上架插件已启动, 休眠30秒, 与自动接收报价插件错开运行时间")
