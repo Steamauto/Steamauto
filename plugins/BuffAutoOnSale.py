@@ -325,6 +325,15 @@ class BuffAutoOnSale:
             + "&max_paintwear="
             + str(max_paint_wear)
         )
+        if min_paint_wear == 0 and max_paint_wear == 1.0:
+            url = (
+                "https://buff.163.com/api/market/goods/sell_order?goods_id="
+                + str(goods_id)
+                + "&page_num=1&page_size=24&allow_tradable_cooldown=1&sort_by=default&game="
+                + game
+                + "&appid="
+                + str(app_id)
+            )
         response_json = self.session.get(url, headers=self.buff_headers).json()
         if response_json["code"] == "OK":
             if len(response_json["data"]["items"]) == 0:  # 无商品
