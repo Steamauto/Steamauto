@@ -3,6 +3,7 @@ import os
 import pickle
 import random
 import time
+from typing import Any
 
 import apprise
 import json5
@@ -36,10 +37,28 @@ def format_str(text: str, trade):
     return text
 
 
+def merge_buy_orders(response_data: dict[str, Any]):
+    orders = response_data["items"]
+    user_info = response_data["user_infos"]
+    for order in orders:
+        order["user"] = user_info[order["user_id"]]
+        del order["user_id"]
+        pay_method = order["pay_method"]
+        if pay_method == 43:
+            order["supported_pay_method"] = ["支付宝", "微信"]
+        elif pay_method == 3:
+            order["supported_pay_method"] = ["支付宝"]
+        elif pay_method == 1:
+            order["supported_pay_method"] = ["微信"]
+        else:
+            order["supported_pay_method"] = []
+    return orders
+
+
 class BuffAutoOnSale:
     buff_headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
+                      "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
     }
 
     def __init__(self, logger, steam_client, steam_client_mutex, config):
@@ -64,7 +83,8 @@ class BuffAutoOnSale:
                 buff_account_data = json5.load(f)
             return buff_account_data["data"]["nickname"]
         else:
-            response_json = self.session.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
+            response_json = self.session.get("https://buff.163.com/account/api/user/info",
+                                             headers=self.buff_headers).json()
             if dev:
                 self.logger.info("开发者模式, 保存账户信息到本地")
                 with open(BUFF_ACCOUNT_DEV_FILE_PATH, "w", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
@@ -128,6 +148,18 @@ class BuffAutoOnSale:
         sleep_seconds_to_prevent_buff_ban = 10
         if 'sleep_seconds_to_prevent_buff_ban' in self.config["buff_auto_on_sale"]:
             sleep_seconds_to_prevent_buff_ban = self.config["buff_auto_on_sale"]["sleep_seconds_to_prevent_buff_ban"]
+        supply_buy_orders = False
+        only_auto_accept = True
+        supported_payment_method = ["支付宝"]
+        min_price = 0
+        if 'buy_order' in self.config["buff_auto_on_sale"] and self.config["buff_auto_on_sale"]["buy_order"]["enable"]:
+            supply_buy_orders = True
+            if 'only_auto_accept' in self.config["buff_auto_on_sale"]["buy_order"]:
+                only_auto_accept = self.config["buff_auto_on_sale"]["buy_order"]["only_auto_accept"]
+            if 'supported_payment_method' in self.config["buff_auto_on_sale"]["buy_order"]:
+                supported_payment_method = self.config["buff_auto_on_sale"]["buy_order"]["supported_payment_method"]
+            if 'min_price' in self.config["buff_auto_on_sale"]["buy_order"]:
+                min_price = self.config["buff_auto_on_sale"]["buy_order"]["min_price"]
         url = "https://buff.163.com/api/market/sell_order/create/manual_plus"
         assets = []
         for item in items:
@@ -136,6 +168,7 @@ class BuffAutoOnSale:
             self.logger.info("[BuffAutoOnSale] 正在解析 " + item["market_hash_name"])
             min_paint_wear = 0
             max_paint_wear = 1.0
+            paint_wear = -1
             if use_range_price:
                 done = False
                 while not done:
@@ -155,17 +188,17 @@ class BuffAutoOnSale:
                                      str(sleep_seconds_to_prevent_buff_ban) + "秒")
                     time.sleep(sleep_seconds_to_prevent_buff_ban)
                     asset = {
-                            "assetid": item["assetid"],
-                            "classid": item["classid"],
-                            "instanceid": item["instanceid"],
-                            "contextid": item["contextid"],
-                            "market_hash_name": item["market_hash_name"],
-                            "price": "",
-                            "income": "",
-                            "has_market_min_price": False,
-                            "game": game,
-                            "goods_id": item["goods_id"]
-                        }
+                        "assetid": item["assetid"],
+                        "classid": item["classid"],
+                        "instanceid": item["instanceid"],
+                        "contextid": item["contextid"],
+                        "market_hash_name": item["market_hash_name"],
+                        "price": "",
+                        "income": "",
+                        "has_market_min_price": False,
+                        "game": game,
+                        "goods_id": item["goods_id"]
+                    }
                     data = {"game": game, "assets": [asset]}
                     self.session.get("https://buff.163.com/api/market/steam_trade", headers=self.buff_headers)
                     csrf_token = self.session.cookies.get("csrf_token")
@@ -197,8 +230,9 @@ class BuffAutoOnSale:
                         break
                     if paint_wear_p is not None:
                         paint_wear = paint_wear_p.text.replace("磨损:", "").replace(" ", "").replace("\n", "")
+                        paint_wear = float(paint_wear)
                         for wear_range in wear_ranges:
-                            if wear_range['min'] <= float(paint_wear) < wear_range['max']:
+                            if wear_range['min'] <= paint_wear < wear_range['max']:
                                 min_paint_wear = wear_range['min']
                                 max_paint_wear = wear_range['max']
                                 done = True
@@ -246,11 +280,34 @@ class BuffAutoOnSale:
                                 break
                             self.logger.error("[BuffAutoOnSale] 商品尚未解析完成...")
                             continue
-                    self.logger.info("[BuffAutoOnSale] 使用磨损区间最低价上架, 磨损区间: " + str(min_paint_wear) + " - " +
-                                     str(max_paint_wear))
+                    self.logger.info(
+                        "[BuffAutoOnSale] 使用磨损区间最低价上架, 磨损区间: " + str(min_paint_wear) + " - " +
+                        str(max_paint_wear))
             sell_price = price
             if sell_price == -1:
-                sell_price = self.get_lowest_price(item["goods_id"], game, app_id, min_paint_wear, max_paint_wear)
+                sell_price = self.get_lowest_sell_price(item["goods_id"], game, app_id, min_paint_wear, max_paint_wear)
+            if supply_buy_orders:
+                highest_buy_order = self.get_highest_buy_order(item["goods_id"], game, app_id, paint_wear=paint_wear,
+                                                               require_auto_accept=only_auto_accept,
+                                                               supported_payment_methods=supported_payment_method)
+                if sell_price <= min_price or sell_price <= float(highest_buy_order["price"]):
+                    # 直接供应给最高报价
+                    self.logger.info("[BuffAutoOnSale] 商品 " + item["market_hash_name"] +
+                                     " 将供应给最高报价 " + str(highest_buy_order["price"]))
+                    success = self.supply_item_to_buy_order(item, highest_buy_order, game, app_id)
+                    if success:
+                        if "on_sale_notification" in self.config["buff_auto_on_sale"]:
+                            item_list = item["market_hash_name"] + " : " + highest_buy_order["price"] + "\n"
+                            apprise_obj = apprise.Apprise(asset=self.asset)
+                            for server in self.config["buff_auto_on_sale"]["servers"]:
+                                apprise_obj.add(server)
+                            apprise_obj.notify(
+                                title=self.config["buff_auto_on_sale"]["on_sale_notification"]["title"].format(
+                                    game=game, sold_count=len(assets)),
+                                body=self.config["buff_auto_on_sale"]["on_sale_notification"]["body"].format(
+                                    game=game, sold_count=len(assets), item_list=item_list)
+                            )
+                        continue
             if sell_price != -1:
                 sell_price = sell_price - 0.01
                 self.logger.info("[BuffAutoOnSale] 商品 " + item["market_hash_name"] +
@@ -292,14 +349,68 @@ class BuffAutoOnSale:
                         game=game, sold_count=len(assets)),
                     body=self.config["buff_auto_on_sale"]["on_sale_notification"]["body"].format(
                         game=game, sold_count=len(assets), item_list=item_list)
-                    )
+                )
             return response_json["data"]
         else:
             self.logger.error(response_json)
             self.logger.error("[BuffAutoOnSale] 上架BUFF商品失败, 请检查buff_cookies.txt或稍后再试! ")
             return {}
 
-    def get_lowest_price(self, goods_id, game="csgo", app_id=730, min_paint_wear=0, max_paint_wear=1.0):
+    def get_highest_buy_order(self, goods_id, game="csgo", app_id=730, paint_wear=-1, require_auto_accept=True,
+                              supported_payment_methods=None):
+        sleep_seconds_to_prevent_buff_ban = 10
+        if 'sleep_seconds_to_prevent_buff_ban' in self.config["buff_auto_on_sale"]:
+            sleep_seconds_to_prevent_buff_ban = self.config["buff_auto_on_sale"]["sleep_seconds_to_prevent_buff_ban"]
+        if supported_payment_methods is None:
+            supported_payment_methods = ["支付宝", "微信"]
+        url = (
+                "https://buff.163.com/api/market/goods/buy_order?goods_id="
+                + str(goods_id)
+                + "&page_num=1&page_size=20&same_goods=false&game="
+                + game
+                + "&appid="
+                + str(app_id)
+        )
+        self.logger.info("[BuffAutoOnSale] 为了避免被封IP, 休眠" + str(sleep_seconds_to_prevent_buff_ban) + "秒")
+        time.sleep(sleep_seconds_to_prevent_buff_ban)
+        self.logger.info("[BuffAutoOnSale] 正在获取BUFF商品最高报价")
+        response = self.session.get(url, headers=self.buff_headers).json()
+        if response["code"] != "OK":
+            return {}
+        buy_orders = merge_buy_orders(response["data"])
+        if len(buy_orders) == 0:
+            return {}
+        for order in buy_orders:
+            if require_auto_accept and not order["user"]["is_auto_accept"]:
+                continue
+            payment_method_supported = False
+            for supported_payment_method in supported_payment_methods:
+                if supported_payment_method in order["supported_pay_method"]:
+                    payment_method_supported = True
+                    break
+            if not payment_method_supported:
+                continue
+            if len(order["specific"]) != 0:
+                match_specific = True
+                for specific in order["specific"]:
+                    if specific["type"] == "paintwear":
+                        if paint_wear == -1:
+                            match_specific = False
+                            break
+                        min_paint_wear = specific["values"][0]
+                        max_paint_wear = specific["values"][1]
+                        if not (min_paint_wear <= paint_wear < max_paint_wear):
+                            match_specific = False
+                            break
+                    if specific["type"] == "unlock_style":  # 对模板有要求, 不进行判断直接当不符合
+                        match_specific = False
+                        break
+                if not match_specific:
+                    continue
+            return order
+        return {}
+
+    def get_lowest_sell_price(self, goods_id, game="csgo", app_id=730, min_paint_wear=0, max_paint_wear=1.0):
         sleep_seconds_to_prevent_buff_ban = 10
         if 'sleep_seconds_to_prevent_buff_ban' in self.config["buff_auto_on_sale"]:
             sleep_seconds_to_prevent_buff_ban = self.config["buff_auto_on_sale"]["sleep_seconds_to_prevent_buff_ban"]
@@ -314,32 +425,32 @@ class BuffAutoOnSale:
                          str(sleep_seconds_to_prevent_buff_ban) + "秒")
         time.sleep(sleep_seconds_to_prevent_buff_ban)
         url = (
-            "https://buff.163.com/api/market/goods/sell_order?goods_id="
-            + str(goods_id)
-            + "&page_num=1&page_size=24&allow_tradable_cooldown=1&sort_by=default&game="
-            + game
-            + "&appid="
-            + str(app_id)
-            + "&min_paintwear="
-            + str(min_paint_wear)
-            + "&max_paintwear="
-            + str(max_paint_wear)
-        )
-        if min_paint_wear == 0 and max_paint_wear == 1.0:
-            url = (
                 "https://buff.163.com/api/market/goods/sell_order?goods_id="
                 + str(goods_id)
                 + "&page_num=1&page_size=24&allow_tradable_cooldown=1&sort_by=default&game="
                 + game
                 + "&appid="
                 + str(app_id)
+                + "&min_paintwear="
+                + str(min_paint_wear)
+                + "&max_paintwear="
+                + str(max_paint_wear)
+        )
+        if min_paint_wear == 0 and max_paint_wear == 1.0:
+            url = (
+                    "https://buff.163.com/api/market/goods/sell_order?goods_id="
+                    + str(goods_id)
+                    + "&page_num=1&page_size=24&allow_tradable_cooldown=1&sort_by=default&game="
+                    + game
+                    + "&appid="
+                    + str(app_id)
             )
         response_json = self.session.get(url, headers=self.buff_headers).json()
         if response_json["code"] == "OK":
             if len(response_json["data"]["items"]) == 0:  # 无商品
                 if min_paint_wear != 0 or max_paint_wear != 1.0:
                     self.logger.info("[BuffAutoOnSale] 无商品, 重试使用同类型最低价上架")
-                    return self.get_lowest_price(goods_id, game, app_id, 0, 1.0)
+                    return self.get_lowest_sell_price(goods_id, game, app_id, 0, 1.0)
                 else:
                     self.logger.info("[BuffAutoOnSale] 无商品")
                     return -1
@@ -369,7 +480,7 @@ class BuffAutoOnSale:
 
     def exec(self):
         self.logger.info("[BuffAutoOnSale] BUFF自动上架插件已启动, 休眠30秒, 与自动接收报价插件错开运行时间")
-        time.sleep(30)
+        # time.sleep(30)
         try:
             self.logger.info("[BuffAutoOnSale] 正在准备登录至BUFF...")
             with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
@@ -444,7 +555,8 @@ class BuffAutoOnSale:
                         items_count_this_loop += len(items)
                         if len(items) != 0:
                             self.logger.info(
-                                "[BuffAutoOnSale] 检查到 " + game["game"] + " 库存有 " + str(len(items)) + " 件可出售商品, 正在上架..."
+                                "[BuffAutoOnSale] 检查到 " + game["game"] + " 库存有 " + str(
+                                    len(items)) + " 件可出售商品, 正在上架..."
                             )
                             items_to_sell = []
                             for item in items:
@@ -479,3 +591,38 @@ class BuffAutoOnSale:
                 self.logger.error("[BuffAutoOnSale] BUFF商品上架失败, 错误信息: " + str(e), exc_info=True)
             self.logger.info("[BuffAutoOnSale] 休眠" + str(sleep_interval) + "秒")
             time.sleep(sleep_interval)
+
+    def supply_item_to_buy_order(self, item, highest_buy_order, game, app_id):
+        sleep_seconds_to_prevent_buff_ban = 10
+        if 'sleep_seconds_to_prevent_buff_ban' in self.config["buff_auto_on_sale"]:
+            sleep_seconds_to_prevent_buff_ban = self.config["buff_auto_on_sale"]["sleep_seconds_to_prevent_buff_ban"]
+        url = "https://buff.163.com/api/market/goods/supply/manual_plus"
+        data = {
+            "game": game,
+            "buy_order_id": highest_buy_order["id"],
+            "buyer_auto_accept": highest_buy_order["user"]["is_auto_accept"],
+            "price": float(highest_buy_order["price"]),
+            "assets": [
+                item
+            ]
+        }
+        self.logger.info("[BuffAutoOnSale] 为了避免被封IP, 休眠" + str(sleep_seconds_to_prevent_buff_ban) + "秒")
+        time.sleep(sleep_seconds_to_prevent_buff_ban)
+        self.logger.info("[BuffAutoOnSale] 正在供应商品至最高报价...")
+        response_json = self.session.post(url, json=data, headers=self.buff_headers).json()
+        if response_json["code"] == "OK":
+            self.logger.info("[BuffAutoOnSale] 商品供应成功! ")
+            # TODO 发起steam报价
+            # url = 'https://buff.163.com/api/market/manual_plus/seller_send_offer'
+            # 请求: POST
+            # body = {
+            #     "seller_info": "steam cookies, 使用AES加密 iv不确定如何生成, key随机生成, 并且用BUFF的公钥加密",
+            #     "bill_orders": [
+            #         "订单编号"
+            #     ]
+            # }
+            return True
+        else:
+            self.logger.error(response_json)
+            self.logger.error("[BuffAutoOnSale] 商品供应失败, 请检查buff_cookies.txt或稍后再试! ")
+        return True

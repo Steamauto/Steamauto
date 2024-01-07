@@ -151,6 +151,17 @@ DEFAULT_CONFIG_JSON = r"""
     "interval": 1800,
     // 每个请求间隔时间 (秒) - 用于防止被BUFF封禁
     "sleep_seconds_to_prevent_buff_ban": 10,
+    // 供应求购相关配置
+    "buy_order": {
+      // 是否供应求购订单
+      "enable": true,
+      // 是否只供应给开启自动收货的求购订单
+      "only_auto_accept": true,
+      // 支持收款方式 支付宝 微信
+      "supported_payment_method": ["支付宝"],
+      // 低于多少金额的商品直接塞求购
+      "min_price": 5
+    },
     // 上架通知配置(如不需要可直接删除)
     "on_sale_notification": {
         // 上架通知标题
