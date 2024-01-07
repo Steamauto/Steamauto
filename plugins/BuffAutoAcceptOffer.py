@@ -47,6 +47,29 @@ class BuffAutoAcceptOffer:
             return True
         return False
 
+    def require_buyer_send_offer(self):
+        url = 'https://buff.163.com/account/api/prefer/force_buyer_send_offer'
+        data = {
+            "force_buyer_send_offer": "true"
+        }
+        resp = requests.get(
+            "https://buff.163.com/api/market/steam_trade", headers=self.buff_headers
+        )
+        csrf_token = resp.cookies.get_dict()['csrf_token']
+        headers = self.buff_headers.copy()
+        headers['X-CSRFToken'] = csrf_token
+        headers['Origin'] = 'https://buff.163.com'
+        headers['Referer'] = 'https://buff.163.com/user-center/profile'
+        try:
+            resp = requests.post(url, headers=headers, json=data)
+            if resp.status_code == 200:
+                if resp.json()['code'] == 'OK':
+                    self.logger.info('[BuffAutoAcceptOffer] 已开启买家发起交易报价功能')
+                else:
+                    self.logger.error('[BuffAutoAcceptOffer] 开启买家发起交易报价功能失败')
+        except:
+            self.logger.error('[BuffAutoAcceptOffer] 开启买家发起交易报价功能失败')
+
     def check_buff_account_state(self, dev=False):
         if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
             self.logger.info("[BuffAutoAcceptOffer] 开发模式, 使用本地账号")
@@ -162,6 +185,7 @@ class BuffAutoAcceptOffer:
             exit_code.set(1)
             return 1
         self.logger.info("[BuffAutoAcceptOffer] 已经登录至BUFF 用户名: " + user_name)
+        self.require_buyer_send_offer()
         ignored_offer = []
         interval = self.config["buff_auto_accept_offer"]["interval"]
         while True:
