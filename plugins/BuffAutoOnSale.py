@@ -5,7 +5,7 @@ import random
 import time
 
 import apprise
-import pyjson5 as json
+import json5 as json
 import requests
 from apprise.AppriseAsset import AppriseAsset
 from bs4 import BeautifulSoup

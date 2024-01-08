@@ -1,7 +1,7 @@
 import datetime
 import pickle
 
-import pyjson5 as json
+import json5 as json
 import time
 import os
 
