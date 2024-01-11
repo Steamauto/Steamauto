@@ -115,6 +115,11 @@ DEFAULT_CONFIG_JSON = r"""
     "servers": [
     ]
   },
+  // BUFF 自动备注购买价格插件配置
+  "buff_auto_comment": {
+    // 是否启用BUFF自动备注购买价格功能
+    "enable": true,
+  },
   // BUFF 自动上架插件配置
   "buff_auto_on_sale": {
     // 是否启用BUFF自动以最低价上架所有库存

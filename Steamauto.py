@@ -13,6 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 from requests.exceptions import SSLError
 
+from plugins.BuffAutoComment import BuffAutoComment
 from utils.static import (
     CONFIG_FILE_PATH,
     CONFIG_FOLDER,
@@ -320,6 +321,13 @@ def get_plugins_enabled(steam_client, steam_client_mutex):
     ):
         buff_auto_accept_offer = BuffAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_accept_offer)
+    if (
+        "buff_auto_comment" in config
+        and "enable" in config["buff_auto_comment"]
+        and config["buff_auto_comment"]["enable"]
+    ):
+        buff_auto_comment = BuffAutoComment(logger, steam_client, steam_client_mutex, config)
+        plugins_enabled.append(buff_auto_comment)
     if "buff_auto_on_sale" in config and "enable" in config["buff_auto_on_sale"] and config["buff_auto_on_sale"]["enable"]:
         buff_auto_on_sale = BuffAutoOnSale(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_on_sale)
