@@ -2,7 +2,7 @@ import os
 import pickle
 import time
 
-import json5 as json
+import json5
 import requests
 from requests.exceptions import ProxyError
 
@@ -104,7 +104,7 @@ class BuffAutoComment:
                         self.logger.info("[BuffAutoComment] Steam会话已过期, 正在重新登录...")
                         self.steam_client._session.cookies.clear()
                         self.steam_client.login(
-                            self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
+                            self.steam_client.username, self.steam_client._password, json5.dumps(self.steam_client.steam_guard)
                         )
                         self.logger.info("[BuffAutoComment] Steam会话已更新")
                         steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")

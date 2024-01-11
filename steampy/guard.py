@@ -1,6 +1,6 @@
 import os
 import hmac
-import json5 as json
+import json5
 import struct
 from time import time
 from typing import Dict
@@ -20,9 +20,9 @@ def load_steam_guard(steam_guard: str) -> Dict[str, str]:
     """
     if os.path.isfile(steam_guard):
         with open(steam_guard, 'r', encoding=get_encoding(steam_guard)) as f:
-            return json.loads(f.read(), parse_int=str)
+            return json5.loads(f.read(), parse_int=str)
     else:
-        return json.loads(steam_guard, parse_int=str)
+        return json5.loads(steam_guard, parse_int=str)
 
 
 def generate_one_time_code(shared_secret: str, timestamp: int = None) -> str:

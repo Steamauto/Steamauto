@@ -3,6 +3,7 @@ import os
 import pickle
 import time
 
+import json5
 from requests.exceptions import ProxyError
 from steampy.exceptions import InvalidCredentials, ConfirmationExpected
 
@@ -52,7 +53,7 @@ class UUAutoAcceptOffer:
                             self.steam_client.login(
                                 self.steam_client.username,
                                 self.steam_client._password,
-                                json.dumps(self.steam_client.steam_guard),
+                                json5.dumps(self.steam_client.steam_guard),
                             )
                             self.logger.info("[UUAutoAcceptOffer] Steam会话已更新")
                             steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")

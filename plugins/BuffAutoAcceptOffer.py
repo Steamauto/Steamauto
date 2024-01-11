@@ -1,7 +1,7 @@
 import datetime
 import pickle
 
-import json5 as json
+import json5
 import time
 import os
 
@@ -74,14 +74,14 @@ class BuffAutoAcceptOffer:
         if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
             self.logger.info("[BuffAutoAcceptOffer] 开发模式, 使用本地账号")
             with open(BUFF_ACCOUNT_DEV_FILE_PATH, "r", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
-                buff_account_data = json.load(f)
+                buff_account_data = json5.load(f)
             return buff_account_data["data"]["nickname"]
         else:
             response_json = requests.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
             if dev:
                 self.logger.info("开发者模式, 保存账户信息到本地")
                 with open(BUFF_ACCOUNT_DEV_FILE_PATH, "w", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
-                    f.write(json.dumps(response_json, indent=4))
+                    f.write(json5.dumps(response_json, indent=4))
             if response_json["code"] == "OK":
                 if "data" in response_json:
                     if "nickname" in response_json["data"]:
@@ -140,7 +140,7 @@ class BuffAutoAcceptOffer:
                 if self.development_mode and os.path.exists(SHOP_LISTING_DEV_FILE_PATH):
                     self.logger.info("[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地价格数据")
                     with open(SHOP_LISTING_DEV_FILE_PATH, "r", encoding=get_encoding(SHOP_LISTING_DEV_FILE_PATH)) as f:
-                        resp_json = json.load(f)
+                        resp_json = json5.load(f)
                 else:
                     time.sleep(5)
                     shop_listing_url = (
@@ -155,7 +155,7 @@ class BuffAutoAcceptOffer:
                     if self.development_mode:
                         self.logger.info("[BuffAutoAcceptOffer] 开发者模式, 保存价格信息到本地")
                         with open(SHOP_LISTING_DEV_FILE_PATH, "w", encoding=get_encoding(SHOP_LISTING_DEV_FILE_PATH)) as f:
-                            f.write(json.dumps(resp_json, indent=4))
+                            f.write(json5.dumps(resp_json, indent=4))
                 other_lowest_price = float(resp_json["data"]["items"][0]["price"])
                 self.lowest_on_sale_price_cache[goods_id] = {"price": other_lowest_price, "cache_time": datetime.datetime.now()}
             if price < other_lowest_price * protection_price_percentage and other_lowest_price > protection_price:
@@ -195,7 +195,7 @@ class BuffAutoAcceptOffer:
                         self.logger.info("[BuffAutoAcceptOffer] Steam会话已过期, 正在重新登录...")
                         self.steam_client._session.cookies.clear()
                         self.steam_client.login(
-                            self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
+                            self.steam_client.username, self.steam_client._password, json5.dumps(self.steam_client.steam_guard)
                         )
                         self.logger.info("[BuffAutoAcceptOffer] Steam会话已更新")
                         steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
@@ -221,7 +221,7 @@ class BuffAutoAcceptOffer:
                     with open(
                         MESSAGE_NOTIFICATION_DEV_FILE_PATH, "r", encoding=get_encoding(MESSAGE_NOTIFICATION_DEV_FILE_PATH)
                     ) as f:
-                        message_notification = json.load(f)
+                        message_notification = json5.load(f)
                         to_deliver_order = message_notification["data"]["to_deliver_order"]
                 else:
                     response_json = requests.get(
@@ -232,7 +232,7 @@ class BuffAutoAcceptOffer:
                         with open(
                             MESSAGE_NOTIFICATION_DEV_FILE_PATH, "w", encoding=get_encoding(MESSAGE_NOTIFICATION_DEV_FILE_PATH)
                         ) as f:
-                            f.write(json.dumps(response_json, indent=4))
+                            f.write(json5.dumps(response_json, indent=4))
                     to_deliver_order = response_json["data"]["to_deliver_order"]
                 try:
                     if ("csgo" in to_deliver_order and int(to_deliver_order["csgo"]) != 0) or (
@@ -259,7 +259,7 @@ class BuffAutoAcceptOffer:
                 if self.development_mode and os.path.exists(STEAM_TRADE_DEV_FILE_PATH):
                     self.logger.info("[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地待发货文件")
                     with open(STEAM_TRADE_DEV_FILE_PATH, "r", encoding=get_encoding(STEAM_TRADE_DEV_FILE_PATH)) as f:
-                        trades = json.load(f)["data"]
+                        trades = json5.load(f)["data"]
                 else:
                     response_json = requests.get(
                         "https://buff.163.com/api/market/steam_trade", headers=self.buff_headers
@@ -267,7 +267,7 @@ class BuffAutoAcceptOffer:
                     if self.development_mode:
                         self.logger.info("[BuffAutoAcceptOffer] 开发者模式, 保存待发货信息到本地")
                         with open(STEAM_TRADE_DEV_FILE_PATH, "w", encoding=get_encoding(STEAM_TRADE_DEV_FILE_PATH)) as f:
-                            f.write(json.dumps(response_json, indent=4))
+                            f.write(json5.dumps(response_json, indent=4))
                     trades = response_json["data"]
                 trade_offer_to_confirm = set()
                 for game in SUPPORT_GAME_TYPES:
@@ -278,7 +278,7 @@ class BuffAutoAcceptOffer:
                             "r",
                             encoding=get_encoding(TO_DELIVER_DEV_FILE_PATH).format(game=game["game"]),
                         ) as f:
-                            trade_supply[game["game"]] = json.load(f)["data"]["items"]
+                            trade_supply[game["game"]] = json5.load(f)["data"]["items"]
                             for trade_offer in trade_supply[game["game"]]:
                                 trade_offer_to_confirm.add(trade_offer["tradeofferid"])
                     else:
@@ -296,7 +296,7 @@ class BuffAutoAcceptOffer:
                                 "w",
                                 encoding=get_encoding(TO_DELIVER_DEV_FILE_PATH).format(game=game["game"]),
                             ) as f:
-                                f.write(json.dumps(response_json, indent=4))
+                                f.write(json5.dumps(response_json, indent=4))
                         trade_supply[game["game"]] = response_json["data"]["items"]
                         for trade_offer in trade_supply[game["game"]]:
                             if trade_offer["tradeofferid"] is not None and trade_offer["tradeofferid"] != "":

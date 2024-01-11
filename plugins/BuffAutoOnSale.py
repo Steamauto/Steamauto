@@ -5,7 +5,7 @@ import random
 import time
 
 import apprise
-import json5 as json
+import json5
 import requests
 from apprise.AppriseAsset import AppriseAsset
 from bs4 import BeautifulSoup
@@ -61,14 +61,14 @@ class BuffAutoOnSale:
         if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
             self.logger.info("[BuffAutoOnSale] 开发模式, 使用本地账号")
             with open(BUFF_ACCOUNT_DEV_FILE_PATH, "r", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
-                buff_account_data = json.load(f)
+                buff_account_data = json5.load(f)
             return buff_account_data["data"]["nickname"]
         else:
             response_json = self.session.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
             if dev:
                 self.logger.info("开发者模式, 保存账户信息到本地")
                 with open(BUFF_ACCOUNT_DEV_FILE_PATH, "w", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
-                    json.dump(response_json, f, indent=4)
+                    json5.dump(response_json, f, indent=4)
             if response_json["code"] == "OK":
                 if "data" in response_json:
                     if "nickname" in response_json["data"]:
@@ -407,7 +407,7 @@ class BuffAutoOnSale:
                         self.logger.info("[BuffAutoOnSale] Steam会话已过期, 正在重新登录...")
                         self.steam_client._session.cookies.clear()
                         self.steam_client.login(
-                            self.steam_client.username, self.steam_client._password, json.dumps(self.steam_client.steam_guard)
+                            self.steam_client.username, self.steam_client._password, json5.dumps(self.steam_client.steam_guard)
                         )
                         self.logger.info("[BuffAutoOnSale] Steam会话已更新")
                         steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")

@@ -8,7 +8,7 @@ import threading
 import time
 from ssl import SSLCertVerificationError
 
-import json5 as json
+import json5
 import requests
 from bs4 import BeautifulSoup
 from requests.exceptions import SSLError
@@ -102,7 +102,7 @@ def get_steam_64_id_from_steam_community(steam_client):
     resp = steam_client._session.get("https://steamcommunity.com/")
     soup = BeautifulSoup(resp.text, "html.parser")
     steam_user_json = soup.find(id="webui_config").get("data-userinfo")
-    steam_user = json.loads(steam_user_json)
+    steam_user = json5.loads(steam_user_json)
     return str(steam_user["steamid"])
 
 
@@ -111,8 +111,8 @@ def login_to_steam():
     steam_client = None
     with open(STEAM_ACCOUNT_INFO_FILE_PATH, "r", encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
         try:
-            acc = json.load(f)
-        except (json.Json5DecoderException, json.Json5IllegalCharacter) as e:
+            acc = json5.load(f)
+        except Exception as e:
             handle_caught_exception(e)
             logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
             pause()
@@ -280,7 +280,7 @@ def init_files_and_params() -> int:
     else:
         with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
             try:
-                config = json.load(f)
+                config = json5.load(f)
             except Exception as e:
                 handle_caught_exception(e)
                 logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
