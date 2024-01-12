@@ -36,21 +36,47 @@ class BuffAutoComment:
         return False
 
     def get_buy_history(self, game: str) -> dict:
-        url = "https://buff.163.com/api/market/buy_order/history?page_num=1&page_size=10000&game=" + game
-        response_json = self.session.get(url, headers=self.buff_headers).json()
-        if response_json["code"] != "OK":
-            self.logger.error("[BuffAutoComment] 获取历史订单失败")
-            return {}
-        items = response_json["data"]["items"]
+        local_history = {}
+        history_file_path = os.path.join(SESSION_FOLDER, "buy_history_" + game + ".json")
+        if os.path.exists(history_file_path):
+            with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
+                local_history = json5.load(f)
+        page_num = 1
         result = {}
-        for item in items:
-            keys_to_form_dict_key = ["appid", "assetid", "classid", "contextid"]
-            keys_list = []
-            for key in keys_to_form_dict_key:
-                keys_list.append(str(item["asset_info"][key]))
-            key_str = "_".join(keys_list)
-            if key_str not in result:  # 使用最新的价格
-                result[key_str] = item["price"]
+        while True:
+            self.logger.debug("[BuffAutoComment] 正在获取" + game + " 购买记录, 页数: " + str(page_num))
+            url = ("https://buff.163.com/api/market/buy_order/history?page_num=" + str(page_num) +
+                   "&page_size=500&game=" + game)
+            response_json = self.session.get(url, headers=self.buff_headers).json()
+            if response_json["code"] != "OK":
+                self.logger.error("[BuffAutoComment] 获取历史订单失败")
+                break
+            items = response_json["data"]["items"]
+            should_break = False
+            for item in items:
+                keys_to_form_dict_key = ["appid", "assetid", "classid", "contextid"]
+                keys_list = []
+                for key in keys_to_form_dict_key:
+                    keys_list.append(str(item["asset_info"][key]))
+                key_str = "_".join(keys_list)
+                if key_str not in result:  # 使用最新的价格
+                    result[key_str] = item["price"]
+                if key_str in local_history and item["price"] == local_history[key_str]:
+                    self.logger.info("[BuffAutoComment] 后面没有新的订单了, 无需继续获取")
+                    should_break = True
+                    break
+            if len(items) < 500 or should_break:
+                break
+            page_num += 1
+            self.logger.info("[BuffAutoComment] 避免被封号, 休眠15秒")
+            time.sleep(15)
+        if local_history:
+            for key in local_history:
+                if key not in result:
+                    result[key] = local_history[key]
+        if result:
+            with open(history_file_path, "w", encoding="utf-8") as f:
+                json5.dump(result, f)
         return result
 
     def check_buff_account_state(self):
