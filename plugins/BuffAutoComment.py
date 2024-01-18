@@ -76,7 +76,7 @@ class BuffAutoComment:
                     result[key] = local_history[key]
         if result:
             with open(history_file_path, "w", encoding="utf-8") as f:
-                json5.dump(result, f)
+                json5.dump(result, f, indent=4)
         return result
 
     def check_buff_account_state(self):
@@ -88,26 +88,39 @@ class BuffAutoComment:
         self.logger.error("[BuffAutoComment] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
         raise TypeError
 
-    def get_buff_inventory(self, page_num=1, page_size=10000, sort_by="time.desc", state="all", force=0, force_wear=0,
-                           game="csgo", app_id=730):
+    def get_all_buff_inventory(self, game="csgo"):
+        self.logger.info("[BuffAutoComment] 正在获取 " + game + " BUFF 库存...")
+        page_num = 1
+        page_size = 500
+        sort_by = "time.desc"
+        state = "all"
+        force = 0
+        force_wear = 0
         url = "https://buff.163.com/api/market/steam_inventory"
-        params = {
-            "page_num": page_num,
-            "page_size": page_size,
-            "sort_by": sort_by,
-            "state": state,
-            "force": force,
-            "force_wear": force_wear,
-            "game": game,
-            "appid": app_id
-        }
-        response_json = self.session.get(url, headers=self.buff_headers, params=params).json()
-        if response_json["code"] == "OK":
-            return response_json["data"]
-        else:
-            self.logger.error(response_json)
-            self.logger.error("[BuffAutoOnSale] 获取BUFF库存失败, 请检查buff_cookies.txt或稍后再试! ")
-            return {}
+        total_items = []
+        while True:
+            params = {
+                "page_num": page_num,
+                "page_size": page_size,
+                "sort_by": sort_by,
+                "state": state,
+                "force": force,
+                "force_wear": force_wear,
+                "game": game
+            }
+            self.logger.info("[BuffAutoComment] 避免被封号, 休眠15秒")
+            time.sleep(15)
+            response_json = self.session.get(url, headers=self.buff_headers, params=params).json()
+            if response_json["code"] == "OK":
+                items = response_json["data"]["items"]
+                total_items.extend(items)
+                if len(items) < page_size:
+                    break
+                page_num += 1
+            else:
+                self.logger.error(response_json)
+                break
+        return total_items
 
     def exec(self):
         self.logger.info("[BuffAutoComment] BUFF自动备注已启动, 休眠60秒, 与其他插件错开运行时间")
@@ -151,12 +164,12 @@ class BuffAutoComment:
                     self.logger.info("[BuffAutoComment] 避免被封号, 休眠20秒")
                     time.sleep(20)
                     self.logger.info("[BuffAutoComment] 正在获取" + game["game"] + " BUFF 库存...")
-                    game_inventory = self.get_buff_inventory(game=game["game"], app_id=game["app_id"])
+                    game_inventory = self.get_all_buff_inventory(game=game["game"])
                     if not game_inventory:
                         self.logger.error("[BuffAutoComment] " + game["game"] + " 无库存")
                         continue
                     assets = []
-                    for item in game_inventory["items"]:
+                    for item in game_inventory:
                         keys_to_form_dict_key = ["appid", "assetid", "classid", "contextid"]
                         keys_list = []
                         for key in keys_to_form_dict_key:
