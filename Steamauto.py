@@ -189,10 +189,15 @@ def login_to_steam():
                 logger.info("已经启用Steamauto内置加速")
                 client._session.auth = accelerator()
             logger.info("正在登录...")
-            SteamClient.login(client, acc.get("steam_username"), acc.get("steam_password"), STEAM_ACCOUNT_INFO_FILE_PATH)
+            client.login(acc.get("steam_username"), acc.get("steam_password"), STEAM_ACCOUNT_INFO_FILE_PATH)
+            if client.is_session_alive():
+                logger.info("登录成功")
+            else:
+                logger.error("登录失败")
+                return None
             with open(steam_session_path, "wb") as f:
                 pickle.dump(client, f)
-            logger.info("登录完成! 已经自动缓存session.")
+            logger.info("已经自动缓存session.")
             steam_client = client
         except FileNotFoundError as e:
             handle_caught_exception(e)
