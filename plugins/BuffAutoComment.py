@@ -54,6 +54,8 @@ class BuffAutoComment:
             items = response_json["data"]["items"]
             should_break = False
             for item in items:
+                if item['state'] != 'SUCCESS':
+                    continue
                 keys_to_form_dict_key = ["appid", "assetid", "classid", "contextid"]
                 keys_list = []
                 for key in keys_to_form_dict_key:
@@ -229,6 +231,6 @@ class BuffAutoComment:
                 self.logger.error('[BuffAutoComment] mafile有问题, 请检查mafile是否正确(尤其是identity_secret)')
                 self.logger.error(str(e))
             except Exception as e:
-                self.logger.error("[BuffAutoComment] BUFF商品上架失败, 错误信息: " + str(e), exc_info=True)
+                self.logger.error("[BuffAutoComment] BUFF自动备注失败, 错误信息: " + str(e), exc_info=True)
             self.logger.info("[BuffAutoComment] 休眠" + str(sleep_interval) + "秒")
             time.sleep(sleep_interval)
