@@ -123,7 +123,7 @@ DEFAULT_CONFIG_JSON = r"""
   // BUFF 自动计算利润插件配置
   "buff_profit_report": {
     // 是否启用BUFF自动计算利润功能
-    "enable": true,
+    "enable": false,
     // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
     "servers": [
     ],
