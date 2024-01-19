@@ -401,16 +401,16 @@ class BuffProfitReport:
                         lowest_price = self.get_lowest_price(goods_id, game=game["game"])
                         if lowest_price == Decimal("-1"):
                             continue
-                        profit = (lowest_price - purchased_items_stats[goods_id]["average_price"])
-                        real_price = lowest_price * transaction_fee
-                        real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
-                        real_price = Decimal(real_price) * Decimal('0.99')
-                        real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
                         keywords = ["total_price", "average_price"]
                         for keyword in keywords:
                             purchased_items_stats[goods_id][keyword] = Decimal(
                                 purchased_items_stats[goods_id][keyword]).quantize(Decimal('0.00'),
                                                                                    rounding="ROUND_DOWN")
+                        profit = (lowest_price - purchased_items_stats[goods_id]["average_price"])
+                        real_price = lowest_price * transaction_fee
+                        real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
+                        real_price = Decimal(real_price) * Decimal('0.99')
+                        real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
                         profit_after_fee = Decimal(real_price) - purchased_items_stats[goods_id]["average_price"]
                         item_name = purchased_items_stats[goods_id]["name"]
                         missing_profit_result.append(
