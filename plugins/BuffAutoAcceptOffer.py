@@ -70,6 +70,15 @@ class BuffAutoAcceptOffer:
         except:
             self.logger.error('[BuffAutoAcceptOffer] 开启买家发起交易报价功能失败')
 
+    def get_buff_bind_steamid(self):
+        response_json = requests.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
+        if response_json["code"] == "OK":
+            return response_json["data"]["steamid"]
+        else:
+            self.logger.error(response_json)
+            self.logger.error("[BuffAutoOnSale] 获取BUFF绑定的SteamID失败, 请检查buff_cookies.txt或稍后再试! ")
+            return ""
+
     def check_buff_account_state(self, dev=False):
         if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
             self.logger.info("[BuffAutoAcceptOffer] 开发模式, 使用本地账号")
@@ -182,6 +191,10 @@ class BuffAutoAcceptOffer:
         user_name = self.check_buff_account_state(dev=self.development_mode)
         if not user_name:
             self.logger.error("[BuffAutoAcceptOffer] 由于登录失败,插件自动退出")
+            exit_code.set(1)
+            return 1
+        if self.steam_client.steam_guard["steamid"] != self.get_buff_bind_steamid():
+            self.logger.error("[BuffAutoAcceptOffer] 当前登录账号与BUFF绑定的Steam账号不一致! ")
             exit_code.set(1)
             return 1
         self.logger.info("[BuffAutoAcceptOffer] 已经登录至BUFF 用户名: " + user_name)
