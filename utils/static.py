@@ -120,6 +120,16 @@ DEFAULT_CONFIG_JSON = r"""
     // 是否启用BUFF自动备注购买价格功能
     "enable": true,
   },
+  // BUFF 自动计算利润插件配置
+  "buff_profit_report": {
+    // 是否启用BUFF自动计算利润功能
+    "enable": true,
+    // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
+    "servers": [
+    ],
+    // 每日发送报告时间, 24小时制
+    "send_report_time": "20:30"
+  },
   // BUFF 自动上架插件配置
   "buff_auto_on_sale": {
     // 是否启用BUFF自动以最低价上架所有库存

@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 from requests.exceptions import SSLError
 
 from plugins.BuffAutoComment import BuffAutoComment
+from plugins.BuffProfitReport import BuffProfitReport
 from utils.static import (
     CONFIG_FILE_PATH,
     CONFIG_FOLDER,
@@ -333,6 +334,13 @@ def get_plugins_enabled(steam_client, steam_client_mutex):
     ):
         buff_auto_comment = BuffAutoComment(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_comment)
+    if (
+        "buff_profit_report" in config
+        and "enable" in config["buff_profit_report"]
+        and config["buff_profit_report"]["enable"]
+    ):
+        buff_profit_report = BuffProfitReport(logger, steam_client, steam_client_mutex, config)
+        plugins_enabled.append(buff_profit_report)
     if "buff_auto_on_sale" in config and "enable" in config["buff_auto_on_sale"] and config["buff_auto_on_sale"]["enable"]:
         buff_auto_on_sale = BuffAutoOnSale(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_on_sale)
