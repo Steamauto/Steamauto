@@ -20,6 +20,9 @@
 **[欢迎加入Steamauto 官方QQ群:425721057](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=TMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj&authKey=VAgXngXUeaHBfGwY2uNzE%2F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz&noverify=0&group_code=425721057)**
 **网络不好的可以加QQ群在群文件内下载最新构建**
 
+**强烈谴责平头哥CSGO违反开源协议闭源修改本软件并收费出售, 我们将对其采取行动**
+**[快照证据](https://web.archive.org/web/20240202005724/https://www.ptgcsgo.com/products/872)**
+
 ## 它能做什么？  
 
 #### 在 [Buff饰品交易平台](https://buff.163.com) 上:
