@@ -71,7 +71,7 @@ class UUAutoAcceptOffer:
                                 f"[UUAutoAcceptOffer] 正在接受悠悠有品待发货报价, 商品名: {item['item_name']}, " f"报价ID: {item['offer_id']}"
                             )
                             if item["offer_id"] is None:
-                                self.logger.warning("[UUAutoAcceptOffer] 此订单为需要手动发货的订单, 无法处理, 跳过此订单! ")
+                                self.logger.warning("[UUAutoAcceptOffer] 此订单为需要手动发货(或异常)的订单, 不能自动处理, 跳过此订单! ")
                             elif item["offer_id"] not in ignored_offer:
                                 try:
                                     with self.steam_client_mutex:

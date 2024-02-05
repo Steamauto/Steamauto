@@ -9,3 +9,4 @@ lib
 pyvenv.cfg
 qrcode.png
 env
+test.py

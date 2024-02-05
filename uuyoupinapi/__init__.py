@@ -1,6 +1,7 @@
-import requests
-import string
 import random
+import string
+
+import requests
 
 from utils.logger import logger
 
@@ -41,12 +42,15 @@ class UUAccount:
                 "platform": "android",
             }
         )
+        try:
+            info = self.call_api("GET", "/api/user/Account/getUserInfo").json()
+            self.nickname = info["Data"]["NickName"]
+            self.userId = info["Data"]["UserId"]
+        except KeyError:
+            raise Exception("悠悠有品账号登录失败，请检查token是否正确")
 
     @staticmethod
     def __random_str(length):
-        import random
-        import string
-
         return "".join(random.sample(string.ascii_letters + string.digits, length))
 
     @staticmethod
@@ -58,7 +62,10 @@ class UUAccount:
         phone_number = input("输入手机号：")
         session_id = UUAccount.get_random_session_id()
         print("随机生成的session_id：", session_id)
-        print("发送验证码结果：", UUAccount.send_login_sms_code(phone_number, session_id)["Msg"])
+        print(
+            "发送验证码结果：",
+            UUAccount.send_login_sms_code(phone_number, session_id)["Msg"],
+        )
         sms_code = input("输入验证码：")
         response = UUAccount.sms_sign_in(phone_number, sms_code, session_id)
         print("登录结果：", response["Msg"])
@@ -79,7 +86,8 @@ class UUAccount:
         :return:
         """
         return requests.post(
-            "https://api.youpin898.com/api/user/Auth/SendSignInSmsCode", json={"Mobile": phone, "Sessionid": session}
+            "https://api.youpin898.com/api/user/Auth/SendSignInSmsCode",
+            json={"Mobile": phone, "Sessionid": session},
         ).json()
 
     @staticmethod
@@ -97,7 +105,7 @@ class UUAccount:
         ).json()
 
     def get_user_nickname(self):
-        return self.call_api("GET", "/api/user/Account/getUserInfo").json()["Data"]["NickName"]
+        return self.nickname
 
     def send_device_info(self):
         return self.call_api(
@@ -131,65 +139,51 @@ class UUAccount:
 
     def get_wait_deliver_list(self, game_id=730, return_offer_id=True):
         """
-        获取待发货列表（出售）
+        获取待发货列表
         :param return_offer_id: 默认为True，是否返回steam交易报价号
         :param game_id: 游戏ID，默认为730(CSGO)
         :return: 待发货列表，格式为[{'order_id': '订单号', 'item_name': '物品名称', 'offer_id': 'steam交易报价号'}... , ...]
         """
-        # data = self.call_api('POST', '/api/youpin/bff/trade/sell/page/v1/waitDeliver/waitDeliverList', data={
-        #     "gameId": game_id,
-        #     "pageIndex": 1,
-        #     "pageSize": 1000
-        # })
-        # wait_deliver_list = data.json()['data']['waitDeliverList']
-        # data_to_return = []
-        # if wait_deliver_list is not None:
-        #     for item in wait_deliver_list:
-        #         if item['orderInfoVO']['orderType'] == 1:
-        #             dict_to_append = dict()
-        #             dict_to_append['order_id'] = item['orderInfoVO']['orderNo']
-        #             dict_to_append['item_name'] = item['commodityInfoVO']['commodityName']
-        #             if return_offer_id:
-        #                 dict_to_append['offer_id'] = self.get_steam_offer_id_by_order_id(dict_to_append['order_id'])
-        #             data_to_return.append(dict_to_append)
-        data = self.call_api(
+        toDoList_response = self.call_api(
             "POST",
-            "/api/youpin/bff/trade/sale/v1/sell/list",
-            data={"keys": "", "orderStatus": "140", "pageIndex": 1, "pageSize": 100},
-        )
-        if data is None:
-            logger.error("待发货列表获取失败")
-            return []
-        else:
-            data = data.json()["data"]
+            "/api/youpin/bff/trade/todo/v1/orderTodo/list",
+            data={
+                "userId": self.userId,
+                "pageIndex": 1,
+                "pageSize": 100,
+                "Sessionid": self.device_info["deviceId"],
+            },
+        ).json()
+        toDoList = dict()
+        for order in toDoList_response["data"]:
+            toDoList[order["orderNo"]] = order
         data_to_return = []
-        for order in data["orderList"]:
-            if int(order["offerType"]) == 2:
-                if order["tradeOfferId"] is not None:
-                    data_to_return.append(
-                        {
-                            "offer_id": order["tradeOfferId"],
-                            "item_name": order["productDetail"]["commodityName"],
-                        }
-                    )
-                else:
-                    try:
-                        response = self.call_api(
-                            "GET", "/api/trade/Order/OrderPagedDetail", data={"orderNo": order["orderNo"]}
-                        ).json()
+        if len(toDoList.keys()) != 0:
+            data = self.call_api(
+                "POST",
+                "/api/youpin/bff/trade/sale/v1/sell/list",
+                data={"keys": "", "orderStatus": "140", "pageIndex": 1, "pageSize": 100},
+            ).json()["data"]
+            for order in data["orderList"]:
+                if int(order["offerType"]) == 2:
+                    if order["tradeOfferId"] is not None:
+                        del toDoList[order["orderNo"]]
                         data_to_return.append(
                             {
-                                "offer_id": response["Data"]["SteamOfferId"],
+                                "offer_id": order["tradeOfferId"],
                                 "item_name": order["productDetail"]["commodityName"],
                             }
                         )
-                    except:
-                        continue 
-            else:
+        if len(toDoList.keys()) != 0:
+            for order in list(toDoList.keys()):
+                orderDetail = self.call_api("POST",'/api/youpin/bff/order/v2/detail',data={"orderId":order,"Sessionid":self.device_info["deviceId"]}).json()['data']['orderDetail']
                 data_to_return.append(
                     {
-                        "offer_id": None,
-                        "item_name": order["productDetail"]["commodityName"],
+                        "offer_id": orderDetail["offerId"],
+                        "item_name": orderDetail["productDetail"]["commodityName"],
                     }
                 )
+                del toDoList[order]
+        if len(toDoList.keys()) != 0:
+            logger.warning("有订单未能获取到steam交易报价号，订单号为：", str(toDoList.keys()))
         return data_to_return
