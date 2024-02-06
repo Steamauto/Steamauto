@@ -37,7 +37,7 @@ from steampy.utils import ping_proxy
 from utils.logger import handle_caught_exception
 from utils.tools import accelerator, compare_version, get_encoding, logger, pause, exit_code
 
-current_version = "3.3.0"
+current_version = "3.4.0"
 
 if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
     import uuyoupinapi
