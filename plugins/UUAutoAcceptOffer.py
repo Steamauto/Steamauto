@@ -35,6 +35,8 @@ class UUAutoAcceptOffer:
                 uuyoupin = uuyoupinapi.UUAccount(f.read())
                 self.logger.info("[UUAutoAcceptOffer] 悠悠有品登录完成, 用户名: " + uuyoupin.get_user_nickname())
                 uuyoupin.send_device_info()
+                self.logger.info("[UUAutoAcceptOffer] 请稍候, 以防止悠悠服务器风控...")
+                time.sleep(5)
             except KeyError as e:
                 handle_caught_exception(e)
                 self.logger.error("[UUAutoAcceptOffer] 悠悠有品登录失败! 请检查token是否正确! ")
