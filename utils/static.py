@@ -118,7 +118,7 @@ DEFAULT_CONFIG_JSON = r"""
   // BUFF 自动备注购买价格插件配置
   "buff_auto_comment": {
     // 是否启用BUFF自动备注购买价格功能
-    "enable": true,
+    "enable": true
   },
   // BUFF 自动计算利润插件配置
   "buff_profit_report": {
@@ -174,9 +174,7 @@ DEFAULT_CONFIG_JSON = r"""
     // 悠悠有品自动发货功能是否启用，默认为false
     "enable": false,
     // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
-    "interval": 300,
-    // 是否主动开启主动报价自动令牌确认(该功能有安全风险，请知晓风险后开启)
-    "auto_confirm": false
+    "interval": 300
   },
   // Steam 自动接受礼物报价插件配置
   "steam_auto_accept_offer": {
