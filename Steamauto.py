@@ -13,29 +13,23 @@ import requests
 from bs4 import BeautifulSoup
 from requests.exceptions import SSLError
 
-from plugins.BuffAutoComment import BuffAutoComment
-from plugins.BuffProfitReport import BuffProfitReport
-from utils.static import (
-    CONFIG_FILE_PATH,
-    CONFIG_FOLDER,
-    DEFAULT_STEAM_ACCOUNT_JSON,
-    DEV_FILE_FOLDER,
-    SESSION_FOLDER,
-    STEAM_ACCOUNT_INFO_FILE_PATH,
-    UU_TOKEN_FILE_PATH,
-    UU_ARG_FILE_PATH,
-    DEFAULT_CONFIG_JSON,
-    set_no_pause,
-)
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
+from plugins.BuffAutoComment import BuffAutoComment
 from plugins.BuffAutoOnSale import BuffAutoOnSale
+from plugins.BuffProfitReport import BuffProfitReport
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from steampy.client import SteamClient
-from steampy.exceptions import ApiException, CaptchaRequired, InvalidCredentials
+from steampy.exceptions import (ApiException, CaptchaRequired,
+                                InvalidCredentials)
 from steampy.utils import ping_proxy
 from utils.logger import handle_caught_exception
-from utils.tools import accelerator, compare_version, get_encoding, logger, pause, exit_code
+from utils.static import (CONFIG_FILE_PATH, CONFIG_FOLDER, DEFAULT_CONFIG_JSON,
+                          DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
+                          SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH,
+                          UU_ARG_FILE_PATH, UU_TOKEN_FILE_PATH, set_no_pause)
+from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
+                         logger, pause)
 
 current_version = "3.4.0"
 

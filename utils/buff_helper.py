@@ -12,7 +12,8 @@ from apprise.AppriseAttachment import AppriseAttachment
 from bs4 import BeautifulSoup
 
 from steampy.client import SteamClient
-from utils.static import BUFF_COOKIES_FILE_PATH, CONFIG_FILE_PATH, APPRISE_ASSET_FOLDER
+from utils.static import (APPRISE_ASSET_FOLDER, BUFF_COOKIES_FILE_PATH,
+                          CONFIG_FILE_PATH)
 from utils.tools import get_encoding, logger
 
 

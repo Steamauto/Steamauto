@@ -13,11 +13,8 @@ from requests.exceptions import ProxyError
 from steampy.exceptions import InvalidCredentials
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception
-from utils.static import (
-    BUFF_COOKIES_FILE_PATH,
-    SUPPORT_GAME_TYPES,
-    SESSION_FOLDER, APPRISE_ASSET_FOLDER,
-)
+from utils.static import (APPRISE_ASSET_FOLDER, BUFF_COOKIES_FILE_PATH,
+                          SESSION_FOLDER, SUPPORT_GAME_TYPES)
 from utils.tools import get_encoding
 
 
