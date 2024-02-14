@@ -1,9 +1,12 @@
 import random
 import string
+from venv import logger
 
 import requests
 
-from utils.logger import logger
+from utils.logger import get_logger
+
+logger = get_logger()
 
 
 def generate_random_string(length):
@@ -22,6 +25,7 @@ class UUAccount:
         :param token: 通过抓包获得的token
         """
         self.session = requests.Session()
+        self.ignore_list = []
         random.seed(token)
         self.device_info = {
             "deviceId": generate_random_string(24),
@@ -156,13 +160,24 @@ class UUAccount:
         ).json()
         toDoList = dict()
         for order in toDoList_response["data"]:
-            toDoList[order["orderNo"]] = order
+            if order["orderNo"] not in self.ignore_list:
+                logger.debug(
+                    "[UUAutoAcceptOffer] 订单号为"
+                    + order["orderNo"]
+                    + "的订单已经被忽略"
+                )
+                toDoList[order["orderNo"]] = order
         data_to_return = []
         if len(toDoList.keys()) != 0:
             data = self.call_api(
                 "POST",
                 "/api/youpin/bff/trade/sale/v1/sell/list",
-                data={"keys": "", "orderStatus": "140", "pageIndex": 1, "pageSize": 100},
+                data={
+                    "keys": "",
+                    "orderStatus": "140",
+                    "pageIndex": 1,
+                    "pageSize": 100,
+                },
             ).json()["data"]
             for order in data["orderList"]:
                 if int(order["offerType"]) == 2:
@@ -176,14 +191,34 @@ class UUAccount:
                         )
         if len(toDoList.keys()) != 0:
             for order in list(toDoList.keys()):
-                orderDetail = self.call_api("POST",'/api/youpin/bff/order/v2/detail',data={"orderId":order,"Sessionid":self.device_info["deviceId"]}).json()['data']['orderDetail']
-                data_to_return.append(
-                    {
-                        "offer_id": orderDetail["offerId"],
-                        "item_name": orderDetail["productDetail"]["commodityName"],
-                    }
-                )
-                del toDoList[order]
+                try:
+                    orderDetail = self.call_api(
+                        "POST",
+                        "/api/youpin/bff/order/v2/detail",
+                        data={
+                            "orderId": order,
+                            "Sessionid": self.device_info["deviceId"],
+                        },
+                    ).json()
+                    orderDetail = orderDetail["data"]["orderDetail"]
+                    data_to_return.append(
+                        {
+                            "offer_id": orderDetail["offerId"],
+                            "item_name": orderDetail["productDetail"]["commodityName"],
+                        }
+                    )
+                    del toDoList[order]
+                except TypeError:
+                    logger.error(
+                        "[UUAutoAcceptOffer] 订单号为"
+                        + order
+                        + "的订单未能获取到Steam交易报价号，可能是悠悠系统错误或者需要卖家手动发送报价。该报价已经加入忽略列表。"
+                    )
+                    self.ignore_list.append(order)
+                    del toDoList[order]
         if len(toDoList.keys()) != 0:
-            logger.warning("有订单未能获取到steam交易报价号，订单号为：", str(toDoList.keys()))
+            logger.warning(
+                "[UUAutoAcceptOffer] 有订单未能获取到Steam交易报价号，订单号为："+
+                str(toDoList.keys()),
+            )
         return data_to_return
