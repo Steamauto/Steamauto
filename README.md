@@ -30,6 +30,9 @@
 - 自动求购收货(需要开启 自动接受礼物报价 功能)
 - 供应求购确认报价
 - 以最低价上架全部库存
+  - 支持自动上架描述
+  - 支持自动上架时间段黑白名单
+  - **支持选择塞给求购订单, 利益最大化**
 
 #### 在 [悠悠有品饰品交易平台](https://www.youpin898.com/) 上:
 - 自动发货出售商品
@@ -57,12 +60,12 @@
 | `steam_account_info.json5` | 用于填入Steam账户相关信息                           |
 | `buff_cookies.txt`        | **启用网易Buff相关插件后才会创建** 用于存取网易BUFF的Cookie信息 |
 | `uu_token.txt`            | **启用悠悠有品相关插件后才会创建** 用于存取悠悠有品的Cookie信息(悠悠有品token获取方法见FAQ)   |
-##### [config.json5](config/config.json5) (仅供参考 以实际文件为主)
+##### [config.json5](utils/static.py) (仅供参考 以实际文件为主)
 ```json5
 {
   // 登录Steam时是否开启SSL验证，正常情况下不建议关闭SSL验证
   "steam_login_ignore_ssl_error": false,
-  
+
   // 是否开启本地加速功能
   // 本地加速功能并非100%可用, 若开启后仍然无法正常连接Steam属于正常情况, 最优解决方案是使用海外服务器
   // 请注意：开启此功能必须关闭Steam登录SSL验证，即steam_login_ignore_ssl_error必须设置为true
@@ -77,7 +80,7 @@
     "http": "http://127.0.0.1:7890",
     "https": "http://127.0.0.1:7890"
   },
-  
+
   // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
 
@@ -121,10 +124,29 @@
       // BUFF Cookies失效通知内容（如不需要可直接删除）
       "body": "BUFF Cookie已过期, 请重新登录"
     },
+    // 二维码登录BUFF通知配置
+    "buff_login_notification": {
+      // 二维码登录BUFF通知标题（如不需要可直接删除）
+      "title": "请扫描二维码登录BUFF"
+    },
     // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
     "servers": [
-      "tgram://bottoken/ChatID"
     ]
+  },
+  // BUFF 自动备注购买价格插件配置
+  "buff_auto_comment": {
+    // 是否启用BUFF自动备注购买价格功能
+    "enable": true
+  },
+  // BUFF 自动计算利润插件配置
+  "buff_profit_report": {
+    // 是否启用BUFF自动计算利润功能
+    "enable": false,
+    // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
+    "servers": [
+    ],
+    // 每日发送报告时间, 24小时制
+    "send_report_time": "20:30"
   },
   // BUFF 自动上架插件配置
   "buff_auto_on_sale": {
@@ -132,6 +154,9 @@
     "enable": false,
     // 每次检查库存强制刷新BUFF库存, 若为否, 刷新不一定会加载最新库存
     "force_refresh": true,
+    // 使用磨损区间最低价上架, 若为否, 则使用类型最低价上架
+    // 注意: 该功能会导致增加更多的请求, 请谨慎开启
+    "use_range_price": false,
     // 黑名单时间, 为小时, int格式, 空为不启用黑名单, 当前小时如果等于黑名单时间, 则不会自动上架
     "blacklist_time": [],
     // 白名单时间, 为小时, int格式, 空为不启用白名单, 当前小时如果不等于白名单时间, 则不会自动上架
@@ -141,7 +166,37 @@
     // 商品上架描述, 为字符串, 为空则不填写描述
     "description": "",
     // 检查库存间隔时间
-    "interval": 1800
+    "interval": 1800,
+    // 每个请求间隔时间 (秒) - 用于防止被BUFF封禁
+    "sleep_seconds_to_prevent_buff_ban": 10,
+    // 供应求购相关配置
+    "buy_order": {
+      // 是否供应求购订单
+      "enable": true,
+      // 是否只供应给开启自动收货的求购订单
+      "only_auto_accept": true,
+      // 支持收款方式 支付宝 微信
+      "supported_payment_method": ["支付宝"],
+      // 低于多少金额的商品直接塞求购
+      "min_price": 5
+    },
+    // 上架通知配置(如不需要可直接删除)
+    "on_sale_notification": {
+      // 上架通知标题
+      "title": "游戏 {game} 成功上架 {sold_count} 件饰品",
+      // 上架通知内容
+      "body": "上架详情:\n{item_list}"
+    },
+    // 出现验证码通知配置(如不需要可直接删除)
+    "captcha_notification": {
+      // 出现验证码通知标题
+      "title": "上架饰品时出现验证码",
+      // 出现验证码通知内容
+      "body": "使用session={session}并使用浏览器打开以下链接并完成验证:\n{captcha_url}"
+    },
+    // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
+    "servers": [
+    ]
   },
   // 悠悠有品自动发货插件配置
   "uu_auto_accept_offer": {
