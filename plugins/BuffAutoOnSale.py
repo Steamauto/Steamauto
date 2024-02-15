@@ -374,7 +374,7 @@ class BuffAutoOnSale:
         )
         self.logger.info("[BuffAutoOnSale] 为了避免被封IP, 休眠" + str(sleep_seconds_to_prevent_buff_ban) + "秒")
         time.sleep(sleep_seconds_to_prevent_buff_ban)
-        self.logger.info("[BuffAutoOnSale] 正在获取BUFF商品最高报价")
+        self.logger.info("[BuffAutoOnSale] 正在获取BUFF商品最高求购")
         response = self.session.get(url, headers=self.buff_headers).json()
         if response["code"] != "OK":
             return {}
@@ -610,7 +610,16 @@ class BuffAutoOnSale:
         self.logger.info("[BuffAutoOnSale] 为了避免被封IP, 休眠" + str(sleep_seconds_to_prevent_buff_ban) + "秒")
         time.sleep(sleep_seconds_to_prevent_buff_ban)
         self.logger.info("[BuffAutoOnSale] 正在供应商品至最高报价...")
-        response_json = self.session.post(url, json=data, headers=self.buff_headers).json()
+        self.session.get("https://buff.163.com/api/market/steam_trade", headers=self.buff_headers)
+        csrf_token = self.session.cookies.get("csrf_token")
+        headers = {
+            "User-Agent": self.buff_headers["User-Agent"],
+            "X-CSRFToken": csrf_token,
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/json",
+            "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
+        }
+        response_json = self.session.post(url, json=data, headers=headers).json()
         if response_json["code"] == "OK":
             self.logger.info("[BuffAutoOnSale] 商品供应成功! ")
             self.logger.info("[BuffAutoOnSale] 正在发起steam报价...")
@@ -628,14 +637,28 @@ class BuffAutoOnSale:
                     order_id
                 ]
             }
+            csrf_token = self.session.cookies.get("csrf_token")
+            headers = {
+                "User-Agent": self.buff_headers["User-Agent"],
+                "X-CSRFToken": csrf_token,
+                "X-Requested-With": "XMLHttpRequest",
+                "Content-Type": "application/json",
+                "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
+            }
             resp_json = self.session.post("https://buff.163.com/api/market/manual_plus/seller_send_offer",
-                                          json=post_data, headers=self.buff_headers).json()
+                                          json=post_data, headers=headers).json()
             if resp_json["code"] == "OK":
                 self.logger.info("[BuffAutoOnSale] 发起steam报价成功! ")
                 for _ in range(10):
                     try:
                         url = 'https://buff.163.com/api/market/bill_order/batch/info?bill_orders=' + order_id
-                        res_json = self.session.get(url, headers=self.buff_headers).json()
+                        csrf_token = self.session.cookies.get("csrf_token")
+                        headers = {
+                            "User-Agent": self.buff_headers["User-Agent"],
+                            "X-CSRFToken": csrf_token,
+                            "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
+                        }
+                        res_json = self.session.get(url, headers=headers).json()
                         if res_json["code"] == "OK" and len(res_json["data"]["items"]) > 0 and \
                                 res_json["data"]["items"][0]["tradeofferid"] is not None:
                             steam_trade_offer_id = res_json["data"]["items"][0]["tradeofferid"]
