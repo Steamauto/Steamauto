@@ -11,10 +11,10 @@ jobs:
         os: [windows-latest, ubuntu-latest, macOS-latest]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4.5.0
+        uses: actions/setup-python@main
         with:
           python-version: "3.10"
 
@@ -25,7 +25,7 @@ jobs:
           pyinstaller -F Steamauto.py --collect-all apprise --name Steamauto-${{ matrix.os }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@main
         with:
           name: ${{ matrix.os }}-dist
           path: dist
@@ -34,8 +34,15 @@ jobs:
     needs: Build
     runs-on: ubuntu-latest
     steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@main
+        with:
+          token: ${{ secrets.PAT }}
+          repository: jiajiaxd/Steamauto-Tutorial
+          event-type: Sync
+          
       - name: Download artifacts
-        uses: actions/download-artifact@v3.0.2
+        uses: actions/download-artifact@main
         with:
           path: ./Steamauto
 
@@ -49,7 +56,7 @@ jobs:
           mv Steamauto/macOS-latest-dist/* releases/
 
       - name: Upload to Github Releases
-        uses: ncipollo/release-action@v1.11.1
+        uses: ncipollo/release-action@main
         with:
           commit: "master"
           tag: ${{ env.DATE }}
