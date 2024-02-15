@@ -38,7 +38,7 @@ def format_str(text: str, trade):
     return text
 
 
-def merge_buy_orders(response_data: dict[str, Any]):
+def merge_buy_orders(response_data: dict):
     orders = response_data["items"]
     user_info = response_data["user_infos"]
     for order in orders:
@@ -71,6 +71,7 @@ class BuffAutoOnSale:
         self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
         self.session = requests.session()
         self.lowest_price_cache = {}
+        self.unfinish_supply_order_list = [] # 等待buff发起报价, 之后进行确认报价的订单, [{order_id, create_time}]
 
     def init(self) -> bool:
         if get_valid_session_for_buff(self.steam_client, self.logger) == "":
@@ -326,6 +327,8 @@ class BuffAutoOnSale:
                         "desc": description,
                     }
                 )
+        if len(assets) == 0:
+            return {}
         data = {"appid": str(app_id), "game": game, "assets": assets}
         self.session.get("https://buff.163.com/api/market/steam_trade", headers=self.buff_headers)
         csrf_token = self.session.cookies.get("csrf_token")
@@ -569,6 +572,9 @@ class BuffAutoOnSale:
                                 self.put_item_on_sale(items=items_to_sell, price=-1, description=description,
                                                       game=game["game"], app_id=game["app_id"],
                                                       use_range_price=use_range_price)
+                                if 'buy_order' in self.config["buff_auto_on_sale"] and \
+                                        self.config["buff_auto_on_sale"]["buy_order"]["enable"]:
+                                    self.confirm_supply_order()
                             self.logger.info("[BuffAutoOnSale] BUFF商品上架成功! ")
                         else:
                             self.logger.info("[BuffAutoOnSale] 检查到 " + game["game"] + " 库存为空, 跳过上架")
@@ -591,7 +597,12 @@ class BuffAutoOnSale:
             except Exception as e:
                 self.logger.error("[BuffAutoOnSale] BUFF商品上架失败, 错误信息: " + str(e), exc_info=True)
             self.logger.info("[BuffAutoOnSale] 休眠" + str(sleep_interval) + "秒")
-            time.sleep(sleep_interval)
+            sleep_cnt = int(sleep_interval // 60)
+            for _ in range(sleep_cnt):
+                time.sleep(60)
+                if 'buy_order' in self.config["buff_auto_on_sale"] and \
+                        self.config["buff_auto_on_sale"]["buy_order"]["enable"]:
+                    self.confirm_supply_order()
 
     def supply_item_to_buy_order(self, item, highest_buy_order, game, app_id):
         sleep_seconds_to_prevent_buff_ban = 10
@@ -648,35 +659,58 @@ class BuffAutoOnSale:
             resp_json = self.session.post("https://buff.163.com/api/market/manual_plus/seller_send_offer",
                                           json=post_data, headers=headers).json()
             if resp_json["code"] == "OK":
+                self.unfinish_supply_order_list.append({"order_id":order_id, "create_time":time.time()})
                 self.logger.info("[BuffAutoOnSale] 发起steam报价成功! ")
-                for _ in range(10):
-                    try:
-                        url = 'https://buff.163.com/api/market/bill_order/batch/info?bill_orders=' + order_id
-                        csrf_token = self.session.cookies.get("csrf_token")
-                        headers = {
-                            "User-Agent": self.buff_headers["User-Agent"],
-                            "X-CSRFToken": csrf_token,
-                            "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
-                        }
-                        res_json = self.session.get(url, headers=headers).json()
-                        if res_json["code"] == "OK" and len(res_json["data"]["items"]) > 0 and \
-                                res_json["data"]["items"][0]["tradeofferid"] is not None:
-                            steam_trade_offer_id = res_json["data"]["items"][0]["tradeofferid"]
-                            self.logger.info("[BuffAutoOnSale] BUFF发起steam报价成功, 报价ID: " + steam_trade_offer_id)
-                            self.steam_client._confirm_transaction(steam_trade_offer_id)
-                            self.logger.info("[BuffAutoOnSale] 确认steam报价成功")
-                            return True
-                        else:
-                            self.logger.error("[BuffAutoOnSale] BUFF尚未完成发起steam报价, 继续等待...")
-                    except Exception as e:
-                        self.logger.error("[BuffAutoOnSale] 发起steam报价失败, 错误信息: " + str(e), exc_info=True)
-                    time.sleep(5)
-                self.logger.error("[BuffAutoOnSale] BUFF发起steam报价失败")
-                return False
-            self.logger.error(resp_json)
-            self.logger.error("[BuffAutoOnSale] 发起steam报价失败")
-            return False
+            return True
         else:
             self.logger.error(response_json)
             self.logger.error("[BuffAutoOnSale] 商品供应失败, 请检查buff_cookies.txt或稍后再试! ")
         return False
+
+    def confirm_supply_order(self):
+        """统一处理发起报价成功, 等待令牌确认的订单"""
+        unfinish_order_list = []
+        error_num = 0 # 超时订单
+        unfinish_num = 0 # 等待buff发起报价
+        finish_num = 0 # 完成
+
+        self.logger.info("[BuffAutoOnSale] 处理等待发起报价的订单, 共有{}个".format(len(self.unfinish_supply_order_list)))
+        for index, order in enumerate(self.unfinish_supply_order_list):
+            order_id, create_time = order["order_id"], order["create_time"]
+            if time.time() - create_time > 15*60:
+                error_num += 1
+                self.logger.error("[BuffAutoOnSale] BUFF发起steam报价失败, 报价ID: {}".format(order_id))
+                continue
+            
+            try:
+                url = 'https://buff.163.com/api/market/bill_order/batch/info?bill_orders=' + order_id
+                csrf_token = self.session.cookies.get("csrf_token")
+                headers = {
+                    "User-Agent": self.buff_headers["User-Agent"],
+                    "X-CSRFToken": csrf_token,
+                    "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
+                }
+                res_json = self.session.get(url, headers=headers).json()
+                if res_json["code"] == "OK" and len(res_json["data"]["items"]) > 0 and \
+                        res_json["data"]["items"][0]["tradeofferid"] is not None:
+                    steam_trade_offer_id = res_json["data"]["items"][0]["tradeofferid"]
+                    self.logger.info("[BuffAutoOnSale] BUFF发起steam报价成功, 报价ID: " + steam_trade_offer_id)
+                    with self.steam_client_mutex:
+                        self.steam_client._confirm_transaction(steam_trade_offer_id)
+                    finish_num += 1
+                    self.logger.info("[BuffAutoOnSale] 确认steam报价成功")
+                else:
+                    unfinish_order_list.append(order)
+                    unfinish_num += 1
+                    self.logger.error("[BuffAutoOnSale] BUFF尚未完成发起steam报价, 继续等待...")
+            except Exception as e:
+                unfinish_num += 1
+                unfinish_order_list.append(order)
+                self.logger.error("[BuffAutoOnSale] 发起steam报价失败, 错误信息: " + str(e), exc_info=True)
+            if index != len(self.unfinish_supply_order_list) - 1:
+                time.sleep(5)
+        self.unfinish_supply_order_list = unfinish_order_list
+        self.logger.info("[BuffAutoOnSale] 本轮求购订单结束, 确认steam报价成功:{}个, 等待确认:{}个, 失败订单:{}个".format(
+            finish_num, unfinish_num, error_num
+        ))
+        self.logger.info("[BuffAutoOnSale] 等待上架5个货物或1分钟后再次检测待确认steam报价订单")
