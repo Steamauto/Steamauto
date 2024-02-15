@@ -31,7 +31,7 @@ from utils.static import (CONFIG_FILE_PATH, CONFIG_FOLDER, DEFAULT_CONFIG_JSON,
 from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
                          logger, pause)
 
-current_version = "3.4.0"
+current_version = "3.5.0"
 
 if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
     import uuyoupinapi
