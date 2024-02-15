@@ -12,6 +12,7 @@ from apprise.AppriseAsset import AppriseAsset
 from bs4 import BeautifulSoup
 from requests.exceptions import ProxyError
 from steampy.exceptions import InvalidCredentials
+from utils.ApiCrypt import ApiCrypt
 from utils.buff_helper import get_valid_session_for_buff
 
 from utils.logger import handle_caught_exception
@@ -612,17 +613,47 @@ class BuffAutoOnSale:
         response_json = self.session.post(url, json=data, headers=self.buff_headers).json()
         if response_json["code"] == "OK":
             self.logger.info("[BuffAutoOnSale] 商品供应成功! ")
-            # TODO 发起steam报价
-            # url = 'https://buff.163.com/api/market/manual_plus/seller_send_offer'
-            # 请求: POST
-            # body = {
-            #     "seller_info": "steam cookies, 使用AES加密 iv不确定如何生成, key随机生成, 并且用BUFF的公钥加密",
-            #     "bill_orders": [
-            #         "订单编号"
-            #     ]
-            # }
-            return True
+            self.logger.info("[BuffAutoOnSale] 正在发起steam报价...")
+            order_id = response_json["data"][0]["id"]
+            # 格式: key=value; key=value
+            steam_cookies_dict = self.steam_client._session.cookies.get_dict('steamcommunity.com')
+            steam_cookies = ""
+            for key in steam_cookies_dict:
+                steam_cookies += key + "=" + steam_cookies_dict[key] + "; "
+            api_crypt = ApiCrypt()
+            encrypted_steam_cookies = api_crypt.encrypt(steam_cookies)
+            post_data = {
+                "seller_info": encrypted_steam_cookies,
+                "bill_orders": [
+                    order_id
+                ]
+            }
+            resp_json = self.session.post("https://buff.163.com/api/market/manual_plus/seller_send_offer",
+                                          json=post_data, headers=self.buff_headers).json()
+            if resp_json["code"] == "OK":
+                self.logger.info("[BuffAutoOnSale] 发起steam报价成功! ")
+                for _ in range(10):
+                    try:
+                        url = 'https://buff.163.com/api/market/bill_order/batch/info?bill_orders=' + order_id
+                        res_json = self.session.get(url, headers=self.buff_headers).json()
+                        if res_json["code"] == "OK" and len(res_json["data"]["items"]) > 0 and \
+                                res_json["data"]["items"][0]["tradeofferid"] is not None:
+                            steam_trade_offer_id = res_json["data"]["items"][0]["tradeofferid"]
+                            self.logger.info("[BuffAutoOnSale] BUFF发起steam报价成功, 报价ID: " + steam_trade_offer_id)
+                            self.steam_client._confirm_transaction(steam_trade_offer_id)
+                            self.logger.info("[BuffAutoOnSale] 确认steam报价成功")
+                            return True
+                        else:
+                            self.logger.error("[BuffAutoOnSale] BUFF尚未完成发起steam报价, 继续等待...")
+                    except Exception as e:
+                        self.logger.error("[BuffAutoOnSale] 发起steam报价失败, 错误信息: " + str(e), exc_info=True)
+                    time.sleep(5)
+                self.logger.error("[BuffAutoOnSale] BUFF发起steam报价失败")
+                return False
+            self.logger.error(resp_json)
+            self.logger.error("[BuffAutoOnSale] 发起steam报价失败")
+            return False
         else:
             self.logger.error(response_json)
             self.logger.error("[BuffAutoOnSale] 商品供应失败, 请检查buff_cookies.txt或稍后再试! ")
-        return True
+        return False
