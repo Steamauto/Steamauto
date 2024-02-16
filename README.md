@@ -291,17 +291,12 @@ pip install urllib3==1.25.11
 ## 附录
 关于`steam_account_info.json`相关参数的获取教程都在下面, 请自行参阅  
 个人推荐使用[ SteamDesktopAuthenticator(简称SDA) ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便(请勿使用1.0.13版本,存在无法获取的问题)  
-[官方视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz/)  
-[获取Steam网页API KEY](http://steamcommunity.com/dev/apikey)   
+[官方视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz/)    
 [已Root安卓手机获取新版Steam手机令牌教程](https://github.com/BeyondDimension/SteamTools/issues/2598)
 
 ## 鸣谢
 感谢 [**@lupohan44**](https://github.com/lupohan44) 为本项目提交的大量代码！ 
 
 感谢 devgod, 14m0k(QQ群用户) 在开发供应求购订单功能时的巨大帮助！
-
-## JetBrains
-感谢 [JetBrains](https://www.jetbrains.com/) 为开源项目提供免费的 [PyCharm](https://www.jetbrains.com/pycharm/) 等 IDE 的授权  
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg" width="200"/>](https://jb.gg/OpenSourceSupport)
 
 感谢 [1Password](https://1password.com/) 为开源项目提供免费的 [1Password](https://1password.com/) 团队账户的授权
