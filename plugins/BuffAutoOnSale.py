@@ -203,7 +203,7 @@ class BuffAutoOnSale:
                     }
                     data = {"game": game, "assets": [asset]}
                     self.session.get("https://buff.163.com/api/market/steam_trade", headers=self.buff_headers)
-                    csrf_token = self.session.cookies.get("csrf_token")
+                    csrf_token = self.session.cookies.get("csrf_token", domain='buff.163.com')
                     headers = {
                         "User-Agent": self.buff_headers["User-Agent"],
                         "X-CSRFToken": csrf_token,
@@ -258,7 +258,7 @@ class BuffAutoOnSale:
                             }
                             self.session.get("https://buff.163.com/api/market/steam_trade",
                                              headers=self.buff_headers)
-                            csrf_token = self.session.cookies.get("csrf_token")
+                            csrf_token = self.session.cookies.get("csrf_token", domain='buff.163.com')
                             headers = {
                                 "User-Agent": self.buff_headers["User-Agent"],
                                 "X-CSRFToken": csrf_token,
@@ -331,7 +331,7 @@ class BuffAutoOnSale:
             return {}
         data = {"appid": str(app_id), "game": game, "assets": assets}
         self.session.get("https://buff.163.com/api/market/steam_trade", headers=self.buff_headers)
-        csrf_token = self.session.cookies.get("csrf_token")
+        csrf_token = self.session.cookies.get("csrf_token", domain='buff.163.com')
         headers = {
             "User-Agent": self.buff_headers["User-Agent"],
             "X-CSRFToken": csrf_token,
@@ -622,7 +622,7 @@ class BuffAutoOnSale:
         time.sleep(sleep_seconds_to_prevent_buff_ban)
         self.logger.info("[BuffAutoOnSale] 正在供应商品至最高报价...")
         self.session.get("https://buff.163.com/api/market/steam_trade", headers=self.buff_headers)
-        csrf_token = self.session.cookies.get("csrf_token")
+        csrf_token = self.session.cookies.get("csrf_token", domain='buff.163.com')
         headers = {
             "User-Agent": self.buff_headers["User-Agent"],
             "X-CSRFToken": csrf_token,
@@ -648,7 +648,7 @@ class BuffAutoOnSale:
                     order_id
                 ]
             }
-            csrf_token = self.session.cookies.get("csrf_token")
+            csrf_token = self.session.cookies.get("csrf_token", domain='buff.163.com')
             headers = {
                 "User-Agent": self.buff_headers["User-Agent"],
                 "X-CSRFToken": csrf_token,
@@ -684,7 +684,7 @@ class BuffAutoOnSale:
             
             try:
                 url = 'https://buff.163.com/api/market/bill_order/batch/info?bill_orders=' + order_id
-                csrf_token = self.session.cookies.get("csrf_token")
+                csrf_token = self.session.cookies.get("csrf_token", domain='buff.163.com')
                 headers = {
                     "User-Agent": self.buff_headers["User-Agent"],
                     "X-CSRFToken": csrf_token,
