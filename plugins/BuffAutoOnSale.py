@@ -684,11 +684,7 @@ class BuffAutoOnSale:
             
             try:
                 url = 'https://buff.163.com/api/market/bill_order/batch/info?bill_orders=' + order_id
-<<<<<<< HEAD
-                csrf_token = self.session.cookies.get("csrf_token", domain='buff.163.com')
-=======
                 csrf_token = self.session.cookies.get("csrf_token")
->>>>>>> 57e44ae (调整求购确认steam报价逻辑, 修复部分求购功能导致的bug)
                 headers = {
                     "User-Agent": self.buff_headers["User-Agent"],
                     "X-CSRFToken": csrf_token,
