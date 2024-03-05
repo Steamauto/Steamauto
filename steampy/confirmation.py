@@ -12,9 +12,10 @@ from steampy.login import InvalidCredentials
 
 
 class Confirmation:
-    def __init__(self, data_confid, nonce):
+    def __init__(self, data_confid, nonce, creator_id=-1):
         self.data_confid = data_confid
         self.nonce = nonce
+        self.creator_id = creator_id
 
 
 class Tag(enum.Enum):
@@ -59,7 +60,8 @@ class ConfirmationExecutor:
             for conf in confirmations_json['conf']:
                 data_confid = conf['id']
                 nonce = conf['nonce']
-                confirmations.append(Confirmation(data_confid, nonce))
+                creator_id = conf['creator_id']
+                confirmations.append(Confirmation(data_confid, nonce, creator_id))
             return confirmations
         else:
             raise ConfirmationExpected
@@ -93,7 +95,10 @@ class ConfirmationExecutor:
     def _select_trade_offer_confirmation(self, confirmations: List[Confirmation], trade_offer_id: str) -> Confirmation:
         for confirmation in confirmations:
             confirmation_details_page = self._fetch_confirmation_details_page(confirmation)
-            confirmation_id = self._get_confirmation_trade_offer_id(confirmation_details_page)
+            try:
+                confirmation_id = self._get_confirmation_trade_offer_id(confirmation_details_page)
+            except IndexError:
+                confirmation_id = confirmation.creator_id
             if confirmation_id == trade_offer_id:
                 return confirmation
         raise ConfirmationExpected

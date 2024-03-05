@@ -78,14 +78,31 @@ def get_api_key(steam_client):
         if regex.match(api_key):
             return api_key
     resp = steam_client._session.post(
-        "https://steamcommunity.com/dev/registerkey",
+        "https://steamcommunity.com/dev/requestkey",
         data={
             "domain": "localhost",
-            "agreeToTerms": "agreed",
-            "sessionid": steam_client._session.cookies.get_dict()["sessionid"],
-            "Submit": "注册",
+            "request_id": "0",
+            "sessionid": steam_client._session.cookies.get_dict("steamcommunity.com")["sessionid"],
+            "agreeToTerms": "true",
         },
     )
+    resp_json = resp.json()
+    if resp_json["success"] == 22:
+        request_id = resp_json["request_id"]
+        steam_client._confirm_transaction(resp_json["request_id"])
+        time.sleep(2)  # wait for steam to process the request
+        test_resp = steam_client._session.post(
+            "https://steamcommunity.com/dev/requestkey",
+            data={
+                "domain": "localhost",
+                "request_id": request_id,
+                "sessionid": steam_client._session.cookies.get_dict("steamcommunity.com")["sessionid"],
+                "agreeToTerms": "true",
+            },
+        )
+        if test_resp.json()["success"] == 1:
+            api_key = test_resp.json()["api_key"]
+            return api_key
     soup = BeautifulSoup(resp.text, "html.parser")
     if soup.find(id="bodyContents_ex") is None:
         return ""
