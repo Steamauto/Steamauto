@@ -38,15 +38,18 @@ class BuffAutoComment:
     def get_buy_history(self, game: str) -> dict:
         local_history = {}
         history_file_path = os.path.join(SESSION_FOLDER, "buy_history_" + game + ".json")
-        if os.path.exists(history_file_path):
-            with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
-                local_history = json5.load(f)
+        try:
+            if os.path.exists(history_file_path):
+                with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
+                    local_history = json5.load(f)
+        except Exception as e:
+            self.logger.debug("[BuffAutoComment] 读取本地购买记录失败, 错误信息: " + str(e), exc_info=True)
         page_num = 1
         result = {}
         while True:
             self.logger.debug("[BuffAutoComment] 正在获取" + game + " 购买记录, 页数: " + str(page_num))
             url = ("https://buff.163.com/api/market/buy_order/history?page_num=" + str(page_num) +
-                   "&page_size=500&game=" + game)
+                   "&page_size=300&game=" + game)
             response_json = self.session.get(url, headers=self.buff_headers).json()
             if response_json["code"] != "OK":
                 self.logger.error("[BuffAutoComment] 获取历史订单失败")
@@ -67,7 +70,7 @@ class BuffAutoComment:
                     self.logger.info("[BuffAutoComment] 后面没有新的订单了, 无需继续获取")
                     should_break = True
                     break
-            if len(items) < 500 or should_break:
+            if len(items) < 300 or should_break:
                 break
             page_num += 1
             self.logger.info("[BuffAutoComment] 避免被封号, 休眠15秒")
@@ -93,7 +96,7 @@ class BuffAutoComment:
     def get_all_buff_inventory(self, game="csgo"):
         self.logger.info("[BuffAutoComment] 正在获取 " + game + " BUFF 库存...")
         page_num = 1
-        page_size = 500
+        page_size = 300
         sort_by = "time.desc"
         state = "all"
         force = 0

@@ -40,7 +40,7 @@ class BuffProfitReport:
     def get_all_buff_inventory(self, game="csgo"):
         self.logger.info("[BuffProfitReport] 正在获取 " + game + " BUFF 库存...")
         page_num = 1
-        page_size = 500
+        page_size = 300
         sort_by = "time.desc"
         state = "all"
         force = 0
@@ -77,9 +77,12 @@ class BuffProfitReport:
         result = {}
         local_sell_history = {}
         history_file_path = os.path.join(SESSION_FOLDER, "sell_history_" + game + "_full.json")
-        if os.path.exists(history_file_path):
-            with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
-                local_sell_history = json5.load(f)
+        try:
+            if os.path.exists(history_file_path):
+                with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
+                    local_sell_history = json5.load(f)
+        except Exception as e:
+            self.logger.error("[BuffProfitReport] 读取本地历史订单失败, 错误信息: " + str(e), exc_info=True)
         while True:
             should_break = False
             self.logger.info("[BuffProfitReport] 为了避免被封号, 休眠15秒")
@@ -116,15 +119,18 @@ class BuffProfitReport:
     def get_buy_history(self, game: str) -> dict:
         local_history = {}
         history_file_path = os.path.join(SESSION_FOLDER, "buy_history_" + game + "_full.json")
-        if os.path.exists(history_file_path):
-            with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
-                local_history = json5.load(f)
+        try:
+            if os.path.exists(history_file_path):
+                with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
+                    local_history = json5.load(f)
+        except Exception as e:
+            self.logger.error("[BuffProfitReport] 读取本地历史订单失败, 错误信息: " + str(e), exc_info=True)
         page_num = 1
         result = {}
         while True:
             self.logger.debug("[BuffProfitReport] 正在获取" + game + " 购买记录, 页数: " + str(page_num))
             url = ("https://buff.163.com/api/market/buy_order/history?page_num=" + str(page_num) +
-                   "&page_size=500&game=" + game)
+                   "&page_size=300&game=" + game)
             response_json = self.session.get(url, headers=self.buff_headers).json()
             if response_json["code"] != "OK":
                 self.logger.error("[BuffProfitReport] 获取历史订单失败")
@@ -147,7 +153,7 @@ class BuffProfitReport:
                     break
                 if item_copy["state"] == "SUCCESS":
                     result[trade_id] = item_copy
-            if len(items) < 500 or should_break:
+            if len(items) < 300 or should_break:
                 break
             page_num += 1
             self.logger.info("[BuffProfitReport] 避免被封号, 休眠15秒")
