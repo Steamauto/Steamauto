@@ -348,8 +348,9 @@ class BuffAutoAcceptOffer:
                                                 ]:
                                                     if item[property_to_compare] != item_in_trade[property_to_compare]:
                                                         break
-                                                match = True
-                                                break
+                                                else:
+                                                    match = True
+                                                    break
                                             if not match:
                                                 self.logger.error("[BuffAutoAcceptOffer] 报价中的物品不在待发货列表中, 跳过接受报价")
                                                 if "item_mismatch_notification" in self.config["buff_auto_accept_offer"]:
