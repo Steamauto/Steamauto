@@ -346,7 +346,7 @@ class BuffAutoAcceptOffer:
                                                     "contextid",
                                                     "instanceid",
                                                 ]:
-                                                    if item[property_to_compare] != item_in_trade[property_to_compare]:
+                                                    if str(item[property_to_compare]) != str(item_in_trade[property_to_compare]):
                                                         break
                                                 else:
                                                     match = True
