@@ -1,3 +1,4 @@
+import copy
 import decimal
 
 import bs4
@@ -131,10 +132,111 @@ class SteamClient:
                   'historical_only': 0,
                   'time_historical_cutoff': ''}
         response = self.api_call('GET', 'IEconService', 'GetTradeOffers', 'v1', params).json()
+        if response == {'response': {'next_cursor': 0}}:
+            response = self.get_all_trade_offer_by_bs4()
         response = self._filter_non_active_offers(response)
         if merge:
             response = merge_items_with_descriptions_from_offers(response)
         return response
+
+    def get_all_trade_offer_by_bs4(self, get_item_name: bool = False):
+        return_data = {"response": {
+            "trade_offers_received": [],
+            "trade_offers_sent": []
+        }}
+        steam_id = self.steam_guard['steamid']
+        response = self._session.get('https://steamcommunity.com/profiles/{}/tradeoffers/?l=english'.format(steam_id))
+        soup = bs4.BeautifulSoup(response.text, 'html.parser')
+        trade_offer_list = soup.find_all('div', class_='tradeoffer')
+        if not trade_offer_list:
+            return False
+
+        for trade_offer in trade_offer_list:
+            trade_offer_status = TradeOfferState.Active
+            trade_offer_id = trade_offer['id'].split('_')[1]
+            is_received_offer = 'offered you a trade:' in trade_offer.text
+
+            if 'Trade Accepted' in trade_offer.text:
+                trade_offer_status = TradeOfferState.Accepted
+            elif 'Trade Cancel' in trade_offer.text:
+                trade_offer_status = TradeOfferState.Canceled
+            elif 'Trade Declined' in trade_offer.text:
+                trade_offer_status = TradeOfferState.Declined
+
+            tradeoffer_item_lists = trade_offer.find_all('div', class_='tradeoffer_item_list')
+            items_to_receive = []
+            items_to_give = []
+
+            for i, tradeoffer_item_list in enumerate(tradeoffer_item_lists, 1):
+                trade_items = tradeoffer_item_list.find_all('div', class_='trade_item')
+                for item in trade_items:
+                    data_economy_item = item['data-economy-item']
+                    values = data_economy_item.split('/')
+                    item_class = values[2]
+                    instance_id = values[3]
+                    game_app_id = int(values[1])
+                    if i == 1:
+                        items_to_receive.append({'app_id': game_app_id, 'class_id': item_class,
+                                                 'instance_id': instance_id})
+                    else:
+                        items_to_give.append({'app_id': game_app_id, 'class_id': item_class,
+                                              'instance_id': instance_id})
+            tmp = copy.copy(items_to_receive)
+            items_to_receive = []
+            for item in tmp:
+                if get_item_name and item['app_id'] == 730:
+                    url = f'http://api.steampowered.com/ISteamEconomy/GetAssetClassInfo/v1?key={self._api_key}&format=json&appid=730&class_count=1&classid0={item["class_id"]}'
+                    data = self._session.get(url).json()
+
+                    icon_url = data['result'][str(item['class_id'])]['icon_url']
+                    market_hash_name = data['result'][item['class_id']]['market_hash_name']
+                    items_to_receive.append({
+                        "class_id": item['class_id'],
+                        "instanceid": item['instance_id'],
+                        "icon_url": icon_url,
+                        "market_hash_name": market_hash_name
+                    })
+                else:
+                    items_to_receive.append({
+                        "classid": item['class_id'],
+                        "instanceid": item['instance_id'],
+                        "icon_url": "",
+                        "market_hash_name": ""
+                    })
+            tmp = copy.copy(items_to_give)
+            items_to_give = []
+            for item in tmp:
+                if get_item_name and item['app_id'] == 730:
+                    url = f'http://api.steampowered.com/ISteamEconomy/GetAssetClassInfo/v1?key={self._api_key}&format=json&appid=730&class_count=1&classid0={item["class_id"]}'
+                    data = self._session.get(url).json()
+
+                    icon_url = data['result'][str(item['class_id'])]['icon_url']
+                    market_hash_name = data['result'][item['class_id']]['market_hash_name']
+                    items_to_give.append({
+                        "class_id": item['class_id'],
+                        "instanceid": item['instance_id'],
+                        "icon_url": icon_url,
+                        "market_hash_name": market_hash_name
+                    })
+                else:
+                    items_to_give.append({
+                        "classid": item['class_id'],
+                        "instanceid": item['instance_id'],
+                        "icon_url": "",
+                        "market_hash_name": ""
+                    })
+
+            trade = {
+                "tradeofferid": trade_offer_id,
+                "trade_offer_state": trade_offer_status,
+                "items_to_receive": copy.copy(items_to_receive),
+                "items_to_give": copy.copy(items_to_give)
+            }
+            if is_received_offer:
+                return_data["response"]["trade_offers_received"].append(trade)
+            else:
+                return_data["response"]["trade_offers_sent"].append(trade)
+        return return_data
 
     @staticmethod
     def _filter_non_active_offers(offers_response):
