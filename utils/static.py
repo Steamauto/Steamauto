@@ -11,6 +11,7 @@ CONFIG_FILE_PATH = os.path.join(CONFIG_FOLDER, "config.json5")
 BUFF_COOKIES_FILE_PATH = os.path.join(CONFIG_FOLDER, "buff_cookies.txt")
 UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token.txt")
 STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
+STEAM_ACCOUNT_JSON_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account.json")
 SESSION_FOLDER = "session"
 DEV_FILE_FOLDER = "dev"
 BUFF_ACCOUNT_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "buff_account.json")

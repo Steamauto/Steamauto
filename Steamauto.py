@@ -1,3 +1,4 @@
+import json
 import os
 import pickle
 import re
@@ -22,12 +23,16 @@ from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from steampy.client import SteamClient
 from steampy.exceptions import (ApiException, CaptchaRequired,
                                 InvalidCredentials)
-from steampy.utils import ping_proxy
+try:
+    from steampy.utils import ping_proxy
+except:
+    def ping_proxy(nothing):
+        return False
 from utils.logger import handle_caught_exception
 from utils.static import (CONFIG_FILE_PATH, CONFIG_FOLDER, DEFAULT_CONFIG_JSON,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
                           SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH,
-                          UU_ARG_FILE_PATH, UU_TOKEN_FILE_PATH, set_no_pause)
+                          UU_ARG_FILE_PATH, UU_TOKEN_FILE_PATH, set_no_pause, STEAM_ACCOUNT_JSON_INFO_FILE_PATH)
 from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
                          logger, pause)
 
@@ -124,6 +129,10 @@ def login_to_steam():
     with open(STEAM_ACCOUNT_INFO_FILE_PATH, "r", encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
         try:
             acc = json5.load(f)
+            # convert to json
+            acc = json.loads(json.dumps(acc))
+            with open(STEAM_ACCOUNT_JSON_INFO_FILE_PATH, "w", encoding="utf-8") as f:
+                f.write(json.dumps(acc, indent=4))
         except Exception as e:
             handle_caught_exception(e)
             logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
@@ -201,7 +210,7 @@ def login_to_steam():
                 logger.info("已经启用Steamauto内置加速")
                 client._session.auth = accelerator()
             logger.info("正在登录...")
-            client.login(acc.get("steam_username"), acc.get("steam_password"), STEAM_ACCOUNT_INFO_FILE_PATH)
+            client.login(acc.get("steam_username"), acc.get("steam_password"), STEAM_ACCOUNT_JSON_INFO_FILE_PATH)
             if client.is_session_alive():
                 logger.info("登录成功")
             else:
