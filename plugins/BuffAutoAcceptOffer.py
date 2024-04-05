@@ -336,12 +336,11 @@ class BuffAutoAcceptOffer:
                                     if not self.development_mode:
                                         with self.steam_client_mutex:
                                             offer = self.steam_client.get_trade_offer(offer_id)
-                                        for item in offer["response"]["offer"]["items_to_give"]:
+                                        for item in offer["response"]["offer"]["items_to_give"].values():
                                             match = False
                                             for item_in_trade in trade["items_to_trade"]:
                                                 for property_to_compare in [
                                                     "appid",
-                                                    "assetid",
                                                     "classid",
                                                     "contextid",
                                                     "instanceid",
