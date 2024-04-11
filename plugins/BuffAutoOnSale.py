@@ -684,7 +684,7 @@ class BuffAutoOnSale:
             
             try:
                 url = 'https://buff.163.com/api/market/bill_order/batch/info?bill_orders=' + order_id
-                csrf_token = self.session.cookies.get("csrf_token")
+                csrf_token = self.session.cookies.get("csrf_token", domain="buff.163.com")
                 headers = {
                     "User-Agent": self.buff_headers["User-Agent"],
                     "X-CSRFToken": csrf_token,
