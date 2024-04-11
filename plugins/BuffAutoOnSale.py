@@ -292,7 +292,7 @@ class BuffAutoOnSale:
                 highest_buy_order = self.get_highest_buy_order(item["goods_id"], game, app_id, paint_wear=paint_wear,
                                                                require_auto_accept=only_auto_accept,
                                                                supported_payment_methods=supported_payment_method)
-                if sell_price <= min_price or sell_price <= float(highest_buy_order.get("price", -1)):
+                if "price" in highest_buy_order and (sell_price <= min_price or sell_price <= float(highest_buy_order["price"])):
                     # 直接供应给最高报价
                     self.logger.info("[BuffAutoOnSale] 商品 " + item["market_hash_name"] +
                                      " 将供应给最高报价 " + str(highest_buy_order["price"]))
