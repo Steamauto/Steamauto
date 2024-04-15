@@ -263,7 +263,12 @@ def login_to_steam():
             handle_caught_exception(e)
             logger.error("登录失败(账号或密码错误). 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "中的账号密码是否正确\n")
     steam_client.steam_guard["steamid"] = str(get_steam_64_id_from_steam_community(steam_client))
-    steam_client._api_key = get_api_key(steam_client)
+    try:
+        steam_client._api_key = get_api_key(steam_client)
+    except Exception as e:
+        handle_caught_exception(e)
+        logger.error("获取API_KEY失败, 此Steam账号无法绑定BUFF")
+        return None
     return steam_client
 
 
