@@ -3,9 +3,8 @@ import pickle
 import time
 
 import json5
-import requests
 from requests.exceptions import ProxyError
-
+from steampy.client import session
 from steampy.exceptions import InvalidCredentials
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception
@@ -28,7 +27,7 @@ class BuffAutoComment:
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.config = config
-        self.session = requests.session()
+        self.session = session()
 
     def init(self) -> bool:
         if get_valid_session_for_buff(self.steam_client, self.logger) == "":

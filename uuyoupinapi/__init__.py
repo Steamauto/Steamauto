@@ -3,7 +3,7 @@ import string
 from venv import logger
 
 import requests
-
+from steampy.client import session
 from utils.logger import get_logger
 
 logger = get_logger()
@@ -24,7 +24,7 @@ class UUAccount:
         """
         :param token: 通过抓包获得的token
         """
-        self.session = requests.Session()
+        self.session = session()
         self.ignore_list = []
         random.seed(token)
         self.device_info = {
@@ -91,7 +91,7 @@ class UUAccount:
         """
         return requests.post(
             "https://api.youpin898.com/api/user/Auth/SendSignInSmsCode",
-            json={"Mobile": phone, "Sessionid": session},
+            json={"Mobile": phone, "Sessionid": session}, timeout=30
         ).json()
 
     @staticmethod
@@ -105,7 +105,7 @@ class UUAccount:
         """
         return requests.post(
             "https://api.youpin898.com/api/user/Auth/SmsSignIn",
-            json={"Code": code, "SessionId": session, "Mobile": phone, "TenDay": 1},
+            json={"Code": code, "SessionId": session, "Mobile": phone, "TenDay": 1}, timeout=30
         ).json()
 
     def get_user_nickname(self):

@@ -3,14 +3,13 @@ import os
 import pickle
 import random
 import time
-from typing import Any
 
 import apprise
 import json5
-import requests
 from apprise.AppriseAsset import AppriseAsset
 from bs4 import BeautifulSoup
 from requests.exceptions import ProxyError
+from steampy.client import session
 from steampy.exceptions import InvalidCredentials
 from utils.ApiCrypt import ApiCrypt
 from utils.buff_helper import get_valid_session_for_buff
@@ -69,9 +68,9 @@ class BuffAutoOnSale:
         self.steam_client_mutex = steam_client_mutex
         self.development_mode = self.config["development_mode"]
         self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
-        self.session = requests.session()
+        self.session = session()
         self.lowest_price_cache = {}
-        self.unfinish_supply_order_list = [] # 等待buff发起报价, 之后进行确认报价的订单, [{order_id, create_time}]
+        self.unfinish_supply_order_list = []  # 等待buff发起报价, 之后进行确认报价的订单, [{order_id, create_time}]
 
     def init(self) -> bool:
         if get_valid_session_for_buff(self.steam_client, self.logger) == "":
@@ -628,7 +627,7 @@ class BuffAutoOnSale:
             "X-CSRFToken": csrf_token,
             "X-Requested-With": "XMLHttpRequest",
             "Content-Type": "application/json",
-            "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
+            "Referer": f"https://buff.163.com/market/sell_order/create?game={game}",
         }
         response_json = self.session.post(url, json=data, headers=headers).json()
         if response_json["code"] == "OK":

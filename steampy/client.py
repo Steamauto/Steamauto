@@ -30,11 +30,26 @@ def login_required(func):
     return func_wrapper
 
 
+class HttpTimeoutAdapter(requests.adapters.HTTPAdapter):
+
+    def send(self, *args, **kwargs):
+        kwargs['timeout'] = kwargs.get('timeout', 15)
+        return super(HttpTimeoutAdapter, self).send(*args, **kwargs)
+
+
+def session():
+    _session = requests.Session()
+    timeout_adapter = HttpTimeoutAdapter()
+    _session.mount('http://', timeout_adapter)
+    _session.mount('https://', timeout_adapter)
+    return _session
+
+
 class SteamClient:
     def __init__(self, api_key: str, username: str = None, password: str = None, steam_guard: str = None,
                  proxies: dict = None, ) -> None:
         self._api_key = api_key
-        self._session = requests.Session()
+        self._session = session()
         self.steam_guard = steam_guard
         self.was_login_executed = False
         self.username = username
@@ -87,9 +102,9 @@ class SteamClient:
                  params: dict = None) -> requests.Response:
         url = '/'.join([SteamUrl.API_URL, interface, api_method, version])
         if request_method == 'GET':
-            response = requests.get(url, params=params, verify=self._session.verify, auth=self._session.auth)
+            response = requests.get(url, params=params, verify=self._session.verify, auth=self._session.auth, timeout=30)
         else:
-            response = requests.post(url, data=params, verify=self._session.verify, auth=self._session.auth)
+            response = requests.post(url, data=params, verify=self._session.verify, auth=self._session.auth, timeout=30)
         if self.is_invalid_api_key(response):
             raise InvalidCredentials('Invalid API key')
         return response

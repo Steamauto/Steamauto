@@ -4,12 +4,11 @@ import time
 
 import apprise
 import json5
-import requests
 from _decimal import Decimal
 from apprise.AppriseAsset import AppriseAsset
 from apprise.AppriseAttachment import AppriseAttachment
 from requests.exceptions import ProxyError
-
+from steampy.client import session
 from steampy.exceptions import InvalidCredentials
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception
@@ -29,7 +28,7 @@ class BuffProfitReport:
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.config = config
-        self.session = requests.session()
+        self.session = session()
         self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
 
     def init(self) -> bool:

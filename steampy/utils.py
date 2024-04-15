@@ -189,8 +189,8 @@ class Credentials:
 
 def ping_proxy(proxies: dict):
     try:
-        requests.get('https://steamcommunity.com/login/dologin', proxies=proxies)
+        requests.get('https://steamcommunity.com/login/dologin', proxies=proxies, timeout=30)
         return True
-    except (requests.exceptions.ConnectionError, TimeoutError) as e:
+    except (requests.exceptions.ConnectionError, TimeoutError):
         return False
 

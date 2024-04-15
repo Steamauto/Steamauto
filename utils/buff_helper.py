@@ -11,7 +11,7 @@ from apprise.AppriseAsset import AppriseAsset
 from apprise.AppriseAttachment import AppriseAttachment
 from bs4 import BeautifulSoup
 
-from steampy.client import SteamClient
+from steampy.client import SteamClient, session as session_
 from utils.static import (APPRISE_ASSET_FOLDER, BUFF_COOKIES_FILE_PATH,
                           CONFIG_FILE_PATH)
 from utils.tools import get_encoding, logger
@@ -28,7 +28,7 @@ def parse_openid_params(response: str) -> Dict[str, str]:
 
 
 def get_openid_params(steam_client: SteamClient) -> Dict[str, str]:
-    response = requests.get("https://buff.163.com/account/login/steam?back_url=/", allow_redirects=False)
+    response = requests.get("https://buff.163.com/account/login/steam?back_url=/", allow_redirects=False, timeout=30)
     response = steam_client._session.get(response.headers["Location"])
     return parse_openid_params(response.text)
 
@@ -36,14 +36,14 @@ def get_openid_params(steam_client: SteamClient) -> Dict[str, str]:
 # Return the cookies of buff
 def login_to_buff_by_steam(steam_client: SteamClient) -> str:
     params = get_openid_params(steam_client)
-    response = steam_client._session.post("https://steamcommunity.com/openid/login", data=params, allow_redirects=False)
+    response = steam_client._session.post("https://steamcommunity.com/openid/login", data=params, allow_redirects=False, timeout=30)
     while response.status_code == 302:
         response = steam_client._session.get(response.headers["Location"], allow_redirects=False)
     return steam_client._session.cookies.get_dict(domain="buff.163.com")
 
 
 def login_to_buff_by_qrcode() -> str:
-    session = requests.session()
+    session = session_()
     response_json = session.get(
         "https://buff.163.com/account/api/qr_code_login_open", params={"_": str(int(time.time() * 1000))}
     ).json()
@@ -63,7 +63,7 @@ def login_to_buff_by_qrcode() -> str:
     try:
         with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
             config = json5.load(f)
-    except:
+    except Exception:
         pass
     if "buff_login_notification" in config["buff_auto_accept_offer"]:
         asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
@@ -101,7 +101,7 @@ def login_to_buff_by_qrcode() -> str:
 def is_session_has_enough_permission(session: str) -> bool:
     if "session=" not in session:
         session = "session=" + session
-    response_json = requests.get("https://buff.163.com/api/market/steam_trade", headers={"Cookie": session}).json()
+    response_json = requests.get("https://buff.163.com/api/market/steam_trade", headers={"Cookie": session}, timeout=30).json()
     if "data" not in response_json:
         return False
     return True
@@ -153,7 +153,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
 def get_buff_username(session) -> str:
     if "session=" not in session:
         session = "session=" + session
-    response_json = requests.get("https://buff.163.com/account/api/user/info", headers={"Cookie": session}).json()
+    response_json = requests.get("https://buff.163.com/account/api/user/info", headers={"Cookie": session}, timeout=30).json()
     if response_json["code"] == "OK":
         if "data" in response_json:
             if "nickname" in response_json["data"]:

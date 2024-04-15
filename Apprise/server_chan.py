@@ -7,7 +7,7 @@ from apprise.decorators import notify
 def server_chan_notification_wrapper(body, title, notify_type, *args, **kwargs):
     token = kwargs['meta']['host']
     try:
-        resp = requests.get('https://sctapi.ftqq.com/%s.send?title=%s&desp=%s' % (token, title, body))
+        resp = requests.get('https://sctapi.ftqq.com/%s.send?title=%s&desp=%s' % (token, title, body),  timeout=30)
         if resp.status_code == 200:
             if resp.json()['code'] == 0:
                 logger.info('Server酱通知发送成功\n')

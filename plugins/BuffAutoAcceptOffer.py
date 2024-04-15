@@ -48,7 +48,7 @@ class BuffAutoAcceptOffer:
             "force_buyer_send_offer": "true"
         }
         resp = requests.get(
-            "https://buff.163.com/api/market/steam_trade", headers=self.buff_headers
+            "https://buff.163.com/api/market/steam_trade", headers=self.buff_headers, timeout=30
         )
         csrf_token = resp.cookies.get_dict()['csrf_token']
         headers = self.buff_headers.copy()
@@ -56,7 +56,7 @@ class BuffAutoAcceptOffer:
         headers['Origin'] = 'https://buff.163.com'
         headers['Referer'] = 'https://buff.163.com/user-center/profile'
         try:
-            resp = requests.post(url, headers=headers, json=data)
+            resp = requests.post(url, headers=headers, json=data, timeout=30)
             if resp.status_code == 200:
                 if resp.json()['code'] == 'OK':
                     self.logger.info('[BuffAutoAcceptOffer] 已开启买家发起交易报价功能')
@@ -66,7 +66,7 @@ class BuffAutoAcceptOffer:
             self.logger.error('[BuffAutoAcceptOffer] 开启买家发起交易报价功能失败')
 
     def get_buff_bind_steamid(self):
-        response_json = requests.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
+        response_json = requests.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers, timeout=30).json()
         if response_json["code"] == "OK":
             return response_json["data"]["steamid"]
         else:
@@ -81,7 +81,7 @@ class BuffAutoAcceptOffer:
                 buff_account_data = json5.load(f)
             return buff_account_data["data"]["nickname"]
         else:
-            response_json = requests.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
+            response_json = requests.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers, timeout=30).json()
             if dev:
                 self.logger.info("开发者模式, 保存账户信息到本地")
                 with open(BUFF_ACCOUNT_DEV_FILE_PATH, "w", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
@@ -90,7 +90,7 @@ class BuffAutoAcceptOffer:
                 if "data" in response_json:
                     if "nickname" in response_json["data"]:
                         steam_trade_response_json = requests.get(
-                            "https://buff.163.com/api/market/steam_trade", headers=self.buff_headers
+                            "https://buff.163.com/api/market/steam_trade", headers=self.buff_headers, timeout=30
                         ).json()
                         if 'data' not in steam_trade_response_json or steam_trade_response_json['data'] is None:
                             self.logger.error("[BuffAutoAcceptOffer] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
@@ -154,7 +154,7 @@ class BuffAutoAcceptOffer:
                         + goods_id
                         + "&page_num=1&sort_by=default&mode=&allow_tradable_cooldown=1"
                     )
-                    resp = requests.get(shop_listing_url, headers=self.buff_headers)
+                    resp = requests.get(shop_listing_url, headers=self.buff_headers, timeout=30)
                     resp_json = resp.json()
                     if self.development_mode:
                         self.logger.info("[BuffAutoAcceptOffer] 开发者模式, 保存价格信息到本地")
@@ -233,7 +233,7 @@ class BuffAutoAcceptOffer:
                         to_deliver_order = message_notification["data"]["to_deliver_order"]
                 else:
                     response_json = requests.get(
-                        "https://buff.163.com/api/message/notification", headers=self.buff_headers
+                        "https://buff.163.com/api/message/notification", headers=self.buff_headers, timeout=30
                     ).json()
                     if self.development_mode:
                         self.logger.info("[BuffAutoAcceptOffer] 开发者模式, 保存发货信息到本地")
@@ -270,7 +270,7 @@ class BuffAutoAcceptOffer:
                         trades = json5.load(f)["data"]
                 else:
                     response_json = requests.get(
-                        "https://buff.163.com/api/market/steam_trade", headers=self.buff_headers
+                        "https://buff.163.com/api/market/steam_trade", headers=self.buff_headers, timeout=30
                     ).json()
                     if self.development_mode:
                         self.logger.info("[BuffAutoAcceptOffer] 开发者模式, 保存待发货信息到本地")
@@ -296,6 +296,7 @@ class BuffAutoAcceptOffer:
                             + "&appid="
                             + str(game["app_id"]),
                             headers=self.buff_headers,
+                            timeout=30,
                         ).json()
                         if self.development_mode:
                             self.logger.info("[BuffAutoAcceptOffer] 开发者模式, 保存待确认供应信息到本地")
