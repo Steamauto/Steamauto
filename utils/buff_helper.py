@@ -1,4 +1,5 @@
 import os
+import base64
 import time
 from typing import Dict
 
@@ -60,6 +61,13 @@ def login_to_buff_by_qrcode() -> str:
     img = qrcode.make(qr_code_url)
     img.save("qrcode.png")
     config = {}
+    
+    # 读取本地图片文件内容编码为Base64
+    with open("qrcode.png", "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+    
+    html_content = f"<br/><img src='data:image/png;base64,{encoded_string}' />"
+
     try:
         with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
             config = json5.load(f)
@@ -71,7 +79,8 @@ def login_to_buff_by_qrcode() -> str:
         for server in config["buff_auto_accept_offer"]["servers"]:
             apprise_obj.add(server)
         apprise_obj.notify(
-            config["buff_auto_accept_offer"]["buff_login_notification"]["title"],
+            title=config["buff_auto_accept_offer"]["buff_login_notification"]["title"],
+            body="保存图片到手机，用Buff扫码登陆"+html_content,
             attach=AppriseAttachment("qrcode.png"),
         )
     logger.info("请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描")

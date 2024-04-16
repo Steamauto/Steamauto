@@ -220,8 +220,8 @@ class BuffAutoAcceptOffer:
                             for server in self.config["buff_auto_accept_offer"]["servers"]:
                                 apprise_obj.add(server)
                             apprise_obj.notify(
-                                self.config["buff_auto_accept_offer"]["buff_cookie_expired_notification"]["title"],
-                                self.config["buff_auto_accept_offer"]["buff_cookie_expired_notification"]["body"],
+                                title=self.config["buff_auto_accept_offer"]["buff_cookie_expired_notification"]["title"],
+                                body=self.config["buff_auto_accept_offer"]["buff_cookie_expired_notification"]["body"],
                             )
                         return
                 if self.development_mode and os.path.exists(MESSAGE_NOTIFICATION_DEV_FILE_PATH):
