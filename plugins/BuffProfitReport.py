@@ -469,7 +469,9 @@ class BuffProfitReport:
                 for server in servers:
                     apprise_obj.add(server)
                 apprise_obj.notify(
-                    body='BUFF每日利润统计报告', attach=AppriseAttachment(report_file_path)
+                    title='BUFF每日利润统计报告',
+                    body='BUFF每日利润统计报告', 
+                    attach=AppriseAttachment(report_file_path)
                 )
             except ProxyError:
                 self.logger.error('[BuffProfitReport] 代理异常, 本软件可不需要代理或任何VPN')

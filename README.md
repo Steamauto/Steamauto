@@ -249,7 +249,7 @@
 | ---                              | ---                                                                                                                              |
 | title                            | 通知标题                                                                                                                             |
 | body                             | 通知内容                                                                                                                             |
-| servers                          | Apprise格式服务器列表 - 详见[Apprise](https://github.com/caronc/apprise)<br>- 额外支持 [Server酱](https://sct.ftqq.com/) 格式为`ftqq://<SENDKEY>` |
+| servers                          | Apprise格式服务器列表 - 详见[Apprise](https://github.com/caronc/apprise)<br>- 额外支持 [Server酱](https://sct.ftqq.com/) 格式为`ftqq://<SENDKEY>` <br>- 额外支持 [pushplus](https://www.pushplus.plus/) 格式为`pushplus://<token>` |
 
 ## FAQ
 ##### 账号安全问题?
