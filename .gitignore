@@ -1,7 +1,10 @@
+build/*
 config/*
 dev/*
 logs
 session
+Steamauto-*.spec
+*.exe
 **/__pycache__
 .idea
 bin

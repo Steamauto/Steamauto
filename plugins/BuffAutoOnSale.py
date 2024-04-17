@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from requests.exceptions import ProxyError
 from steampy.client import session
 from steampy.exceptions import InvalidCredentials
+from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
 from utils.ApiCrypt import ApiCrypt
 from utils.buff_helper import get_valid_session_for_buff
 
@@ -220,7 +221,7 @@ class BuffAutoOnSale:
                     response_data = response_json["data"]
                     bs = BeautifulSoup(response_data, "html.parser")
                     paint_wear_p = bs.find("p", {"class": "paint-wear"})
-                    bs_span = bs.find("span", {"class": "custom-currency"})
+                    # bs_span = bs.find("span", {"class": "custom-currency"})
                     try:
                         suggested_price = int(bs.find("span", {"class": "custom-currency"}).attrs.get("data-price"))
                     except Exception:
@@ -658,8 +659,11 @@ class BuffAutoOnSale:
             resp_json = self.session.post("https://buff.163.com/api/market/manual_plus/seller_send_offer",
                                           json=post_data, headers=headers).json()
             if resp_json["code"] == "OK":
-                self.unfinish_supply_order_list.append({"order_id":order_id, "create_time":time.time()})
+                self.unfinish_supply_order_list.append({"order_id": order_id, "create_time": time.time()})
                 self.logger.info("[BuffAutoOnSale] 发起steam报价成功! ")
+            else:
+                self.logger.error("[BuffAutoOnSale] 发起steam报价失败, 请检查buff_cookies.txt或稍后再试! ")
+                return False
             return True
         else:
             self.logger.error(response_json)
@@ -669,18 +673,17 @@ class BuffAutoOnSale:
     def confirm_supply_order(self):
         """统一处理发起报价成功, 等待令牌确认的订单"""
         unfinish_order_list = []
-        error_num = 0 # 超时订单
-        unfinish_num = 0 # 等待buff发起报价
-        finish_num = 0 # 完成
+        error_num = 0  # 超时订单
+        unfinish_num = 0  # 等待buff发起报价
+        finish_num = 0  # 完成
 
         self.logger.info("[BuffAutoOnSale] 处理等待发起报价的订单, 共有{}个".format(len(self.unfinish_supply_order_list)))
         for index, order in enumerate(self.unfinish_supply_order_list):
             order_id, create_time = order["order_id"], order["create_time"]
-            if time.time() - create_time > 15*60:
+            if time.time() - create_time >= 30*60:
                 error_num += 1
                 self.logger.error("[BuffAutoOnSale] BUFF发起steam报价失败, 报价ID: {}".format(order_id))
                 continue
-            
             try:
                 url = 'https://buff.163.com/api/market/bill_order/batch/info?bill_orders=' + order_id
                 csrf_token = self.session.cookies.get("csrf_token", domain="buff.163.com")
@@ -694,18 +697,23 @@ class BuffAutoOnSale:
                         res_json["data"]["items"][0]["tradeofferid"] is not None:
                     steam_trade_offer_id = res_json["data"]["items"][0]["tradeofferid"]
                     self.logger.info("[BuffAutoOnSale] BUFF发起steam报价成功, 报价ID: " + steam_trade_offer_id)
+                    time.sleep(3)
                     with self.steam_client_mutex:
-                        self.steam_client._confirm_transaction(steam_trade_offer_id)
+                        if steam_trade_offer_id in BuffAutoAcceptOffer.ignored_offer:
+                            self.logger.info("[BuffAutoOnSale] 该报价已经被处理过, 跳过")
+                        else:
+                            self.steam_client._confirm_transaction(steam_trade_offer_id)
+                            BuffAutoAcceptOffer.ignored_offer.add(steam_trade_offer_id)
                     finish_num += 1
                     self.logger.info("[BuffAutoOnSale] 确认steam报价成功")
                 else:
                     unfinish_order_list.append(order)
                     unfinish_num += 1
-                    self.logger.error("[BuffAutoOnSale] BUFF尚未完成发起steam报价, 继续等待...")
+                    self.logger.error("[BuffAutoOnSale] BUFF尚未完成发起steam报价, 继续等待...: ")
             except Exception as e:
                 unfinish_num += 1
                 unfinish_order_list.append(order)
-                self.logger.error("[BuffAutoOnSale] 发起steam报价失败, 错误信息: " + str(e), exc_info=True)
+                self.logger.error("[BuffAutoOnSale] 发起steam报价失败, 错误信息: " + str(e) + "报价ID: " + steam_trade_offer_id, exc_info=True)
             if index != len(self.unfinish_supply_order_list) - 1:
                 time.sleep(5)
         self.unfinish_supply_order_list = unfinish_order_list

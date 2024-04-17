@@ -400,7 +400,7 @@ def plugins_check(plugins_enabled):
 def get_steam_client_mutexs(num):
     steam_client_mutexs = []
     for i in range(num):
-        steam_client_mutexs.append(threading.Lock())
+        steam_client_mutexs.append(threading.RLock())
     return steam_client_mutexs
 
 

@@ -26,6 +26,7 @@ class BuffAutoAcceptOffer:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
     }
+    ignored_offer = set()
 
     def __init__(self, logger, steam_client, steam_client_mutex, config):
         self.logger = logger
@@ -168,8 +169,8 @@ class BuffAutoAcceptOffer:
                     apprise_obj = apprise.Apprise(asset=self.asset)
                     for server in self.config["buff_auto_accept_offer"]["servers"]:
                         apprise_obj.add(server)
-                    if self.order_info == {}:
-                        self.get_order_info([trade])
+                    # if self.order_info == {}:
+                    #     self.get_order_info([trade])
                     apprise_obj.notify(
                         title=self.format_str(self.config["buff_auto_accept_offer"]["protection_notification"]["title"], trade),
                         body=self.format_str(self.config["buff_auto_accept_offer"]["protection_notification"]["body"], trade),
@@ -194,7 +195,6 @@ class BuffAutoAcceptOffer:
             return 1
         self.logger.info("[BuffAutoAcceptOffer] 已经登录至BUFF 用户名: " + user_name)
         self.require_buyer_send_offer()
-        ignored_offer = []
         interval = self.config["buff_auto_accept_offer"]["interval"]
         while True:
             try:
@@ -329,7 +329,7 @@ class BuffAutoAcceptOffer:
                                 trade_offer_to_confirm.remove(offer_id)
                                 # offer_id会同时在2个接口中出现, 移除重复的offer_id
                             self.logger.info("[BuffAutoAcceptOffer] 正在处理第 " + str(i) + " 个交易报价 报价ID" + str(offer_id))
-                            if offer_id not in ignored_offer:
+                            if offer_id not in self.ignored_offer:
                                 try:
                                     if not self.should_accept_offer(trade):
                                         continue
@@ -384,11 +384,11 @@ class BuffAutoAcceptOffer:
                                         try:
                                             with self.steam_client_mutex:
                                                 self.steam_client.accept_trade_offer(offer_id)
+                                                self.ignored_offer.add(offer_id)
+                                                self.logger.info("[BuffAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! ")
                                         except KeyError as e:
                                             handle_caught_exception(e)
                                             self.logger.error("[BuffAutoAcceptOffer] Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
-                                    ignored_offer.append(offer_id)
-                                    self.logger.info("[BuffAutoAcceptOffer] 接受完成! 已经将此交易报价加入忽略名单! ")
                                     if "sell_notification" in self.config["buff_auto_accept_offer"]:
                                         apprise_obj = apprise.Apprise()
                                         for server in self.config["buff_auto_accept_offer"]["servers"]:
@@ -410,7 +410,7 @@ class BuffAutoAcceptOffer:
                             else:
                                 self.logger.info("[BuffAutoAcceptOffer] 该报价已经被处理过, 跳过.")
                     for trade_offer_id in trade_offer_to_confirm:
-                        if trade_offer_id not in ignored_offer:
+                        if trade_offer_id not in self.ignored_offer:
                             if self.development_mode:
                                 self.logger.info("[BuffAutoAcceptOffer] 开发者模式已开启, 跳过令牌确认")
                             else:
@@ -420,7 +420,7 @@ class BuffAutoAcceptOffer:
                                     if offer["response"]["offer"]["trade_offer_state"] == 9:
                                         with self.steam_client_mutex:
                                             self.steam_client._confirm_transaction(trade_offer_id)
-                                        ignored_offer.append(trade_offer_id)
+                                            self.ignored_offer.add(trade_offer_id)
                                         self.logger.info(
                                             "[BuffAutoAcceptOffer] 令牌完成! ( " + trade_offer_id + " ) 已经将此交易报价加入忽略名单!"
                                         )
