@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import pickle
 import time
@@ -17,7 +18,7 @@ from utils.static import (APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH,
                           MESSAGE_NOTIFICATION_DEV_FILE_PATH, SESSION_FOLDER,
                           SHOP_LISTING_DEV_FILE_PATH,
                           STEAM_TRADE_DEV_FILE_PATH, SUPPORT_GAME_TYPES,
-                          TO_DELIVER_DEV_FILE_PATH)
+                          TO_DELIVER_DEV_FILE_PATH, SELL_ORDER_HISTORY_DEV_FILE_PATH)
 from utils.tools import exit_code, get_encoding
 
 
@@ -64,6 +65,36 @@ class BuffAutoAcceptOffer:
                     self.logger.error('[BuffAutoAcceptOffer] 开启买家发起交易报价功能失败')
         except:
             self.logger.error('[BuffAutoAcceptOffer] 开启买家发起交易报价功能失败')
+
+    def get_order_info(self, trades):
+        for trade in trades:
+            if trade["tradeofferid"] not in self.order_info:
+                if self.development_mode and os.path.exists(SELL_ORDER_HISTORY_DEV_FILE_PATH):
+                    self.logger.info("[BuffAutoAcceptOffer] 开发者模式已开启, 使用本地数据")
+                    with open(
+                            SELL_ORDER_HISTORY_DEV_FILE_PATH, "r",
+                            encoding=get_encoding(SELL_ORDER_HISTORY_DEV_FILE_PATH)
+                    ) as f:
+                        resp_json = json.load(f)
+                else:
+                    time.sleep(5)
+                    sell_order_history_url = (
+                            "https://buff.163.com/api/market/sell_order" "/history" "?appid=" + str(
+                        trade["appid"]) + "&mode=1 "
+                    )
+                    resp = requests.get(sell_order_history_url, headers=self.buff_headers)
+                    resp_json = resp.json()
+                    if self.development_mode:
+                        self.logger.info("[BuffAutoAcceptOffer] 开发者模式, 保存交易历史信息到本地")
+                        with open(
+                                SELL_ORDER_HISTORY_DEV_FILE_PATH, "w",
+                                encoding=get_encoding(SELL_ORDER_HISTORY_DEV_FILE_PATH)
+                        ) as f:
+                            f.write(json.dumps(resp_json, indent=4))
+                if resp_json["code"] == "OK":
+                    for sell_item in resp_json["data"]["items"]:
+                        if "tradeofferid" in sell_item and sell_item["tradeofferid"]:
+                            self.order_info[sell_item["tradeofferid"]] = sell_item
 
     def get_buff_bind_steamid(self):
         response_json = requests.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
