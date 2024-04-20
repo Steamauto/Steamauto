@@ -9,6 +9,7 @@ import apprise
 import json5
 import requests
 from apprise.AppriseAsset import AppriseAsset
+from Apprise.server_chan import *
 from bs4 import BeautifulSoup
 from requests.exceptions import ProxyError
 from steampy.exceptions import InvalidCredentials

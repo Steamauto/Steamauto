@@ -110,7 +110,9 @@ DEFAULT_CONFIG_JSON = r"""
     // 二维码登录BUFF通知配置
     "buff_login_notification": {
       // 二维码登录BUFF通知标题（如不需要可直接删除）
-      "title": "请扫描二维码登录BUFF"
+      "title": "请扫描二维码登录BUFF",
+      // 是否开启传递 二维码图片
+      "include_qrcode_html_enable": false
     },
     // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
     "servers": [

@@ -8,6 +8,7 @@ import requests
 from _decimal import Decimal
 from apprise.AppriseAsset import AppriseAsset
 from apprise.AppriseAttachment import AppriseAttachment
+from Apprise.server_chan import *
 from requests.exceptions import ProxyError
 
 from steampy.exceptions import InvalidCredentials

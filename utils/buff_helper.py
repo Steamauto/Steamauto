@@ -10,6 +10,7 @@ import qrcode_terminal
 import requests
 from apprise.AppriseAsset import AppriseAsset
 from apprise.AppriseAttachment import AppriseAttachment
+from Apprise.server_chan import *
 from bs4 import BeautifulSoup
 
 from steampy.client import SteamClient
@@ -78,9 +79,14 @@ def login_to_buff_by_qrcode() -> str:
         apprise_obj = apprise.Apprise(asset=asset)
         for server in config["buff_auto_accept_offer"]["servers"]:
             apprise_obj.add(server)
+        # 检查是否应包括HTML内容
+        if config["buff_auto_accept_offer"]["buff_login_notification"]["include_qrcode_html_enable"]:
+            body_content = "保存图片到手机，用Buff扫码登陆" + html_content
+        else:
+            body_content = "请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描"
         apprise_obj.notify(
             title=config["buff_auto_accept_offer"]["buff_login_notification"]["title"],
-            body="保存图片到手机，用Buff扫码登陆"+html_content,
+            body=body_content,
             attach=AppriseAttachment("qrcode.png"),
         )
     logger.info("请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描")
