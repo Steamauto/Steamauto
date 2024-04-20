@@ -9,6 +9,7 @@ import json5
 import requests
 from apprise.AppriseAsset import AppriseAsset
 from requests.exceptions import ProxyError
+from Apprise.server_chan import *
 
 from steampy.exceptions import ConfirmationExpected, InvalidCredentials
 from utils.buff_helper import get_valid_session_for_buff
