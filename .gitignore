@@ -13,3 +13,4 @@ test.py
 build/*
 dist/*
 steamauto.spec
+*.spec
