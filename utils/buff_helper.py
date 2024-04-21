@@ -79,8 +79,11 @@ def login_to_buff_by_qrcode() -> str:
         apprise_obj = apprise.Apprise(asset=asset)
         for server in config["buff_auto_accept_offer"]["servers"]:
             apprise_obj.add(server)
-        # 检查是否应包括HTML内容
-        if config["buff_auto_accept_offer"]["buff_login_notification"]["include_qrcode_html_enable"]:
+        if (
+            "buff_login_notification" in config["buff_auto_accept_offer"]
+            and "include_qrcode_html_enable" in config["buff_auto_accept_offer"]["buff_login_notification"]
+            and  config["buff_auto_accept_offer"]["buff_login_notification"]["include_qrcode_html_enable"]
+        ):
             body_content = "保存图片到手机，用Buff扫码登陆" + html_content
         else:
             body_content = "请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描"
