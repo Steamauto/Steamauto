@@ -39,7 +39,7 @@ class UUAccount:
                 "authorization": "Bearer " + token,
                 "content-type": "application/json; charset=utf-8",
                 "user-agent": "okhttp/3.14.9",
-                "app-version": "5.4.1",
+                "app-version": "5.12.1",
                 "apptype": "4",
                 "devicetoken": self.device_info["deviceId"],
                 "deviceid": self.device_info["deviceId"],
