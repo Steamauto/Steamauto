@@ -279,6 +279,7 @@ def init_files_and_params() -> int:
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! \n")
+    logger.info("\033[1;31m！！！ 本程序完全\033[1;33m免费开源\033[1;31m，若有人向你售卖，请立即投诉并申请退款！！！ \033[0m\n")
     logger.info(f"当前版本: {current_version}")
     logger.info("正在检查更新...")
     try:
