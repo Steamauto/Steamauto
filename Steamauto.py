@@ -267,8 +267,7 @@ def login_to_steam():
         steam_client._api_key = get_api_key(steam_client)
     except Exception as e:
         handle_caught_exception(e)
-        logger.error("获取API_KEY失败, 此Steam账号无法绑定BUFF")
-        return None
+        logger.error("获取API_KEY失败, 但由于现在完全没用到API_KEY, 所以不影响程序运行. 请忽略此错误!")
     return steam_client
 
 
