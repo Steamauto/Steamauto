@@ -121,8 +121,7 @@ class SteamClient:
         return self._session.cookies.get_dict()['sessionid']
 
     def _get_access_token(self) -> str:
-        steam_login_secure_cookies = [cookie for cookie in self._session.cookies if cookie.name == 'steamLoginSecure']
-        cookie_value = steam_login_secure_cookies[0].value
+        cookie_value = self._session.cookies.get_dict('steamcommunity.com')['steamLoginSecure']
         decoded_cookie_value = unquote(cookie_value)
         access_token_parts = decoded_cookie_value.split('||')
         if len(access_token_parts) < 2:
