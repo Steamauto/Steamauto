@@ -1,52 +1,53 @@
 {
+    "broadcast": "闲鱼 大学路蹦极选手 刘少魔帝 心如止水 蜜汁老八小憨包 请立刻停止倒卖",
     "latest_version": {
         "version": "3.5.0",
-        "changelog": "!!!\u8f6f\u4ef6\u6c38\u4e45\u4e3a\u514d\u8d39\u5f00\u6e90\u8f6f\u4ef6\uff0c\u5730\u5740https://github.com/Steamauto/Steamauto\n\u8c28\u9632\u5012\u5356!\u8c28\u9632\u5012\u5356!\u8c28\u9632\u5012\u5356!\n3.5.0\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u652f\u6301\u81ea\u52a8\u4f9b\u5e94\u6c42\u8d2d\u8ba2\u5355\n2.\u4fee\u6b63\u60a0\u60a0\u6709\u54c1\u90e8\u5206\u4ee3\u7801\uff0c\u9632\u6b62\u56e0\u60a0\u60a0\u6709\u54c1\u7cfb\u7edf\u800c\u5bfc\u81f4\u63d2\u4ef6\u5d29\u6e83\n\u611f\u8c22 devgod, 14m0k(QQ\u7fa4\u7528\u6237) \u5728\u5f00\u53d1\u4f9b\u5e94\u6c42\u8d2d\u8ba2\u5355\u529f\u80fd\u65f6\u7684\u5de8\u5927\u5e2e\u52a9\uff01"
+        "changelog": "!!!软件永久为免费开源软件，地址https://github.com/Steamauto/Steamauto\n谨防倒卖!谨防倒卖!谨防倒卖!\n3.5.0更新日志如下，推荐所有用户更新：\n1.支持自动供应求购订单\n2.修正悠悠有品部分代码，防止因悠悠有品系统而导致插件崩溃\n感谢 devgod, 14m0k(QQ群用户) 在开发供应求购订单功能时的巨大帮助！"
     },
     "history_versions": [
         {
             "version": "3.5.0",
-            "changelog": "!!!\u8f6f\u4ef6\u6c38\u4e45\u4e3a\u514d\u8d39\u5f00\u6e90\u8f6f\u4ef6\uff0c\u5730\u5740https://github.com/Steamauto/Steamauto\n\u8c28\u9632\u5012\u5356!\u8c28\u9632\u5012\u5356!\u8c28\u9632\u5012\u5356!\n3.5.0\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u652f\u6301\u81ea\u52a8\u4f9b\u5e94\u6c42\u8d2d\u8ba2\u5355\n2.\u4fee\u6b63\u60a0\u60a0\u6709\u54c1\u90e8\u5206\u4ee3\u7801\uff0c\u9632\u6b62\u56e0\u60a0\u60a0\u6709\u54c1\u7cfb\u7edf\u800c\u5bfc\u81f4\u63d2\u4ef6\u5d29\u6e83\n\u611f\u8c22 devgod, 14m0k(QQ\u7fa4\u7528\u6237) \u5728\u5f00\u53d1\u4f9b\u5e94\u6c42\u8d2d\u8ba2\u5355\u529f\u80fd\u65f6\u7684\u5de8\u5927\u5e2e\u52a9\uff01"
+            "changelog": "!!!软件永久为免费开源软件，地址https://github.com/Steamauto/Steamauto\n谨防倒卖!谨防倒卖!谨防倒卖!\n3.5.0更新日志如下，推荐所有用户更新：\n1.支持自动供应求购订单\n2.修正悠悠有品部分代码，防止因悠悠有品系统而导致插件崩溃\n感谢 devgod, 14m0k(QQ群用户) 在开发供应求购订单功能时的巨大帮助！"
         },
         {
             "version": "3.4.0",
-            "changelog": "!!!\u8f6f\u4ef6\u6c38\u4e45\u4e3a\u514d\u8d39\u5f00\u6e90\u8f6f\u4ef6\uff0c\u5730\u5740https://github.com/Steamauto/Steamauto\n\u8c28\u9632\u5012\u5356!\u8c28\u9632\u5012\u5356!\u8c28\u9632\u5012\u5356!\n3.4.0\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u4fee\u6b63Steam\u767b\u5f55\u4ee3\u7801\n2.\u65b0\u589e\u63d2\u4ef6\u81ea\u52a8\u5907\u6ce8\u5546\u54c1\u8d2d\u4e70\u4ef7\u683c\n3.\u4fee\u6b63\u65e0\u78e8\u635f\u7269\u54c1\u65e0\u6cd5\u83b7\u53d6\u5546\u54c1\u4ef7\u683c\n4.\u589e\u52a0BUFF\u533a\u95f4\u78e8\u635f\u4e0a\u67b6\u529f\u80fd\n5.\u589e\u52a0\u4f7f\u7528Apprise\u53d1\u9001\u4e8c\u7ef4\u7801\u901a\u77e5\n6.\u52a0\u5165\u68c0\u67e5\u767b\u5f55\u7684Steam\u8d26\u53f7\u4e0eBUFF\u7ed1\u5b9a\u7684Steam\u8d26\u53f7\n7.\u589e\u52a0\u65b0\u63d2\u4ef6 - BUFF\u5229\u6da6\u62a5\u544a\n8.\u4fee\u6b63\u83b7\u53d6BUFF\u5e93\u5b58\u65f6\u83b7\u53d6\u4e0d\u5b8c\u6574"
+            "changelog": "!!!软件永久为免费开源软件，地址https://github.com/Steamauto/Steamauto\n谨防倒卖!谨防倒卖!谨防倒卖!\n3.4.0更新日志如下，推荐所有用户更新：\n1.修正Steam登录代码\n2.新增插件自动备注商品购买价格\n3.修正无磨损物品无法获取商品价格\n4.增加BUFF区间磨损上架功能\n5.增加使用Apprise发送二维码通知\n6.加入检查登录的Steam账号与BUFF绑定的Steam账号\n7.增加新插件 - BUFF利润报告\n8.修正获取BUFF库存时获取不完整"
         },
         {
             "version": "3.3.0",
-            "changelog": "3.3.0\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u652f\u6301\u901a\u8fc7Steam\u6216\u626b\u63cf\u4e8c\u7ef4\u7801\u767b\u5f55\u81f3BUFF\n2.\u9002\u914d\u65b0\u7684Steam\u63a5\u53e3\n3.\u5220\u9664\u4e0d\u5fc5\u8981\u7684Sleep\n4.\u4fee\u6b63BUFF\u81ea\u52a8\u4e0a\u67b6\u63d2\u4ef6\u4ee3\u7801\u4e0econfig.example.json5\u4e0d\u4e00\u81f4\u7684\u95ee\u9898\n5.\u4fee\u6b63BUFF\u81ea\u52a8\u4e0a\u67b6DOTA2\u9970\u54c1\u51fa\u9519\n6.\u4fee\u6b63\u63a5\u53e3\u4e0d\u8fd4\u56deCSGO\u6216DOTA2\u5bfc\u81f4\u7a0b\u5e8f\u62a5\u9519\n7.\u5b8c\u5584\u9519\u8bef\u63d0\u793a\n8.\u81ea\u52a8\u83b7\u53d6API_KEY"
+            "changelog": "3.3.0更新日志如下，推荐所有用户更新：\n1.支持通过Steam或扫描二维码登录至BUFF\n2.适配新的Steam接口\n3.删除不必要的Sleep\n4.修正BUFF自动上架插件代码与config.example.json5不一致的问题\n5.修正BUFF自动上架DOTA2饰品出错\n6.修正接口不返回CSGO或DOTA2导致程序报错\n7.完善错误提示\n8.自动获取API_KEY"
         },
         {
             "version": "3.2.3",
-            "changelog": "3.2.3\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u4fee\u6539\u67d0\u4e9b\u63d0\u793a\uff0c\u907f\u514d\u8bef\u5bfc\u7528\u6237\n2.\u6355\u83b7\u66f4\u8be6\u7ec6\u7684Steam\u9519\u8bef\n3.\u652f\u6301\u901a\u8fc7\u65b0\u5efauu.txt\u83b7\u53d6token"
+            "changelog": "3.2.3更新日志如下，推荐所有用户更新：\n1.修改某些提示，避免误导用户\n2.捕获更详细的Steam错误\n3.支持通过新建uu.txt获取token"
         },
         {
             "version": "3.2.2",
-            "changelog": "3.2.2\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u4fee\u590d\u60a0\u60a0\u6709\u54c1\u7684Token\u6709\u6548\u671f\u8fc7\u77ed\u7684\u95ee\u9898\n2.\u89e3\u51b3\u67d0\u4e9b\u201c\u95ea\u9000\u201d\u60c5\u51b5\n3.\u6355\u83b7\u7f51\u7edc\u9519\u8bef"
+            "changelog": "3.2.2更新日志如下，推荐所有用户更新：\n1.修复悠悠有品的Token有效期过短的问题\n2.解决某些“闪退”情况\n3.捕获网络错误"
         },
         {
             "version": "3.2.1",
-            "changelog": "\n=================================\nSteamauto \u5b98\u65b9QQ\u7fa4  \u7fa4\u53f7:425721057\n=================================\n3.2.1\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u5904\u7406\u60a0\u60a0\u6709\u54c1\u9700\u8981\u5356\u5bb6\u624b\u52a8\u53d1\u62a5\u4ef7\u7684\u60c5\u51b5\n2.\u5c1d\u8bd5\u4f18\u5316\u5185\u7f6e\u52a0\u901f\u529f\u80fd"
+            "changelog": "\n=================================\nSteamauto 官方QQ群  群号:425721057\n=================================\n3.2.1更新日志如下，推荐所有用户更新：\n1.处理悠悠有品需要卖家手动发报价的情况\n2.尝试优化内置加速功能"
         },
         {
             "version": "3.2.0",
-            "changelog": "\n=================================\nSteamauto \u5b98\u65b9QQ\u7fa4  \u7fa4\u53f7:425721057\n=================================\n3.2.0\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u4fee\u590d\u60a0\u60a0\u6709\u54c1\u65e0\u6cd5\u6b63\u5e38\u53d1\u8d27\n2.\u5e76\u5165uuyoupinapi\u4ed3\u5e93\n"
+            "changelog": "\n=================================\nSteamauto 官方QQ群  群号:425721057\n=================================\n3.2.0更新日志如下，推荐所有用户更新：\n1.修复悠悠有品无法正常发货\n2.并入uuyoupinapi仓库\n"
         },
         {
             "version": "3.1.2",
-            "changelog": "\n=================================\nSteamauto \u5b98\u65b9QQ\u7fa4  \u7fa4\u53f7:425721057\n=================================\n3.1.2\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u5b8c\u5584\u9519\u8bef\u63d0\u793a\n2.\u4fee\u590d\u6f5c\u5728\u7684\u5185\u7f6e\u52a0\u901fBUG\n"
+            "changelog": "\n=================================\nSteamauto 官方QQ群  群号:425721057\n=================================\n3.1.2更新日志如下，推荐所有用户更新：\n1.完善错误提示\n2.修复潜在的内置加速BUG\n"
         },
         {
             "version": "3.1.1",
-            "changelog": "3.1.1\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u4fee\u590d\u65e0\u6cd5\u63a5\u53d7\u62a5\u4ef7\u7684BUG\n2.\u989d\u5916\u52a0\u5165\u68c0\u67e5\u907f\u514dtradeofferid\u4e3aNone\u5bfc\u81f4\u7a0b\u5e8f\u9519\u8bef\n3.\u4fee\u590d\u62a5\u4ef7\u4e0d\u5b58\u5728offer\u5b57\u6bb5\u65f6\u8f93\u51fa\u9519\u8bef\u65e5\u5fd7\u5bfc\u81f4\u7a0b\u5e8f\u9519\u8bef\n"
+            "changelog": "3.1.1更新日志如下，推荐所有用户更新：\n1.修复无法接受报价的BUG\n2.额外加入检查避免tradeofferid为None导致程序错误\n3.修复报价不存在offer字段时输出错误日志导致程序错误\n"
         },
         {
             "version": "3.1.0",
-            "changelog": "3.1.0\u66f4\u65b0\u65e5\u5fd7\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.\u6dfb\u52a0\u5185\u90e8\u52a0\u901f\u5668\u529f\u80fd\n2.\u4fee\u590d\u4e86\u8bb8\u591aBUG"
+            "changelog": "3.1.0更新日志如下，推荐所有用户更新：\n1.添加内部加速器功能\n2.修复了许多BUG"
         },
         {
             "version": "3.0.1",
-            "changelog": "\u672c\u6b21\u66f4\u65b0\u5185\u5bb9\u5982\u4e0b\uff0c\u63a8\u8350\u6240\u6709\u7528\u6237\u66f4\u65b0\uff1a\n1.config\u6587\u4ef6\u6dfb\u52a0\u6ce8\u91ca\n2.\u89e3\u51b3\u90e8\u5206\u60c5\u51b5\u4e0b\u65e0\u6cd5\u767b\u5f55\u7684BUG\n3.\u89e3\u51b3\u6709\u65f6\u53ea\u80fd\u5728Linux\u4e0b\u800c\u4e0d\u80fd\u5728Windows\u4e0b\u8fd0\u884c\u7684bug\n4.\u5f7b\u5e95\u89e3\u51b3\u201c\u95ea\u9000\u201d\u95ee\u9898 \u5f53\u7a0b\u5e8f\u672a\u6355\u6349\u62a5\u9519\u4f1a\u6682\u505c\n5.\u4f18\u5316\u60a0\u60a0\u6709\u54c1\u53d1\u8d27\u529f\u80fd\n6.\u65e5\u5fd7\u66f4\u52a0\u8be6\u7ec6\n7.\u73b0\u5728\u652f\u6301\u76f4\u63a5\u7528`-uu`\u53c2\u6570\u8fd0\u884cSteamauto\u6765\u83b7\u53d6\u60a0\u60a0\u6709\u54c1\u7684token\n8.\u5e76\u5165Steampy\u4ed3\u5e93\n9.\u4f18\u5316\u4ee3\u7801\n10.\u4f18\u5316\u7248\u672c\u66f4\u65b0\u529f\u80fd"
+            "changelog": "本次更新内容如下，推荐所有用户更新：\n1.config文件添加注释\n2.解决部分情况下无法登录的BUG\n3.解决有时只能在Linux下而不能在Windows下运行的bug\n4.彻底解决“闪退”问题 当程序未捕捉报错会暂停\n5.优化悠悠有品发货功能\n6.日志更加详细\n7.现在支持直接用`-uu`参数运行Steamauto来获取悠悠有品的token\n8.并入Steampy仓库\n9.优化代码\n10.优化版本更新功能"
         },
         {
             "version": "3.0.0",
