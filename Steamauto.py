@@ -285,6 +285,9 @@ def init_files_and_params() -> int:
         response_json = requests.get("https://steamauto.jiajiaxd.com/versions", timeout=5)
         data = response_json.json()
         latest_version = data["latest_version"]["version"]
+        broadcast = data.get("broadcast", None)
+        if broadcast:
+            logger.info(f"公告: {broadcast}")
         if compare_version(current_version, latest_version) == -1:
             logger.info(f"检测到最新版本: {latest_version}")
             changelog_to_output = str()
