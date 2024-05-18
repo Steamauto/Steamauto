@@ -1,5 +1,6 @@
 import random
 import string
+import time
 from venv import logger
 
 import requests
@@ -44,7 +45,6 @@ def generate_headers(devicetoken, deviceid, token=""):
 
 
 class UUAccount:
-    @staticmethod
     def __init__(self, token):
         """
         :param token: 通过抓包获得的token
@@ -96,12 +96,13 @@ class UUAccount:
             result = UUAccount.get_smsUpSignInConfig(headers).json()
             if result['Code'] == 0:
                 print('请求结果：'+result['Msg'])
-                print(f"请编辑发送短信 \033[1;33m{result['Data']['SmsUpContent']}\033[0m 到号码 \033[1;31m{result['Data']['SmsUpNumber']}\033[0m ！\n发送完成后请点击回车.")
+                print(f"请编辑发送短信 \033[1;33m{result['Data']['SmsUpContent']}\033[0m 到号码 \033[1;31m{result['Data']['SmsUpNumber']}\033[0m ！\n发送完成后请点击回车.",end='')
                 input()
+                print('请稍候...')
+                time.sleep(3) # 防止短信发送延迟
                 response = UUAccount.sms_sign_in(phone_number, '', session_id, headers=headers)
         print("登录结果：", response["Msg"])
         got_token = response["Data"]["Token"]
-        print("token：", got_token)
         return got_token
 
     
