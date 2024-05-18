@@ -3,12 +3,11 @@ import pickle
 import time
 
 import apprise
-import Apprise
 import json5
 import requests
 from _decimal import Decimal
-from apprise.AppriseAsset import AppriseAsset
-from apprise.AppriseAttachment import AppriseAttachment
+from apprise import AppriseAsset
+from apprise import AppriseAttachment
 from requests.exceptions import ProxyError
 
 from steampy.exceptions import InvalidCredentials

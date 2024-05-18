@@ -4,13 +4,12 @@ import time
 from typing import Dict
 
 import apprise
-import Apprise
 import json5
 import qrcode
 import qrcode_terminal
 import requests
-from apprise.AppriseAsset import AppriseAsset
-from apprise.AppriseAttachment import AppriseAttachment
+from apprise import AppriseAsset
+from apprise import AppriseAttachment
 from bs4 import BeautifulSoup
 
 from steampy.client import SteamClient
