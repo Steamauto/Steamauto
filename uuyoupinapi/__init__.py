@@ -19,7 +19,32 @@ def generate_random_string(length):
     return "".join(random.choice(letters_and_digits) for i in range(length))
 
 
+def generate_device_info():
+    return {
+        "deviceId": generate_random_string(24),
+        "deviceType": generate_random_string(6),
+        "hasSteamApp": 0,
+        "systemName ": "Android",
+        "systemVersion": "13",
+    }
+
+
+def generate_headers(devicetoken, deviceid, token=""):
+    return {
+        "authorization": "Bearer " + token,
+        "content-type": "application/json; charset=utf-8",
+        "user-agent": "okhttp/3.14.9",
+        "app-version": "5.14.2",
+        "apptype": "4",
+        "package-type": "uuyp",
+        "devicetoken": devicetoken,
+        "deviceid": deviceid,
+        "platform": "android",
+    }
+
+
 class UUAccount:
+    @staticmethod
     def __init__(self, token):
         """
         :param token: 通过抓包获得的token
@@ -27,24 +52,11 @@ class UUAccount:
         self.session = requests.Session()
         self.ignore_list = []
         random.seed(token)
-        self.device_info = {
-            "deviceId": generate_random_string(24),
-            "deviceType": generate_random_string(6),
-            "hasSteamApp": 0,
-            "systemName ": "Android",
-            "systemVersion": "13",
-        }
+        self.device_info = generate_device_info()
         self.session.headers.update(
-            {
-                "authorization": "Bearer " + token,
-                "content-type": "application/json; charset=utf-8",
-                "user-agent": "okhttp/3.14.9",
-                "app-version": "5.12.1",
-                "apptype": "4",
-                "devicetoken": self.device_info["deviceId"],
-                "deviceid": self.device_info["deviceId"],
-                "platform": "android",
-            }
+            generate_headers(
+                self.device_info["deviceId"], self.device_info["deviceId"], token=token
+            )
         )
         try:
             info = self.call_api("GET", "/api/user/Account/getUserInfo").json()
@@ -63,26 +75,43 @@ class UUAccount:
         引导用户输入手机号，发送验证码，输入验证码，自动登录，并且返回token
         :return: token
         """
-        phone_number = input("输入手机号：")
-        session_id = UUAccount.get_random_session_id()
+        device_info = generate_device_info()
+        headers = generate_headers(device_info["deviceId"], device_info["deviceId"])
+
+        phone_number = input("输入手机号(+86)：")
+        session_id = device_info["deviceId"]
         print("随机生成的session_id：", session_id)
-        print(
-            "发送验证码结果：",
-            UUAccount.send_login_sms_code(phone_number, session_id)["Msg"],
+        result = UUAccount.send_login_sms_code(
+            phone_number, session_id, headers=headers
         )
-        sms_code = input("输入验证码：")
-        response = UUAccount.sms_sign_in(phone_number, sms_code, session_id)
+        response = {}
+        if result['Code'] != 5050:
+            print("发送验证码结果：", result["Msg"])
+            sms_code = input("输入验证码：")
+            response = UUAccount.sms_sign_in(
+                phone_number, sms_code, session_id, headers=headers
+            )
+        else:
+            print('该手机号需要手动发送短信进行验证，正在获取相关信息...')
+            result = UUAccount.get_smsUpSignInConfig(headers).json()
+            if result['Code'] == 0:
+                print('请求结果：'+result['Msg'])
+                print(f"请编辑发送短信 \033[1;33m{result['Data']['SmsUpContent']}\033[0m 到号码 \033[1;31m{result['Data']['SmsUpNumber']}\033[0m ！\n发送完成后请点击回车.")
+                input()
+                response = UUAccount.sms_sign_in(phone_number, '', session_id, headers=headers)
         print("登录结果：", response["Msg"])
         got_token = response["Data"]["Token"]
         print("token：", got_token)
         return got_token
 
+    
     @staticmethod
-    def get_random_session_id():
-        return UUAccount.__random_str(32)
+    def get_smsUpSignInConfig(headers):
+        return requests.get('https://api.youpin898.com/api/user/Auth/GetSmsUpSignInConfig',headers=headers)
+        
 
     @staticmethod
-    def send_login_sms_code(phone, session: str):
+    def send_login_sms_code(phone, session: str, headers=""):
         """
         发送登录短信验证码
         :param phone: 手机号
@@ -91,11 +120,12 @@ class UUAccount:
         """
         return requests.post(
             "https://api.youpin898.com/api/user/Auth/SendSignInSmsCode",
-            json={"Mobile": phone, "Sessionid": session},
+            json={"Area": 86, "Mobile": phone, "Sessionid": session, "Code": ""},
+            headers=headers,
         ).json()
 
     @staticmethod
-    def sms_sign_in(phone, code, session):
+    def sms_sign_in(phone, code, session, headers=""):
         """
         通过短信验证码登录，返回值内包含Token
         :param phone: 发送验证码时的手机号
@@ -103,9 +133,20 @@ class UUAccount:
         :param session: 可以通过UUAccount.get_random_session_id()获得，必须和发送验证码时的session一致
         :return:
         """
+        if code == '':
+            url = 'https://api.youpin898.com/api/user/Auth/SmsUpSignIn'
+        else:
+            url = 'https://api.youpin898.com/api/user/Auth/SmsSignIn'
         return requests.post(
-            "https://api.youpin898.com/api/user/Auth/SmsSignIn",
-            json={"Code": code, "SessionId": session, "Mobile": phone, "TenDay": 1},
+            url,
+            json={
+                "Area": 86,
+                "Code": code,
+                "Sessionid": session,
+                "Mobile": phone,
+                "TenDay": 1,
+            },
+            headers=headers,
         ).json()
 
     def get_user_nickname(self):
@@ -218,7 +259,7 @@ class UUAccount:
                     del toDoList[order]
         if len(toDoList.keys()) != 0:
             logger.warning(
-                "[UUAutoAcceptOffer] 有订单未能获取到Steam交易报价号，订单号为："+
-                str(toDoList.keys()),
+                "[UUAutoAcceptOffer] 有订单未能获取到Steam交易报价号，订单号为："
+                + str(toDoList.keys()),
             )
         return data_to_return
