@@ -313,6 +313,8 @@ class BuffAutoOnSale:
                         continue
             if sell_price != -1:
                 sell_price = sell_price - 0.01
+                if sell_price < 0.02:
+                    sell_price = 0.02
                 self.logger.info("[BuffAutoOnSale] 商品 " + item["market_hash_name"] +
                                  " 将使用价格 " + str(sell_price) + " 进行上架")
                 assets.append(
