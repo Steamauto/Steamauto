@@ -74,47 +74,6 @@ def set_exit_code(code):
     exit_code = code
 
 
-def get_api_key(steam_client):
-    resp = steam_client._session.get("https://steamcommunity.com/dev/apikey")
-    soup = BeautifulSoup(resp.text, "html.parser")
-    if soup.find(id="bodyContents_ex") is not None:
-        api_key = soup.find(id="bodyContents_ex").find("p").text.split(" ")[-1]
-        regex = re.compile(r"[a-zA-Z0-9]{32}")
-        if regex.match(api_key):
-            return api_key
-    resp = steam_client._session.post(
-        "https://steamcommunity.com/dev/requestkey",
-        data={
-            "domain": "localhost",
-            "request_id": "0",
-            "sessionid": steam_client._session.cookies.get_dict("steamcommunity.com")["sessionid"],
-            "agreeToTerms": "true",
-        },
-    )
-    resp_json = resp.json()
-    if resp_json["success"] == 22:
-        request_id = resp_json["request_id"]
-        steam_client._confirm_transaction(resp_json["request_id"])
-        time.sleep(2)  # wait for steam to process the request
-        test_resp = steam_client._session.post(
-            "https://steamcommunity.com/dev/requestkey",
-            data={
-                "domain": "localhost",
-                "request_id": request_id,
-                "sessionid": steam_client._session.cookies.get_dict("steamcommunity.com")["sessionid"],
-                "agreeToTerms": "true",
-            },
-        )
-        if test_resp.json()["success"] == 1:
-            api_key = test_resp.json()["api_key"]
-            return api_key
-    soup = BeautifulSoup(resp.text, "html.parser")
-    if soup.find(id="bodyContents_ex") is None:
-        return ""
-    api_key = soup.find(id="bodyContents_ex").find("p").text.split(" ")[-1]
-    return api_key
-
-
 def get_steam_64_id_from_steam_community(steam_client):
     resp = steam_client._session.get("https://steamcommunity.com/")
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -263,11 +222,6 @@ def login_to_steam():
             handle_caught_exception(e)
             logger.error("登录失败(账号或密码错误). 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "中的账号密码是否正确\n")
     steam_client.steam_guard["steamid"] = str(get_steam_64_id_from_steam_community(steam_client))
-    try:
-        steam_client._api_key = get_api_key(steam_client)
-    except Exception as e:
-        handle_caught_exception(e)
-        logger.error("获取API_KEY失败, 但由于现在完全没用到API_KEY, 所以不影响程序运行. 请忽略此错误!")
     return steam_client
 
 
