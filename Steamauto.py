@@ -122,11 +122,12 @@ def login_to_steam():
             handle_caught_exception(e)
             logger.error("使用缓存的session登录失败!可能是网络异常")
             steam_client = None
-        except EOFError as e:
+        except (EOFError,pickle.UnpicklingError) as e:
             handle_caught_exception(e)
             shutil.rmtree(SESSION_FOLDER)
+            os.mkdir(SESSION_FOLDER)
             steam_client = None
-            logger.error("session文件异常.已删除session文件夹")
+            logger.error("检测到session文件异常，已自动清空session文件夹")
         except AssertionError as e:
             handle_caught_exception(e)
             if config["steam_local_accelerate"]:
