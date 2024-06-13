@@ -38,7 +38,7 @@ class SteamAutoAcceptOffer:
                             pickle.dump(self.steam_client.session, f)
                 with self.steam_client_mutex:
                     trade_summary = self.steam_client.get_trade_offers(merge=False)["response"]
-                self.logger.info(f"检测到有{len(trade_summary["trade_offers_received"])}个待处理的交易报价")
+                self.logger.info(f"检测到有{len(trade_summary['trade_offers_received'])}个待处理的交易报价")
                 if trade_summary["trade_offers_received"] > 0:
                     with self.steam_client_mutex:
                         trade_offers = self.steam_client.get_trade_offers(merge=False)["response"]
