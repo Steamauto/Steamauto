@@ -332,14 +332,14 @@ def get_plugins_enabled(steam_client, steam_client_mutex):
         and "enable" in config["uu_auto_accept_offer"]
         and config["uu_auto_accept_offer"]["enable"]
     ):
-        uu_auto_accept_offer = UUAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
+        uu_auto_accept_offer = UUAutoAcceptOffer(steam_client, steam_client_mutex, config)
         plugins_enabled.append(uu_auto_accept_offer)
     if (
         "steam_auto_accept_offer" in config
         and "enable" in config["steam_auto_accept_offer"]
         and config["steam_auto_accept_offer"]["enable"]
     ):
-        steam_auto_accept_offer = SteamAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
+        steam_auto_accept_offer = SteamAutoAcceptOffer(steam_client, steam_client_mutex, config)
         plugins_enabled.append(steam_auto_accept_offer)
 
     return plugins_enabled

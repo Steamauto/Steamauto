@@ -1,14 +1,11 @@
 import random
 import string
 import time
-from venv import logger
 
 import requests
 
-from utils.logger import get_logger
-
-logger = get_logger()
-
+from utils.logger import PluginLogger
+logger = PluginLogger("UUAutoAcceptOffer")
 
 def generate_random_string(length):
     """
