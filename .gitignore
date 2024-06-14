@@ -9,7 +9,7 @@ lib
 pyvenv.cfg
 qrcode.png
 env
-test.py
+test*
 build/*
 dist/*
 steamauto.spec

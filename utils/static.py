@@ -22,6 +22,7 @@ SHOP_LISTING_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "shop_listing.json")
 TO_DELIVER_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "to_deliver_{game}.json")
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 UU_ARG_FILE_PATH = "uu.txt"
+ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
 
 DEFAULT_STEAM_ACCOUNT_JSON = """
 {
@@ -197,7 +198,17 @@ DEFAULT_CONFIG_JSON = r"""
     // 每次检查报价列表的间隔（轮询间隔），单位为秒
     "interval": 300
   },
-  // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！
+  // ECOSteam.cn 插件配置
+  // 请提前接入开放平台 RSAKey请放置在config目录下的rsakey.txt文件中
+  "ecosteam": {
+    "enable": false,
+    "partnerId": "", // 必填！用于登录ECOsteam平台
+    "auto_accept_offer": {
+      "interval": 300
+    },
+    "qps": 10 //每秒最大请求数。如果你是白名单大会员，建议设置为30。如果你不知道这是什么，请保持默认值。
+  },
+  // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！！！
   "development_mode": false
 }
 """
