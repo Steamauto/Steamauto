@@ -38,7 +38,7 @@ class UUAutoAcceptOffer:
                     + uuyoupin.get_user_nickname()
                 )
                 uuyoupin.send_device_info()
-            except KeyError as e:
+            except Exception as e:
                 handle_caught_exception(e)
                 self.logger.error(
                     "悠悠有品登录失败! 请检查token是否正确! "
