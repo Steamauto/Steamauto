@@ -21,7 +21,7 @@ class SteamAutoAcceptOffer:
         return False
 
     def exec(self):
-        self.logger.info("Steam自动接受礼物报价插件已启动, 休眠30秒, 与自动接收报价插件错开运行时间")
+        self.logger.info("Steam自动接受礼物报价插件已启动, 休眠30秒, 与其它插件错开运行时间")
         time.sleep(30)
         while True:
             try:
@@ -39,7 +39,7 @@ class SteamAutoAcceptOffer:
                 with self.steam_client_mutex:
                     trade_summary = self.steam_client.get_trade_offers(merge=False)["response"]
                 self.logger.info(f"检测到有{len(trade_summary['trade_offers_received'])}个待处理的交易报价")
-                if trade_summary["trade_offers_received"] > 0:
+                if len(trade_summary["trade_offers_received"]) > 0:
                     with self.steam_client_mutex:
                         trade_offers = self.steam_client.get_trade_offers(merge=False)["response"]
                     if len(trade_offers["trade_offers_received"]) > 0:
