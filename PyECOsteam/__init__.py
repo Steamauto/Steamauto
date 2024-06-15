@@ -1,9 +1,9 @@
 import logging
 import time
 
-from pytz import timezone
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
+from pytz import timezone
 
 from PyECOsteam.sign import generate_rsa_signature
 
@@ -12,16 +12,16 @@ class ECOsteamClient:
     # https://openapi.ecosteam.cn/index.html/ 查看API文档
     def __rps_counter(self):
         self.rps = 0
-    
+
     def __init__(self, partnerId, RSAKey, qps=10) -> None:
         self.partnerId = partnerId
         self.RSAKey = RSAKey
         self.qps = qps
         self.rps = 0
-        logging.getLogger('apscheduler').propagate = False
-        logging.getLogger('apscheduler').setLevel(logging.WARNING)
-        scheduler = BackgroundScheduler(timezone=timezone('Asia/Shanghai'))
-        scheduler.add_job(self.__rps_counter,'interval',seconds=1)
+        logging.getLogger("apscheduler").propagate = False
+        logging.getLogger("apscheduler").setLevel(logging.WARNING)
+        scheduler = BackgroundScheduler(timezone=timezone("Asia/Shanghai"))
+        scheduler.add_job(self.__rps_counter, "interval", seconds=1)
         scheduler.start()
 
     def post(self, api, data={}):
@@ -61,3 +61,54 @@ class ECOsteamClient:
             "/Api/open/order/SellerOrderDetail",
             {"OrderNum": OrderNum, "MerchantNo": MerchantNo},
         )
+
+    def GetSellGoodsList(self, PageIndex=1, PageSize=1000):
+        return self.post(
+            "/Api/Selling/GetSellGoodsList",
+            {"PageIndex": PageIndex, "PageSize": PageSize},
+        )
+
+    def PublishStock(self, Assets: list):
+        return self.post("/Api/Selling/PublishStock", data=Assets)
+
+    def OffshelfGoods(self, goodsNumList: list):
+        return self.post("/Api/Selling/OffshelfGoods", data=goodsNumList)
+
+    def GoodsPublishedBatchEdit(self, goodsBatchEditList: list):
+        return self.post(
+            "/Api/Selling/GoodsPublishedBatchEdit", data=goodsBatchEditList
+        )
+    
+    def QueryStock(self,index):
+        return self.post('/Api/Selling/QueryStock',data={"PageIndex":index})
+    
+    def getFullInventory(self):
+        index = 1
+        inv = list()
+        while True:
+            res = self.QueryStock(index).json()
+            if res['ResultCode'] != '0':
+                raise Exception(res['ResultMsg'])
+            elif res['ResultData']['PageResult'] == []:
+                break
+            else:
+                index+=1
+                inv += res['ResultData']['PageResult']
+    
+    def searchStockIds(self,assetId:list):
+        index = 1
+        inv = dict()
+        while True:
+            res = self.QueryStock(index).json()
+            if res['ResultCode'] != '0':
+                raise Exception(res['ResultMsg'])
+            elif res['ResultData']['PageResult'] == []:
+                break
+            else:
+                index+=1
+                for item in res['ResultData']['PageResult']:
+                    if item['AssetId'] in assetId:
+                        inv[item['AssetId']] = item['StockId']
+                        assetId.remove(item['AssetId'])
+                        if assetId == []:
+                            return inv

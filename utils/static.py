@@ -201,10 +201,21 @@ DEFAULT_CONFIG_JSON = r"""
   // ECOSteam.cn 插件配置
   // 请提前接入开放平台 RSAKey请放置在config目录下的rsakey.txt文件中
   "ecosteam": {
-    "enable": false,
+    "enable": true,
     "partnerId": "", // 必填！用于登录ECOsteam平台
     "auto_accept_offer": {
       "interval": 300
+    },
+    "auto_sync_sell_shelf": { // 自动同步各平台的上架商品, 与主平台一致, 目前仅支持buff
+      "enable": false,
+      "main_platform": "buff", // 填buff或eco,不可以填其它内容！
+      "enabled_platforms": ["buff"], // 由于目前仅支持buff, 所以该配置项请保持不变
+      "ratio":{ // 各平台上架价格的比例
+        "eco" : 1,
+        "buff" : 1.2
+      },
+      "interval": 60 // 不建议设置太长，因为同步上架带来的问题是ECO发货后BUFF未及时下架，如果此时有人购买库存中没有的饰品，可能会导致BUFF封号
+
     },
     "qps": 10 //每秒最大请求数。如果你是白名单大会员，建议设置为30。如果你不知道这是什么，请保持默认值。
   },
