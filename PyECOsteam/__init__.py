@@ -1,5 +1,6 @@
 import logging
 import time
+import json
 
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -31,7 +32,7 @@ class ECOsteamClient:
         if self.rps >= self.qps:
             time.sleep(1)
         self.rps += 1
-        return requests.post("https://openapi.ecosteam.cn" + api, json=data)
+        return requests.post("https://openapi.ecosteam.cn" + api, data=json.dumps(data, indent=4))
 
     def GetTotalMoney(self):
         return self.post("/Api/Merchant/GetTotalMoney")

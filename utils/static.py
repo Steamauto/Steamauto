@@ -201,7 +201,7 @@ DEFAULT_CONFIG_JSON = r"""
   // ECOSteam.cn 插件配置
   // 请提前接入开放平台 RSAKey请放置在config目录下的rsakey.txt文件中
   "ecosteam": {
-    "enable": true,
+    "enable": false,
     "partnerId": "", // 必填！用于登录ECOsteam平台
     "auto_accept_offer": {
       "interval": 300

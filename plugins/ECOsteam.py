@@ -83,7 +83,6 @@ def compare_lists(A, B, ratio: float):
 
             if round(A_price / B_price, 2) != ratio:
                 # 调整B表中字典的price
-                print(A_price, B_price, A_price / B_price, ratio)
                 adjusted_dict = B_dict[assetid].copy()
                 adjusted_dict["price"] = round(A_price / ratio, 2)
                 result["change"].append(adjusted_dict)
@@ -429,7 +428,11 @@ class ECOsteamPlugin:
                 self.logger.info(
                     "正在搜索饰品的StockId，本过程可能需要一段时间，请耐心等待，并保持网络的稳定..."
                 )
-                stockIdsDict = self.client.searchStockIds(assetIds)
+                try:
+                    stockIdsDict = self.client.searchStockIds(assetIds)
+                except Exception:
+                    self.logger.error('搜索失败！请稍候再试(出现此问题可能是因为网络不稳定或ECO服务器异常)')
+                    return False
                 for asset in assets:
                     asset["StockId"] = stockIdsDict[asset["AssetId"]]
                     del asset["AssetId"]
