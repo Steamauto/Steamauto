@@ -6,6 +6,8 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import timezone
 
+from utils.logger import PluginLogger
+
 from PyECOsteam.sign import generate_rsa_signature
 
 
@@ -15,6 +17,7 @@ class ECOsteamClient:
         self.rps = 0
 
     def __init__(self, partnerId, RSAKey, qps=10) -> None:
+        self.logger = PluginLogger("ECOsteam.cn")
         self.partnerId = partnerId
         self.RSAKey = RSAKey
         self.qps = qps
@@ -32,7 +35,9 @@ class ECOsteamClient:
         if self.rps >= self.qps:
             time.sleep(1)
         self.rps += 1
-        return requests.post("https://openapi.ecosteam.cn" + api, data=json.dumps(data, indent=4))
+        return requests.post(
+            "https://openapi.ecosteam.cn" + api, data=json.dumps(data, indent=4)
+        )
 
     def GetTotalMoney(self):
         return self.post("/Api/Merchant/GetTotalMoney")
@@ -79,37 +84,40 @@ class ECOsteamClient:
         return self.post(
             "/Api/Selling/GoodsPublishedBatchEdit", data=goodsBatchEditList
         )
-    
-    def QueryStock(self,index):
-        return self.post('/Api/Selling/QueryStock',data={"PageIndex":index})
-    
+
+    def QueryStock(self, index, PageSize=100):
+        return self.post(
+            "/Api/Selling/QueryStock", data={"PageIndex": index, "PageSize": PageSize}
+        )
+
     def getFullInventory(self):
         index = 1
         inv = list()
         while True:
             res = self.QueryStock(index).json()
-            if res['ResultCode'] != '0':
-                raise Exception(res['ResultMsg'])
-            elif res['ResultData']['PageResult'] == []:
+            if res["ResultCode"] != "0":
+                raise Exception(res["ResultMsg"])
+            elif res["ResultData"]["PageResult"] == []:
                 break
             else:
-                index+=1
-                inv += res['ResultData']['PageResult']
-    
-    def searchStockIds(self,assetId:list):
+                index += 1
+                inv += res["ResultData"]["PageResult"]
+
+    def searchStockIds(self, assetId: list):
         index = 1
         inv = dict()
         while True:
             res = self.QueryStock(index).json()
-            if res['ResultCode'] != '0':
-                raise Exception(res['ResultMsg'])
-            elif res['ResultData']['PageResult'] == []:
+            if res["ResultCode"] != "0":
+                raise Exception(res["ResultMsg"])
+            elif res["ResultData"]["PageResult"] == []:
                 break
             else:
-                index+=1
-                for item in res['ResultData']['PageResult']:
-                    if item['AssetId'] in assetId:
-                        inv[item['AssetId']] = item['StockId']
-                        assetId.remove(item['AssetId'])
+                self.logger.debug(f'已经进行到第{index}次遍历,本次遍历获取到的库存数量为{len(res["ResultData"]["PageResult"])}')
+                index += 1
+                for item in res["ResultData"]["PageResult"]:
+                    if item["AssetId"] in assetId:
+                        inv[item["AssetId"]] = item["StockId"]
+                        assetId.remove(item["AssetId"])
                         if assetId == []:
                             return inv
