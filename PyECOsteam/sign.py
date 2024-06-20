@@ -17,6 +17,8 @@ def generate_rsa_signature(private_key_str, params):
         if isinstance(value, dict) or isinstance(value,list):
             message_parts.append('{}={}'.format(key,json.dumps(value,sort_keys=False,ensure_ascii=False,separators=(',',':'))))
         else:
+            if value is None:
+                continue
             message_parts.append('{}={}'.format(key,value))
 
     message = "&".join(message_parts)
