@@ -191,6 +191,16 @@ class ECOsteamPlugin:
             return assets
 
     def auto_accept_offer(self):
+        while True:
+            try:
+                self._auto_accept_offer()
+            except Exception as e:
+                handle_caught_exception(e)
+                self.logger.error("发生未知错误，请稍候再试！")
+                time.sleep(self.config["ecosteam"]["auto_accept_offer"]["interval"])
+
+
+    def _auto_accept_offer(self):
         self.logger.info("正在检查待发货列表...")
         today = datetime.datetime.today()
         tomorrow = datetime.datetime.today() + datetime.timedelta(days=1)
