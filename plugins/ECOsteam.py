@@ -141,15 +141,17 @@ class ECOsteamPlugin:
             handle_caught_exception(e)
             exit_code.set(1)
             return 1
-        threads = []
-        threads.append(Thread(target=self.auto_accept_offer))
         if self.config["ecosteam"]["auto_sync_sell_shelf"]["enable"]:
+            threads = []
+            threads.append(Thread(target=self.auto_accept_offer))
             threads.append(Thread(target=self.auto_sync_sell_shelf))
-        for thread in threads:
-            thread.daemon = True
-            thread.start()
-        for thread in threads:
-            thread.join()
+            for thread in threads:
+                thread.daemon = True
+                thread.start()
+            for thread in threads:
+                thread.join()
+        else:
+            self.auto_accept_offer()
 
     def get_shelf(self, platform, inventory):
         assets = list()
