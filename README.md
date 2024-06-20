@@ -232,7 +232,7 @@ ECOSteam 新CSGO皮肤交易平台
     "enable": false,
     "partnerId": "", // 必填！用于登录ECOsteam平台
     "auto_accept_offer": {
-      "interval": 300
+      "interval": 30
     },
     "auto_sync_sell_shelf": { // 自动同步各平台的上架商品, 与主平台一致, 目前仅支持buff
       "enable": false,
