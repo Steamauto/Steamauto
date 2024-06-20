@@ -35,9 +35,16 @@ class ECOsteamClient:
         if self.rps >= self.qps:
             time.sleep(1)
         self.rps += 1
-        return requests.post(
+        resp = requests.post(
             "https://openapi.ecosteam.cn" + api, data=json.dumps(data, indent=4)
         )
+        self.logger.debug(f"POST {api} {data} {resp.text}")
+        if not resp.ok:
+            raise Exception(f"POST {api} {data} {resp.text}")
+        resp_json = resp.json()
+        if resp_json["ResultCode"] != "0":
+            raise Exception(f"POST {api} {data} {resp.text}")
+        return resp
 
     def GetTotalMoney(self):
         return self.post("/Api/Merchant/GetTotalMoney")
