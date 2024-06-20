@@ -81,7 +81,7 @@ def compare_lists(A, B, ratio: float):
             A_price = A_dict[assetid]["price"]
             B_price = B_dict[assetid]["price"]
 
-            if round(A_price / B_price, 2) != ratio:
+            if abs(round(A_price / B_price, 2) - ratio) >= 0.01:
                 # 调整B表中字典的price
                 adjusted_dict = B_dict[assetid].copy()
                 adjusted_dict["price"] = round(A_price / ratio, 2)
