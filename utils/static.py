@@ -211,8 +211,8 @@ DEFAULT_CONFIG_JSON = r"""
       "main_platform": "buff", // 填buff或eco,不可以填其它内容！
       "enabled_platforms": ["buff"], // 由于目前仅支持buff, 所以该配置项请保持不变
       "ratio":{ // 各平台上架价格的比例
-        "eco" : 1,
-        "buff" : 1.2
+        "eco" : 0.98,
+        "buff" : 1
       },
       "interval": 60 // 不建议设置太长，因为同步上架带来的问题是ECO发货后BUFF未及时下架，如果此时有人购买库存中没有的饰品，可能会导致BUFF封号
 
