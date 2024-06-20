@@ -14,6 +14,13 @@
 > 开源的 Steam 自动收发货解决方案  
 > 杜绝收费、安全稳定
 
+> 广告:
+> 【ECOSteam】复制整段打开ECOSteam加入「Elsa可达鸭」PN：01J0TGJPQZF7G9FK0P6QJWQGRJ「欢迎加入Elsa可达鸭的团队或点击链接https://share.ecosteam.cn/share/01J0TGJPQZF7G9FK0P6QJWQGRJ「欢迎加入Elsa可达鸭的团队  
+ECOSteam 新CSGO皮肤交易平台  
+交易0手续费 提现1% 加入团队金额前10我还额外赠送免费提现券(20000元)  
+可租可售 上架就有利息拿 最高可拿15%利息 加入我的团队拿额外2%利息(总金额要求已经达到 只需要人数)  
+> 本软件完美支持ECOSteam, 请放心使用
+
 **使用前请仔细阅读本文档！**  
 **欢迎有能力者提交PR来完善本程序。**  
 **请勿违反开源协议，包括但不限于闭源倒卖此程序或修改后不进行开源等。**  
@@ -36,6 +43,10 @@
 
 #### 在 [悠悠有品饰品交易平台](https://www.youpin898.com/) 上:
 - 自动发货出售商品
+
+#### 在 [ECOSteam交易平台](https://www.ecosteam.cn/) 上:
+- 自动发货
+- 与BUFF上架商品同步 (支持比例)
 
 #### 在 Steam 上:
 - 内置Steam加速器
@@ -127,7 +138,9 @@
     // 二维码登录BUFF通知配置
     "buff_login_notification": {
       // 二维码登录BUFF通知标题（如不需要可直接删除）
-      "title": "请扫描二维码登录BUFF"
+      "title": "请扫描二维码登录BUFF",
+      // 是否开启传递 二维码图片
+      "include_qrcode_html_enable": false
     },
     // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
     "servers": [
@@ -212,7 +225,28 @@
     // 每次检查报价列表的间隔（轮询间隔），单位为秒
     "interval": 300
   },
-  // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！
+  // ECOSteam.cn 插件配置
+  // 请提前接入开放平台 RSAKey请放置在config目录下的rsakey.txt文件中
+  "ecosteam": {
+    "enable": false,
+    "partnerId": "", // 必填！用于登录ECOsteam平台
+    "auto_accept_offer": {
+      "interval": 300
+    },
+    "auto_sync_sell_shelf": { // 自动同步各平台的上架商品, 与主平台一致, 目前仅支持buff
+      "enable": false,
+      "main_platform": "buff", // 填buff或eco,不可以填其它内容！
+      "enabled_platforms": ["buff"], // 由于目前仅支持buff, 所以该配置项请保持不变
+      "ratio":{ // 各平台上架价格的比例
+        "eco" : 1,
+        "buff" : 1.2
+      },
+      "interval": 60 // 不建议设置太长，因为同步上架带来的问题是ECO发货后BUFF未及时下架，如果此时有人购买库存中没有的饰品，可能会导致BUFF封号
+
+    },
+    "qps": 10 //每秒最大请求数。如果你是白名单大会员，建议设置为30。如果你不知道这是什么，请保持默认值。
+  },
+  // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！！！
   "development_mode": false
 }
 ```
@@ -289,10 +323,31 @@ pip install urllib3==1.25.11
 `steampy/client.py` 44-48行注释掉的代码解除注释后若出现报错则说明是此问题
 
 ## 附录
+### 获取 Steam 账户信息
 关于`steam_account_info.json`相关参数的获取教程都在下面, 请自行参阅  
 个人推荐使用[ SteamDesktopAuthenticator(简称SDA) ](https://github.com/Jessecar96/SteamDesktopAuthenticator)获取Steam令牌参数 操作简便(请勿使用1.0.13版本,存在无法获取的问题)  
 [官方视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz/)    
 [已Root安卓手机获取新版Steam手机令牌教程](https://github.com/BeyondDimension/SteamTools/issues/2598)
+
+### 如何注册 ECOSteam 开放平台 - 节选自[ECOSteam官方文档](https://docs.qq.com/aio/DRnR2U05aeG5MT0RS?p=tOOCPKrP8CUmptM7fhIq7p)
+1. 申请接入流程
+   1. 注册并登录ECO App：
+   2. 进入【我的】，点击右上角设置；
+   3. 点击【账号与安全】进入；
+   4. 点击【开放能力申请】进入介绍页面；
+   5. 点击申请入驻；
+   6. 填写申请资料并提交，回调地址和回调开关配置审核通过后可修改；  // 备注: 此处如需上传身份证正反面照片, 可随意上传图片, 不会进行审核
+   7. 等待审核；  // 备注: 实际上是自动审核, 申请后立刻可用
+2. 审核通过后流程
+   1. 审核通过的用户，可回到页面点击【查看身份ID】；
+   2. 输入RSA公钥后，获取身份ID；  // 备注: RSA公钥在插件运行后需要填写进在config目录下的rsakey.txt中, 请自行生成RSA密钥对, 建议使用2048位或4096位密钥, 如果你不会生成且不想学习, 可以使用在线生成工具生成, 例如[https://www.ssleye.com/ssltool/pass_double.html](https://www.ssleye.com/ssltool/pass_double.html) (若使用此网站, 请设置算法: RSA, 强度: 2048或4096, 密码留空, 安全性我们不能作保证, 请自行判断) 此处请注意: 使用密钥时不要带头尾标识，例如：
+      -----BEGIN PUBLIC KEY-----
+      -----END PUBLIC KEY-----
+      或
+      -----BEGIN PRIVATE KEY-----
+      -----END PRIVATE KEY-----
+      只使用**不带换行格式**的密钥内容部分。
+   3. 如开启回调通知，则需配置回调地址和获取ECO的回调公钥；
 
 ## 鸣谢
 感谢 [**@lupohan44**](https://github.com/lupohan44) 为本项目提交的大量代码！ 
