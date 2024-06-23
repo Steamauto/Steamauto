@@ -33,10 +33,15 @@ class ConfirmationExecutor:
         self._identity_secret = identity_secret
         self._session = session
 
-    def send_trade_allow_request(self, trade_offer_id: str) -> dict:
+    def send_trade_allow_request(self, trade_offer_id: str, match_end: bool = False) -> dict:
         confirmations = self._get_confirmations()
-        confirmation = self._select_trade_offer_confirmation(confirmations, trade_offer_id)
-        return self._send_confirmation(confirmation)
+        for _ in range(3):
+            try:
+                confirmation = self._select_trade_offer_confirmation(confirmations, trade_offer_id, match_end)
+                return self._send_confirmation(confirmation)
+            except ConfirmationExpected:
+                time.sleep(3)
+        raise ConfirmationExpected
 
     def confirm_sell_listing(self, asset_id: str) -> dict:
         confirmations = self._get_confirmations()
@@ -54,15 +59,17 @@ class ConfirmationExecutor:
 
     def _get_confirmations(self) -> List[Confirmation]:
         confirmations = []
-        confirmations_page = self._fetch_confirmations_page()
-        if confirmations_page.status_code == 200:
-            confirmations_json = json.loads(confirmations_page.text)
-            for conf in confirmations_json['conf']:
-                data_confid = conf['id']
-                nonce = conf['nonce']
-                creator_id = conf['creator_id']
-                confirmations.append(Confirmation(data_confid, nonce, creator_id))
-            return confirmations
+        for i in range(5):
+            confirmations_page = self._fetch_confirmations_page()
+            if confirmations_page.status_code == 200:
+                confirmations_json = json.loads(confirmations_page.text)
+                for conf in confirmations_json['conf']:
+                    data_confid = conf['id']
+                    nonce = conf['nonce']
+                    creator_id = conf['creator_id']
+                    confirmations.append(Confirmation(data_confid, nonce, creator_id))
+                return confirmations
+            time.sleep(1)
         else:
             raise ConfirmationExpected
 

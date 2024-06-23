@@ -304,7 +304,7 @@ class SteamClient:
     def accept_trade_offer(self, trade_offer_id: str) -> dict:
         trade = self.get_trade_offer(trade_offer_id)
         trade_offer_state = TradeOfferState(trade['response']['offer']['trade_offer_state'])
-        if trade_offer_state is not TradeOfferState.Active:
+        if trade_offer_state not in [TradeOfferState.Active, TradeOfferState.ConfirmationNeed]:
             raise ApiException("Invalid trade offer state: {} ({})".format(trade_offer_state.name,
                                                                            trade_offer_state.value))
         partner = self._fetch_trade_partner_id(trade_offer_id)
