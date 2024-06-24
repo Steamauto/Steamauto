@@ -99,14 +99,16 @@ class ConfirmationExecutor:
                 'm': 'android',
                 'tag': tag_string}
 
-    def _select_trade_offer_confirmation(self, confirmations: List[Confirmation], trade_offer_id: str) -> Confirmation:
+    def _select_trade_offer_confirmation(self, confirmations: List[Confirmation], trade_offer_id: str,
+                                         match_end: bool = False) -> Confirmation:
         for confirmation in confirmations:
             confirmation_details_page = self._fetch_confirmation_details_page(confirmation)
-            try:
-                confirmation_id = self._get_confirmation_trade_offer_id(confirmation_details_page)
-            except IndexError:
+            confirmation_id = self._get_confirmation_trade_offer_id(confirmation_details_page)
+            if confirmation_id == '' or confirmation_id is None or not confirmation_id.isdigit():
                 confirmation_id = confirmation.creator_id
             if confirmation_id == trade_offer_id:
+                return confirmation
+            elif match_end and trade_offer_id.endswith(confirmation_id):
                 return confirmation
         raise ConfirmationExpected
 
