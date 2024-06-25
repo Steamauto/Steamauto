@@ -35,7 +35,7 @@ class Asset:
 
 
 def toECO(obj: dict):
-    return {"AssetId": obj["assetid"], "Price": obj["price"], "Description": ""}
+    return {"AssetId": obj["assetid"], "Price": obj["price"], "Description": "", "SteamGameId": obj["appid"]}
 
 
 def shelf_processor(assets: List[Asset]):
@@ -368,6 +368,10 @@ class ECOsteamPlugin:
             ratios[platform] = tc["ratio"][platform]
         self.logger.info("正在从Steam获取物品信息...")
         inventory = self.get_steam_inventory()
+        with open('test.json','w') as f:
+            f.write(json.dumps(inventory))
+            
+        
         try:
             for platform in tc["enabled_platforms"]:
                 self.logger.info(f"正在从{platform.upper()}平台获取上架物品信息...")
@@ -436,25 +440,30 @@ class ECOsteamPlugin:
             assets = [toECO(asset) for asset in difference["add"]]
             if len(assets) > 0:
                 self.logger.info(f"即将上架{len(assets)}个商品到ECOsteam")
-                assetIds = [asset["AssetId"] for asset in assets]
-                self.logger.info(
-                    "正在搜索饰品的StockId，本过程可能需要一段时间，请耐心等待，并保持网络的稳定..."
-                )
+                # assetIds = [asset["AssetId"] for asset in assets]
+                # self.logger.info(
+                #     "正在搜索饰品的StockId，本过程可能需要一段时间，请耐心等待，并保持网络的稳定..."
+                # )
+                # try:
+                #     stockIdsDict = self.client.searchStockIds(assetIds)
+                # except Exception:
+                #     self.logger.error('搜索失败！请稍候再试(出现此问题可能是因为网络不稳定或ECO服务器异常)')
+                #     return False
+                # for asset in assets:
+                #     asset["StockId"] = stockIdsDict[asset["AssetId"]]
+                #     del asset["AssetId"]
                 try:
-                    stockIdsDict = self.client.searchStockIds(assetIds)
-                except Exception:
-                    self.logger.error('搜索失败！请稍候再试(出现此问题可能是因为网络不稳定或ECO服务器异常)')
-                    return False
-                for asset in assets:
-                    asset["StockId"] = stockIdsDict[asset["AssetId"]]
-                    del asset["AssetId"]
-                response = self.client.PublishStock({"Assets": assets})
+                    response = self.client.PublishStock({"Assets": assets})
+                except Exception as e:
+                    if "饰品状态变化" in str(e):
+                        self.logger.info('ECO平台库存数据已过期，正在请求刷新...')
+                        self.client.RefreshUserSteamStock()
+                        self.logger.info('已经请求刷新，将在30秒后重新尝试上架！')
+                        time.sleep(30)
+                        self.logger.info('正在重新尝试上架...')
+                        response = self.client.PublishStock({"Assets": assets})
                 if response.json()["ResultCode"] == "0":
                     self.logger.info(f"上架{len(assets)}个商品到ECOsteam成功！")
-                else:
-                    self.logger.error(
-                        f'上架{len(assets)}个商品到ECOsteam失败！错误信息：{response.json().get("ResultMsg", None)}'
-                    )
 
             # 下架商品
             assets = [asset["orderNo"] for asset in difference["delete"]]

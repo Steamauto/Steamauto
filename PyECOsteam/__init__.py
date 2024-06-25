@@ -28,7 +28,7 @@ class ECOsteamClient:
         scheduler.add_job(self.__rps_counter, "interval", seconds=1)
         scheduler.start()
 
-    def post(self, api, data={}):
+    def post(self, api,data):
         data["PartnerId"] = self.partnerId
         data["Timestamp"] = int(time.time())
         data["Sign"] = generate_rsa_signature(self.RSAKey, data)
@@ -47,7 +47,7 @@ class ECOsteamClient:
         return resp
 
     def GetTotalMoney(self):
-        return self.post("/Api/Merchant/GetTotalMoney")
+        return self.post("/Api/Merchant/GetTotalMoney", {})
 
     def GetSellerOrderList(
         self, StartTime, EndTime, DetailsState=None, PageIndex=1, PageSize=80
@@ -128,3 +128,6 @@ class ECOsteamClient:
                         assetId.remove(item["AssetId"])
                         if assetId == []:
                             return inv
+
+    def RefreshUserSteamStock(self):
+        return self.post("/Api/Selling/RefreshUserSteamStock",data={})
