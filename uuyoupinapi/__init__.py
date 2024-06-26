@@ -1,11 +1,14 @@
 import random
 import string
 import time
+from urllib import response
 
 import requests
 
 from utils.logger import PluginLogger
+
 logger = PluginLogger("UUAutoAcceptOffer")
+
 
 def generate_random_string(length):
     """
@@ -82,31 +85,37 @@ class UUAccount:
             phone_number, session_id, headers=headers
         )
         response = {}
-        if result['Code'] != 5050:
+        if result["Code"] != 5050:
             print("发送验证码结果：", result["Msg"])
             sms_code = input("输入验证码：")
             response = UUAccount.sms_sign_in(
                 phone_number, sms_code, session_id, headers=headers
             )
         else:
-            print('该手机号需要手动发送短信进行验证，正在获取相关信息...')
+            print("该手机号需要手动发送短信进行验证，正在获取相关信息...")
             result = UUAccount.get_smsUpSignInConfig(headers).json()
-            if result['Code'] == 0:
-                print('请求结果：'+result['Msg'])
-                print(f"请编辑发送短信 \033[1;33m{result['Data']['SmsUpContent']}\033[0m 到号码 \033[1;31m{result['Data']['SmsUpNumber']}\033[0m ！\n发送完成后请点击回车.",end='')
+            if result["Code"] == 0:
+                print("请求结果：" + result["Msg"])
+                print(
+                    f"请编辑发送短信 \033[1;33m{result['Data']['SmsUpContent']}\033[0m 到号码 \033[1;31m{result['Data']['SmsUpNumber']}\033[0m ！\n发送完成后请点击回车.",
+                    end="",
+                )
                 input()
-                print('请稍候...')
-                time.sleep(3) # 防止短信发送延迟
-                response = UUAccount.sms_sign_in(phone_number, '', session_id, headers=headers)
+                print("请稍候...")
+                time.sleep(3)  # 防止短信发送延迟
+                response = UUAccount.sms_sign_in(
+                    phone_number, "", session_id, headers=headers
+                )
         print("登录结果：", response["Msg"])
         got_token = response["Data"]["Token"]
         return got_token
 
-    
     @staticmethod
     def get_smsUpSignInConfig(headers):
-        return requests.get('https://api.youpin898.com/api/user/Auth/GetSmsUpSignInConfig',headers=headers)
-        
+        return requests.get(
+            "https://api.youpin898.com/api/user/Auth/GetSmsUpSignInConfig",
+            headers=headers,
+        )
 
     @staticmethod
     def send_login_sms_code(phone, session: str, headers=""):
@@ -131,10 +140,10 @@ class UUAccount:
         :param session: 可以通过UUAccount.get_random_session_id()获得，必须和发送验证码时的session一致
         :return:
         """
-        if code == '':
-            url = 'https://api.youpin898.com/api/user/Auth/SmsUpSignIn'
+        if code == "":
+            url = "https://api.youpin898.com/api/user/Auth/SmsUpSignIn"
         else:
-            url = 'https://api.youpin898.com/api/user/Auth/SmsSignIn'
+            url = "https://api.youpin898.com/api/user/Auth/SmsSignIn"
         return requests.post(
             url,
             json={
@@ -261,3 +270,43 @@ class UUAccount:
                 + str(toDoList.keys()),
             )
         return data_to_return
+
+    def get_sell_list(self):
+        data = {"pageIndex": 0, "pageSize": 100, "whetherMerge": 0}
+        shelf = list()
+        while True:
+            data["pageIndex"] += 1
+            response = self.call_api(
+                "POST", "/api/youpin/bff/new/commodity/v1/commodity/list/sell"
+            )
+            if response.json()["code"] != 0:
+                break
+            else:
+                for item in response.json()["data"]["commodityInfoList"]:
+                    shelf.append(item)
+        return shelf
+
+    def off_shelf(self, commodity_ids: list):
+        return self.call_api(
+            "POST",
+            "/api/commodity/Commodity/OffShelf",
+            data={
+                "commodityId": commodity_ids.join(","),
+                "IsDeleteCommodityCache": 1,
+                "IsForceOffline": True,
+            },
+        )
+
+    def sell_items(self, assets: dict):
+        item_infos = [
+            {"AssetId": asset, "Price": assets[asset], "Remark": None}
+            for asset in assets.keys()
+        ]
+        self.call_api(
+            "POST",
+            "/api/commodity/Inventory/SellInventoryWithLeaseV2",
+            data={
+                "GameID": 730,
+                "ItemInfos": item_infos,
+            },
+        )
