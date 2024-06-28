@@ -1,7 +1,7 @@
 from typing import List
 
 import pydantic
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Params(BaseModel):
@@ -35,7 +35,5 @@ class RSAKey(pydantic.BaseModel):
     timestamp: int
 
     class Config:
-        fields = {
-            'mod': 'publickey_mod',
-            'exp': 'publickey_exp',
-        }
+        mod: Field = 'publickey_mod'
+        exp: Field = 'publickey_exp'

@@ -11,4 +11,4 @@ qrcode_terminal
 PyCryptodome
 apscheduler
 protobuf
-pydantic
+pydantic >= 2.7.4
