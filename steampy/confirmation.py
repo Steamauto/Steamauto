@@ -131,5 +131,13 @@ class ConfirmationExecutor:
     @staticmethod
     def _get_confirmation_trade_offer_id(confirmation_details_page: str) -> str:
         soup = BeautifulSoup(confirmation_details_page, 'html.parser')
-        full_offer_id = soup.select('.tradeoffer')[0]['id']
-        return full_offer_id.split('_')[1]
+        trade_offer_id = soup.select('.tradeoffer')
+        if len(trade_offer_id) != 0:
+            full_offer_id = soup.select('.tradeoffer')[0]['id']
+            return full_offer_id.split('_')[1]
+        else:
+            div = soup.select('div')
+            if len(div) > 3:
+                return soup.select('div')[3].text.replace('\r', '').replace('\n', '').replace('\t', '')
+            else:
+                return ''

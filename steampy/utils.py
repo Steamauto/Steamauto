@@ -5,15 +5,32 @@ import copy
 import struct
 import urllib.parse as urlparse
 import re
-
-import requests
 from requests.structures import CaseInsensitiveDict
+from requests import Response
 from typing import List
 
 from bs4 import BeautifulSoup, Tag
 
-from steampy.exceptions import ProxyConnectionError
 from steampy.models import GameOptions
+from steampy.exceptions import SteamError
+from steampy.steam_error_codes import STEAM_ERROR_CODES
+
+
+def check_error(resp: Response, ignore_error_num: List = None):
+    error = resp.headers.get('X-eresult')
+    if error is not None:
+        error = int(error)
+        check_error_id(error, ignore_error_num)
+
+
+def check_error_id(error_id: int, ignore_error_num: List = None):
+    if ignore_error_num is not None:
+        if error_id in ignore_error_num:
+            return
+    if error_id in (1, 22):
+        return
+    if error_id in STEAM_ERROR_CODES:
+        raise SteamError(error_code=error_id)
 
 
 def text_between(text: str, begin: str, end: str) -> str:
@@ -90,6 +107,10 @@ def merge_items(items: List[dict], descriptions: dict, **kwargs) -> dict:
     merged_items = {}
     for item in items:
         description_key = get_description_key(item)
+        if description_key not in descriptions:
+            description = copy.copy(item)
+            merged_items[description_key] = description
+            continue
         description = copy.copy(descriptions[description_key])
         item_id = item.get('id') or item['assetid']
         description['contextid'] = item.get('contextid') or kwargs['context_id']
@@ -166,7 +187,7 @@ def get_description_key(item: dict) -> str:
     return item['classid'] + '_' + item['instanceid']
 
 
-def get_key_value_from_url(url: str, key: str, case_sensitive: bool = True) -> str:
+def get_key_value_from_url(url: str, key: str, case_sensitive: bool=True) -> str:
     params = urlparse.urlparse(url).query
     if case_sensitive:
         return urlparse.parse_qs(params)[key][0]
@@ -185,12 +206,3 @@ class Credentials:
         self.login = login
         self.password = password
         self.api_key = api_key
-
-
-def ping_proxy(proxies: dict):
-    try:
-        requests.get('https://steamcommunity.com/login/dologin', proxies=proxies)
-        return True
-    except (requests.exceptions.ConnectionError, TimeoutError) as e:
-        return False
-

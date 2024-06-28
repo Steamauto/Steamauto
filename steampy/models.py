@@ -11,6 +11,7 @@ class GameOptions:
     TF2 = PredefinedOptions('440', '2')
     PUBG = PredefinedOptions('578080', '2')
     RUST = PredefinedOptions('252490', '2')
+    BANANA = PredefinedOptions('2923300', '2')
 
     def __init__(self, app_id: str, context_id: str) -> None:
         self.app_id = app_id
