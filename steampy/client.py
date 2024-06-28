@@ -30,7 +30,7 @@ def login_required(func):
 
 
 class SteamClient:
-    def __init__(self, api_key: str, username: str = None, password: str = None, steam_guard: str = None) -> None:
+    def __init__(self, api_key: str, username: str = None, password: str = None, steam_guard: str = None, proxies: dict = None) -> None:
         self._api_key = api_key
         self._session = requests.Session()
         self.steam_guard = steam_guard
@@ -39,6 +39,8 @@ class SteamClient:
         self._password = password
         self.market = SteamMarket(self._session)
         self.chat = SteamChat(self._session)
+        if proxies:
+            self._session.proxies.update(proxies)
 
     def login(self, username: str, password: str, steam_guard: str, get_email_on_time_code_func: callable = None,
               func_2fa_input: callable = None) -> None:
