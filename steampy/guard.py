@@ -1,11 +1,40 @@
 import base64
 import hmac
 import json
+import logging
 import struct
 import time
 import os
 
 from hashlib import sha1
+import sys
+
+from requests import Session
+
+time_delta = sys.maxsize
+
+
+def get_steam_server_time(session: Session) -> int:
+    try:
+        url = 'https://api.steampowered.com/ITwoFactorService/QueryTime/v1/'
+        resp = session.post(url)
+        return int(resp.json()['response']['server_time'])
+    except Exception as e:
+        return -1
+
+
+def try_to_get_time_delta_from_steam(session: Session) -> int:
+    global time_delta
+    if time_delta == sys.maxsize:
+        for _ in range(3):
+            server_time = get_steam_server_time(session)
+            if server_time != -1:
+                time_delta = server_time - int(time.time())
+                logging.debug(f'Time delta from steam: {time_delta}')
+                return time_delta
+        logging.debug('Failed to get time delta from steam, use system time instead')
+        time_delta = 0
+    return time_delta
 
 
 def load_steam_guard(steam_guard: str) -> dict:
@@ -19,6 +48,7 @@ def load_steam_guard(steam_guard: str) -> dict:
 def generate_one_time_code(shared_secret: str, timestamp: int = None) -> str:
     if timestamp is None:
         timestamp = int(time.time())
+        timestamp += try_to_get_time_delta_from_steam(Session())
     time_buffer = struct.pack('>Q', timestamp // 30)  # pack as Big endian, uint64
     time_hmac = hmac.new(base64.b64decode(shared_secret), time_buffer, digestmod=sha1).digest()
     begin = ord(time_hmac[19:20]) & 0xf
@@ -33,7 +63,10 @@ def generate_one_time_code(shared_secret: str, timestamp: int = None) -> str:
     return code
 
 
-def generate_confirmation_key(identity_secret: str, tag: str, timestamp: int = int(time.time())) -> bytes:
+def generate_confirmation_key(identity_secret: str, tag: str, timestamp: int = None) -> bytes:
+    if timestamp is None:
+        timestamp = int(time.time())
+        timestamp += try_to_get_time_delta_from_steam(Session())
     buffer = struct.pack('>Q', timestamp) + tag.encode('ascii')
     return base64.b64encode(hmac.new(base64.b64decode(identity_secret), buffer, digestmod=sha1).digest())
 

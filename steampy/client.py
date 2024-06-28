@@ -44,6 +44,7 @@ class SteamClient:
 
     def login(self, username: str, password: str, steam_guard: str, get_email_on_time_code_func: callable = None,
               func_2fa_input: callable = None) -> None:
+        guard.try_to_get_time_delta_from_steam(self._session)
         self.steam_guard = guard.load_steam_guard(steam_guard)
         self.username = username
         self._password = password
@@ -93,6 +94,7 @@ class SteamClient:
 
     @login_required
     def is_session_alive(self):
+        guard.try_to_get_time_delta_from_steam(self._session)
         if not self.is_username_in_community():
             try:
                 self.update_access_token()
