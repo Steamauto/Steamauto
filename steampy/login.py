@@ -129,8 +129,10 @@ class LoginExecutor:
             access_token = resp_json['response']['access_token']
             steam_login_secure = (steamid + '%7C%7C' +
                                   access_token)
-            for domain_name in ['steamcommunity.com', 'store.steampowered.com', 'help.steampowered.com']:
-                self.session.cookies.set('sessionid', self.session.cookies.get_dict()['sessionid'], domain=domain_name)
+            for domain_name in ['steamcommunity.com']:
+                self.session.cookies.set('sessionid',
+                                         self.session.cookies.get_dict(domain_name)['sessionid'],
+                                         domain=domain_name)
                 self.session.cookies.set('steamLoginSecure', steam_login_secure, domain=domain_name)
 
     def _set_token_protobuf(self, url: str, nonce: str, auth: str, steamid: int) -> None:
