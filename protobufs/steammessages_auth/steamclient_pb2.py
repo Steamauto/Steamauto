@@ -10,7 +10,7 @@ from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import enum_type_wrapper
 
-from pysteamauth.pb2.steammessages_unified_base import steamclient_pb2  # noqa
+from protobufs.steammessages_unified_base import steamclient_pb2  # noqa
 
 
 # @@protoc_insertion_point(imports)
