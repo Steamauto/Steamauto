@@ -298,7 +298,7 @@ class BuffAutoAcceptOffer:
             self.logger.error("[BuffAutoAcceptOffer] 由于登录失败,插件自动退出")
             exit_code.set(1)
             return 1
-        if self.steam_client.steam_guard["steamid"] != self.get_buff_bind_steamid():
+        if self.steam_client.get_steam64id_from_cookies() != self.get_buff_bind_steamid():
             self.logger.error(
                 "[BuffAutoAcceptOffer] 当前登录账号与BUFF绑定的Steam账号不一致! "
             )

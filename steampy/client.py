@@ -42,6 +42,12 @@ class SteamClient:
         if proxies:
             self._session.proxies.update(proxies)
 
+    @login_required
+    def get_steam64id_from_cookies(self):
+        cookies = self._session.cookies.get_dict('steamcommunity.com')
+        steam_id = cookies.get('steamLoginSecure').split('%7C%7C')[0]
+        return steam_id
+
     def login(self, username: str, password: str, steam_guard: str, get_email_on_time_code_func: callable = None,
               func_2fa_input: callable = None) -> None:
         guard.try_to_get_time_delta_from_steam(self._session)
@@ -126,7 +132,7 @@ class SteamClient:
 
     @login_required
     def get_my_inventory(self, game: GameOptions, merge: bool = True, count: int = 5000) -> dict:
-        steam_id = self.steam_guard['steamid']
+        steam_id = self.get_steam64id_from_cookies()
         return self.get_partner_inventory(steam_id, game, merge, count)
 
     @login_required
@@ -177,7 +183,7 @@ class SteamClient:
             "trade_offers_received": [],
             "trade_offers_sent": []
         }}
-        steam_id = self.steam_guard['steamid']
+        steam_id = self.get_steam64id_from_cookies()
         response = self._session.get('https://steamcommunity.com/profiles/{}/tradeoffers/?l=english'.format(steam_id))
         soup = bs4.BeautifulSoup(response.text, 'html.parser')
         trade_offer_list = soup.find_all('div', class_='tradeoffer')

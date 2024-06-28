@@ -96,14 +96,6 @@ def set_exit_code(code):
     exit_code = code
 
 
-def get_steam_64_id_from_steam_community(steam_client):
-    resp = steam_client._session.get("https://steamcommunity.com/")
-    soup = BeautifulSoup(resp.text, "html.parser")
-    steam_user_json = soup.find(id="webui_config").get("data-userinfo")
-    steam_user = json5.loads(steam_user_json)
-    return str(steam_user["steamid"])
-
-
 def login_to_steam():
     global config
     steam_client = None
@@ -283,9 +275,6 @@ def login_to_steam():
                 + STEAM_ACCOUNT_INFO_FILE_PATH
                 + "中的账号密码是否正确\n"
             )
-    steam_client.steam_guard["steamid"] = str(
-        get_steam_64_id_from_steam_community(steam_client)
-    )
     return steam_client
 
 

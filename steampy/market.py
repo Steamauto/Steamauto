@@ -32,6 +32,12 @@ class SteamMarket:
         self._session_id = session_id
         self.was_login_executed = True
 
+    @login_required
+    def get_steam64id_from_cookies(self):
+        cookies = self._session.cookies.get_dict('steamcommunity.com')
+        steam_id = cookies.get('steamLoginSecure').split('%7C%7C')[0]
+        return steam_id
+
     def fetch_price(self, item_hash_name: str, game: GameOptions, currency: str = Currency.USD) -> dict:
         url = SteamUrl.COMMUNITY_URL + '/market/priceoverview/'
         params = {'country': 'PL',
@@ -102,7 +108,7 @@ class SteamMarket:
             "amount": 1,
             "price": money_to_receive
         }
-        headers = {'Referer': "%s/profiles/%s/inventory" % (SteamUrl.COMMUNITY_URL, self._steam_guard['steamid'])}
+        headers = {'Referer': "%s/profiles/%s/inventory" % (SteamUrl.COMMUNITY_URL, self.get_steam64id_from_cookies())}
         response = self._session.post(SteamUrl.COMMUNITY_URL + "/market/sellitem/", data, headers=headers).json()
         if response.get("needs_mobile_confirmation"):
             return self._confirm_sell_listing(assetid)
@@ -173,6 +179,6 @@ class SteamMarket:
         return response
 
     def _confirm_sell_listing(self, asset_id: str) -> dict:
-        con_executor = ConfirmationExecutor(self._steam_guard['identity_secret'], self._steam_guard['steamid'],
+        con_executor = ConfirmationExecutor(self._steam_guard['identity_secret'], self.get_steam64id_from_cookies(),
                                             self._session)
         return con_executor.confirm_sell_listing(asset_id)
