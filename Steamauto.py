@@ -20,6 +20,7 @@ from plugins.BuffProfitReport import BuffProfitReport
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from plugins.ECOsteam import ECOsteamPlugin
+from plugins.UUAutoLease import UUAutoLeaseItem
 from steampy.client import SteamClient
 from steampy.exceptions import ApiException, CaptchaRequired, InvalidCredentials
 
@@ -43,6 +44,7 @@ from utils.static import (
     STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
     UU_ARG_FILE_PATH,
     UU_TOKEN_FILE_PATH,
+    UU_LEASE_ITEMS_PATH,
     set_no_pause,
 )
 from utils.tools import (
@@ -348,6 +350,28 @@ def init_files_and_params() -> int:
             )
             first_run = True
 
+    if not os.path.exists(UU_LEASE_ITEMS_PATH):
+        with open(UU_LEASE_ITEMS_PATH, "w", encoding="utf-8") as f:
+            f.write("{}")
+        config["lease_items"] = {}
+        logger.info(
+            "检测到首次运行, 已为您生成"
+            + UU_LEASE_ITEMS_PATH
+            + ", 请按照README提示填写配置文件! "
+        )
+    else:
+        with open(UU_LEASE_ITEMS_PATH, "r", encoding=get_encoding(UU_LEASE_ITEMS_PATH)) as f:
+            try:
+                config["lease_items"] = json5.load(f)
+            except Exception as e:
+                handle_caught_exception(e)
+                logger.error(
+                    "检测到"
+                    + UU_LEASE_ITEMS_PATH
+                    + "格式错误, 请检查配置文件格式是否正确! "
+                )
+                return 0
+
     if not first_run:
         if "no_pause" in config:
             set_no_pause(config["no_pause"])
@@ -422,6 +446,15 @@ def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
             steam_client, steam_client_mutex, config
         )
         plugins_enabled.append(uu_auto_accept_offer)
+    if (
+        "uu_auto_lease_item" in config
+        and "enable" in config["uu_auto_lease_item"]
+        and config["uu_auto_lease_item"]["enable"]
+    ):
+        uu_auto_lease_on_shelf = UUAutoLeaseItem(
+            config
+        )
+        plugins_enabled.append(uu_auto_lease_on_shelf)
     if (
         "steam_auto_accept_offer" in config
         and "enable" in config["steam_auto_accept_offer"]

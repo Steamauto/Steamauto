@@ -10,6 +10,7 @@ CONFIG_FOLDER = "config"
 CONFIG_FILE_PATH = os.path.join(CONFIG_FOLDER, "config.json5")
 BUFF_COOKIES_FILE_PATH = os.path.join(CONFIG_FOLDER, "buff_cookies.txt")
 UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token.txt")
+UU_LEASE_ITEMS_PATH = os.path.join(CONFIG_FOLDER, "uu_lease_items.json5")
 STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
 STEAM_ACCOUNT_JSON_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account.json")
 SESSION_FOLDER = "session"
@@ -190,6 +191,11 @@ DEFAULT_CONFIG_JSON = r"""
     "enable": false,
     // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
     "interval": 300
+  },
+  // 悠悠有品租赁自动上架配置
+  "uu_auto_lease_item": {
+    "enable": false,
+    "uu_lease_item_cfg": "config/uu_lease_items.json5"
   },
   // Steam 自动接受礼物报价插件配置
   "steam_auto_accept_offer": {
