@@ -365,7 +365,8 @@ class SteamClient:
         return text_between(offer_response_text, "var g_ulTradePartnerSteamID = '", "';")
 
     def _confirm_transaction(self, trade_offer_id: str, match_end: bool = False) -> dict:
-        confirmation_executor = ConfirmationExecutor(self.steam_guard['identity_secret'], self.steam_guard['steamid'],
+        confirmation_executor = ConfirmationExecutor(self.steam_guard['identity_secret'],
+                                                     self.get_steam64id_from_cookies(),
                                                      self._session)
         return confirmation_executor.send_trade_allow_request(trade_offer_id, match_end)
 
