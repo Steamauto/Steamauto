@@ -119,7 +119,7 @@ class ECOsteamPlugin:
         self.logger.info("正在登录ECOsteam...")
         try:
             with open(
-                ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)
+                    ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)
             ) as f:
                 rsa_key = f.read()
             self.client = ECOsteamClient(
@@ -199,7 +199,6 @@ class ECOsteamPlugin:
                 self.logger.error("发生未知错误，请稍候再试！")
                 time.sleep(self.config["ecosteam"]["auto_accept_offer"]["interval"])
 
-
     def _auto_accept_offer(self):
         self.logger.info("正在检查待发货列表...")
         today = datetime.datetime.today()
@@ -228,39 +227,8 @@ class ECOsteamPlugin:
                             self.steam_client.accept_trade_offer(str(tradeOfferId))
                         self.ignored_offer.append(tradeOfferId)
                         self.logger.info(f"已接受报价号{tradeOfferId}！")
-                    except ProxyError:
-                        self.logger.error("代理异常, 本软件可不需要代理或任何VPN")
-                        self.logger.error("可以尝试关闭代理或VPN后重启软件")
-                    except (
-                        ConnectionError,
-                        ConnectionResetError,
-                        ConnectionAbortedError,
-                        ConnectionRefusedError,
-                    ):
-                        self.logger.error("网络异常, 请检查网络连接")
-                        self.logger.error(
-                            "这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN"
-                        )
-                        self.logger.error(
-                            "如果你正在使用代理或VPN, 请尝试关闭后重启软件"
-                        )
-                        self.logger.error("如果你没有使用代理或VPN, 请检查网络连接")
-                    except InvalidCredentials as e:
-                        self.logger.error(
-                            "mafile有问题, 请检查mafile是否正确"
-                            "(尤其是identity_secret)"
-                        )
-                        self.logger.error(str(e))
-                    except ConfirmationExpected as e:
-                        handle_caught_exception(e)
-                        self.logger.error(
-                            "Steam Session已经过期, 请删除session文件夹并重启Steamauto"
-                        )
-                    except ValueError as e:
-                        self.logger.error("Steam 宵禁限制, 请稍后再试!")
-                        handle_caught_exception(e)
                     except Exception as e:
-                        handle_caught_exception(e)
+                        handle_caught_exception(e, "[ECOSteam]")
                         self.logger.error("Steam异常, 暂时无法接受报价, 请稍后再试! ")
                 else:
                     self.logger.info(
@@ -275,36 +243,8 @@ class ECOsteamPlugin:
         try:
             with self.steam_client_mutex:
                 inventory = self.steam_client.get_my_inventory(game=GameOptions.CS)
-        except ProxyError:
-            self.logger.error("代理异常, 本软件可不需要代理或任何VPN")
-            self.logger.error("可以尝试关闭代理或VPN后重启软件")
-        except (
-            ConnectionError,
-            ConnectionResetError,
-            ConnectionAbortedError,
-            ConnectionRefusedError,
-        ):
-            self.logger.error("网络异常, 请检查网络连接")
-            self.logger.error(
-                "这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN"
-            )
-            self.logger.error("如果你正在使用代理或VPN, 请尝试关闭后重启软件")
-            self.logger.error("如果你没有使用代理或VPN, 请检查网络连接")
-        except InvalidCredentials as e:
-            self.logger.error(
-                "mafile有问题, 请检查mafile是否正确" "(尤其是identity_secret)"
-            )
-            self.logger.error(str(e))
-        except ConfirmationExpected as e:
-            handle_caught_exception(e)
-            self.logger.error(
-                "Steam Session已经过期, 请删除session文件夹并重启Steamauto"
-            )
-        except ValueError as e:
-            self.logger.error("Steam 宵禁限制, 请稍后再试!")
-            handle_caught_exception(e)
         except Exception as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, "[ECOSteam]")
             self.logger.error("Steam异常, 暂时无法获取库存, 请稍后再试! ")
         return inventory
 
@@ -353,7 +293,7 @@ class ECOsteamPlugin:
         if not tc["main_platform"] in tc["enabled_platforms"]:
             self.logger.error("由于主平台未启用，自动同步平台功能已经自动关闭")
             sync_shelf_enabled = False
-        
+
         while sync_shelf_enabled:
             self.sync_shelf(tc)
             self.logger.info(f'等待{tc["interval"]}秒后重新检查多平台上架物品')
@@ -368,10 +308,9 @@ class ECOsteamPlugin:
             ratios[platform] = tc["ratio"][platform]
         self.logger.info("正在从Steam获取物品信息...")
         inventory = self.get_steam_inventory()
-        with open('test.json','w') as f:
+        with open('test.json', 'w') as f:
             f.write(json.dumps(inventory))
-            
-        
+
         try:
             for platform in tc["enabled_platforms"]:
                 self.logger.info(f"正在从{platform.upper()}平台获取上架物品信息...")
@@ -407,13 +346,8 @@ class ECOsteamPlugin:
                             self.logger.error(
                                 f'下架{len(offshelf_assets)}个商品失败！错误信息{response.json().get("msg", None)}'
                             )
-        except SystemError as e:
-            handle_caught_exception(e)
-            self.logger.error(
-                "无法连接至Steam，请检查Steam账户状态、网络连接、或重启Steamauto"
-            )
         except Exception as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, "[ECOSteam]")
             self.logger.error("发生未知错误，请稍候再试！")
 
         for platform in tc["enabled_platforms"]:
@@ -429,10 +363,13 @@ class ECOsteamPlugin:
                 if difference:
                     self.logger.debug(json.dumps(difference))
                     self.logger.info(f"{platform.upper()}平台需要更新上架商品/价格")
-                    self.solve_platform_difference(platform, difference)
+                    try:
+                        self.solve_platform_difference(platform, difference)
+                    except Exception as e:
+                        handle_caught_exception(e, "[ECOSteam]")
+                        self.logger.error("发生未知错误，请稍候再试！")
                 else:
                     self.logger.info(f"{platform.upper()}平台已经保持同步")
-            
 
     def solve_platform_difference(self, platform, difference):
         if platform == "eco":
@@ -440,18 +377,6 @@ class ECOsteamPlugin:
             assets = [toECO(asset) for asset in difference["add"]]
             if len(assets) > 0:
                 self.logger.info(f"即将上架{len(assets)}个商品到ECOsteam")
-                # assetIds = [asset["AssetId"] for asset in assets]
-                # self.logger.info(
-                #     "正在搜索饰品的StockId，本过程可能需要一段时间，请耐心等待，并保持网络的稳定..."
-                # )
-                # try:
-                #     stockIdsDict = self.client.searchStockIds(assetIds)
-                # except Exception:
-                #     self.logger.error('搜索失败！请稍候再试(出现此问题可能是因为网络不稳定或ECO服务器异常)')
-                #     return False
-                # for asset in assets:
-                #     asset["StockId"] = stockIdsDict[asset["AssetId"]]
-                #     del asset["AssetId"]
                 try:
                     response = self.client.PublishStock({"Assets": assets})
                 except Exception as e:
@@ -462,20 +387,18 @@ class ECOsteamPlugin:
                         time.sleep(30)
                         self.logger.info('正在重新尝试上架...')
                         response = self.client.PublishStock({"Assets": assets})
-                if response.json()["ResultCode"] == "0":
-                    self.logger.info(f"上架{len(assets)}个商品到ECOsteam成功！")
+                    else:
+                        handle_caught_exception(e, "[ECOSteam]")
+                        self.logger.error("发生未知错误，请稍候再试！")
+                        return
+                self.logger.info(f"上架{len(assets)}个商品到ECOsteam成功！")
 
             # 下架商品
             assets = [asset["orderNo"] for asset in difference["delete"]]
             if len(assets) > 0:
                 self.logger.info(f"即将下架{len(assets)}个商品")
                 response = self.client.OffshelfGoods({"goodsNumList": assets})
-                if response.json()["ResultCode"] == "0":
-                    self.logger.info(f"下架{len(assets)}个商品成功！")
-                else:
-                    self.logger.error(
-                        f'下架{len(assets)}个商品失败！错误信息{response.json().get("ResultMsg", None)}'
-                    )
+                self.logger.info(f"下架{len(assets)}个商品成功！")
 
             # 修改价格
             assets = [
@@ -487,12 +410,7 @@ class ECOsteamPlugin:
                 response = self.client.GoodsPublishedBatchEdit(
                     {"goodsBatchEditList": assets}
                 )
-                if response.json()["ResultCode"] == "0":
-                    self.logger.info(f"修改{len(assets)}个商品的价格成功！")
-                else:
-                    self.logger.error(
-                        f'修改{len(assets)}个商品的价格失败！错误信息：{response.json().get("ResultMsg", None)}'
-                    )
+                self.logger.info(f"修改{len(assets)}个商品的价格成功！")
 
         elif platform == "buff":
             # 上架商品

@@ -220,7 +220,7 @@ class BuffProfitReport:
             self.logger.info("[BuffProfitReport] 已检测到cookies, 尝试登录")
             self.logger.info("[BuffProfitReport] 已经登录至BUFF 用户名: " + self.check_buff_account_state())
         except TypeError as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, "[BuffProfitReport]")
             self.logger.error("[BuffProfitReport] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
             return
         while True:
@@ -473,17 +473,7 @@ class BuffProfitReport:
                     body='BUFF每日利润统计报告', 
                     attach=AppriseAttachment(report_file_path)
                 )
-            except ProxyError:
-                self.logger.error('[BuffProfitReport] 代理异常, 本软件可不需要代理或任何VPN')
-                self.logger.error('[BuffProfitReport] 可以尝试关闭代理或VPN后重启软件')
-            except (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError):
-                self.logger.error('[BuffProfitReport] 网络异常, 请检查网络连接')
-                self.logger.error('[BuffProfitReport] 这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN')
-                self.logger.error('[BuffProfitReport] 如果你正在使用代理或VPN, 请尝试关闭后重启软件')
-                self.logger.error('[BuffProfitReport] 如果你没有使用代理或VPN, 请检查网络连接')
-            except InvalidCredentials as e:
-                self.logger.error('[BuffProfitReport] mafile有问题, 请检查mafile是否正确(尤其是identity_secret)')
-                self.logger.error(str(e))
             except Exception as e:
+                handle_caught_exception(e, "[BuffProfitReport]")
                 self.logger.error("[BuffProfitReport] 生成BUFF利润报告失败, 错误信息: " + str(e), exc_info=True)
             time.sleep(sleep_interval)

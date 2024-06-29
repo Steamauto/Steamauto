@@ -155,7 +155,7 @@ class BuffAutoComment:
                         with open(steam_session_path, "wb") as f:
                             pickle.dump(self.steam_client.session, f)
             except Exception as e:
-                self.logger.error("[BuffAutoComment] 出现错误, 错误信息: " + str(e), exc_info=True)
+                handle_caught_exception(e, "[BuffAutoComment]")
                 self.logger.info("[BuffAutoComment] 休眠" + str(sleep_interval) + "秒")
                 time.sleep(sleep_interval)
                 continue
@@ -222,18 +222,7 @@ class BuffAutoComment:
                             self.logger.error("[BuffAutoComment] 备注失败")
                     else:
                         self.logger.info("[BuffAutoComment] 无需备注")
-            except ProxyError:
-                self.logger.error('[BuffAutoComment] 代理异常, 本软件可不需要代理或任何VPN')
-                self.logger.error('[BuffAutoComment] 可以尝试关闭代理或VPN后重启软件')
-            except (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError):
-                self.logger.error('[BuffAutoComment] 网络异常, 请检查网络连接')
-                self.logger.error('[BuffAutoComment] 这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN')
-                self.logger.error('[BuffAutoComment] 如果你正在使用代理或VPN, 请尝试关闭后重启软件')
-                self.logger.error('[BuffAutoComment] 如果你没有使用代理或VPN, 请检查网络连接')
-            except InvalidCredentials as e:
-                self.logger.error('[BuffAutoComment] mafile有问题, 请检查mafile是否正确(尤其是identity_secret)')
-                self.logger.error(str(e))
             except Exception as e:
-                self.logger.error("[BuffAutoComment] BUFF自动备注失败, 错误信息: " + str(e), exc_info=True)
+                handle_caught_exception(e, "[BuffAutoComment]")
             self.logger.info("[BuffAutoComment] 休眠" + str(sleep_interval) + "秒")
             time.sleep(sleep_interval)

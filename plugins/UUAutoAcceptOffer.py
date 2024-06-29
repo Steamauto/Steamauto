@@ -39,7 +39,7 @@ class UUAutoAcceptOffer:
                 )
                 uuyoupin.send_device_info()
             except Exception as e:
-                handle_caught_exception(e)
+                handle_caught_exception(e, "[UUAutoAcceptOffer]")
                 self.logger.error(
                     "悠悠有品登录失败! 请检查token是否正确! "
                 )
@@ -102,49 +102,8 @@ class UUAutoAcceptOffer:
                                         f'接受报价[{str(item["offer_id"])}]完成!'
                                     )
                                     accepted = True
-                                except ProxyError:
-                                    self.logger.error(
-                                        "代理异常, 本软件可不需要代理或任何VPN"
-                                    )
-                                    self.logger.error(
-                                        "可以尝试关闭代理或VPN后重启软件"
-                                    )
-                                except (
-                                    ConnectionError,
-                                    ConnectionResetError,
-                                    ConnectionAbortedError,
-                                    ConnectionRefusedError,
-                                ):
-                                    self.logger.error(
-                                        "网络异常, 请检查网络连接"
-                                    )
-                                    self.logger.error(
-                                        "这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN"
-                                    )
-                                    self.logger.error(
-                                        "如果你正在使用代理或VPN, 请尝试关闭后重启软件"
-                                    )
-                                    self.logger.error(
-                                        "如果你没有使用代理或VPN, 请检查网络连接"
-                                    )
-                                except InvalidCredentials as e:
-                                    self.logger.error(
-                                        "mafile有问题, 请检查mafile是否正确"
-                                        "(尤其是identity_secret)"
-                                    )
-                                    self.logger.error(str(e))
-                                except ConfirmationExpected as e:
-                                    handle_caught_exception(e)
-                                    self.logger.error(
-                                        "Steam Session已经过期, 请删除session文件夹并重启Steamauto"
-                                    )
-                                except ValueError as e:
-                                    self.logger.error(
-                                        "Steam 宵禁限制, 请稍后再试!"
-                                    )
-                                    handle_caught_exception(e)
                                 except Exception as e:
-                                    handle_caught_exception(e)
+                                    handle_caught_exception(e, "[UUAutoAcceptOffer]")
                                     self.logger.error(
                                         "Steam异常, 暂时无法接受报价, 请稍后再试! "
                                     )
@@ -161,20 +120,13 @@ class UUAutoAcceptOffer:
                                     "为了避免频繁访问Steam接口, 等待5秒后继续..."
                                 )
                                 time.sleep(5)
-                except TypeError as e:
-                    handle_caught_exception(e)
-                    self.logger.error(
-                        "悠悠有品待发货信息获取失败, 请检查账号是否正确! 插件将自动退出"
-                    )
-                    exit_code.set(1)
-                    return 1
                 except Exception as e:
-                    self.logger.error(e, exc_info=True)
+                    handle_caught_exception(e, "[UUAutoAcceptOffer]")
                     self.logger.info("出现未知错误, 稍后再试! ")
                     try:
                         uuyoupin.get_user_nickname()
                     except KeyError as e:
-                        handle_caught_exception(e)
+                        handle_caught_exception(e, "[UUAutoAcceptOffer]")
                         self.logger.error(
                             "检测到悠悠有品登录已经失效,请重新登录"
                         )

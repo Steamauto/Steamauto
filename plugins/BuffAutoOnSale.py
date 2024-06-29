@@ -545,7 +545,7 @@ class BuffAutoOnSale:
                     time.sleep(sleep_interval)
                     continue
             except Exception as e:
-                self.logger.error("[BuffAutoOnSale] 出现错误, 错误信息: " + str(e), exc_info=True)
+                handle_caught_exception(e, "[BuffAutoOnSale]")
                 self.logger.info("[BuffAutoOnSale] 休眠" + str(sleep_interval) + "秒")
                 time.sleep(sleep_interval)
                 continue
@@ -586,18 +586,8 @@ class BuffAutoOnSale:
                     if items_count_this_loop == 0:
                         self.logger.info("[BuffAutoOnSale] 库存为空, 本批次上架结束!")
                         break
-            except ProxyError:
-                self.logger.error('[BuffAutoOnSale] 代理异常, 本软件可不需要代理或任何VPN')
-                self.logger.error('[BuffAutoOnSale] 可以尝试关闭代理或VPN后重启软件')
-            except (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError):
-                self.logger.error('[BuffAutoOnSale] 网络异常, 请检查网络连接')
-                self.logger.error('[BuffAutoOnSale] 这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN')
-                self.logger.error('[BuffAutoOnSale] 如果你正在使用代理或VPN, 请尝试关闭后重启软件')
-                self.logger.error('[BuffAutoOnSale] 如果你没有使用代理或VPN, 请检查网络连接')
-            except InvalidCredentials as e:
-                self.logger.error('[BuffAutoOnSale] mafile有问题, 请检查mafile是否正确(尤其是identity_secret)')
-                self.logger.error(str(e))
             except Exception as e:
+                handle_caught_exception(e, "[BuffAutoOnSale]")
                 self.logger.error("[BuffAutoOnSale] BUFF商品上架失败, 错误信息: " + str(e), exc_info=True)
             self.logger.info("[BuffAutoOnSale] 休眠" + str(sleep_interval) + "秒")
             sleep_cnt = int(sleep_interval // 60)

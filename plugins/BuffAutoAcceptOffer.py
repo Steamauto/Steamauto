@@ -748,48 +748,11 @@ class BuffAutoAcceptOffer:
                             self.logger.info(
                                 "[BuffAutoAcceptOffer] 该报价已经被处理过, 跳过."
                             )
-                except ProxyError:
-                    self.logger.error(
-                        "[BuffAutoAcceptOffer] 代理异常, 本软件可不需要代理或任何VPN"
-                    )
-                    self.logger.error(
-                        "[BuffAutoAcceptOffer] 可以尝试关闭代理或VPN后重启软件"
-                    )
-                except (
-                    ConnectionError,
-                    ConnectionResetError,
-                    ConnectionAbortedError,
-                    ConnectionRefusedError,
-                ):
-                    self.logger.error("[BuffAutoAcceptOffer] 网络异常, 请检查网络连接")
-                    self.logger.error(
-                        "[BuffAutoAcceptOffer] 这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN"
-                    )
-                    self.logger.error(
-                        "[BuffAutoAcceptOffer] 如果你正在使用代理或VPN, 请尝试关闭后重启软件"
-                    )
-                    self.logger.error(
-                        "[BuffAutoAcceptOffer] 如果你没有使用代理或VPN, 请检查网络连接"
-                    )
-                except InvalidCredentials as e:
-                    self.logger.error(
-                        "[BuffAutoAcceptOffer] mafile有问题, 请检查mafile是否正确(尤其是identity_secret)"
-                    )
-                    self.logger.error(str(e))
-                except ConfirmationExpected:
-                    self.logger.error(
-                        "[UUAutoAcceptOffer] Steam Session已经过期, 请删除session文件夹并重启Steamauto"
-                    )
-                except ValueError as e:
-                    self.logger.error(
-                        "[BuffAutoAcceptOffer] Steam 宵禁限制, 请稍后再试!"
-                    )
-                    handle_caught_exception(e)
                 except Exception as e:
-                    self.logger.error(e, exc_info=True)
+                    handle_caught_exception(e, "[BuffAutoAcceptOffer]")
                     self.logger.info("[BuffAutoAcceptOffer] 出现错误, 稍后再试! ")
             except Exception as e:
-                self.logger.error(e, exc_info=True)
+                handle_caught_exception(e, "[BuffAutoAcceptOffer]")
                 self.logger.info("[BuffAutoAcceptOffer] 出现未知错误, 稍后再试! ")
             self.logger.info(
                 "[BuffAutoAcceptOffer] 将在{0}秒后再次检查待发货订单信息! ".format(

@@ -6,7 +6,7 @@ import json5
 from requests.exceptions import ProxyError
 
 from steampy.exceptions import ConfirmationExpected, InvalidCredentials
-from utils.logger import PluginLogger
+from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import SESSION_FOLDER
 
 
@@ -56,21 +56,8 @@ class SteamAutoAcceptOffer:
                                 try:
                                     with self.steam_client_mutex:
                                         self.steam_client.accept_trade_offer(trade_offer["tradeofferid"])
-                                except ProxyError:
-                                    self.logger.error("代理异常, 本软件可不需要代理或任何VPN")
-                                    self.logger.error("可以尝试关闭代理或VPN后重启软件")
-                                except (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError):
-                                    self.logger.error("网络异常, 请检查网络连接")
-                                    self.logger.error("这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN")
-                                    self.logger.error("如果你正在使用代理或VPN, 请尝试关闭后重启软件")
-                                    self.logger.error("如果你没有使用代理或VPN, 请检查网络连接")
-                                except InvalidCredentials as e:
-                                    self.logger.error("mafile有问题, 请检查mafile是否正确" "(尤其是identity_secret)")
-                                    self.logger.error(str(e))
-                                except ConfirmationExpected:
-                                    self.logger.error("[UUAutoAcceptOffer] Steam Session已经过期, 请删除session文件夹并重启Steamauto")
                                 except Exception as e:
-                                    self.logger.error(e, exc_info=True)
+                                    handle_caught_exception(e, "[SteamAutoAcceptOffer]")
                                     self.logger.error("Steam异常! 稍后再试...")
                                 self.logger.info(f'报价[{trade_offer["tradeofferid"]}]接受成功！')
                             else:
@@ -78,6 +65,6 @@ class SteamAutoAcceptOffer:
                                     f'检测到报价[{trade_offer["tradeofferid"]}]' f"需要支出物品，自动跳过处理"
                                 )
             except Exception as e:
-                self.logger.error(e, exc_info=True)
+                handle_caught_exception(e, "[SteamAutoAcceptOffer]")
                 self.logger.error("发生未知错误！稍后再试...")
             time.sleep(self.config["steam_auto_accept_offer"]["interval"])
