@@ -44,6 +44,7 @@ ECOSteam 新CSGO皮肤交易平台
 
 #### 在 [悠悠有品饰品交易平台](https://www.youpin898.com/) 上:
 - 自动发货出售商品
+- 自动出租商品
 
 #### 在 [ECOSteam交易平台](https://www.ecosteam.cn/) 上:
 - 自动发货

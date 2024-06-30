@@ -7,8 +7,7 @@ import schedule
 
 import uuyoupinapi
 from utils.logger import PluginLogger, handle_caught_exception
-from utils.static import UU_TOKEN_FILE_PATH
-from utils.tools import exit_code, get_encoding
+from utils.tools import exit_code
 from utils.uu_helper import get_valid_token_for_uu
 
 
@@ -21,10 +20,6 @@ class UUAutoLeaseItem:
         self.inventory_list = []
 
     def init(self) -> bool:
-        if not os.path.exists(UU_TOKEN_FILE_PATH):
-            with open(UU_TOKEN_FILE_PATH, "w", encoding="utf-8") as f:
-                f.write("")
-            return True
         return False
 
     def get_uu_inventory(self):
@@ -258,7 +253,7 @@ class UUAutoLeaseItem:
 
 
 if __name__ == "__main__":
-    
+    # 调试代码
     with open("config/config.json5", "r", encoding="utf-8") as f:
         config = json5.load(f)
 
