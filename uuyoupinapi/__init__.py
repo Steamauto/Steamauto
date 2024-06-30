@@ -24,7 +24,7 @@ def generate_device_info():
         "deviceType": generate_random_string(6),
         "hasSteamApp": 0,
         "systemName ": "Android",
-        "systemVersion": "13",
+        "systemVersion": "14",
     }
 
 
@@ -33,12 +33,14 @@ def generate_headers(devicetoken, deviceid, token=""):
         "authorization": "Bearer " + token,
         "content-type": "application/json; charset=utf-8",
         "user-agent": "okhttp/3.14.9",
-        "app-version": "5.14.2",
+        "app-version": "5.18.1",
         "apptype": "4",
         "package-type": "uuyp",
         "devicetoken": devicetoken,
         "deviceid": deviceid,
         "platform": "android",
+        "package-type": "uuyp",
+        "accept-encoding": "gzip",
     }
 
 
@@ -138,7 +140,7 @@ class UUAccount:
         elif method == "POST":
             return self.session.post(url, json=data)
         elif method == "PUT":
-            return self.session.put(url, data=data)
+            return self.session.put(url, json=data)
         elif method == "DELETE":
             return self.session.delete(url)
         else:
@@ -226,7 +228,7 @@ class UUAccount:
         shelf = list()
         while True:
             data["pageIndex"] += 1
-            response = self.call_api("POST", "/api/youpin/bff/new/commodity/v1/commodity/list/sell")
+            response = self.call_api("POST", "/api/youpin/bff/new/commodity/v1/commodity/list/sell", data=data)
             if response.json()["code"] != 0:
                 break
             else:
@@ -236,10 +238,10 @@ class UUAccount:
 
     def off_shelf(self, commodity_ids: list):
         return self.call_api(
-            "POST",
+            "PUT",
             "/api/commodity/Commodity/OffShelf",
             data={
-                "commodityId": commodity_ids.join(","),
+                "Ids": ",".join(commodity_ids),
                 "IsDeleteCommodityCache": 1,
                 "IsForceOffline": True,
             },
@@ -247,11 +249,21 @@ class UUAccount:
 
     def sell_items(self, assets: dict):
         item_infos = [{"AssetId": asset, "Price": assets[asset], "Remark": None} for asset in assets.keys()]
-        self.call_api(
+        return self.call_api(
             "POST",
             "/api/commodity/Inventory/SellInventoryWithLeaseV2",
             data={
                 "GameID": 730,
                 "ItemInfos": item_infos,
             },
+        )
+
+    def change_price(self, assets: dict):
+        item_infos = [
+            {"CommodityId": int(asset), "Price": str(assets[asset]), "Remark": None, "IsCanSold": True} for asset in assets.keys()
+        ]
+        return self.call_api(
+            "PUT",
+            "/api/commodity/Commodity/PriceChangeWithLeaseV2",
+            data={"Commoditys": item_infos},
         )

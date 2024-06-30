@@ -8,7 +8,7 @@ from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import UU_TOKEN_FILE_PATH
 from utils.tools import get_encoding
 
-logger = PluginLogger("UULoginHelper")
+logger = PluginLogger("UULoginSolver")
 
 
 def get_valid_token_for_uu():
@@ -23,7 +23,7 @@ def get_valid_token_for_uu():
                 relogin = False
                 return token
             except Exception as e:
-                handle_caught_exception(e, "[UULoginHelper]")
+                handle_caught_exception(e, "[UULoginSolver]")
                 logger.warning("悠悠有品token无效")
     else:
         logger.info("未检测到存储的悠悠token")
