@@ -10,7 +10,6 @@ CONFIG_FOLDER = "config"
 CONFIG_FILE_PATH = os.path.join(CONFIG_FOLDER, "config.json5")
 BUFF_COOKIES_FILE_PATH = os.path.join(CONFIG_FOLDER, "buff_cookies.txt")
 UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token.txt")
-UU_LEASE_ITEMS_PATH = os.path.join(CONFIG_FOLDER, "uu_lease_items.json5")
 STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
 STEAM_ACCOUNT_JSON_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account.json")
 SESSION_FOLDER = "session"
@@ -194,8 +193,14 @@ DEFAULT_CONFIG_JSON = r"""
   },
   // 悠悠有品租赁自动上架配置
   "uu_auto_lease_item": {
+    // 悠悠有品租赁自动上架功能是否启用，默认为false
     "enable": false,
-    "uu_lease_item_cfg": "config/uu_lease_items.json5"
+    // 最长租赁时间，默认60天
+    "lease_max_days": 60,
+    // 价格低于 filter_price 的物品不会上架，默认100
+    "filter_price": 100,
+    // 插件每天定时运行时间
+    "run_time": "16:30"
   },
   // Steam 自动接受礼物报价插件配置
   "steam_auto_accept_offer": {

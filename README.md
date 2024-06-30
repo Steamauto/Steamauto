@@ -219,6 +219,17 @@ ECOSteam 新CSGO皮肤交易平台
     // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
     "interval": 300
   },
+  // 悠悠有品租赁自动上架配置
+  "uu_auto_lease_item": {
+    // 悠悠有品租赁自动上架功能是否启用，默认为false
+    "enable": false,
+    // 最长租赁时间，默认60天
+    "lease_max_days": 60,
+    // 价格低于 filter_price 的物品不会上架，默认100
+    "filter_price": 100,
+    // 插件每天定时运行时间
+    "run_time": "16:30"
+  },
   // Steam 自动接受礼物报价插件配置
   "steam_auto_accept_offer": {
     // 是否开启自动接受Steam礼物报价（无需支出任何Steam库存中的物品的报价）
