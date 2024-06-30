@@ -10,6 +10,7 @@ from ssl import SSLCertVerificationError
 
 import json5
 import requests
+from colorama import Fore, Style
 from requests.exceptions import SSLError
 
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
@@ -43,6 +44,7 @@ from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
                          logger, pause)
 
 current_version = "3.6.0"
+
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
     logger.exception(
@@ -232,7 +234,7 @@ def init_files_and_params() -> int:
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! \n")
     logger.info(
-        "\033[1;31m！！！ 本程序完全\033[1;33m免费开源\033[1;31m，若有人向你售卖，请立即投诉并申请退款！！！ \033[0m\n"
+        f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n"
     )
     logger.info(f"当前版本: {current_version}")
     logger.info("正在检查更新...")
@@ -242,7 +244,7 @@ def init_files_and_params() -> int:
         latest_version = data["latest_version"]["version"]
         broadcast = data.get("broadcast", None)
         if broadcast:
-            logger.info(f"公告: {broadcast}\n")
+            logger.info(f"Steamauto官方公告:\n {broadcast}\n")
         if compare_version(current_version, latest_version) == -1:
             logger.info(f"检测到最新版本: {latest_version}")
             changelog_to_output = str()
@@ -317,12 +319,6 @@ def init_files_and_params() -> int:
 
 
 def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
-    # from steampy.models import GameOptions
-
-    # with steam_client_mutex:
-    #     with open("test.json", "w", encoding="utf-8") as f:
-    #         f.write(json.dumps(steam_client.get_my_inventory(game=GameOptions.CS)))
-    # input()
     global config
     plugins_enabled = []
     if (

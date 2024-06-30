@@ -1,6 +1,8 @@
 import os
 import time
 
+from colorama import Fore, Style
+
 import uuyoupinapi
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import UU_TOKEN_FILE_PATH
@@ -46,14 +48,14 @@ def get_token_automatically():
     device_info = uuyoupinapi.generate_device_info()
     headers = uuyoupinapi.generate_headers(device_info["deviceId"], device_info["deviceId"])
 
-    phone_number = input("输入手机号(+86)：")
+    phone_number = input(f"{Style.BRIGHT+Fore.RED}请输入手机号(+86)：{Style.RESET_ALL}")
     token_id = device_info["deviceId"]
     logger.debug("随机生成的token_id：" + token_id)
     result = uuyoupinapi.UUAccount.send_login_sms_code(phone_number, token_id, headers=headers)
     response = {}
     if result["Code"] != 5050:
         logger.info("发送验证码结果：" + result["Msg"])
-        sms_code = input("输入验证码：")
+        sms_code = input(f"{Style.BRIGHT+Fore.RED}请输入验证码：{Style.RESET_ALL}")
         response = uuyoupinapi.UUAccount.sms_sign_in(phone_number, sms_code, token_id, headers=headers)
     else:
         logger.info("该手机号需要手动发送短信进行验证，正在获取相关信息...")
@@ -61,7 +63,7 @@ def get_token_automatically():
         if result["Code"] == 0:
             logger.info("请求结果：" + result["Msg"])
             logger.info(
-                f"请编辑发送短信 \033[1;33m{result['Data']['SmsUpContent']}\033[0m 到号码 \033[1;31m{result['Data']['SmsUpNumber']}\033[0m ！\n发送完成后请点击回车.",
+                f"{Style.BRIGHT+Fore.RED}请编辑发送短信 {Fore.YELLOW+result['Data']['SmsUpContent']} {Fore.RED}到号码 {Fore.YELLOW+result['Data']['SmsUpNumber']} {Fore.RED}！发送完成后请按下回车{Style.RESET_ALL}",
             )
             input()
             logger.info("请稍候...")
