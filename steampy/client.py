@@ -41,6 +41,11 @@ class SteamClient:
         self.chat = SteamChat(self._session)
         if proxies:
             self._session.proxies.update(proxies)
+            # try:
+            #     self._session.get(SteamUrl.COMMUNITY_URL)
+            # except (requests.exceptions.ConnectionError, TimeoutError) as e:
+            #     print("Proxy connection error: {}".format(e))
+            # print("Using proxies: {}".format(proxies))
 
     @login_required
     def get_steam64id_from_cookies(self):
