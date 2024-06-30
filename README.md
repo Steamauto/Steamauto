@@ -348,13 +348,8 @@ pip install urllib3==1.25.11
    7. 等待审核；  // 备注: 实际上是自动审核, 申请后立刻可用
 2. 审核通过后流程
    1. 审核通过的用户，可回到页面点击【查看身份ID】；
-   2. 输入RSA公钥后，获取身份ID；  // 备注: RSA公钥在插件运行后需要填写进在config目录下的rsakey.txt中, 请自行生成RSA密钥对, 建议使用2048位或4096位密钥, 如果你不会生成且不想学习, 可以使用在线生成工具生成, 例如[https://www.ssleye.com/ssltool/pass_double.html](https://www.ssleye.com/ssltool/pass_double.html) (若使用此网站, 请设置算法: RSA, 强度: 2048或4096, 密码留空, 安全性我们不能作保证, 请自行判断) 此处请注意: 使用密钥时不要带头尾标识，例如：
-      -----BEGIN PUBLIC KEY-----
-      -----END PUBLIC KEY-----
-      或
-      -----BEGIN PRIVATE KEY-----
-      -----END PRIVATE KEY-----
-      只使用**不带换行格式**的密钥内容部分。
+   2. 输入RSA公钥后，获取身份ID；  // 备注: RSA公钥在插件运行后需要填写进在config目录下的rsakey.txt中, 请自行生成RSA密钥对, 建议使用2048位或4096位密钥, 如果你不会生成且不想学习, 可以使用在线生成工具生成, 例如[https://www.ssleye.com/ssltool/pass_double.html](https://www.ssleye.com/ssltool/pass_double.html) (若使用此网站, 请设置算法: RSA, 强度: 2048或4096, 密码留空, 安全性我们不能作保证, 请自行判断)
+      ~~只使用**不带换行格式**的密钥内容部分。~~ ECOSteam已经支持完整格式的密钥内容部分
    3. 如开启回调通知，则需配置回调地址和获取ECO的回调公钥；
 
 ## 鸣谢
