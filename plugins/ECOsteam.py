@@ -8,7 +8,6 @@ from typing import List
 
 from BuffApi import BuffAccount
 from PyECOsteam import ECOsteamClient
-from steampy.exceptions import ConfirmationExpected, InvalidCredentials
 from steampy.models import GameOptions
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import PluginLogger, handle_caught_exception
@@ -114,9 +113,7 @@ class ECOsteamPlugin:
     def exec(self):
         self.logger.info("正在登录ECOsteam...")
         try:
-            with open(
-                    ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)
-            ) as f:
+            with open(ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)) as f:
                 rsa_key = f.read()
             self.client = ECOsteamClient(
                 self.config["ecosteam"]["partnerId"],
@@ -178,9 +175,7 @@ class ECOsteamPlugin:
                 asset.contextid = str(item["asset_info"]["contextid"])
                 asset.instanceid = item["asset_info"]["instanceid"]
                 goods_id = item["goods_id"]
-                asset.market_hash_name = data["goods_infos"][str(goods_id)][
-                    "market_hash_name"
-                ]
+                asset.market_hash_name = data["goods_infos"][str(goods_id)]["market_hash_name"]
                 asset.orderNo = item["id"]
                 asset.price = float(item["price"])
                 assets.append(asset)
@@ -202,22 +197,18 @@ class ECOsteamPlugin:
         last_month = today - datetime.timedelta(days=30)
         tomorrow = tomorrow.strftime("%Y-%m-%d")
         last_month = last_month.strftime("%Y-%m-%d")
-        wait_deliver_orders = self.client.GetSellerOrderList(
-            last_month, tomorrow, DetailsState=8
-        ).json()["ResultData"]["PageResult"]
+        wait_deliver_orders = self.client.GetSellerOrderList(last_month, tomorrow, DetailsState=8).json()["ResultData"][
+            "PageResult"
+        ]
         self.logger.info(f"检测到{len(wait_deliver_orders)}个待发货订单！")
         if len(wait_deliver_orders) > 0:
             for order in wait_deliver_orders:
                 self.logger.debug(f'正在获取订单号{order["OrderNum"]}的详情！')
-                detail = self.client.GetSellerOrderDetail(
-                    OrderNum=order["OrderNum"]
-                ).json()["ResultData"]
+                detail = self.client.GetSellerOrderDetail(OrderNum=order["OrderNum"]).json()["ResultData"]
                 tradeOfferId = detail["TradeOfferId"]
                 goodsName = detail["GoodsName"]
                 if tradeOfferId not in self.ignored_offer:
-                    self.logger.info(
-                        f"正在发货商品{goodsName}，报价号{tradeOfferId}..."
-                    )
+                    self.logger.info(f"正在发货商品{goodsName}，报价号{tradeOfferId}...")
                     try:
                         with self.steam_client_mutex:
                             self.steam_client.accept_trade_offer(str(tradeOfferId))
@@ -227,9 +218,7 @@ class ECOsteamPlugin:
                         handle_caught_exception(e, "[ECOSteam]")
                         self.logger.error("Steam异常, 暂时无法接受报价, 请稍后再试! ")
                 else:
-                    self.logger.info(
-                        f"已经自动忽略报价号{tradeOfferId}，商品名{goodsName}，因为它已经被程序处理过！"
-                    )
+                    self.logger.info(f"已经自动忽略报价号{tradeOfferId}，商品名{goodsName}，因为它已经被程序处理过！")
         interval = self.config["ecosteam"]["auto_accept_offer"]["interval"]
         self.logger.info(f"等待{interval}秒后继续检查待发货列表...")
         time.sleep(interval)
@@ -250,39 +239,28 @@ class ECOsteamPlugin:
         sync_shelf_enabled = True
         tc["enabled_platforms"].append("eco")
         if not tc["main_platform"] in tc["enabled_platforms"]:
-            self.logger.error(
-                "主平台必须在enabled_platforms中！请重新修改检查配置文件！"
-            )
+            self.logger.error("主平台必须在enabled_platforms中！请重新修改检查配置文件！")
             sync_shelf_enabled = False
-        if not (tc["main_platform"] == "buff" or tc["main_platform"] == "eco"):
-            self.logger.error("main_platform参数配置错误，请检查配置文件！")
-            sync_shelf_enabled = False
-        if not (tc["enabled_platforms"] == ["buff", "eco"]):
-            self.logger.error(
-                "暂不支持其他平台的自动同步功能！请勿修改enabled_platforms！"
-            )
-            sync_shelf_enabled = False
+        platforms = list(copy.deepcopy(tc["enabled_platforms"]))
+        while len(platforms) > 0:
+            platform = platforms.pop()
+            if not (platform == "uu" or platform == "eco" or platform == "buff"):
+                self.logger.error("当前仅支持UU/ECO/BUFF平台，请检查配置！")
+                sync_shelf_enabled = False
+                break
         if not sync_shelf_enabled:
             self.logger.error("由于配置错误，自动同步平台功能已经自动关闭")
             return
         if "buff" in tc["enabled_platforms"]:
-            self.logger.info(
-                "由于已经启用BUFF平台，正在联系BuffLoginSolver获取有效的session..."
-            )
+            self.logger.info("由于已经启用BUFF平台，正在联系BuffLoginSolver获取有效的session...")
             with self.steam_client_mutex:
-                buff_session = get_valid_session_for_buff(
-                    self.steam_client, self.logger
-                )
+                buff_session = get_valid_session_for_buff(self.steam_client, self.logger)
             if not buff_session:
-                self.logger.warning(
-                    "无法获取有效的BUFF session，BUFF平台相关已经自动关闭"
-                )
+                self.logger.warning("无法获取有效的BUFF session，BUFF平台相关已经自动关闭")
                 tc["enabled_platforms"].remove("buff")
             else:
                 self.buff_client = BuffAccount(buff_session)
-                self.logger.info(
-                    f"已经获取到有效的BUFF session, 用户名：{self.buff_client.get_user_nickname()}"
-                )
+                self.logger.info(f"已经获取到有效的BUFF session, 用户名：{self.buff_client.get_user_nickname()}")
         if len(tc["enabled_platforms"]) == 1:
             self.logger.error("无平台可用。已经关闭自动同步平台功能！")
             sync_shelf_enabled = False
@@ -304,16 +282,14 @@ class ECOsteamPlugin:
             ratios[platform] = tc["ratio"][platform]
         self.logger.info("正在从Steam获取物品信息...")
         inventory = self.get_steam_inventory()
-        with open('test.json', 'w') as f:
+        with open("test.json", "w") as f:
             f.write(json.dumps(inventory))
 
         try:
             for platform in tc["enabled_platforms"]:
                 self.logger.info(f"正在从{platform.upper()}平台获取上架物品信息...")
                 shelves[platform] = self.get_shelf(platform, inventory)
-                self.logger.info(
-                    f"获取完成。{platform.upper()}平台共上架{len(shelves[platform])}个商品。"
-                )
+                self.logger.info(f"获取完成。{platform.upper()}平台共上架{len(shelves[platform])}个商品。")
                 offshelf_assets = []
                 for asset in shelves[platform]:
                     if asset.assetid not in inventory:
@@ -325,9 +301,7 @@ class ECOsteamPlugin:
                 if len(offshelf_assets) > 0:
                     self.logger.info(f"即将下架{len(offshelf_assets)}个物品")
                     if platform == "eco":
-                        response = self.client.OffshelfGoods(
-                            {"goodsNumList": offshelf_assets}
-                        )
+                        response = self.client.OffshelfGoods({"goodsNumList": offshelf_assets})
                         if response.json()["ResultCode"] == "0":
                             self.logger.info(f"下架{len(offshelf_assets)}个商品成功！")
                         else:
@@ -353,9 +327,7 @@ class ECOsteamPlugin:
                     shelves[platform],
                     ratios[main_platform] / ratios[platform],
                 )
-                self.logger.debug(
-                    f"当前平台：{platform.upper()}\nDifference: {json.dumps(difference)}"
-                )
+                self.logger.debug(f"当前平台：{platform.upper()}\nDifference: {json.dumps(difference)}")
                 if difference:
                     self.logger.debug(json.dumps(difference))
                     self.logger.info(f"{platform.upper()}平台需要更新上架商品/价格")
@@ -377,11 +349,11 @@ class ECOsteamPlugin:
                     response = self.client.PublishStock({"Assets": assets})
                 except Exception as e:
                     if "饰品状态变化" in str(e):
-                        self.logger.info('ECO平台库存数据已过期，正在请求刷新...')
+                        self.logger.info("ECO平台库存数据已过期，正在请求刷新...")
                         self.client.RefreshUserSteamStock()
-                        self.logger.info('已经请求刷新，将在30秒后重新尝试上架！')
+                        self.logger.info("已经请求刷新，将在30秒后重新尝试上架！")
                         time.sleep(30)
-                        self.logger.info('正在重新尝试上架...')
+                        self.logger.info("正在重新尝试上架...")
                         response = self.client.PublishStock({"Assets": assets})
                     else:
                         handle_caught_exception(e, "[ECOSteam]")
@@ -397,15 +369,10 @@ class ECOsteamPlugin:
                 self.logger.info(f"下架{len(assets)}个商品成功！")
 
             # 修改价格
-            assets = [
-                {"GoodsNum": asset["orderNo"], "SellingPrice": asset["price"]}
-                for asset in difference["change"]
-            ]
+            assets = [{"GoodsNum": asset["orderNo"], "SellingPrice": asset["price"]} for asset in difference["change"]]
             if len(assets) > 0:
                 self.logger.info(f"即将修改{len(assets)}个商品的价格")
-                response = self.client.GoodsPublishedBatchEdit(
-                    {"goodsBatchEditList": assets}
-                )
+                response = self.client.GoodsPublishedBatchEdit({"goodsBatchEditList": assets})
                 self.logger.info(f"修改{len(assets)}个商品的价格成功！")
 
         elif platform == "buff":
@@ -446,9 +413,7 @@ class ECOsteamPlugin:
                 if response.json()["code"] == "OK":
                     self.logger.info(f"下架{len(assets)}个商品成功！")
                 else:
-                    self.logger.error(
-                        f'下架{len(assets)}个商品失败！错误信息{response.json().get("msg", None)}'
-                    )
+                    self.logger.error(f'下架{len(assets)}个商品失败！错误信息{response.json().get("msg", None)}')
 
             # 更改价格
             assets = difference["change"]
@@ -470,5 +435,3 @@ class ECOsteamPlugin:
                     self.logger.error(
                         f'修改{len(assets)}个商品的价格失败(可能部分修改成功)！错误信息：{response.json().get("msg", None)}'
                     )
-        
-        

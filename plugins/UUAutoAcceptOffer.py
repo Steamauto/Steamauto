@@ -1,13 +1,15 @@
 import os
 import pickle
 import time
+from webbrowser import get
 
 import json5
 
 import uuyoupinapi
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import SESSION_FOLDER, UU_TOKEN_FILE_PATH
-from utils.tools import exit_code, get_encoding
+from utils.tools import exit_code
+from utils.uu_helper import get_valid_token_for_uu
 
 
 class UUAutoAcceptOffer:
@@ -18,25 +20,17 @@ class UUAutoAcceptOffer:
         self.config = config
 
     def init(self) -> bool:
-        if not os.path.exists(UU_TOKEN_FILE_PATH):
-            with open(UU_TOKEN_FILE_PATH, "w", encoding="utf-8") as f:
-                f.write("")
-            return True
         return False
 
     def exec(self):
         uuyoupin = None
-        with open(UU_TOKEN_FILE_PATH, "r", encoding=get_encoding(UU_TOKEN_FILE_PATH)) as f:
-            try:
-                uuyoupin = uuyoupinapi.UUAccount(f.read())
-                self.logger.info("悠悠有品登录完成, 用户名: " + uuyoupin.get_user_nickname())
-                uuyoupin.send_device_info()
-            except Exception as e:
-                handle_caught_exception(e, "[UUAutoAcceptOffer]")
-                self.logger.error("悠悠有品登录失败! 请检查token是否正确! ")
-                self.logger.error("由于登录失败，插件将自动退出")
-                exit_code.set(1)
-                return 1
+        token = get_valid_token_for_uu()
+        if not token:
+            self.logger.error("由于登录失败，插件将自动退出")
+            exit_code.set(1)
+            return 1
+        else:
+            uuyoupin = uuyoupinapi.UUAccount(token)
         ignored_offer = []
         interval = self.config["uu_auto_accept_offer"]["interval"]
         if uuyoupin is not None:

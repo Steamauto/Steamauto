@@ -44,28 +44,6 @@ from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
 
 current_version = "3.6.0"
 
-if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
-    import uuyoupinapi
-
-    if os.path.exists("uu.txt") or os.path.exists("uu.txt.txt"):
-        logger.info("检测到uu.txt文件,已经自动使用-uu参数启动Steamauto")
-        logger.info("已经自动删除uu.txt文件")
-        os.remove("uu.txt")
-    logger.info("你使用了-uu参数启动Steamauto,这代表着Steamauto会引导你获取悠悠有品的token")
-    logger.info("如果无需获取悠悠有品的token,请删除-uu参数后重启Steamauto")
-    logger.info("按回车键继续...")
-    input()
-    token = uuyoupinapi.UUAccount.get_token_automatically()
-    if not os.path.exists(CONFIG_FOLDER):
-        os.mkdir(CONFIG_FOLDER)
-    with open(UU_TOKEN_FILE_PATH, "w", encoding="utf-8") as f:
-        f.write(token)
-    logger.info(f"已成功获取悠悠有品token,并写入{UU_TOKEN_FILE_PATH}中!")
-    logger.info("需要注意的是, 你需要在配置文件中将uu_auto_accept_offer.enable设置为true才能使用悠悠有品的自动发货功能")
-    logger.info("按回车键继续启动Steamauto...")
-    input()
-
-
 def handle_global_exception(exc_type, exc_value, exc_traceback):
     logger.exception(
         "程序发生致命错误，请将此界面截图，并提交最新的log文件到https://github.com/jiajiaxd/Steamauto/issues",

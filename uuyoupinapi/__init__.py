@@ -1,7 +1,5 @@
 import random
 import string
-import time
-from urllib import response
 
 import requests
 
@@ -54,9 +52,7 @@ class UUAccount:
         random.seed(token)
         self.device_info = generate_device_info()
         self.session.headers.update(
-            generate_headers(
-                self.device_info["deviceId"], self.device_info["deviceId"], token=token
-            )
+            generate_headers(self.device_info["deviceId"], self.device_info["deviceId"], token=token)
         )
         try:
             info = self.call_api("GET", "/api/user/Account/getUserInfo").json()
@@ -68,47 +64,6 @@ class UUAccount:
     @staticmethod
     def __random_str(length):
         return "".join(random.sample(string.ascii_letters + string.digits, length))
-
-    @staticmethod
-    def get_token_automatically():
-        """
-        引导用户输入手机号，发送验证码，输入验证码，自动登录，并且返回token
-        :return: token
-        """
-        device_info = generate_device_info()
-        headers = generate_headers(device_info["deviceId"], device_info["deviceId"])
-
-        phone_number = input("输入手机号(+86)：")
-        session_id = device_info["deviceId"]
-        print("随机生成的session_id：", session_id)
-        result = UUAccount.send_login_sms_code(
-            phone_number, session_id, headers=headers
-        )
-        response = {}
-        if result["Code"] != 5050:
-            print("发送验证码结果：", result["Msg"])
-            sms_code = input("输入验证码：")
-            response = UUAccount.sms_sign_in(
-                phone_number, sms_code, session_id, headers=headers
-            )
-        else:
-            print("该手机号需要手动发送短信进行验证，正在获取相关信息...")
-            result = UUAccount.get_smsUpSignInConfig(headers).json()
-            if result["Code"] == 0:
-                print("请求结果：" + result["Msg"])
-                print(
-                    f"请编辑发送短信 \033[1;33m{result['Data']['SmsUpContent']}\033[0m 到号码 \033[1;31m{result['Data']['SmsUpNumber']}\033[0m ！\n发送完成后请点击回车.",
-                    end="",
-                )
-                input()
-                print("请稍候...")
-                time.sleep(3)  # 防止短信发送延迟
-                response = UUAccount.sms_sign_in(
-                    phone_number, "", session_id, headers=headers
-                )
-        print("登录结果：", response["Msg"])
-        got_token = response["Data"]["Token"]
-        return got_token
 
     @staticmethod
     def get_smsUpSignInConfig(headers):
@@ -209,11 +164,7 @@ class UUAccount:
         toDoList = dict()
         for order in toDoList_response["data"]:
             if order["orderNo"] not in self.ignore_list:
-                logger.debug(
-                    "[UUAutoAcceptOffer] 订单号为"
-                    + order["orderNo"]
-                    + "的订单已经被忽略"
-                )
+                logger.debug("[UUAutoAcceptOffer] 订单号为" + order["orderNo"] + "的订单已经被忽略")
                 toDoList[order["orderNo"]] = order
         data_to_return = []
         if len(toDoList.keys()) != 0:
@@ -266,8 +217,7 @@ class UUAccount:
                     del toDoList[order]
         if len(toDoList.keys()) != 0:
             logger.warning(
-                "[UUAutoAcceptOffer] 有订单未能获取到Steam交易报价号，订单号为："
-                + str(toDoList.keys()),
+                "[UUAutoAcceptOffer] 有订单未能获取到Steam交易报价号，订单号为：" + str(toDoList.keys()),
             )
         return data_to_return
 
@@ -276,9 +226,7 @@ class UUAccount:
         shelf = list()
         while True:
             data["pageIndex"] += 1
-            response = self.call_api(
-                "POST", "/api/youpin/bff/new/commodity/v1/commodity/list/sell"
-            )
+            response = self.call_api("POST", "/api/youpin/bff/new/commodity/v1/commodity/list/sell")
             if response.json()["code"] != 0:
                 break
             else:
@@ -298,10 +246,7 @@ class UUAccount:
         )
 
     def sell_items(self, assets: dict):
-        item_infos = [
-            {"AssetId": asset, "Price": assets[asset], "Remark": None}
-            for asset in assets.keys()
-        ]
+        item_infos = [{"AssetId": asset, "Price": assets[asset], "Remark": None} for asset in assets.keys()]
         self.call_api(
             "POST",
             "/api/commodity/Inventory/SellInventoryWithLeaseV2",
