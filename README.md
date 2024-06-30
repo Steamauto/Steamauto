@@ -243,11 +243,11 @@ ECOSteam 新CSGO皮肤交易平台
       "enable": false,
       "main_platform": "buff", // 填buff/eco/uu,不可以填其它内容！
       "enabled_platforms": ["buff"], // 填buff/uu,不可以填其它内容！
-      "ratio":{ // 各平台上架价格的比例
-        "eco" : 1,
-        "uu" : 1.1,
-        "buff" : 1.2
-      },
+       "ratio":{ // 各平台上架价格的比例
+          "eco" : 0.98,
+          "uu" : 0.99,
+          "buff" : 1
+       },
       "interval": 60 // 不建议设置太长，因为同步上架带来的问题是ECO发货后BUFF/UU未及时下架，如果此时有人购买库存中没有的饰品，可能会导致封号
 
     },
