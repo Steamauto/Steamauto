@@ -48,7 +48,7 @@ from utils.static import (
 )
 from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
 
-current_version = "3.6.0"
+current_version = "4.0.0"
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
