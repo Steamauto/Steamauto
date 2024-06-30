@@ -211,18 +211,11 @@ def login_to_steam():
             )
             pause()
             return None
-        except CaptchaRequired as e:
+        except Exception as e:
             handle_caught_exception(e)
-            logger.error(
-                "登录失败. 触发Steam风控, 请尝试更换加速器节点或使用手机热点等其它网络环境重试.\n"
-                "强烈建议使用Steamauto内置加速，仅需在配置文件中将steam_login_ignore_ssl_error和steam_local_accelerate设置为true即可使用.\n"
-                "这并不是一个程序问题, 请勿提交相关issue!(即使你已经开启Steamauto内置加速) "
-            )
+            logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
             pause()
             return None
-        except InvalidCredentials as e:
-            handle_caught_exception(e)
-            logger.error("登录失败(账号或密码错误). 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "中的账号密码是否正确\n")
     return steam_client
 
 
