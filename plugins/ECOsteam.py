@@ -117,6 +117,9 @@ class ECOsteamPlugin:
         try:
             with open(ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)) as f:
                 rsa_key = f.read()
+            if 'PUBLIC' in rsa_key:
+                self.logger.error("请使用私钥文件(Private key)！")
+                return 1
             self.client = ECOsteamClient(
                 self.config["ecosteam"]["partnerId"],
                 rsa_key,
