@@ -53,7 +53,6 @@ jobs:
           mkdir releases
           mv Steamauto/windows-latest-dist/* releases/
           mv Steamauto/ubuntu-latest-dist/* releases/
-          mv Steamauto/macOS-latest-dist/* releases/
 
       - name: Upload to Github Releases
         uses: ncipollo/release-action@main
