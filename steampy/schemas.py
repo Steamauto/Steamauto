@@ -1,39 +1,35 @@
-from typing import List
-
-import pydantic
-from pydantic import BaseModel, Field
+from typing import List, TypedDict
 
 
-class Params(BaseModel):
-    nonce: str
-    auth: str
+class Params:
+    def __init__(self, nonce: str, auth: str):
+        self.nonce = nonce
+        self.auth = auth
 
 
-class TransferInfoItem(BaseModel):
-    url: str
-    params: Params
+class TransferInfoItem:
+    def __init__(self, url: str, params: Params):
+        self.url = url
+        self.params = params
 
 
-class FinalizeLoginStatus(BaseModel):
-    steamID: str
-    redir: str
-    transfer_info: List[TransferInfoItem]
-    primary_domain: str
+class FinalizeLoginStatus:
+    def __init__(self, steamID: str, redir: str, transfer_info: List[TransferInfoItem], primary_domain: str):
+        self.steamID = steamID
+        self.redir = redir
+        self.transfer_info = transfer_info
+        self.primary_domain = primary_domain
 
 
-class AccountRecoveryParams(pydantic.BaseModel):
+class AccountRecoveryParams(TypedDict):
     s: int
     account: int
     reset: int
     issueid: int
-    lost: int = 0
+    lost: int
 
 
-class RSAKey(pydantic.BaseModel):
+class RSAKey(TypedDict):
     mod: str
     exp: str
     timestamp: int
-
-    class Config:
-        mod: Field = 'publickey_mod'
-        exp: Field = 'publickey_exp'

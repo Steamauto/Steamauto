@@ -1,8 +1,9 @@
 import base64
+import json
 from time import time
 from http import HTTPStatus
 from base64 import b64encode
-from typing import List
+from typing import List, Dict, Any
 
 import rsa
 from rsa import encrypt, PublicKey
@@ -10,7 +11,7 @@ from requests import Session, Response
 from protobufs.enums_pb2 import ESessionPersistence
 from protobufs.steammessages_auth.steamclient_pb2 import *
 
-from steampy.schemas import FinalizeLoginStatus
+from steampy.schemas import FinalizeLoginStatus, TransferInfoItem, Params
 from steampy.utils import check_error
 from steampy import guard
 from steampy.models import SteamUrl
@@ -153,7 +154,27 @@ class LoginExecutor:
                 'sessionid': sessionid,
                 'redir': 'https://steamcommunity.com/login/home/?goto='
             })
-        return FinalizeLoginStatus.parse_raw(response.content)
+
+        response_data = json.loads(response.content)
+
+        transfer_info_items = [
+            TransferInfoItem(
+                url=item['url'],
+                params=Params(
+                    nonce=item['params']['nonce'],
+                    auth=item['params']['auth']
+                )
+            ) for item in response_data['transfer_info']
+        ]
+
+        finalize_login_status = FinalizeLoginStatus(
+            steamID=response_data['steamID'],
+            redir=response_data['redir'],
+            transfer_info=transfer_info_items,
+            primary_domain=response_data['primary_domain']
+        )
+
+        return finalize_login_status
 
     def _poll_auth_session_status_protobuf(
             self,
