@@ -393,8 +393,16 @@ class ECOsteamPlugin:
             assets = [toECO(asset) for asset in difference["add"]]
             if len(assets) > 0:
                 self.logger.info(f"即将上架{len(assets)}个商品到ECOsteam")
+
+                def publish_assets_in_batches(assets, batch_size=100):
+                    batches = [assets[i:i + batch_size] for i in range(0, len(assets), batch_size)]
+                    return batches
+
                 try:
-                    response = self.client.PublishStock({"Assets": assets})
+                    batches = publish_assets_in_batches(assets)
+                    for batch in batches:
+                        response = self.client.PublishStock({"Assets": batch})
+                        self.logger.info(f"上架{len(batch)}个商品到ECOsteam成功！")
                 except Exception as e:
                     if "饰品状态变化" in str(e):
                         self.logger.info("ECO平台库存数据已过期，正在请求刷新...")
@@ -402,12 +410,18 @@ class ECOsteamPlugin:
                         self.logger.info("已经请求刷新，将在30秒后重新尝试上架！")
                         time.sleep(30)
                         self.logger.info("正在重新尝试上架...")
-                        response = self.client.PublishStock({"Assets": assets})
+                        try:
+                            for batch in batches:
+                                response = self.client.PublishStock({"Assets": batch})
+                                self.logger.info(f"上架{len(batch)}个商品到ECOsteam成功！")
+                        except Exception as e:
+                            handle_caught_exception(e, "[ECOsteam.cn]")
+                            self.logger.error("发生未知错误，请稍候再试！")
+                            return
                     else:
                         handle_caught_exception(e, "[ECOsteam.cn]")
                         self.logger.error("发生未知错误，请稍候再试！")
                         return
-                self.logger.info(f"上架{len(assets)}个商品到ECOsteam成功！")
 
             # 下架商品
             assets = [asset["orderNo"] for asset in difference["delete"]]
