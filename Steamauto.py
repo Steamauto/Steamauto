@@ -38,7 +38,7 @@ from utils.static import (CONFIG_FILE_PATH, CONFIG_FOLDER, DEFAULT_CONFIG_JSON,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
                           SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH,
                           STEAM_ACCOUNT_JSON_INFO_FILE_PATH, UU_ARG_FILE_PATH,
-                          UU_LEASE_ITEMS_PATH, UU_TOKEN_FILE_PATH,
+                          UU_TOKEN_FILE_PATH,
                           set_no_pause)
 from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
                          logger, pause)
@@ -283,20 +283,6 @@ def init_files_and_params() -> int:
                 "检测到首次运行, 已为您生成" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请按照README提示填写配置文件! "
             )
             first_run = True
-
-    if not os.path.exists(UU_LEASE_ITEMS_PATH):
-        with open(UU_LEASE_ITEMS_PATH, "w", encoding="utf-8") as f:
-            f.write("{}")
-        config["lease_items"] = {}
-        logger.info("检测到首次运行, 已为您生成" + UU_LEASE_ITEMS_PATH + ", 请按照README提示填写配置文件! ")
-    else:
-        with open(UU_LEASE_ITEMS_PATH, "r", encoding=get_encoding(UU_LEASE_ITEMS_PATH)) as f:
-            try:
-                config["lease_items"] = json5.load(f)
-            except Exception as e:
-                handle_caught_exception(e)
-                logger.error("检测到" + UU_LEASE_ITEMS_PATH + "格式错误, 请检查配置文件格式是否正确! ")
-                return 0
 
     if not first_run:
         if "no_pause" in config:

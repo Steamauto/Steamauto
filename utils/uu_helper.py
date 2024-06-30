@@ -17,10 +17,11 @@ def get_valid_token_for_uu():
     if os.path.exists(UU_TOKEN_FILE_PATH):
         with open(UU_TOKEN_FILE_PATH, "r", encoding=get_encoding(UU_TOKEN_FILE_PATH)) as f:
             try:
-                uuyoupin = uuyoupinapi.UUAccount(f.read())
+                token = f.read()
+                uuyoupin = uuyoupinapi.UUAccount(token)
                 logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
                 relogin = False
-                return f.read()
+                return token
             except Exception as e:
                 handle_caught_exception(e, "[UULoginHelper]")
                 logger.warning("悠悠有品token无效")
