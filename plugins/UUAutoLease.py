@@ -1,5 +1,4 @@
 import os
-import random
 import time
 
 import json5
@@ -7,7 +6,7 @@ import numpy as np
 import schedule
 
 import uuyoupinapi
-from utils.logger import handle_caught_exception, PluginLogger
+from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import UU_TOKEN_FILE_PATH
 from utils.tools import exit_code, get_encoding
 

@@ -10,19 +10,19 @@ from ssl import SSLCertVerificationError
 
 import json5
 import requests
-from bs4 import BeautifulSoup
 from requests.exceptions import SSLError
 
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
 from plugins.BuffAutoComment import BuffAutoComment
 from plugins.BuffAutoOnSale import BuffAutoOnSale
 from plugins.BuffProfitReport import BuffProfitReport
+from plugins.ECOsteam import ECOsteamPlugin
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
-from plugins.ECOsteam import ECOsteamPlugin
 from plugins.UUAutoLease import UUAutoLeaseItem
 from steampy.client import SteamClient
-from steampy.exceptions import ApiException, CaptchaRequired, InvalidCredentials
+from steampy.exceptions import (ApiException, CaptchaRequired,
+                                InvalidCredentials)
 
 try:
     from steampy.utils import ping_proxy
@@ -33,28 +33,14 @@ except:
 
 
 from utils.logger import handle_caught_exception
-from utils.static import (
-    CONFIG_FILE_PATH,
-    CONFIG_FOLDER,
-    DEFAULT_CONFIG_JSON,
-    DEFAULT_STEAM_ACCOUNT_JSON,
-    DEV_FILE_FOLDER,
-    SESSION_FOLDER,
-    STEAM_ACCOUNT_INFO_FILE_PATH,
-    STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
-    UU_ARG_FILE_PATH,
-    UU_TOKEN_FILE_PATH,
-    UU_LEASE_ITEMS_PATH,
-    set_no_pause,
-)
-from utils.tools import (
-    accelerator,
-    compare_version,
-    exit_code,
-    get_encoding,
-    logger,
-    pause,
-)
+from utils.static import (CONFIG_FILE_PATH, CONFIG_FOLDER, DEFAULT_CONFIG_JSON,
+                          DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
+                          SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH,
+                          STEAM_ACCOUNT_JSON_INFO_FILE_PATH, UU_ARG_FILE_PATH,
+                          UU_LEASE_ITEMS_PATH, UU_TOKEN_FILE_PATH,
+                          set_no_pause)
+from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
+                         logger, pause)
 
 current_version = "3.6.0"
 
@@ -65,9 +51,7 @@ if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
         logger.info("检测到uu.txt文件,已经自动使用-uu参数启动Steamauto")
         logger.info("已经自动删除uu.txt文件")
         os.remove("uu.txt")
-    logger.info(
-        "你使用了-uu参数启动Steamauto,这代表着Steamauto会引导你获取悠悠有品的token"
-    )
+    logger.info("你使用了-uu参数启动Steamauto,这代表着Steamauto会引导你获取悠悠有品的token")
     logger.info("如果无需获取悠悠有品的token,请删除-uu参数后重启Steamauto")
     logger.info("按回车键继续...")
     input()
@@ -77,9 +61,7 @@ if ("-uu" in sys.argv) or (os.path.exists(UU_ARG_FILE_PATH)):
     with open(UU_TOKEN_FILE_PATH, "w", encoding="utf-8") as f:
         f.write(token)
     logger.info(f"已成功获取悠悠有品token,并写入{UU_TOKEN_FILE_PATH}中!")
-    logger.info(
-        "需要注意的是, 你需要在配置文件中将uu_auto_accept_offer.enable设置为true才能使用悠悠有品的自动发货功能"
-    )
+    logger.info("需要注意的是, 你需要在配置文件中将uu_auto_accept_offer.enable设置为true才能使用悠悠有品的自动发货功能")
     logger.info("按回车键继续启动Steamauto...")
     input()
 
@@ -114,16 +96,10 @@ def login_to_steam():
                 f.write(json.dumps(acc, indent=4))
         except Exception as e:
             handle_caught_exception(e)
-            logger.error(
-                "检测到"
-                + STEAM_ACCOUNT_INFO_FILE_PATH
-                + "格式错误, 请检查配置文件格式是否正确! "
-            )
+            logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
             pause()
             return None
-    steam_session_path = os.path.join(
-        SESSION_FOLDER, acc.get("steam_username").lower() + ".pkl"
-    )
+    steam_session_path = os.path.join(SESSION_FOLDER, acc.get("steam_username").lower() + ".pkl")
     if not os.path.exists(steam_session_path):
         logger.info("检测到首次登录Steam，正在尝试登录...登录完成后会自动缓存session")
     else:
@@ -157,9 +133,7 @@ def login_to_steam():
         except AssertionError as e:
             handle_caught_exception(e)
             if config["steam_local_accelerate"]:
-                logger.error(
-                    "由于内置加速问题,暂时无法登录.请稍等10分钟后再进行登录,或者关闭内置加速功能！"
-                )
+                logger.error("由于内置加速问题,暂时无法登录.请稍等10分钟后再进行登录,或者关闭内置加速功能！")
             else:
                 logger.error("未知登录错误,可能是由于网络问题?")
     if steam_client is None:
@@ -247,11 +221,7 @@ def login_to_steam():
             return None
         except (ValueError, ApiException) as e:
             handle_caught_exception(e)
-            logger.error(
-                "登录失败. 请检查"
-                + STEAM_ACCOUNT_INFO_FILE_PATH
-                + "的格式或内容是否正确!\n"
-            )
+            logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
             pause()
             return None
         except (TypeError, AttributeError) as e:
@@ -272,11 +242,7 @@ def login_to_steam():
             return None
         except InvalidCredentials as e:
             handle_caught_exception(e)
-            logger.error(
-                "登录失败(账号或密码错误). 请检查"
-                + STEAM_ACCOUNT_INFO_FILE_PATH
-                + "中的账号密码是否正确\n"
-            )
+            logger.error("登录失败(账号或密码错误). 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "中的账号密码是否正确\n")
     return steam_client
 
 
@@ -293,9 +259,7 @@ def init_files_and_params() -> int:
     logger.info(f"当前版本: {current_version}")
     logger.info("正在检查更新...")
     try:
-        response_json = requests.get(
-            "https://steamauto.jiajiaxd.com/versions", timeout=5
-        )
+        response_json = requests.get("https://steamauto.jiajiaxd.com/versions", timeout=5)
         data = response_json.json()
         latest_version = data["latest_version"]["version"]
         broadcast = data.get("broadcast", None)
@@ -322,11 +286,7 @@ def init_files_and_params() -> int:
     if not os.path.exists(CONFIG_FILE_PATH):
         with open(CONFIG_FILE_PATH, "w", encoding="utf-8") as f:
             f.write(DEFAULT_CONFIG_JSON)
-        logger.info(
-            "检测到首次运行, 已为您生成"
-            + CONFIG_FILE_PATH
-            + ", 请按照README提示填写配置文件! "
-        )
+        logger.info("检测到首次运行, 已为您生成" + CONFIG_FILE_PATH + ", 请按照README提示填写配置文件! ")
         first_run = True
     else:
         with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
@@ -334,19 +294,13 @@ def init_files_and_params() -> int:
                 config = json5.load(f)
             except Exception as e:
                 handle_caught_exception(e)
-                logger.error(
-                    "检测到"
-                    + CONFIG_FILE_PATH
-                    + "格式错误, 请检查配置文件格式是否正确! "
-                )
+                logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
                 return 0
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
             f.write(DEFAULT_STEAM_ACCOUNT_JSON)
             logger.info(
-                "检测到首次运行, 已为您生成"
-                + STEAM_ACCOUNT_INFO_FILE_PATH
-                + ", 请按照README提示填写配置文件! "
+                "检测到首次运行, 已为您生成" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请按照README提示填写配置文件! "
             )
             first_run = True
 
@@ -354,22 +308,14 @@ def init_files_and_params() -> int:
         with open(UU_LEASE_ITEMS_PATH, "w", encoding="utf-8") as f:
             f.write("{}")
         config["lease_items"] = {}
-        logger.info(
-            "检测到首次运行, 已为您生成"
-            + UU_LEASE_ITEMS_PATH
-            + ", 请按照README提示填写配置文件! "
-        )
+        logger.info("检测到首次运行, 已为您生成" + UU_LEASE_ITEMS_PATH + ", 请按照README提示填写配置文件! ")
     else:
         with open(UU_LEASE_ITEMS_PATH, "r", encoding=get_encoding(UU_LEASE_ITEMS_PATH)) as f:
             try:
                 config["lease_items"] = json5.load(f)
             except Exception as e:
                 handle_caught_exception(e)
-                logger.error(
-                    "检测到"
-                    + UU_LEASE_ITEMS_PATH
-                    + "格式错误, 请检查配置文件格式是否正确! "
-                )
+                logger.error("检测到" + UU_LEASE_ITEMS_PATH + "格式错误, 请检查配置文件格式是否正确! ")
                 return 0
 
     if not first_run:
@@ -406,69 +352,51 @@ def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
         and "enable" in config["buff_auto_accept_offer"]
         and config["buff_auto_accept_offer"]["enable"]
     ):
-        buff_auto_accept_offer = BuffAutoAcceptOffer(
-            logger, steam_client, steam_client_mutex, config
-        )
+        buff_auto_accept_offer = BuffAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_accept_offer)
     if (
         "buff_auto_comment" in config
         and "enable" in config["buff_auto_comment"]
         and config["buff_auto_comment"]["enable"]
     ):
-        buff_auto_comment = BuffAutoComment(
-            logger, steam_client, steam_client_mutex, config
-        )
+        buff_auto_comment = BuffAutoComment(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_comment)
     if (
         "buff_profit_report" in config
         and "enable" in config["buff_profit_report"]
         and config["buff_profit_report"]["enable"]
     ):
-        buff_profit_report = BuffProfitReport(
-            logger, steam_client, steam_client_mutex, config
-        )
+        buff_profit_report = BuffProfitReport(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_profit_report)
     if (
         "buff_auto_on_sale" in config
         and "enable" in config["buff_auto_on_sale"]
         and config["buff_auto_on_sale"]["enable"]
     ):
-        buff_auto_on_sale = BuffAutoOnSale(
-            logger, steam_client, steam_client_mutex, config
-        )
+        buff_auto_on_sale = BuffAutoOnSale(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_on_sale)
     if (
         "uu_auto_accept_offer" in config
         and "enable" in config["uu_auto_accept_offer"]
         and config["uu_auto_accept_offer"]["enable"]
     ):
-        uu_auto_accept_offer = UUAutoAcceptOffer(
-            steam_client, steam_client_mutex, config
-        )
+        uu_auto_accept_offer = UUAutoAcceptOffer(steam_client, steam_client_mutex, config)
         plugins_enabled.append(uu_auto_accept_offer)
     if (
         "uu_auto_lease_item" in config
         and "enable" in config["uu_auto_lease_item"]
         and config["uu_auto_lease_item"]["enable"]
     ):
-        uu_auto_lease_on_shelf = UUAutoLeaseItem(
-            config
-        )
+        uu_auto_lease_on_shelf = UUAutoLeaseItem(config)
         plugins_enabled.append(uu_auto_lease_on_shelf)
     if (
         "steam_auto_accept_offer" in config
         and "enable" in config["steam_auto_accept_offer"]
         and config["steam_auto_accept_offer"]["enable"]
     ):
-        steam_auto_accept_offer = SteamAutoAcceptOffer(
-            steam_client, steam_client_mutex, config
-        )
+        steam_auto_accept_offer = SteamAutoAcceptOffer(steam_client, steam_client_mutex, config)
         plugins_enabled.append(steam_auto_accept_offer)
-    if (
-        "ecosteam" in config
-        and "enable" in config["ecosteam"]
-        and config["ecosteam"]["enable"]
-    ):
+    if "ecosteam" in config and "enable" in config["ecosteam"] and config["ecosteam"]["enable"]:
         ecosteam = ECOsteamPlugin(steam_client, steam_client_mutex, config)
         plugins_enabled.append(ecosteam)
 

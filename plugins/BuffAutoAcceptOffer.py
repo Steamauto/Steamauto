@@ -8,9 +8,7 @@ import apprise
 import json5
 import requests
 from apprise import AppriseAsset
-from requests.exceptions import ProxyError
 
-from steampy.exceptions import ConfirmationExpected, InvalidCredentials
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception
 from utils.static import (APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH,

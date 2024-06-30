@@ -3,9 +3,7 @@ import pickle
 import time
 
 import json5
-from requests.exceptions import ProxyError
 
-from steampy.exceptions import ConfirmationExpected, InvalidCredentials
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import SESSION_FOLDER
 
