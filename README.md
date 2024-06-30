@@ -48,7 +48,7 @@ ECOSteam 新CSGO皮肤交易平台
 
 #### 在 [ECOSteam交易平台](https://www.ecosteam.cn/) 上:
 - 自动发货
-- 与BUFF上架商品同步 (支持比例)
+- 与BUFF、悠悠有品所上架商品同步 (支持比例)
 
 #### 在 Steam 上:
 - 内置Steam加速器
@@ -66,19 +66,12 @@ ECOSteam 新CSGO皮肤交易平台
 
 ## 配置说明
 **部分配置项数据(如获取Steam账户信息、Buff的cookie等)在附录中，请自行查阅！**
-##### 在正确运行本程序后，config文件夹应包含以下文件
-| 文件名                       | 描述                                        | 
-|---------------------------|-------------------------------------------|
-| `config.json5`             | 主配置文件，可以修改程序的大多数设置                        |
-| `steam_account_info.json5` | 用于填入Steam账户相关信息                           |
-| `buff_cookies.txt`        | **启用网易Buff相关插件后才会创建** 用于存取网易BUFF的Cookie信息 |
-| `uu_token.txt`            | **启用悠悠有品相关插件后才会创建** 用于存取悠悠有品的Cookie信息(悠悠有品token获取方法见FAQ)   |
 ##### [config.json5](utils/static.py) (仅供参考 以实际文件为主)
 ```json5
 {
   // 登录Steam时是否开启SSL验证，正常情况下不建议关闭SSL验证
   "steam_login_ignore_ssl_error": false,
-
+  
   // 是否开启本地加速功能
   // 本地加速功能并非100%可用, 若开启后仍然无法正常连接Steam属于正常情况, 最优解决方案是使用海外服务器
   // 请注意：开启此功能必须关闭Steam登录SSL验证，即steam_login_ignore_ssl_error必须设置为true
@@ -93,14 +86,14 @@ ECOSteam 新CSGO皮肤交易平台
     "http": "http://127.0.0.1:7890",
     "https": "http://127.0.0.1:7890"
   },
-
+  
   // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
 
   // BUFF 自动发货插件配置
   "buff_auto_accept_offer": {
     // 是否启用BUFF自动发货报价功能
-    "enable": true,
+    "enable": false,
     // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
     "interval": 300,
     // 是否开启出售保护(自动发货前检查其他卖家最低价，若低于保护价格则不会自动接受报价s)
@@ -151,7 +144,7 @@ ECOSteam 新CSGO皮肤交易平台
   // BUFF 自动备注购买价格插件配置
   "buff_auto_comment": {
     // 是否启用BUFF自动备注购买价格功能
-    "enable": true
+    "enable": false
   },
   // BUFF 自动计算利润插件配置
   "buff_profit_report": {
@@ -197,17 +190,17 @@ ECOSteam 新CSGO皮肤交易平台
     },
     // 上架通知配置(如不需要可直接删除)
     "on_sale_notification": {
-      // 上架通知标题
-      "title": "游戏 {game} 成功上架 {sold_count} 件饰品",
-      // 上架通知内容
-      "body": "上架详情:\n{item_list}"
+        // 上架通知标题
+        "title": "游戏 {game} 成功上架 {sold_count} 件饰品",
+        // 上架通知内容
+        "body": "上架详情:\n{item_list}"
     },
     // 出现验证码通知配置(如不需要可直接删除)
     "captcha_notification": {
-      // 出现验证码通知标题
-      "title": "上架饰品时出现验证码",
-      // 出现验证码通知内容
-      "body": "使用session={session}并使用浏览器打开以下链接并完成验证:\n{captcha_url}"
+        // 出现验证码通知标题
+        "title": "上架饰品时出现验证码",
+        // 出现验证码通知内容
+        "body": "使用session={session}并使用浏览器打开以下链接并完成验证:\n{captcha_url}"
     },
     // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
     "servers": [
@@ -244,17 +237,18 @@ ECOSteam 新CSGO皮肤交易平台
     "enable": false,
     "partnerId": "", // 必填！用于登录ECOsteam平台
     "auto_accept_offer": {
-      "interval": 30
+      "interval": 300
     },
     "auto_sync_sell_shelf": { // 自动同步各平台的上架商品, 与主平台一致, 目前仅支持buff
       "enable": false,
-      "main_platform": "buff", // 填buff或eco,不可以填其它内容！
-      "enabled_platforms": ["buff"], // 由于目前仅支持buff, 所以该配置项请保持不变
+      "main_platform": "buff", // 填buff/eco/uu,不可以填其它内容！
+      "enabled_platforms": ["buff"], // 填buff/uu,不可以填其它内容！
       "ratio":{ // 各平台上架价格的比例
-        "eco" : 0.98,
-        "buff" : 1
+        "eco" : 1,
+        "uu" : 1.1,
+        "buff" : 1.2
       },
-      "interval": 60 // 不建议设置太长，因为同步上架带来的问题是ECO发货后BUFF未及时下架，如果此时有人购买库存中没有的饰品，可能会导致BUFF封号
+      "interval": 60 // 不建议设置太长，因为同步上架带来的问题是ECO发货后BUFF/UU未及时下架，如果此时有人购买库存中没有的饰品，可能会导致封号
 
     },
     "qps": 10 //每秒最大请求数。如果你是白名单大会员，建议设置为30。如果你不知道这是什么，请保持默认值。

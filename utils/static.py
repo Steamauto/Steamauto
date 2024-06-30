@@ -71,7 +71,7 @@ DEFAULT_CONFIG_JSON = r"""
   // BUFF 自动发货插件配置
   "buff_auto_accept_offer": {
     // 是否启用BUFF自动发货报价功能
-    "enable": true,
+    "enable": false,
     // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
     "interval": 300,
     // 是否开启出售保护(自动发货前检查其他卖家最低价，若低于保护价格则不会自动接受报价s)
@@ -122,7 +122,7 @@ DEFAULT_CONFIG_JSON = r"""
   // BUFF 自动备注购买价格插件配置
   "buff_auto_comment": {
     // 是否启用BUFF自动备注购买价格功能
-    "enable": true
+    "enable": false
   },
   // BUFF 自动计算利润插件配置
   "buff_profit_report": {
@@ -215,17 +215,18 @@ DEFAULT_CONFIG_JSON = r"""
     "enable": false,
     "partnerId": "", // 必填！用于登录ECOsteam平台
     "auto_accept_offer": {
-      "interval": 30
+      "interval": 300
     },
     "auto_sync_sell_shelf": { // 自动同步各平台的上架商品, 与主平台一致, 目前仅支持buff
       "enable": false,
-      "main_platform": "buff", // 填buff或eco,不可以填其它内容！
-      "enabled_platforms": ["buff"], // 由于目前仅支持buff, 所以该配置项请保持不变
+      "main_platform": "buff", // 填buff/eco/uu,不可以填其它内容！
+      "enabled_platforms": ["buff"], // 填buff/uu,不可以填其它内容！
       "ratio":{ // 各平台上架价格的比例
-        "eco" : 0.98,
-        "buff" : 1
+        "eco" : 1,
+        "uu" : 1.1,
+        "buff" : 1.2
       },
-      "interval": 60 // 不建议设置太长，因为同步上架带来的问题是ECO发货后BUFF未及时下架，如果此时有人购买库存中没有的饰品，可能会导致BUFF封号
+      "interval": 60 // 不建议设置太长，因为同步上架带来的问题是ECO发货后BUFF/UU未及时下架，如果此时有人购买库存中没有的饰品，可能会导致封号
 
     },
     "qps": 10 //每秒最大请求数。如果你是白名单大会员，建议设置为30。如果你不知道这是什么，请保持默认值。

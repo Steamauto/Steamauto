@@ -22,8 +22,7 @@ from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from plugins.UUAutoLease import UUAutoLeaseItem
 from steampy.client import SteamClient
-from steampy.exceptions import (ApiException, CaptchaRequired,
-                                InvalidCredentials)
+from steampy.exceptions import ApiException
 
 try:
     from steampy.utils import ping_proxy
@@ -34,14 +33,20 @@ except:
 
 
 from utils.logger import handle_caught_exception
-from utils.static import (CONFIG_FILE_PATH, CONFIG_FOLDER, DEFAULT_CONFIG_JSON,
-                          DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
-                          SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH,
-                          STEAM_ACCOUNT_JSON_INFO_FILE_PATH, UU_ARG_FILE_PATH,
-                          UU_TOKEN_FILE_PATH,
-                          set_no_pause)
-from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
-                         logger, pause)
+from utils.static import (
+    CONFIG_FILE_PATH,
+    CONFIG_FOLDER,
+    DEFAULT_CONFIG_JSON,
+    DEFAULT_STEAM_ACCOUNT_JSON,
+    DEV_FILE_FOLDER,
+    SESSION_FOLDER,
+    STEAM_ACCOUNT_INFO_FILE_PATH,
+    STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
+    UU_ARG_FILE_PATH,
+    UU_TOKEN_FILE_PATH,
+    set_no_pause,
+)
+from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
 
 current_version = "3.6.0"
 
