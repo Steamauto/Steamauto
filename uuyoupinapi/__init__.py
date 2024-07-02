@@ -45,7 +45,7 @@ def generate_headers(devicetoken, deviceid, token=""):
 
 
 class UUAccount:
-    def __init__(self, token):
+    def __init__(self, token: str):
         """
         :param token: 通过抓包获得的token
         """
@@ -260,7 +260,8 @@ class UUAccount:
 
     def change_price(self, assets: dict):
         item_infos = [
-            {"CommodityId": int(asset), "Price": str(assets[asset]), "Remark": None, "IsCanSold": True} for asset in assets.keys()
+            {"CommodityId": int(asset), "Price": str(assets[asset]), "Remark": None, "IsCanSold": True}
+            for asset in assets.keys()
         ]
         return self.call_api(
             "PUT",

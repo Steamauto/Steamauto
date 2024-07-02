@@ -419,7 +419,7 @@ def main():
     # 检查插件是否正确初始化
     plugins_check_status = plugins_check(plugins_enabled)
     if plugins_check_status == 0:
-        logger.info("存在插件首次运行, 请按照README提示填写配置文件! ")
+        logger.info("存在插件无法正常初始化, Steamauto即将退出！ ")
         pause()
         return 1
 

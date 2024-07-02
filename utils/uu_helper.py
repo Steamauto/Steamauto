@@ -12,7 +12,6 @@ logger = PluginLogger("UULoginSolver")
 
 
 def get_valid_token_for_uu():
-    relogin = True
     logger.info("正在为悠悠有品获取有效的token...")
     if os.path.exists(UU_TOKEN_FILE_PATH):
         with open(UU_TOKEN_FILE_PATH, "r", encoding=get_encoding(UU_TOKEN_FILE_PATH)) as f:
@@ -20,11 +19,10 @@ def get_valid_token_for_uu():
                 token = f.read()
                 uuyoupin = uuyoupinapi.UUAccount(token)
                 logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
-                relogin = False
                 return token
             except Exception as e:
                 handle_caught_exception(e, "[UULoginSolver]")
-                logger.warning("悠悠有品token无效")
+                logger.warning("缓存的悠悠有品Token无效")
     else:
         logger.info("未检测到存储的悠悠token")
     logger.info("即将重新登录悠悠有品！")
@@ -36,8 +34,11 @@ def get_valid_token_for_uu():
             f.write(token)
         logger.info("悠悠有品token已保存到文件")
         return token
+    except TypeError:
+        logger.error('获取Token失败！可能是验证码填写错误或者未发送验证短信！')
+        return False
     except Exception as e:
-        handle_caught_exception(e, "[UULoginHelper]")
+        handle_caught_exception(e, "[UULoginSolver]")
         return False
 
 
@@ -71,5 +72,8 @@ def get_token_automatically():
             time.sleep(3)  # 防止短信发送延迟
             response = uuyoupinapi.UUAccount.sms_sign_in(phone_number, "", token_id, headers=headers)
     logger.info("登录结果：" + response["Msg"])
-    got_token = response["Data"]["Token"]
+    try:
+        got_token = response["Data"]["Token"]
+    except (KeyError,TypeError,AttributeError):
+        return False
     return got_token

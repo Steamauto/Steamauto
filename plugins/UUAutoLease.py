@@ -20,6 +20,11 @@ class UUAutoLeaseItem:
         self.inventory_list = []
 
     def init(self) -> bool:
+        token = get_valid_token_for_uu()
+        if not token:
+            self.logger.error("悠悠有品登录失败！即将关闭程序！")
+            exit_code.set(1)
+            return True
         return False
 
     def get_uu_inventory(self):
