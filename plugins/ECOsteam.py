@@ -267,7 +267,7 @@ class ECOsteamPlugin:
             f.write(json.dumps(inventory))
         assets = list()
         if platform == "eco":
-            result = self.client.GetSellGoodsList().json()["ResultData"]["PageResult"]
+            result = self.client.getFullSellGoodsList()
             if not inventory:
                 raise SystemError
             for item in result:

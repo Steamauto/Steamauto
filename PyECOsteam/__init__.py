@@ -75,11 +75,25 @@ class ECOsteamClient:
             {"OrderNum": OrderNum, "MerchantNo": MerchantNo},
         )
 
-    def GetSellGoodsList(self, PageIndex=1, PageSize=1000):
+    def GetSellGoodsList(self, PageIndex=1, PageSize=20):
         return self.post(
             "/Api/Selling/GetSellGoodsList",
             {"PageIndex": PageIndex, "PageSize": PageSize},
         )
+    
+    def getFullSellGoodsList(self):
+        index = 1
+        goods = list()
+        while True:
+            res = self.GetSellGoodsList(PageIndex=index).json()
+            if res["ResultCode"] != "0":
+                raise Exception(res["ResultMsg"])
+            elif res["ResultData"]["PageResult"] == []:
+                break
+            else:
+                index += 1
+                goods += res["ResultData"]["PageResult"]
+        return goods
 
     def PublishStock(self, Assets: list):
         return self.post("/Api/Selling/PublishStock", data=Assets)
