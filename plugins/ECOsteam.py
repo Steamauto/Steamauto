@@ -263,8 +263,6 @@ class ECOsteamPlugin:
             time.sleep(tc["interval"])
     
     def get_shelf(self, platform, inventory):
-        with open('test.json', 'w') as f:
-            f.write(json.dumps(inventory))
         assets = list()
         if platform == "eco":
             result = self.client.getFullSellGoodsList()
@@ -322,8 +320,6 @@ class ECOsteamPlugin:
             ratios[platform] = tc["ratio"][platform]
         self.logger.info("正在从Steam获取库存信息...")
         inventory = self.get_steam_inventory()
-        with open("test.json", "w") as f:
-            f.write(json.dumps(inventory))
 
         try:
             for platform in tc["enabled_platforms"]:

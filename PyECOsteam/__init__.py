@@ -1,14 +1,14 @@
+import json
 import logging
 import time
-import json
 
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import timezone
 
-from utils.logger import PluginLogger
-
 from PyECOsteam.sign import generate_rsa_signature
+from utils.logger import PluginLogger
+from utils.static import CURRENT_VERSION
 
 
 class ECOsteamClient:
@@ -28,7 +28,7 @@ class ECOsteamClient:
         scheduler.add_job(self.__rps_counter, "interval", seconds=1)
         scheduler.start()
 
-    def post(self, api,data):
+    def post(self, api, data):
         data["PartnerId"] = self.partnerId
         data["Timestamp"] = int(time.time())
         data["Sign"] = generate_rsa_signature(self.RSAKey, data)
@@ -36,7 +36,9 @@ class ECOsteamClient:
             time.sleep(1)
         self.rps += 1
         resp = requests.post(
-            "https://openapi.ecosteam.cn" + api, data=json.dumps(data, indent=4)
+            "https://openapi.ecosteam.cn" + api,
+            data=json.dumps(data, indent=4),
+            headers={"User-Agent": "Steamauto " + CURRENT_VERSION, "Content-Type": "application/json"},
         )
         self.logger.debug(f"POST {api} {data} {resp.text}")
         if not resp.ok:
@@ -49,9 +51,7 @@ class ECOsteamClient:
     def GetTotalMoney(self):
         return self.post("/Api/Merchant/GetTotalMoney", {})
 
-    def GetSellerOrderList(
-        self, StartTime, EndTime, DetailsState=None, PageIndex=1, PageSize=80
-    ):
+    def GetSellerOrderList(self, StartTime, EndTime, DetailsState=None, PageIndex=1, PageSize=80):
         return self.post(
             "/Api/open/order/SellerOrderList",
             {
@@ -80,7 +80,7 @@ class ECOsteamClient:
             "/Api/Selling/GetSellGoodsList",
             {"PageIndex": PageIndex, "PageSize": PageSize},
         )
-    
+
     def getFullSellGoodsList(self):
         index = 1
         goods = list()
@@ -102,14 +102,10 @@ class ECOsteamClient:
         return self.post("/Api/Selling/OffshelfGoods", data=goodsNumList)
 
     def GoodsPublishedBatchEdit(self, goodsBatchEditList: list):
-        return self.post(
-            "/Api/Selling/GoodsPublishedBatchEdit", data=goodsBatchEditList
-        )
+        return self.post("/Api/Selling/GoodsPublishedBatchEdit", data=goodsBatchEditList)
 
     def QueryStock(self, index, PageSize=100):
-        return self.post(
-            "/Api/Selling/QueryStock", data={"PageIndex": index, "PageSize": PageSize}
-        )
+        return self.post("/Api/Selling/QueryStock", data={"PageIndex": index, "PageSize": PageSize})
 
     def getFullInventory(self):
         index = 1
@@ -134,7 +130,9 @@ class ECOsteamClient:
             elif res["ResultData"]["PageResult"] == []:
                 break
             else:
-                self.logger.debug(f'已经进行到第{index}次遍历,本次遍历获取到的库存数量为{len(res["ResultData"]["PageResult"])}')
+                self.logger.debug(
+                    f'已经进行到第{index}次遍历,本次遍历获取到的库存数量为{len(res["ResultData"]["PageResult"])}'
+                )
                 index += 1
                 for item in res["ResultData"]["PageResult"]:
                     if item["AssetId"] in assetId:
@@ -144,4 +142,4 @@ class ECOsteamClient:
                             return inv
 
     def RefreshUserSteamStock(self):
-        return self.post("/Api/Selling/RefreshUserSteamStock",data={})
+        return self.post("/Api/Selling/RefreshUserSteamStock", data={})

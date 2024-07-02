@@ -42,13 +42,10 @@ from utils.static import (
     SESSION_FOLDER,
     STEAM_ACCOUNT_INFO_FILE_PATH,
     STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
-    UU_ARG_FILE_PATH,
-    UU_TOKEN_FILE_PATH,
+    CURRENT_VERSION,
     set_no_pause,
 )
 from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
-
-current_version = "4.0.0"
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -234,20 +231,22 @@ def init_files_and_params() -> int:
     logger.info(
         f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n"
     )
-    logger.info(f"当前版本: {current_version}")
+    logger.info(f"当前版本: {CURRENT_VERSION}")
     logger.info("正在检查更新...")
     try:
-        response_json = requests.get("https://steamauto.jiajiaxd.com/versions", timeout=5)
+        response_json = requests.get(
+            "https://steamauto.jiajiaxd.com/versions", params={"version": CURRENT_VERSION}, timeout=5
+        )
         data = response_json.json()
         latest_version = data["latest_version"]["version"]
         broadcast = data.get("broadcast", None)
         if broadcast:
             logger.info(f"Steamauto官方公告:\n {broadcast}\n")
-        if compare_version(current_version, latest_version) == -1:
+        if compare_version(CURRENT_VERSION, latest_version) == -1:
             logger.info(f"检测到最新版本: {latest_version}")
             changelog_to_output = str()
             for version in data["history_versions"]:
-                if compare_version(current_version, version["version"]) == -1:
+                if compare_version(CURRENT_VERSION, version["version"]) == -1:
                     changelog_to_output += f"版本: {version['version']}\n更新日志: {version['changelog']}\n\n"
 
             logger.info(f"\n{changelog_to_output}")
