@@ -1,4 +1,3 @@
-import os
 import time
 
 import json5
@@ -102,23 +101,23 @@ class UUAutoLeaseItem:
                 ):
                     lease_deposit_list.append(float(rsp_list[i]["LeaseDeposit"]))
 
-            lease_unit_price = np.mean(lease_unit_price_list) * 0.95
+            lease_unit_price = np.mean(lease_unit_price_list) * 0.98
             long_lease_unit_price = min(
-                lease_unit_price * 0.93, np.mean(long_lease_unit_price_list) * 0.95
+                lease_unit_price * 0.98, np.mean(long_lease_unit_price_list) * 0.98
             )
-            lease_deposit = np.mean(lease_deposit_list) * 0.95
+            lease_deposit = np.mean(lease_deposit_list) * 0.99
 
-            lease_unit_price = max(lease_unit_price, 0.01)
-
-            long_lease_unit_price = max(long_lease_unit_price, 0.01)
+            lease_unit_price = max(lease_unit_price, lease_unit_price_list[0],  0.01)
+            long_lease_unit_price = max(long_lease_unit_price, long_lease_unit_price_list[0], 0.01)
+            lease_deposit = max(lease_deposit, min(lease_deposit_list))
 
             self.logger.info(
                 f"{commodity_name}, "
                 f"lease_unit_price: {lease_unit_price:.2f}, long_lease_unit_price: {long_lease_unit_price:.2f}, "
                 f"lease_deposit: {lease_deposit:.2f}"
             )
-            self.logger.info(
-                f"[DEBUG] lease_unit_price_list: {lease_unit_price_list}, "
+            self.logger.debug(
+                f"lease_unit_price_list: {lease_unit_price_list}, "
                 f"long_lease_unit_price_list: {long_lease_unit_price_list}"
             )
         else:
@@ -199,7 +198,6 @@ class UUAutoLeaseItem:
 
                     lease_item = {
                         "AssetId": asset_id,
-                        "CompensationType": 0,
                         "IsCanLease": True,
                         "IsCanSold": False,
                         "LeaseMaxDays": self.config["uu_auto_lease_item"]["lease_max_days"],
@@ -210,10 +208,6 @@ class UUAutoLeaseItem:
                         "PrivateLeaseCommodity": 0,
                         "NomarlChargePercent": "0.25",
                         "Remark": "",
-                        "SupportZeroCD": 0,
-                        "UseDepositSafeguard": 1,
-                        "VipChargePercent": "0.2",
-                        "VipSwitchStatus": 1,
                     }
 
                     lease_item_list.append(lease_item)
@@ -263,4 +257,4 @@ if __name__ == "__main__":
         config = json5.load(f)
 
     uu_auto_lease = UUAutoLeaseItem(config)
-    uu_auto_lease.exec()
+    uu_auto_lease.auto_lease()

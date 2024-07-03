@@ -41,28 +41,28 @@ class UUAutoAcceptOffer:
         if uuyoupin is not None:
             while True:
                 try:
-                    with self.steam_client_mutex:
-                        if not self.steam_client.is_session_alive():
-                            self.logger.info("Steam会话已过期, 正在重新登录...")
-                            self.steam_client._session.cookies.clear()
-                            self.steam_client.login(
-                                self.steam_client.username,
-                                self.steam_client._password,
-                                json5.dumps(self.steam_client.steam_guard),
-                            )
-                            self.logger.info("Steam会话已更新")
-                            steam_session_path = os.path.join(
-                                SESSION_FOLDER,
-                                self.steam_client.username.lower() + ".pkl",
-                            )
-                            with open(steam_session_path, "wb") as f:
-                                pickle.dump(self.steam_client.session, f)
                     uuyoupin.send_device_info()
                     self.logger.info("正在检查悠悠有品待发货信息...")
                     uu_wait_deliver_list = uuyoupin.get_wait_deliver_list()
                     len_uu_wait_deliver_list = len(uu_wait_deliver_list)
                     self.logger.info("" + str(len_uu_wait_deliver_list) + "个悠悠有品待发货订单")
                     if len(uu_wait_deliver_list) != 0:
+                        with self.steam_client_mutex:
+                            if not self.steam_client.is_session_alive():
+                                self.logger.info("Steam会话已过期, 正在重新登录...")
+                                self.steam_client._session.cookies.clear()
+                                self.steam_client.login(
+                                    self.steam_client.username,
+                                    self.steam_client._password,
+                                    json5.dumps(self.steam_client.steam_guard),
+                                )
+                                self.logger.info("Steam会话已更新")
+                                steam_session_path = os.path.join(
+                                    SESSION_FOLDER,
+                                    self.steam_client.username.lower() + ".pkl",
+                                )
+                                with open(steam_session_path, "wb") as f:
+                                    pickle.dump(self.steam_client.session, f)
                         for item in uu_wait_deliver_list:
                             accepted = False
                             self.logger.info(
