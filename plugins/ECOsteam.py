@@ -117,7 +117,7 @@ class ECOsteamPlugin:
         try:
             with open(ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)) as f:
                 rsa_key = f.read()
-            if 'PUBLIC' in rsa_key:
+            if "PUBLIC" in rsa_key:
                 self.logger.error("请使用私钥文件(Private key)！")
                 return 1
             self.client = ECOsteamClient(
@@ -207,7 +207,7 @@ class ECOsteamPlugin:
     # 自动同步上架相关功能
     def auto_sync_sell_shelf(self):
         time.sleep(2)  # 与自动发货错开运行
-        
+
         # 配置检查
         tc = copy.deepcopy(self.config["ecosteam"]["auto_sync_sell_shelf"])
         sync_shelf_enabled = True
@@ -228,7 +228,7 @@ class ECOsteamPlugin:
         if not sync_shelf_enabled:
             self.logger.error("由于配置错误，自动同步平台功能已经自动关闭")
             return
-        
+
         # BUFF登录
         if "buff" in tc["enabled_platforms"]:
             self.logger.info("由于已经启用BUFF平台，正在联系BuffLoginSolver获取有效的session...")
@@ -240,7 +240,7 @@ class ECOsteamPlugin:
             else:
                 self.buff_client = BuffAccount(buff_session)
                 self.logger.info(f"已经获取到有效的BUFF session, 用户名：{self.buff_client.get_user_nickname()}")
-            
+
         # 悠悠登录
         if "uu" in tc["enabled_platforms"]:
             self.logger.info("由于已经启用悠悠平台，正在联系UULoginSolver获取有效的session...")
@@ -250,19 +250,19 @@ class ECOsteamPlugin:
             else:
                 self.logger.warning("无法获取有效的悠悠token，悠悠有品平台相关已经自动关闭")
                 tc["enabled_platforms"].remove("uu")
-        
+
         # 检查是否有平台可用
         if len(tc["enabled_platforms"]) == 1:
             self.logger.error("无平台可用。已经关闭自动同步平台功能！")
             sync_shelf_enabled = False
-            
 
         while sync_shelf_enabled:
             self.sync_shelf(tc)
             self.logger.info(f'等待{tc["interval"]}秒后重新检查多平台上架物品')
             time.sleep(tc["interval"])
-    
+
     def get_shelf(self, platform, inventory):
+        # 如果需要下架，则返回orderNo列表，否则返回assets列表
         assets = list()
         if platform == "eco":
             result = self.client.getFullSellGoodsList()
@@ -271,44 +271,59 @@ class ECOsteamPlugin:
             for item in result:
                 asset = Asset()
                 asset.assetid = item["AssetId"]
-                asset.appid = inventory[asset.assetid]["appid"]
-                asset.classid = inventory[asset.assetid]["classid"]
-                asset.contextid = inventory[asset.assetid]["contextid"]
-                asset.instanceid = inventory[asset.assetid]["instanceid"]
-                asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                 asset.orderNo = item["GoodsNum"]
                 asset.price = float(item["Price"])
-                assets.append(asset)
+                try:
+                    asset.appid = inventory[asset.assetid]["appid"]
+                    asset.classid = inventory[asset.assetid]["classid"]
+                    asset.contextid = inventory[asset.assetid]["contextid"]
+                    asset.instanceid = inventory[asset.assetid]["instanceid"]
+                    asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
+                    assets.append(asset)
+                except KeyError:
+                    self.logger.error(f"检测到ECOsteam上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
+                    assets.append(asset.orderNo)
             return assets
         elif platform == "buff":
             data = self.buff_client.get_on_sale().json()["data"]
             items = data["items"]
             for item in items:
                 asset = Asset()
-                asset.appid = item["appid"]
                 asset.assetid = item["asset_info"]["assetid"]
-                asset.classid = item["asset_info"]["classid"]
-                asset.contextid = str(item["asset_info"]["contextid"])
-                asset.instanceid = item["asset_info"]["instanceid"]
-                goods_id = item["goods_id"]
-                asset.market_hash_name = data["goods_infos"][str(goods_id)]["market_hash_name"]
                 asset.orderNo = item["id"]
                 asset.price = float(item["price"])
-                assets.append(asset)
+
+                try:
+                    asset.appid = inventory[asset.assetid]["appid"]
+                    asset.classid = inventory[asset.assetid]["classid"]
+                    asset.contextid = inventory[asset.assetid]["contextid"]
+                    asset.instanceid = inventory[asset.assetid]["instanceid"]
+                    asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
+                    assets.append(asset)
+                except KeyError:
+                    self.logger.error(f"检测到BUFF上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
+                    assets.append(asset.orderNo)
+
             return assets
-        elif platform == 'uu':
+        elif platform == "uu":
             data = self.uu_client.get_sell_list()
             for item in data:
                 asset = Asset()
                 asset.assetid = str(item["steamAssetId"])
-                asset.appid = inventory[asset.assetid]["appid"]
-                asset.classid = inventory[asset.assetid]["classid"]
-                asset.contextid = inventory[asset.assetid]["contextid"]
-                asset.instanceid = inventory[asset.assetid]["instanceid"]
-                asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
-                asset.price = float(item['sellAmount'])
-                asset.orderNo = item['id']
-                assets.append(asset)
+                asset.price = float(item["sellAmount"])
+                asset.orderNo = item["id"]
+
+                try:
+                    asset.appid = inventory[asset.assetid]["appid"]
+                    asset.classid = inventory[asset.assetid]["classid"]
+                    asset.contextid = inventory[asset.assetid]["contextid"]
+                    asset.instanceid = inventory[asset.assetid]["instanceid"]
+                    asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
+                    assets.append(asset)
+                except KeyError:
+                    self.logger.error(f"检测到悠悠上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
+                    assets.append(asset.orderNo)
+
             return assets
 
     def sync_shelf(self, tc):
@@ -325,41 +340,66 @@ class ECOsteamPlugin:
             for platform in tc["enabled_platforms"]:
                 self.logger.info(f"正在从{platform.upper()}平台获取上架物品信息...")
                 shelves[platform] = self.get_shelf(platform, inventory)
-                self.logger.info(f"获取完成。{platform.upper()}平台共上架{len(shelves[platform])}个商品。")
-                offshelf_assets = []
-                for asset in shelves[platform]:
-                    if asset.assetid not in inventory:
-                        self.logger.warning(
-                            f"检测到{platform.upper()}平台上架物品{asset.market_hash_name}不在Steam库存中！"
-                        )
-                        offshelf_assets.append(asset.orderNo)
-                        del asset
-                if len(offshelf_assets) > 0:
-                    self.logger.info(f"即将下架{len(offshelf_assets)}个物品")
+                # 判断是否需要下架
+                if len(shelves[platform]) > 0 and isinstance(shelves[platform][0], str):
+                    self.logger.warning(f"检测到{platform.upper()}平台上架物品不在Steam库存中！即将下架！")
                     if platform == "eco":
-                        response = self.client.OffshelfGoods({"goodsNumList": offshelf_assets})
+                        response = self.client.OffshelfGoods({"goodsNumList": shelves[platform]})
                         if response.json()["ResultCode"] == "0":
-                            self.logger.info(f"下架{len(offshelf_assets)}个商品成功！")
+                            self.logger.info(f"下架{len(shelves[platform])}个商品成功！")
                         else:
                             self.logger.error(
-                                f'下架{len(offshelf_assets)}个商品失败！错误信息{response.json().get("ResultMsg", None)}'
+                                f'下架{len(shelves[platform])}个商品失败！错误信息{response.json().get("ResultMsg", None)}'
                             )
                     elif platform == "buff":
-                        response = self.buff_client.cancel_sale(offshelf_assets)
+                        response = self.buff_client.cancel_sale(shelves[platform])
                         if response.json()["code"] == "OK":
-                            self.logger.info(f"下架{len(offshelf_assets)}个商品成功！")
+                            self.logger.info(f"下架{len(shelves[platform])}个商品成功！")
                         else:
                             self.logger.error(
-                                f'下架{len(offshelf_assets)}个商品失败！错误信息{response.json().get("msg", None)}'
+                                f'下架{len(shelves[platform])}个商品失败！错误信息{response.json().get("msg", None)}'
                             )
                     elif platform == "uu":
-                        response = self.uu_client.off_shelf(offshelf_assets)
+                        response = self.uu_client.off_shelf(shelves[platform])
                         if int(response.json()["code"]) == "0":
-                            self.logger.info(f"下架{len(offshelf_assets)}个商品成功！")
+                            self.logger.info(f"下架{len(shelves[platform])}个商品成功！")
                         else:
-                            self.logger.error(
-                                f'下架{len(offshelf_assets)}个商品失败！错误信息{str(response.json())}'
-                            )
+                            self.logger.error(f"下架{len(shelves[platform])}个商品失败！错误信息{str(response.json())}")
+                    # 重新获取上架物品
+                    shelves[platform] = self.get_shelf(platform, inventory)
+                # self.logger.info(f"获取完成。{platform.upper()}平台共上架{len(shelves[platform])}个商品。")
+                # offshelf_assets = []
+                # for asset in shelves[platform]:
+                #     if asset.assetid not in inventory:
+                #         self.logger.warning(
+                #             f"检测到{platform.upper()}平台上架物品{asset.market_hash_name}不在Steam库存中！"
+                #         )
+                #         offshelf_assets.append(asset.orderNo)
+                #         del asset
+                # if len(offshelf_assets) > 0:
+                #     self.logger.info(f"即将下架{len(offshelf_assets)}个物品")
+                #     if platform == "eco":
+                #         response = self.client.OffshelfGoods({"goodsNumList": offshelf_assets})
+                #         if response.json()["ResultCode"] == "0":
+                #             self.logger.info(f"下架{len(offshelf_assets)}个商品成功！")
+                #         else:
+                #             self.logger.error(
+                #                 f'下架{len(offshelf_assets)}个商品失败！错误信息{response.json().get("ResultMsg", None)}'
+                #             )
+                #     elif platform == "buff":
+                #         response = self.buff_client.cancel_sale(offshelf_assets)
+                #         if response.json()["code"] == "OK":
+                #             self.logger.info(f"下架{len(offshelf_assets)}个商品成功！")
+                #         else:
+                #             self.logger.error(
+                #                 f'下架{len(offshelf_assets)}个商品失败！错误信息{response.json().get("msg", None)}'
+                #             )
+                #     elif platform == "uu":
+                #         response = self.uu_client.off_shelf(offshelf_assets)
+                #         if int(response.json()["code"]) == "0":
+                #             self.logger.info(f"下架{len(offshelf_assets)}个商品成功！")
+                #         else:
+                #             self.logger.error(f"下架{len(offshelf_assets)}个商品失败！错误信息{str(response.json())}")
         except Exception as e:
             handle_caught_exception(e, "[ECOsteam.cn]")
             self.logger.error("发生未知错误，请稍候再试！")
@@ -391,7 +431,7 @@ class ECOsteamPlugin:
                 self.logger.info(f"即将上架{len(assets)}个商品到ECOsteam")
 
                 def publish_assets_in_batches(assets, batch_size=100):
-                    batches = [assets[i:i + batch_size] for i in range(0, len(assets), batch_size)]
+                    batches = [assets[i : i + batch_size] for i in range(0, len(assets), batch_size)]
                     return batches
 
                 try:
@@ -498,7 +538,7 @@ class ECOsteamPlugin:
             add = difference["add"]
             assets = dict()
             for item in add:
-                assets[item['assetid']] = item['price']
+                assets[item["assetid"]] = item["price"]
             if len(assets) > 0:
                 self.logger.info(f"即将上架{len(assets)}个商品到UU有品")
                 response = self.uu_client.sell_items(assets)
@@ -508,25 +548,23 @@ class ECOsteamPlugin:
                     self.logger.error(
                         f'上架{len(assets)}个商品到UU有品失败(可能部分上架成功)！错误信息：{str(response.json()["Msg"])}'
                     )
-            
+
             # 下架商品
             delete = difference["delete"]
-            assets = [str(item['orderNo']) for item in delete]
+            assets = [str(item["orderNo"]) for item in delete]
             if len(assets) > 0:
                 self.logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
                 response = self.uu_client.off_shelf(assets)
                 if int(response.json()["Code"]) == 0:
                     self.logger.info(f"下架{len(assets)}个商品成功！")
                 else:
-                    self.logger.error(
-                        f'下架{len(assets)}个商品失败！错误信息：{str(response.json()["Msg"])}'
-                    )
-            
+                    self.logger.error(f'下架{len(assets)}个商品失败！错误信息：{str(response.json()["Msg"])}')
+
             # 修改价格
             change = difference["change"]
             assets = dict()
             for item in change:
-                assets[item['orderNo']] = item['price']
+                assets[item["orderNo"]] = item["price"]
             if len(assets) > 0:
                 self.logger.info(f"即将在{platform.upper()}平台修改{len(assets)}个商品的价格")
                 response = self.uu_client.change_price(assets)
