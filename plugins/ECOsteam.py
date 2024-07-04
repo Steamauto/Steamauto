@@ -6,14 +6,17 @@ import time
 from threading import Thread
 from typing import List
 
+from colorama import Fore, Style
+
 from BuffApi import BuffAccount
 from PyECOsteam import ECOsteamClient
+from steampy.client import SteamClient
 from steampy.models import GameOptions
 from utils.buff_helper import get_valid_session_for_buff
-from utils.uu_helper import get_valid_token_for_uu
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import ECOSTEAM_RSAKEY_FILE
 from utils.tools import exit_code, get_encoding
+from utils.uu_helper import get_valid_token_for_uu
 from uuyoupinapi import UUAccount
 
 sync_shelf_enabled = False
@@ -98,12 +101,14 @@ def compare_shelf(target_shelf: List[Asset], shelf: List[Asset], ratio: float):
 
 
 class ECOsteamPlugin:
-    def __init__(self, steam_client, steam_client_mutex, config):
+    def __init__(self, steam_client: SteamClient, steam_client_mutex, config):
         self.logger = PluginLogger("ECOsteam.cn")
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.config = config
         self.ignored_offer = []
+        with steam_client_mutex:
+            self.steam_id = steam_client.get_steam64id_from_cookies()
 
     def init(self):
         if not os.path.exists(ECOSTEAM_RSAKEY_FILE):
@@ -113,6 +118,9 @@ class ECOsteamPlugin:
         return False
 
     def exec(self):
+        self.logger.info(
+            f"ECOsteam插件已启动！{Fore.YELLOW+Style.BRIGHT}如果你绑定了多个Steam账号，所有操作仅对SteamID为{self.steam_id}的账号生效！{Style.RESET_ALL}"
+        )
         self.logger.info("正在登录ECOsteam...")
         try:
             with open(ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)) as f:
@@ -168,9 +176,9 @@ class ECOsteamPlugin:
         last_month = today - datetime.timedelta(days=30)
         tomorrow = tomorrow.strftime("%Y-%m-%d")
         last_month = last_month.strftime("%Y-%m-%d")
-        wait_deliver_orders = self.client.GetSellerOrderList(last_month, tomorrow, DetailsState=8).json()["ResultData"][
-            "PageResult"
-        ]
+        wait_deliver_orders = self.client.GetSellerOrderList(
+            last_month, tomorrow, DetailsState=8, SteamId=self.steam_id
+        ).json()["ResultData"]["PageResult"]
         self.logger.info(f"检测到{len(wait_deliver_orders)}个待发货订单！")
         if len(wait_deliver_orders) > 0:
             for order in wait_deliver_orders:
@@ -265,7 +273,7 @@ class ECOsteamPlugin:
         # 如果需要下架，则返回orderNo列表，否则返回assets列表
         assets = list()
         if platform == "eco":
-            result = self.client.getFullSellGoodsList()
+            result = self.client.getFullSellGoodsList(self.steam_id)
             if not inventory:
                 raise SystemError
             for item in result:
@@ -344,7 +352,9 @@ class ECOsteamPlugin:
                 if len(shelves[platform]) > 0 and isinstance(shelves[platform][0], str):
                     self.logger.warning(f"检测到{platform.upper()}平台上架物品不在Steam库存中！即将下架！")
                     if platform == "eco":
-                        response = self.client.OffshelfGoods({"goodsNumList": shelves[platform]})
+                        response = self.client.OffshelfGoods(
+                            {"goodsNumList": [{"GoodsNum": good, "SteamGameId": 730} for good in shelves[platform]]}
+                        )
                         if response.json()["ResultCode"] == "0":
                             self.logger.info(f"下架{len(shelves[platform])}个商品成功！")
                         else:
@@ -463,7 +473,11 @@ class ECOsteamPlugin:
             assets = [asset["orderNo"] for asset in difference["delete"]]
             if len(assets) > 0:
                 self.logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
-                response = self.client.OffshelfGoods({"goodsNumList": assets})
+                response = self.client.OffshelfGoods(
+                    self.client.OffshelfGoods(
+                        {"goodsNumList": [{"GoodsNum": good, "SteamGameId": 730} for good in assets]}
+                    )
+                )
                 self.logger.info(f"下架{len(assets)}个商品成功！")
 
             # 修改价格

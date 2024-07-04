@@ -51,7 +51,7 @@ class ECOsteamClient:
     def GetTotalMoney(self):
         return self.post("/Api/Merchant/GetTotalMoney", {})
 
-    def GetSellerOrderList(self, StartTime, EndTime, DetailsState=None, PageIndex=1, PageSize=80):
+    def GetSellerOrderList(self, StartTime, EndTime, DetailsState=None, PageIndex=1, PageSize=80, SteamId=None):
         return self.post(
             "/Api/open/order/SellerOrderList",
             {
@@ -60,13 +60,8 @@ class ECOsteamClient:
                 "DetailsState": DetailsState,
                 "PageIndex": PageIndex,
                 "PageSize": PageSize,
+                "SteamId": SteamId,
             },
-        )
-
-    def GetSellGoodsList(self, PageIndex=1, PageSize=None):
-        return self.post(
-            "/Api/Selling/GetSellGoodsList",
-            {"PageIndex": PageIndex, "PageSize": PageSize},
         )
 
     def GetSellerOrderDetail(self, OrderNum=None, MerchantNo=None):
@@ -75,17 +70,17 @@ class ECOsteamClient:
             {"OrderNum": OrderNum, "MerchantNo": MerchantNo},
         )
 
-    def GetSellGoodsList(self, PageIndex=1, PageSize=20):
+    def GetSellGoodsList(self, PageIndex=1, PageSize=20, steam_id = None):
         return self.post(
             "/Api/Selling/GetSellGoodsList",
-            {"PageIndex": PageIndex, "PageSize": PageSize},
+            {"PageIndex": PageIndex, "PageSize": PageSize, "SteamId": steam_id},
         )
 
-    def getFullSellGoodsList(self):
+    def getFullSellGoodsList(self,steam_id):
         index = 1
         goods = list()
         while True:
-            res = self.GetSellGoodsList(PageIndex=index).json()
+            res = self.GetSellGoodsList(PageIndex=index,steam_id=steam_id).json()
             if res["ResultCode"] != "0":
                 raise Exception(res["ResultMsg"])
             elif res["ResultData"]["PageResult"] == []:

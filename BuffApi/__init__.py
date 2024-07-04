@@ -65,11 +65,18 @@ class BuffAccount:
         self.session.headers = {"User-Agent": user_agent}
         headers = copy.deepcopy(self.session.headers)
         headers["Cookie"] = buffcookie
+        self.get_notification(headers=headers)
+
+
+    def get_user_nickname(self) -> str:
+        """
+        :return: str
+        """
         try:
             self.username = (
                 json.loads(
                     self.session.get(
-                        "https://buff.163.com/account/api/user/info", headers=headers
+                        "https://buff.163.com/account/api/user/info"
                     ).text
                 )
                 .get("data")
@@ -77,12 +84,7 @@ class BuffAccount:
             )
         except AttributeError:
             raise ValueError("Buff登录失败！请稍后再试或检查cookie填写是否正确.")
-
-    def get_user_nickname(self) -> str:
-        """
-        :return: str
-        """
-        return self.username
+        return self.username    
 
     def get_user_brief_assest(self) -> dict:
         """
@@ -254,11 +256,13 @@ class BuffAccount:
         else:
             return response
 
-    def get_notification(self) -> dict:
+    def get_notification(self,headers = None) -> dict:
         """
         获取notification
         :return: dict
         """
+        if headers:
+            self.session.headers = headers
         return json.loads(
             self.session.get("https://buff.163.com/api/message/notification").text
         ).get("data")
