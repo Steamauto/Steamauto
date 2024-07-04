@@ -70,7 +70,7 @@ class ECOsteamClient:
             {"OrderNum": OrderNum, "MerchantNo": MerchantNo},
         )
 
-    def GetSellGoodsList(self, PageIndex=1, PageSize=20, steam_id=None):
+    def GetSellGoodsList(self, PageIndex=1, PageSize=50, steam_id=None):
         return self.post(
             "/Api/Selling/GetSellGoodsList",
             {"PageIndex": PageIndex, "PageSize": PageSize, "SteamId": steam_id},
