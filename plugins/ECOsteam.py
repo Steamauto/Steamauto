@@ -247,7 +247,7 @@ class ECOsteamPlugin:
                 tc["enabled_platforms"].remove("buff")
             else:
                 self.buff_client = BuffAccount(buff_session)
-                self.logger.info(f"已经获取到有效的BUFF session, 用户名：{self.buff_client.get_user_nickname()}")
+                self.logger.info(f"已经获取到有效的BUFF session")
 
         # 悠悠登录
         if "uu" in tc["enabled_platforms"]:
@@ -474,10 +474,9 @@ class ECOsteamPlugin:
             if len(assets) > 0:
                 self.logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
                 response = self.client.OffshelfGoods(
-                    self.client.OffshelfGoods(
-                        {"goodsNumList": [{"GoodsNum": good, "SteamGameId": 730} for good in assets]}
-                    )
+                    {"goodsNumList": [{"GoodsNum": good, "SteamGameId": 730} for good in assets]}
                 )
+
                 self.logger.info(f"下架{len(assets)}个商品成功！")
 
             # 修改价格

@@ -28,7 +28,7 @@ class ECOsteamClient:
         scheduler.add_job(self.__rps_counter, "interval", seconds=1)
         scheduler.start()
 
-    def post(self, api, data):
+    def post(self, api: str, data: dict):
         data["PartnerId"] = self.partnerId
         data["Timestamp"] = int(time.time())
         data["Sign"] = generate_rsa_signature(self.RSAKey, data)
@@ -70,17 +70,17 @@ class ECOsteamClient:
             {"OrderNum": OrderNum, "MerchantNo": MerchantNo},
         )
 
-    def GetSellGoodsList(self, PageIndex=1, PageSize=20, steam_id = None):
+    def GetSellGoodsList(self, PageIndex=1, PageSize=20, steam_id=None):
         return self.post(
             "/Api/Selling/GetSellGoodsList",
             {"PageIndex": PageIndex, "PageSize": PageSize, "SteamId": steam_id},
         )
 
-    def getFullSellGoodsList(self,steam_id):
+    def getFullSellGoodsList(self, steam_id):
         index = 1
         goods = list()
         while True:
-            res = self.GetSellGoodsList(PageIndex=index,steam_id=steam_id).json()
+            res = self.GetSellGoodsList(PageIndex=index, steam_id=steam_id).json()
             if res["ResultCode"] != "0":
                 raise Exception(res["ResultMsg"])
             elif res["ResultData"]["PageResult"] == []:
