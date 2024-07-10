@@ -75,9 +75,9 @@ class SteamClient:
                 'steamid': steam_id,
                 'refresh_token': refresh
             }
-            response = self._session.post(post_url, data=post_data, allow_redirects=False)
+            response = self._session.post(post_url, data=post_data, allow_redirects=False, timeout=20)
             while response.status_code == 302:
-                response = self._session.post(response.headers['Location'], data=post_data, allow_redirects=False)
+                response = self._session.post(response.headers['Location'], data=post_data, allow_redirects=False, timeout=20)
             access_token = response.json()['response']['access_token']
             steam_login_secure = str(steam_id) + '%7C%7C' + str(access_token)
             self._session.cookies.set('steamLoginSecure', steam_login_secure, domain='steamcommunity.com')
@@ -116,7 +116,7 @@ class SteamClient:
 
     def is_username_in_community(self) -> bool:
         steam_login = self.username
-        main_page_response = self._session.get(SteamUrl.COMMUNITY_URL)
+        main_page_response = self._session.get(SteamUrl.COMMUNITY_URL, timeout=20)
         return steam_login.lower() in main_page_response.text.lower()
 
     def api_call(self, request_method: str, interface: str, api_method: str, version: str,

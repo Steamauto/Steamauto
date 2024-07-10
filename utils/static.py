@@ -202,7 +202,9 @@ DEFAULT_CONFIG_JSON = r"""
     // 价格低于 filter_price 的物品不会上架，默认100
     "filter_price": 100,
     // 插件每天定时运行时间
-    "run_time": "16:30"
+    "run_time": "16:30",
+    // 轮询间隔，单位为分钟
+    "interval": 31
   },
   // Steam 自动接受礼物报价插件配置
   "steam_auto_accept_offer": {

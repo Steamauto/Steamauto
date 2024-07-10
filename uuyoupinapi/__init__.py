@@ -165,8 +165,9 @@ class UUAccount:
         ).json()
         toDoList = dict()
         for order in toDoList_response["data"]:
-            if order["orderNo"] not in self.ignore_list:
+            if order["orderNo"] in self.ignore_list:
                 logger.debug("[UUAutoAcceptOffer] 订单号为" + order["orderNo"] + "的订单已经被忽略")
+            else:
                 toDoList[order["orderNo"]] = order
         data_to_return = []
         if len(toDoList.keys()) != 0:

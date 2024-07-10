@@ -17,7 +17,7 @@ time_delta = sys.maxsize
 def get_steam_server_time(session: Session) -> int:
     try:
         url = 'https://api.steampowered.com/ITwoFactorService/QueryTime/v1/'
-        resp = session.post(url)
+        resp = session.post(url, timeout=20)
         return int(resp.json()['response']['server_time'])
     except Exception as e:
         return -1
