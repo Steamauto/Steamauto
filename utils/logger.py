@@ -3,7 +3,7 @@ import logging
 import os
 
 import colorlog
-from socks import ProxyError
+import requests
 from steampy.exceptions import InvalidCredentials, ConfirmationExpected, SteamError
 
 from utils.static import LOGS_FOLDER
@@ -170,7 +170,7 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
     elif isinstance(e, SystemExit):
         logger.info(prefix + "检测到系统退出请求,程序即将退出...")
         exit(0)
-    elif isinstance(e, ProxyError):
+    elif isinstance(e, requests.exceptions.ProxyError):
         logger.error(prefix + "代理异常, 本软件可不需要代理或任何VPN")
         logger.error(prefix + "可以尝试关闭代理或VPN后重启软件")
     elif isinstance(e, (ConnectionError, ConnectionResetError,
