@@ -16,7 +16,7 @@ class UUAutoLeaseItem:
         self.logger = PluginLogger("UUAutoLeaseItem")
         self.uuyoupin = None
         self.config = config
-        self.timeSleep = 3.0
+        self.timeSleep = 10.0
         self.inventory_list = []
 
     def init(self) -> bool:
@@ -65,12 +65,14 @@ class UUAutoLeaseItem:
         if rsp["code"] == 0:
             leased_inventory_list = rsp["data"]["commodityInfoList"]
             self.logger.info(f"上架数量 {len(leased_inventory_list)}")
+        elif rsp["code"] == 9004001:
+            self.logger.info("暂无自租商品")
         else:
             self.logger.error(leased_inventory_list)
-            self.logger.error("获取UU库存失败!")
+            self.logger.error("获取UU上架物品失败!")
         self.leased_inventory_list = leased_inventory_list
 
-    def get_market_lease_price(self, item_id, min_price, cnt=10, max_price=10000):
+    def get_market_lease_price(self, item_id, min_price, cnt=15, max_price=20000):
         lease_price_rsp = self.uuyoupin.call_api(
             "POST",
             "/api/homepage/v3/detail/commodity/list/lease",
@@ -99,12 +101,13 @@ class UUAutoLeaseItem:
 
             lease_unit_price_list = []
             long_lease_unit_price_list = []
+            lease_deposit_list = []
             for i in range(cnt):
                 if (
                         rsp_list[i]["LeaseDeposit"]
                         and min_price < float(rsp_list[i]["LeaseDeposit"]) < max_price
                 ):
-                    if rsp_list[i]["LeaseUnitPrice"]:
+                    if rsp_list[i]["LeaseUnitPrice"] and i < max(10, cnt - 5):
                         lease_unit_price_list.append(
                             float(rsp_list[i]["LeaseUnitPrice"])
                         )
@@ -113,34 +116,33 @@ class UUAutoLeaseItem:
                             float(rsp_list[i]["LongLeaseUnitPrice"])
                         )
 
-            lease_deposit_list = []
-            for i in range(cnt):
                 if (
                         rsp_list[i]["LeaseDeposit"]
                         and float(rsp_list[i]["LeaseDeposit"]) < max_price
                         and rsp_list[i]["LeaseUnitPrice"]
+                        and i < max(10, cnt - 5)
                 ):
                     lease_deposit_list.append(float(rsp_list[i]["LeaseDeposit"]))
 
-            lease_unit_price = np.mean(lease_unit_price_list) * 0.98
-            long_lease_unit_price = min(
-                lease_unit_price * 0.98, np.mean(long_lease_unit_price_list) * 0.98
-            )
-            lease_deposit = np.mean(lease_deposit_list) * 0.99
-
+            lease_unit_price = np.mean(lease_unit_price_list) * 0.97
             lease_unit_price = max(lease_unit_price, lease_unit_price_list[0], 0.01)
+
+            long_lease_unit_price = min(
+                lease_unit_price * 0.98, np.mean(long_lease_unit_price_list) * 0.95
+            )
             if len(long_lease_unit_price_list) == 0:
                 long_lease_unit_price = max(lease_unit_price - 0.01, 0.01)
             else:
                 long_lease_unit_price = max(long_lease_unit_price, long_lease_unit_price_list[0], 0.01)
-            lease_deposit = max(lease_deposit, min(lease_deposit_list))
+
+            lease_deposit = max(np.mean(lease_deposit_list) * 0.98, min(lease_deposit_list))
 
             self.logger.info(
                 f"{commodity_name}, "
                 f"lease_unit_price: {lease_unit_price:.2f}, long_lease_unit_price: {long_lease_unit_price:.2f}, "
                 f"lease_deposit: {lease_deposit:.2f}"
             )
-            self.logger.debug(
+            self.logger.info(
                 f"lease_unit_price_list: {lease_unit_price_list}, "
                 f"long_lease_unit_price_list: {long_lease_unit_price_list}"
             )
@@ -212,14 +214,6 @@ class UUAutoLeaseItem:
         self.logger.info("UU自动租赁上架插件已启动, 休眠3秒, 与自动接收报价插件错开运行时间")
         self.operate_sleep()
 
-        token = get_valid_token_for_uu()
-        if not token:
-            self.logger.error("由于登录失败，插件将自动退出")
-            exit_code.set(1)
-            return 1
-        else:
-            self.uuyoupin = uuyoupinapi.UUAccount(token)
-
         if self.uuyoupin is not None:
             try:
                 lease_item_list = []
@@ -287,12 +281,12 @@ class UUAutoLeaseItem:
                     return 1
 
     def auto_change_price(self):
-        self.logger.info("UU自动租赁修改价格插件已启动, 休眠5秒, 与自动接收报价插件错开运行时间")
+        self.logger.info("[UUAutoChangePrice] UU租赁自动修改价格已启动, 休眠5秒, 与自动接收报价错开运行时间")
         self.operate_sleep(5)
 
         try:
             self.uuyoupin.send_device_info()
-            self.logger.info("正在获取悠悠有品已上架物品...")
+            self.logger.info("[UUAutoChangePrice] 正在获取悠悠有品已上架物品...")
             self.get_uu_leased_inventory()
 
             new_leased_item_list = []
@@ -324,7 +318,7 @@ class UUAutoLeaseItem:
             self.change_leased_price(new_leased_item_list)
 
         except TypeError as e:
-            handle_caught_exception(e, "[UUAutoLeaseItem]")
+            handle_caught_exception(e, "[UUAutoChangePrice]")
             self.logger.error("悠悠有品出租出现错误")
             exit_code.set(1)
             return 1
@@ -334,7 +328,7 @@ class UUAutoLeaseItem:
             try:
                 self.uuyoupin.get_user_nickname()
             except KeyError as e:
-                handle_caught_exception(e, "[UUAutoLeaseItem]")
+                handle_caught_exception(e, "[UUAutoChangePrice]")
                 self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                 self.logger.error("由于登录失败，插件将自动退出")
                 exit_code.set(1)
@@ -342,6 +336,15 @@ class UUAutoLeaseItem:
 
     def exec(self):
         self.logger.info("run func exec.")
+        token = get_valid_token_for_uu()
+        if not token:
+            self.logger.error("由于登录失败，插件将自动退出")
+            exit_code.set(1)
+            return 1
+        else:
+            self.uuyoupin = uuyoupinapi.UUAccount(token)
+
+        self.pre_check_price()
         self.auto_lease()
         self.auto_change_price()
 
@@ -364,11 +367,15 @@ class UUAutoLeaseItem:
         else:
             time.sleep(sleep)
 
+    def pre_check_price(self):
+        self.get_market_lease_price(44444, 1000)
+        self.logger.info("请检查押金设置是否有问题，如有请终止程序，否则15s后开始运行该插件")
+        self.operate_sleep(15)
 
 if __name__ == "__main__":
     # 调试代码
     with open("config/config.json5", "r", encoding="utf-8") as f:
-        config = json5.load(f)
+        my_config = json5.load(f)
 
-    uu_auto_lease = UUAutoLeaseItem(config)
+    uu_auto_lease = UUAutoLeaseItem(my_config)
     uu_auto_lease.auto_lease()
