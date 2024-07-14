@@ -33,19 +33,13 @@ except:
 
 
 from utils.logger import handle_caught_exception
-from utils.static import (
-    CONFIG_FILE_PATH,
-    CONFIG_FOLDER,
-    DEFAULT_CONFIG_JSON,
-    DEFAULT_STEAM_ACCOUNT_JSON,
-    DEV_FILE_FOLDER,
-    SESSION_FOLDER,
-    STEAM_ACCOUNT_INFO_FILE_PATH,
-    STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
-    CURRENT_VERSION,
-    set_no_pause,
-)
-from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
+from utils.static import (CONFIG_FILE_PATH, CONFIG_FOLDER, CURRENT_VERSION,
+                          DEFAULT_CONFIG_JSON, DEFAULT_STEAM_ACCOUNT_JSON,
+                          DEV_FILE_FOLDER, SESSION_FOLDER,
+                          STEAM_ACCOUNT_INFO_FILE_PATH,
+                          STEAM_ACCOUNT_JSON_INFO_FILE_PATH, set_no_pause)
+from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
+                         logger, pause)
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -197,7 +191,7 @@ def login_to_steam():
         except (requests.exceptions.ConnectionError, TimeoutError) as e:
             handle_caught_exception(e)
             logger.error(
-                "网络错误! \n强烈建议使用Steamauto内置加速，仅需在配置文件中将steam_login_ignore_ssl_error和steam_local_accelerate设置为true即可使用 \n注意: 使用游戏加速器并不能解决问题. 请尝试使用Proxifier及其类似软件代理Python进程解决"
+                "网络错误! \n强烈建议使用Steamauto内置加速，仅需在配置文件中将steam_login_ignore_ssl_error和steam_local_accelerate设置为true即可使用 \n注意: 使用游戏加速器并不能解决问题，请使用代理软件如Clash/Proxifier等"
             )
             pause()
             return None
@@ -254,8 +248,7 @@ def init_files_and_params() -> int:
         else:
             logger.info("当前版本已经是最新版本")
     except Exception as e:
-        handle_caught_exception(e)
-        logger.info("检查更新失败, 跳过检查更新")
+        logger.warning("检查更新失败, 跳过检查更新")
     logger.info("正在初始化...")
     first_run = False
     if not os.path.exists(CONFIG_FOLDER):

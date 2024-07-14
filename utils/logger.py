@@ -4,10 +4,11 @@ import os
 
 import colorlog
 import requests
-from steampy.exceptions import InvalidCredentials, ConfirmationExpected, SteamError
+from requests.exceptions import ConnectionError
 
+from steampy.exceptions import (ConfirmationExpected, InvalidCredentials,
+                                SteamError)
 from utils.static import LOGS_FOLDER
-
 
 STEAM_ERROR_CODES = {
     1: '成功',
@@ -158,38 +159,38 @@ logger.addHandler(f_handler)
 
 
 def handle_caught_exception(e: Exception, prefix: str = ""):
+    plogger = logger
     if prefix and not prefix.endswith(" "):
         prefix += " "
-
-    logger.error(prefix + "发生异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 详细异常请见日志")
-    logger.debug(e, exc_info=True)
+        plogger = PluginLogger(prefix)
+    plogger.error("发生异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 详细异常请见日志")
+    plogger.debug(e, exc_info=True)
 
     if isinstance(e, KeyboardInterrupt):
-        logger.info(prefix + "检测到键盘中断,程序即将退出...")
+        plogger.info("检测到键盘中断,程序即将退出...")
         exit(0)
     elif isinstance(e, SystemExit):
-        logger.info(prefix + "检测到系统退出请求,程序即将退出...")
+        plogger.info("检测到系统退出请求,程序即将退出...")
         exit(0)
     elif isinstance(e, requests.exceptions.ProxyError):
-        logger.error(prefix + "代理异常, 本软件可不需要代理或任何VPN")
-        logger.error(prefix + "可以尝试关闭代理或VPN后重启软件")
+        plogger.error("代理异常。建议关闭代理。如果你连接Steam有困难，可单独打开配置文件内的Steam代理功能。")
     elif isinstance(e, (ConnectionError, ConnectionResetError,
                         ConnectionAbortedError, ConnectionRefusedError)):
-        logger.error(prefix + "网络异常, 请检查网络连接")
-        logger.error(prefix + "这个错误可能是由于代理或VPN引起的, 本软件可无需代理或任何VPN")
-        logger.error(prefix + "如果你正在使用代理或VPN, 请尝试关闭后重启软件")
-        logger.error(prefix + "如果你没有使用代理或VPN, 请检查网络连接")
+        plogger.error("网络异常, 请检查网络连接")
+        plogger.error("这个错误可能是由于代理或VPN引起的, 本软件可不使用代理或任何VPN")
+        plogger.error("如果你正在使用代理或VPN, 请尝试关闭后重启软件")
+        plogger.error("如果你没有使用代理或VPN, 请检查网络连接")
     elif isinstance(e, InvalidCredentials):
-        logger.error(prefix + "mafile有问题, 请检查mafile是否正确(尤其是identity_secret)")
-        logger.error(str(e))
+        plogger.error("mafile有问题, 请检查mafile是否正确(尤其是identity_secret)")
+        plogger.error(str(e))
     elif isinstance(e, ConfirmationExpected):
-        logger.error(prefix + "Steam Session已经过期, 请删除session文件夹并重启Steamauto")
+        plogger.error("Steam Session已经过期, 请删除session文件夹并重启Steamauto")
     elif isinstance(e, ValueError):
-        logger.error(prefix + "Steam 宵禁限制, 请稍后再试!")
+        plogger.error("Steam 宵禁限制, 请稍后再试!")
     elif isinstance(e, SystemError):
-        logger.error(prefix + "无法连接至Steam，请检查Steam账户状态、网络连接、或重启Steamauto")
+        plogger.error("无法连接至Steam，请检查Steam账户状态、网络连接、或重启Steamauto")
     elif isinstance(e, SteamError):
-        logger.error(prefix + "Steam 异常, 异常id:" + str(e.error_code) + ", 异常信息:" +
+        plogger.error("Steam 异常, 异常id:" + str(e.error_code) + ", 异常信息:" +
                      STEAM_ERROR_CODES.get(e.error_code, "未知Steam错误"))
 
 
