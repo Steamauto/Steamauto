@@ -33,13 +33,19 @@ except:
 
 
 from utils.logger import handle_caught_exception
-from utils.static import (CONFIG_FILE_PATH, CONFIG_FOLDER, CURRENT_VERSION,
-                          DEFAULT_CONFIG_JSON, DEFAULT_STEAM_ACCOUNT_JSON,
-                          DEV_FILE_FOLDER, SESSION_FOLDER,
-                          STEAM_ACCOUNT_INFO_FILE_PATH,
-                          STEAM_ACCOUNT_JSON_INFO_FILE_PATH, set_no_pause)
-from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
-                         logger, pause)
+from utils.static import (
+    CONFIG_FILE_PATH,
+    CONFIG_FOLDER,
+    CURRENT_VERSION,
+    DEFAULT_CONFIG_JSON,
+    DEFAULT_STEAM_ACCOUNT_JSON,
+    DEV_FILE_FOLDER,
+    SESSION_FOLDER,
+    STEAM_ACCOUNT_INFO_FILE_PATH,
+    STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
+    set_no_pause,
+)
+from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -117,10 +123,10 @@ def login_to_steam():
             logger.info("正在登录Steam...")
             if "use_proxies" not in config:
                 config["use_proxies"] = False
+            if not (config.get("proxies", None)):
+                config["use_proxies"] = False
             if config["use_proxies"]:
                 logger.info("已经启用Steam代理")
-                if "proxies" not in config:
-                    config["proxies"] = {}
 
                 if not isinstance(config["proxies"], dict):
                     logger.error("proxies格式错误，请检查配置文件")
@@ -129,11 +135,11 @@ def login_to_steam():
                 logger.info("正在检查代理服务器可用性...")
                 proxy_status = ping_proxy(config["proxies"])
                 if proxy_status is False:
-                    logger.error("代理服务器不可用，请检查配置文件")
+                    logger.error("代理服务器不可用，请检查配置文件，或者将use_proxies配置项设置为false")
                     pause()
                     return None
                 else:
-                    # logger.info("代理服务器可用")
+                    logger.info("代理服务器可用")
                     logger.warning(
                         "警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动"
                     )
@@ -147,6 +153,8 @@ def login_to_steam():
                 client._session.verify = False
                 requests.packages.urllib3.disable_warnings()
             if config["steam_local_accelerate"]:
+                if config["use_proxies"]:
+                    logger.warning('检测到你已经同时开启内置加速和代理功能！正常情况下不推荐通过这种方式使用软件。')
                 logger.info("已经启用Steamauto内置加速")
                 client._session.auth = accelerator()
             logger.info("正在登录...")
