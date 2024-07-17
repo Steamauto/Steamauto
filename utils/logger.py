@@ -7,7 +7,7 @@ import requests
 from requests.exceptions import ConnectionError
 
 from steampy.exceptions import (ConfirmationExpected, InvalidCredentials,
-                                SteamError)
+                                SteamError, EmptyResponse)
 from utils.static import LOGS_FOLDER
 
 STEAM_ERROR_CODES = {
@@ -172,6 +172,10 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
     elif isinstance(e, SystemExit):
         plogger.info("检测到系统退出请求,程序即将退出...")
         exit(0)
+    elif isinstance(e, requests.exceptions.SSLError):
+        plogger.error("梯子问题, 请更换梯子")
+    elif isinstance(e, EmptyResponse):
+        plogger.error("Steam返回空响应, 可能是IP受到Steam风控, 请更换IP或稍后再试")
     elif isinstance(e, requests.exceptions.ProxyError):
         plogger.error("代理异常。建议关闭代理。如果你连接Steam有困难，可单独打开配置文件内的Steam代理功能。")
     elif isinstance(e, (ConnectionError, ConnectionResetError,
