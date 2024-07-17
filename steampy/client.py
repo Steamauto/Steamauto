@@ -155,7 +155,7 @@ class SteamClient:
         return response_dict
 
     def _get_session_id(self) -> str:
-        return self._session.cookies.get_dict()['sessionid']
+        return self._session.cookies.get_dict('steamcommunity.com')['sessionid']
 
     def get_trade_offers_summary(self) -> dict:
         params = {'key': self._api_key}
