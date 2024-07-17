@@ -1,6 +1,6 @@
 import base64
 import hmac
-import json5
+import json
 import logging
 import struct
 import time
@@ -40,9 +40,9 @@ def try_to_get_time_delta_from_steam(session: Session) -> int:
 def load_steam_guard(steam_guard: str) -> dict:
     if os.path.isfile(steam_guard):
         with open(steam_guard, 'r') as f:
-            return json5.loads(f.read())
+            return json.loads(f.read())
     else:
-        return json5.loads(steam_guard)
+        return json.loads(steam_guard)
 
 
 def generate_one_time_code(shared_secret: str, timestamp: int = None) -> str:
