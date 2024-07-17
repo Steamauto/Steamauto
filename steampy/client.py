@@ -5,7 +5,7 @@ import bs4
 import urllib.parse as urlparse
 from typing import List, Union
 
-import json
+import json5
 import requests
 from steampy import guard
 from steampy.chat import SteamChat
@@ -331,7 +331,7 @@ class SteamClient:
         html = self._session.get("https://steamcommunity.com/trade/{}/receipt".format(trade_id)).content.decode()
         items = []
         for item in texts_between(html, "oItem = ", ";\r\n\toItem"):
-            items.append(json.loads(item))
+            items.append(json5.loads(item))
         return items
 
     @login_required
@@ -397,7 +397,7 @@ class SteamClient:
             'serverid': server_id,
             'partner': partner_steam_id,
             'tradeoffermessage': message,
-            'json_tradeoffer': json.dumps(offer),
+            'json_tradeoffer': json5.dumps(offer),
             'captcha': '',
             'trade_offer_create_params': '{}'
         }
@@ -468,9 +468,9 @@ class SteamClient:
             'serverid': server_id,
             'partner': partner_steam_id,
             'tradeoffermessage': message,
-            'json_tradeoffer': json.dumps(offer),
+            'json_tradeoffer': json5.dumps(offer),
             'captcha': '',
-            'trade_offer_create_params': json.dumps(trade_offer_create_params)
+            'trade_offer_create_params': json5.dumps(trade_offer_create_params)
         }
         headers = {'Referer': SteamUrl.COMMUNITY_URL + urlparse.urlparse(trade_offer_url).path,
                    'Origin': SteamUrl.COMMUNITY_URL}
