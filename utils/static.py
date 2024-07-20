@@ -3,7 +3,7 @@ import os
 global no_pause
 no_pause = False
 
-CURRENT_VERSION = "4.0.0"
+CURRENT_VERSION = "4.0.1"
 
 VERSION_FILE = "version.json"
 APPRISE_ASSET_FOLDER = "Apprise"

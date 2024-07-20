@@ -6,8 +6,8 @@ import colorlog
 import requests
 from requests.exceptions import ConnectionError
 
-from steampy.exceptions import (ConfirmationExpected, InvalidCredentials,
-                                SteamError, EmptyResponse)
+from steampy.exceptions import (ConfirmationExpected, EmptyResponse,
+                                InvalidCredentials, SteamError)
 from utils.static import LOGS_FOLDER
 
 STEAM_ERROR_CODES = {
@@ -161,7 +161,6 @@ logger.addHandler(f_handler)
 def handle_caught_exception(e: Exception, prefix: str = ""):
     plogger = logger
     if prefix and not prefix.endswith(" "):
-        prefix += " "
         plogger = PluginLogger(prefix)
     plogger.error("发生异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 详细异常请见日志")
     plogger.debug(e, exc_info=True)
