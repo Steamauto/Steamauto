@@ -225,7 +225,7 @@ DEFAULT_CONFIG_JSON = r"""
     },
     "auto_sync_sell_shelf": { // 自动同步各平台的上架商品, 与主平台一致
       "enable": false,
-      "main_platform": "buff", // 主平台。主平台的上架信息不会被程序改动，按照价格比例自动同步到其他平台。可选值为"buff"或"uu"
+      "main_platform": "buff", // 主平台。主平台的上架信息不会被程序改动，按照价格比例自动同步到其他平台。可选值为"buff"/"uu"/"eco"，不可重复
       "enabled_platforms": ["buff"], // 可以填入多个平台，如["buff", "uu"]，可选值为"buff"或"uu"，不可重复。ECO平台已经强制开启，无需手动填写
       "ratio":{ // 各平台上架价格的比例
         "eco" : 1,
