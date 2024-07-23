@@ -165,7 +165,7 @@ class ECOsteamPlugin:
             try:
                 self.__auto_accept_offer()
             except Exception as e:
-                handle_caught_exception(e)
+                handle_caught_exception(e,'ECOsteam.cn')
                 self.logger.error("发生未知错误，请稍候再试！")
                 time.sleep(self.config["ecosteam"]["auto_accept_offer"]["interval"])
 
@@ -194,7 +194,7 @@ class ECOsteamPlugin:
                         self.ignored_offer.append(tradeOfferId)
                         self.logger.info(f"已接受报价号{tradeOfferId}！")
                     except Exception as e:
-                        handle_caught_exception(e, "[ECOsteam.cn]")
+                        handle_caught_exception(e, "ECOsteam.cn")
                         self.logger.error("Steam异常, 暂时无法接受报价, 请稍后再试! ")
                 else:
                     self.logger.info(f"已经自动忽略报价号{tradeOfferId}，商品名{goodsName}，因为它已经被程序处理过！")
@@ -208,7 +208,7 @@ class ECOsteamPlugin:
             with self.steam_client_mutex:
                 inventory = self.steam_client.get_my_inventory(game=GameOptions.CS)
         except Exception as e:
-            handle_caught_exception(e, "[ECOsteam.cn]")
+            handle_caught_exception(e, "ECOsteam.cn")
             self.logger.error("Steam异常, 暂时无法获取库存, 请稍后再试! ")
         return inventory
 
@@ -377,41 +377,8 @@ class ECOsteamPlugin:
                             self.logger.error(f"下架{len(shelves[platform])}个商品失败！错误信息{str(response.json())}")
                     # 重新获取上架物品
                     shelves[platform] = self.get_shelf(platform, inventory)
-                # self.logger.info(f"获取完成。{platform.upper()}平台共上架{len(shelves[platform])}个商品。")
-                # offshelf_assets = []
-                # for asset in shelves[platform]:
-                #     if asset.assetid not in inventory:
-                #         self.logger.warning(
-                #             f"检测到{platform.upper()}平台上架物品{asset.market_hash_name}不在Steam库存中！"
-                #         )
-                #         offshelf_assets.append(asset.orderNo)
-                #         del asset
-                # if len(offshelf_assets) > 0:
-                #     self.logger.info(f"即将下架{len(offshelf_assets)}个物品")
-                #     if platform == "eco":
-                #         response = self.client.OffshelfGoods({"goodsNumList": offshelf_assets})
-                #         if response.json()["ResultCode"] == "0":
-                #             self.logger.info(f"下架{len(offshelf_assets)}个商品成功！")
-                #         else:
-                #             self.logger.error(
-                #                 f'下架{len(offshelf_assets)}个商品失败！错误信息{response.json().get("ResultMsg", None)}'
-                #             )
-                #     elif platform == "buff":
-                #         response = self.buff_client.cancel_sale(offshelf_assets)
-                #         if response.json()["code"] == "OK":
-                #             self.logger.info(f"下架{len(offshelf_assets)}个商品成功！")
-                #         else:
-                #             self.logger.error(
-                #                 f'下架{len(offshelf_assets)}个商品失败！错误信息{response.json().get("msg", None)}'
-                #             )
-                #     elif platform == "uu":
-                #         response = self.uu_client.off_shelf(offshelf_assets)
-                #         if int(response.json()["code"]) == "0":
-                #             self.logger.info(f"下架{len(offshelf_assets)}个商品成功！")
-                #         else:
-                #             self.logger.error(f"下架{len(offshelf_assets)}个商品失败！错误信息{str(response.json())}")
         except Exception as e:
-            handle_caught_exception(e, "[ECOsteam.cn]")
+            handle_caught_exception(e, "ECOsteam.cn")
             self.logger.error("发生未知错误，请稍候再试！")
 
         for platform in tc["enabled_platforms"]:
@@ -428,7 +395,7 @@ class ECOsteamPlugin:
                     try:
                         self.solve_platform_difference(platform, difference)
                     except Exception as e:
-                        handle_caught_exception(e, "[ECOsteam.cn]")
+                        handle_caught_exception(e, "ECOsteam.cn")
                         self.logger.error("发生未知错误，请稍候再试！")
                 else:
                     self.logger.info(f"{platform.upper()}平台已经保持同步")
@@ -461,11 +428,11 @@ class ECOsteamPlugin:
                                 response = self.client.PublishStock({"Assets": batch})
                                 self.logger.info(f"上架{len(batch)}个商品到ECOsteam成功！")
                         except Exception as e:
-                            handle_caught_exception(e, "[ECOsteam.cn]")
+                            handle_caught_exception(e, "ECOsteam.cn")
                             self.logger.error("发生未知错误，请稍候再试！")
                             return
                     else:
-                        handle_caught_exception(e, "[ECOsteam.cn]")
+                        handle_caught_exception(e, "ECOsteam.cn")
                         self.logger.error("发生未知错误，请稍候再试！")
                         return
 

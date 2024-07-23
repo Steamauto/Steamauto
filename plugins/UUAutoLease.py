@@ -264,7 +264,7 @@ class UUAutoLeaseItem:
                 self.put_lease_item_on_shelf(lease_item_list)
 
             except TypeError as e:
-                handle_caught_exception(e, "[UUAutoLeaseItem]")
+                handle_caught_exception(e, "UUAutoLeaseItem")
                 self.logger.error("悠悠有品出租出现错误")
                 exit_code.set(1)
                 return 1
@@ -274,7 +274,7 @@ class UUAutoLeaseItem:
                 try:
                     self.uuyoupin.get_user_nickname()
                 except KeyError as e:
-                    handle_caught_exception(e, "[UUAutoLeaseItem]")
+                    handle_caught_exception(e, "UUAutoLeaseItem")
                     self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                     self.logger.error("由于登录失败，插件将自动退出")
                     exit_code.set(1)
@@ -318,7 +318,7 @@ class UUAutoLeaseItem:
             self.change_leased_price(new_leased_item_list)
 
         except TypeError as e:
-            handle_caught_exception(e, "[UUAutoChangePrice]")
+            handle_caught_exception(e, "UUAutoLeaseItem-AutoChangePrice")
             self.logger.error("悠悠有品出租出现错误")
             exit_code.set(1)
             return 1
@@ -328,7 +328,7 @@ class UUAutoLeaseItem:
             try:
                 self.uuyoupin.get_user_nickname()
             except KeyError as e:
-                handle_caught_exception(e, "[UUAutoChangePrice]")
+                handle_caught_exception(e, "UUAutoLeaseItem-AutoChangePrice")
                 self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                 self.logger.error("由于登录失败，插件将自动退出")
                 exit_code.set(1)

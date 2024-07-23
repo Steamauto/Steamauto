@@ -329,7 +329,7 @@ class BuffAutoAcceptOffer:
                             + "个"
                         )
                 except TypeError as e:
-                    handle_caught_exception(e)
+                    handle_caught_exception(e, "BuffAutoAcceptOffer")
                     self.logger.error("Buff接口返回数据异常! 请检查网络连接或稍后再试! ")
                 trade_supply = {}
                 if self.development_mode and os.path.exists(STEAM_TRADE_DEV_FILE_PATH):
@@ -466,10 +466,10 @@ class BuffAutoAcceptOffer:
                                             with self.steam_client_mutex:
                                                 self.steam_client.accept_trade_offer(offer_id)
                                         except KeyError as e:
-                                            handle_caught_exception(e)
+                                            handle_caught_exception(e, "BuffAutoAcceptOffer")
                                             self.logger.error("Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
                                         except Exception as e:
-                                            handle_caught_exception(e)
+                                            handle_caught_exception(e, "BuffAutoAcceptOffer")
                                             self.logger.error("无法接受报价, 请检查网络连接或稍后再试! ")
                                     ignored_offer.append(offer_id)
                                     self.logger.info("接受完成! 已经将此交易报价加入忽略名单! ")
