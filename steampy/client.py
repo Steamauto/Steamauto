@@ -1,5 +1,6 @@
 import copy
 import decimal
+import time
 
 import bs4
 import urllib.parse as urlparse
@@ -145,7 +146,7 @@ class SteamClient:
         url = '/'.join([SteamUrl.COMMUNITY_URL, 'inventory', str(partner_steam_id), game.app_id, game.context_id])
         params = {'l': 'english',
                   'count': count}
-        response_dict = self._session.get(url, params=params).json()
+        response_dict = self._session.get(url, params=params,timeout=10).json()
         if 'success' not in response_dict:
             raise InvalidResponse()
         if response_dict['success'] != 1:
@@ -351,7 +352,7 @@ class SteamClient:
                       'partner': partner,
                       'captcha': ''}
             headers = {'Referer': self._get_trade_offer_url(trade_offer_id)}
-            response = self._session.post(accept_url, data=params, headers=headers).json()
+            response = self._session.post(accept_url, data=params, headers=headers,timeout=10).json()
             if response is None:
                 raise EmptyResponse('Login response is empty')
             if response.get('needs_mobile_confirmation', False):

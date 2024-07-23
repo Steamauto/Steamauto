@@ -212,9 +212,9 @@ class ECOsteamPlugin:
             self.logger.error("Steam异常, 暂时无法获取库存, 请稍后再试! ")
         return inventory
 
-    # 自动同步上架相关功能
+    # 自动同步上架启动线程
     def auto_sync_sell_shelf(self):
-        time.sleep(2)  # 与自动发货错开运行
+        time.sleep(3)  # 与自动发货错开运行
 
         # 配置检查
         tc = copy.deepcopy(self.config["ecosteam"]["auto_sync_sell_shelf"])
@@ -333,7 +333,8 @@ class ECOsteamPlugin:
                     assets.append(asset.orderNo)
 
             return assets
-
+    
+    # 轮询实现
     def sync_shelf(self, tc):
         main_platform = tc["main_platform"]
         shelves = {}
