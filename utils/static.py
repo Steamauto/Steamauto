@@ -2,7 +2,7 @@ import os
 
 global no_pause
 global is_latest_version
-is_latest_version = None
+is_latest_version = False
 no_pause = False
 
 CURRENT_VERSION = "4.0.3"
@@ -253,3 +253,7 @@ def set_no_pause(no_pause_):
 def get_no_pause():
     global no_pause
     return no_pause
+
+def set_is_latest_version(is_latest_version_):
+    global is_latest_version
+    is_latest_version = is_latest_version_
