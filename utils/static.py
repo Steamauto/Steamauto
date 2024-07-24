@@ -1,9 +1,11 @@
 import os
 
 global no_pause
+global is_latest_version
+is_latest_version = None
 no_pause = False
 
-CURRENT_VERSION = "4.0.2"
+CURRENT_VERSION = "4.0.3"
 
 VERSION_FILE = "version.json"
 APPRISE_ASSET_FOLDER = "Apprise"

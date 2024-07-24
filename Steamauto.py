@@ -44,6 +44,7 @@ from utils.static import (
     STEAM_ACCOUNT_INFO_FILE_PATH,
     STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
     set_no_pause,
+    is_latest_version,
 )
 from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
 
@@ -225,6 +226,7 @@ def login_to_steam():
 
 # 文件缺失或格式错误返回0，首次运行返回1，非首次运行返回2
 def init_files_and_params() -> int:
+    global is_latest_version
     global config
     development_mode = False
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
@@ -252,8 +254,10 @@ def init_files_and_params() -> int:
                     changelog_to_output += f"版本: {version['version']}\n更新日志: {version['changelog']}\n\n"
 
             logger.info(f"\n{changelog_to_output}")
+            is_latest_version = False
             logger.warning("当前版本不是最新版本,为了您的使用体验,请及时更新!")
         else:
+            is_latest_version = True
             logger.info("当前版本已经是最新版本")
     except Exception as e:
         logger.warning("检查更新失败, 跳过检查更新")
