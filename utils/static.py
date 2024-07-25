@@ -5,7 +5,7 @@ global is_latest_version
 is_latest_version = False
 no_pause = False
 
-CURRENT_VERSION = "4.0.3"
+CURRENT_VERSION = "4.0.4"
 
 VERSION_FILE = "version.json"
 APPRISE_ASSET_FOLDER = "Apprise"
@@ -257,3 +257,7 @@ def get_no_pause():
 def set_is_latest_version(is_latest_version_):
     global is_latest_version
     is_latest_version = is_latest_version_
+
+def get_is_latest_version():
+    global is_latest_version
+    return is_latest_version

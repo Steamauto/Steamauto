@@ -7,9 +7,8 @@ import colorlog
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from steampy.exceptions import (ConfirmationExpected, EmptyResponse,
-                                InvalidCredentials, SteamError)
-from utils.static import CURRENT_VERSION, LOGS_FOLDER, is_latest_version
+from steampy.exceptions import ConfirmationExpected, EmptyResponse, InvalidCredentials, SteamError, ApiException
+from utils.static import CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version
 
 STEAM_ERROR_CODES = {
     1: "成功",
@@ -163,9 +162,7 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
     plogger = logger
     if prefix and not prefix.endswith(" "):
         plogger = PluginLogger(prefix)
-    
-    plogger.error(f'当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})')
-    if not is_latest_version:
+    if not get_is_latest_version():
         plogger.warning("当前Steamauto版本可能不是最新版本！请在更新到新版本后再次尝试！")
     plogger.debug(e, exc_info=True)
 
@@ -204,7 +201,12 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
             + ", 异常信息:"
             + STEAM_ERROR_CODES.get(e.error_code, "未知Steam错误")
         )
+    elif isinstance(e, ApiException):
+        plogger.error("Steam API 异常, 异常信息:" + str(e))
     else:
+        plogger.error(
+            f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})"
+        )
         plogger.error("发生未知异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 建议反馈至开发者！")
 
 
