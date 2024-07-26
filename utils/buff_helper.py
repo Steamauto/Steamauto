@@ -1,5 +1,5 @@
-import os
 import base64
+import os
 import time
 from typing import Dict
 
@@ -8,8 +8,7 @@ import json5
 import qrcode
 import qrcode_terminal
 import requests
-from apprise import AppriseAsset
-from apprise import AppriseAttachment
+from apprise import AppriseAsset, AppriseAttachment
 from bs4 import BeautifulSoup
 
 from steampy.client import SteamClient
@@ -111,7 +110,7 @@ def login_to_buff_by_qrcode() -> str:
         "https://buff.163.com/account/api/qr_code_login",
         json={"item_id": code_id},
     )
-    logger.debug(response.json())
+    logger.debug(json5.dumps(response.json()))
     cookies = response.cookies.get_dict(domain="buff.163.com")
     return cookies["session"]
 

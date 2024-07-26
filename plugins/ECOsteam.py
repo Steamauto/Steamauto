@@ -383,13 +383,13 @@ class ECOsteamPlugin:
                                     f'下架{len(offshelf_list)}个商品失败！错误信息{response.json().get("ResultMsg", None)}'
                                 )
                         elif platform == "buff":
-                            response = self.buff_client.cancel_sale(offshelf_list)
-                            if response.json()["code"] == "OK":
-                                self.logger.info(f"下架{len(offshelf_list)}个商品成功！")
-                            else:
-                                self.logger.error(
-                                    f'下架{len(offshelf_list)}个商品失败！错误信息{response.json().get("msg", None)}'
-                                )
+                            try:
+                                count = self.buff_client.cancel_sale(offshelf_list)
+                                self.logger.info(f"下架{count}个商品成功！下架{len(offshelf_list) - count}个商品失败！")
+                            except Exception as e:
+                                handle_caught_exception(e, "ECOsteam.cn")
+                                self.logger.error(f"下架{len(offshelf_list)}个商品失败！")
+                            
                         elif platform == "uu":
                             response = self.uu_client.off_shelf(offshelf_list)
                             if int(response.json()["code"]) == "0":
@@ -400,7 +400,6 @@ class ECOsteamPlugin:
                         shelves[platform] = self.get_shelf(platform, inventory)
         except Exception as e:
             handle_caught_exception(e, "ECOsteam.cn")
-            self.logger.error("发生未知错误，请稍候再试！")
 
         for platform in tc["enabled_platforms"]:
             if platform != main_platform:
@@ -514,11 +513,12 @@ class ECOsteamPlugin:
             if len(assets) > 0:
                 sell_orders = [asset["orderNo"] for asset in difference["delete"]]
                 self.logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
-                response = self.buff_client.cancel_sale(sell_orders)
-                if response.json()["code"] == "OK":
-                    self.logger.info(f"下架{len(assets)}个商品成功！")
-                else:
-                    self.logger.error(f'下架{len(assets)}个商品失败！错误信息{response.json().get("msg", None)}')
+                try:
+                    count = self.buff_client.cancel_sale(sell_orders)
+                    self.logger.info(f"下架{count}个商品成功！下架{len(assets) - count}个商品失败！")
+                except Exception as e:
+                    handle_caught_exception(e, "ECOsteam.cn")
+                    self.logger.error(f"下架商品失败！可能部分下架成功！")
 
             # 更改价格
             assets = difference["change"]
