@@ -8,8 +8,11 @@ import colorlog
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from steampy.exceptions import ApiException, ConfirmationExpected, EmptyResponse, InvalidCredentials, SteamError
-from utils.static import BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version
+from steampy.exceptions import (ApiException, ConfirmationExpected,
+                                EmptyResponse, InvalidCredentials,
+                                InvalidResponse, SteamError)
+from utils.static import (BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER,
+                          get_is_latest_version)
 
 sensitive_data = []
 sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token"]
@@ -227,7 +230,7 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
     elif isinstance(e, requests.exceptions.ProxyError):
         plogger.error("代理异常。建议关闭代理。如果你连接Steam有困难，可单独打开配置文件内的Steam代理功能。")
     elif isinstance(
-        e, (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError, ReadTimeout)
+        e, (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError, ReadTimeout, InvalidResponse)
     ):
         plogger.error("网络异常, 请检查网络连接")
         plogger.error("这个错误可能是由于代理或VPN引起的, 本软件可不使用代理或任何VPN")

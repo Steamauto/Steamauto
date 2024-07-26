@@ -6,14 +6,12 @@ import time
 from threading import Thread
 from typing import List
 
-from colorama import Fore, Style
-
 from BuffApi import BuffAccount
 from PyECOsteam import ECOsteamClient
 from steampy.client import SteamClient
 from steampy.models import GameOptions
 from utils.buff_helper import get_valid_session_for_buff
-from utils.logger import PluginLogger, LogFilter, handle_caught_exception
+from utils.logger import LogFilter, PluginLogger, handle_caught_exception
 from utils.static import ECOSTEAM_RSAKEY_FILE
 from utils.tools import exit_code, get_encoding
 from utils.uu_helper import get_valid_token_for_uu
