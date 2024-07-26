@@ -303,7 +303,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    self.logger.warning(f"检测到ECOsteam上架物品 {item['GoodsName']} 不在Steam库存中！即将下架！")
+                    self.logger.warning(f"检测到ECOsteam上架物品 {item['GoodsName']} 不在Steam库存中！")
                     assets.append(asset.orderNo)
             return assets
         elif platform == "buff":
@@ -323,7 +323,7 @@ class ECOsteamPlugin:
                     assets.append(asset)
                 except KeyError:
                     self.logger.warning(
-                        f"检测到BUFF上架物品 {data['goods_infos'][str(item['goods_id'])]['market_hash_name']} 不在Steam库存中！即将下架！"
+                        f"检测到BUFF上架物品 {data['goods_infos'][str(item['goods_id'])]['market_hash_name']} 不在Steam库存中！"
                     )
                     assets.append(asset.orderNo)
 
@@ -344,7 +344,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    self.logger.warning(f"检测到悠悠上架物品不在Steam库存中！即将下架！")  # TODO: 提示物品名
+                    self.logger.warning(f"检测到悠悠上架物品不在Steam库存中！")  # TODO: 提示物品名
                     assets.append(asset.orderNo)
 
             return assets
@@ -365,34 +365,39 @@ class ECOsteamPlugin:
                 self.logger.info(f"正在从{platform.upper()}平台获取上架物品信息...")
                 shelves[platform] = self.get_shelf(platform, inventory)
                 # 判断是否需要下架
-                if len(shelves[platform]) > 0 and (not isinstance(shelves[platform][0], Asset)):
-                    self.logger.warning(f"检测到{platform.upper()}平台上架物品不在Steam库存中！即将下架！")
-                    if platform == "eco":
-                        response = self.client.OffshelfGoods(
-                            {"goodsNumList": [{"GoodsNum": good, "SteamGameId": 730} for good in shelves[platform]]}
-                        )
-                        if response.json()["ResultCode"] == "0":
-                            self.logger.info(f"下架{len(shelves[platform])}个商品成功！")
-                        else:
-                            self.logger.error(
-                                f'下架{len(shelves[platform])}个商品失败！错误信息{response.json().get("ResultMsg", None)}'
+                if len(shelves[platform]) > 0 :
+                    offshelf_list = []
+                    for good in shelves[platform]:
+                        if not isinstance(good, Asset):
+                            offshelf_list.append(good)
+                    if len(offshelf_list) > 0:
+                        self.logger.warning(f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！")
+                        if platform == "eco":
+                            response = self.client.OffshelfGoods(
+                                {"goodsNumList": [{"GoodsNum": good, "SteamGameId": 730} for good in offshelf_list]}
                             )
-                    elif platform == "buff":
-                        response = self.buff_client.cancel_sale(shelves[platform])
-                        if response.json()["code"] == "OK":
-                            self.logger.info(f"下架{len(shelves[platform])}个商品成功！")
-                        else:
-                            self.logger.error(
-                                f'下架{len(shelves[platform])}个商品失败！错误信息{response.json().get("msg", None)}'
-                            )
-                    elif platform == "uu":
-                        response = self.uu_client.off_shelf(shelves[platform])
-                        if int(response.json()["code"]) == "0":
-                            self.logger.info(f"下架{len(shelves[platform])}个商品成功！")
-                        else:
-                            self.logger.error(f"下架{len(shelves[platform])}个商品失败！错误信息{str(response.json())}")
-                    # 重新获取上架物品
-                    shelves[platform] = self.get_shelf(platform, inventory)
+                            if response.json()["ResultCode"] == "0":
+                                self.logger.info(f"下架{len(offshelf_list)}个商品成功！")
+                            else:
+                                self.logger.error(
+                                    f'下架{len(offshelf_list)}个商品失败！错误信息{response.json().get("ResultMsg", None)}'
+                                )
+                        elif platform == "buff":
+                            response = self.buff_client.cancel_sale(offshelf_list)
+                            if response.json()["code"] == "OK":
+                                self.logger.info(f"下架{len(offshelf_list)}个商品成功！")
+                            else:
+                                self.logger.error(
+                                    f'下架{len(offshelf_list)}个商品失败！错误信息{response.json().get("msg", None)}'
+                                )
+                        elif platform == "uu":
+                            response = self.uu_client.off_shelf(offshelf_list)
+                            if int(response.json()["code"]) == "0":
+                                self.logger.info(f"下架{len(offshelf_list)}个商品成功！")
+                            else:
+                                self.logger.error(f"下架{len(offshelf_list)}个商品失败！错误信息{str(response.json())}")
+                        # 重新获取上架物品
+                        shelves[platform] = self.get_shelf(platform, inventory)
         except Exception as e:
             handle_caught_exception(e, "ECOsteam.cn")
             self.logger.error("发生未知错误，请稍候再试！")

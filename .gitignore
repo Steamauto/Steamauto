@@ -14,3 +14,4 @@ build/*
 dist/*
 steamauto.spec
 *.spec
+*bak
