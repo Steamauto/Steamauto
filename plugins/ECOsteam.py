@@ -366,7 +366,7 @@ class ECOsteamPlugin:
                 self.logger.info(f"正在从{platform.upper()}平台获取上架物品信息...")
                 shelves[platform] = self.get_shelf(platform, inventory)
                 # 判断是否需要下架
-                if len(shelves[platform]) > 0 and isinstance(shelves[platform][0], str):
+                if len(shelves[platform]) > 0 and (not isinstance(shelves[platform][0], Asset)):
                     self.logger.warning(f"检测到{platform.upper()}平台上架物品不在Steam库存中！即将下架！")
                     if platform == "eco":
                         response = self.client.OffshelfGoods(
