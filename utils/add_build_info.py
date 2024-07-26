@@ -1,7 +1,7 @@
 import datetime
 import platform
 
-with open("utils/static.py", "r+") as f:
+with open("utils/static.py", "r+",encoding='utf-8') as f:
     static = f.read()
     static = static.replace(
         "正在使用源码运行",
