@@ -28,6 +28,7 @@ class ECOsteamClient:
         scheduler.add_job(self.__rps_counter, "interval", seconds=1)
         scheduler.start()
 
+        
     def post(self, api: str, data: dict):
         data["PartnerId"] = self.partnerId
         data["Timestamp"] = int(time.time())
@@ -40,11 +41,12 @@ class ECOsteamClient:
             data=json.dumps(data, indent=4),
             headers={"User-Agent": "Steamauto " + CURRENT_VERSION, "Content-Type": "application/json"},
         )
+        data["Sign"] = "******"
         self.logger.debug(f"POST {api} {data} {resp.text}")
         if not resp.ok:
             raise Exception(f"POST {api} {data} {resp.text}")
         resp_json = resp.json()
-        if 'ResultCode' in resp_json:
+        if "ResultCode" in resp_json:
             if resp_json["ResultCode"] != "0":
                 raise Exception(f"POST {api} {data} {resp.text}")
         return resp

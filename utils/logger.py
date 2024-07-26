@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import platform
+import re
 
 import colorlog
 import requests
@@ -9,7 +10,33 @@ from requests.exceptions import ConnectionError, ReadTimeout
 
 from steampy.exceptions import (ApiException, ConfirmationExpected,
                                 EmptyResponse, InvalidCredentials, SteamError)
-from utils.static import CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version, BUILD_INFO
+from utils.static import (BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER,
+                          get_is_latest_version)
+
+sensitive_data = []
+sensitive_keys = ["ApiKey","TradeLink","JoinTime","NickName"]
+
+
+class LogFilter(logging.Filter):
+    @staticmethod
+    def add_sensitive_data(data):
+        sensitive_data.append(data)
+
+    def filter(self, record):
+        for sensitive in sensitive_data:
+            record.msg = record.msg.replace(sensitive, "*" * len(sensitive))
+        for key in sensitive_keys:
+            pattern = rf'"{key}"\s*:\s*("(.*?)"|(\d+)|(true|false|null))'
+            def replace_match(match):
+                if match.group(2):  # 如果匹配到的是带引号的字符串
+                    return f'"{key}": "{len(match.group(2)) * "*"}"'
+                elif match.group(3):  # 如果匹配到的是数字
+                    return f'"{key}": {"*" * len(match.group(3))}'
+                elif match.group(4):  # 如果匹配到的是true, false或null
+                    return f'"{key}": {"*" * len(match.group(4))}'
+            record.msg = re.sub(pattern, replace_match, record.msg, flags=re.IGNORECASE)
+        return True
+
 
 STEAM_ERROR_CODES = {
     1: "成功",
@@ -157,10 +184,12 @@ f_handler = logging.FileHandler(
 f_handler.setLevel(logging.DEBUG)
 f_handler.setFormatter(log_formatter)
 logger.addHandler(f_handler)
-logger.debug(f'Steamauto {CURRENT_VERSION} started')
-logger.debug(f'Running on {platform.system()} {platform.release()}({platform.version()})')
-logger.debug(f'Python version: {os.sys.version}')
-logger.debug(f'Build info: {BUILD_INFO}')
+logger.addFilter(LogFilter())
+logger.debug(f"Steamauto {CURRENT_VERSION} started")
+logger.debug(f"Running on {platform.system()} {platform.release()}({platform.version()})")
+logger.debug(f"Python version: {os.sys.version}")
+logger.debug(f"Build info: {BUILD_INFO}")
+
 
 def handle_caught_exception(e: Exception, prefix: str = ""):
     plogger = logger

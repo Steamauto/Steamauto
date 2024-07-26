@@ -13,7 +13,7 @@ from PyECOsteam import ECOsteamClient
 from steampy.client import SteamClient
 from steampy.models import GameOptions
 from utils.buff_helper import get_valid_session_for_buff
-from utils.logger import PluginLogger, handle_caught_exception
+from utils.logger import PluginLogger, LogFilter, handle_caught_exception
 from utils.static import ECOSTEAM_RSAKEY_FILE
 from utils.tools import exit_code, get_encoding
 from utils.uu_helper import get_valid_token_for_uu
@@ -118,9 +118,7 @@ class ECOsteamPlugin:
         return False
 
     def exec(self):
-        self.logger.info(
-            f"ECOsteam插件已启动"
-        )
+        self.logger.info(f"ECOsteam插件已启动")
         self.logger.info("正在登录ECOsteam...")
         try:
             with open(ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)) as f:
@@ -128,6 +126,7 @@ class ECOsteamPlugin:
             if "PUBLIC" in rsa_key:
                 self.logger.error("请使用私钥文件(Private key)！")
                 return 1
+            LogFilter.add_sensitive_data(self.config["ecosteam"]["partnerId"])
             self.client = ECOsteamClient(
                 self.config["ecosteam"]["partnerId"],
                 rsa_key,
@@ -147,7 +146,7 @@ class ECOsteamPlugin:
             handle_caught_exception(e)
             exit_code.set(1)
             return 1
-        
+
         # 检查当前登录的Steam账号是否在ECOsteam绑定账号列表内
         exist = False
         accounts_list = self.client.QuerySteamAccountList().json()["StatusData"]["ResultData"]
@@ -160,8 +159,10 @@ class ECOsteamPlugin:
             exit_code.set(1)
             return 1
         if exist and len(accounts_list) > 1:
-            self.logger.warning(f"检测到你的ECOsteam绑定了多个Steam账号。插件的所有操作仅对SteamID为{self.steam_id}生效！如需同时操作多个账号，请多开Steamauto实例！")
-        
+            self.logger.warning(
+                f"检测到你的ECOsteam绑定了多个Steam账号。插件的所有操作仅对SteamID为{self.steam_id}生效！如需同时操作多个账号，请多开Steamauto实例！"
+            )
+
         if self.config["ecosteam"]["auto_sync_sell_shelf"]["enable"]:
             threads = []
             threads.append(Thread(target=self.auto_accept_offer))
@@ -180,7 +181,7 @@ class ECOsteamPlugin:
             try:
                 self.__auto_accept_offer()
             except Exception as e:
-                handle_caught_exception(e,'ECOsteam.cn')
+                handle_caught_exception(e, "ECOsteam.cn")
                 self.logger.error("发生未知错误，请稍候再试！")
                 time.sleep(self.config["ecosteam"]["auto_accept_offer"]["interval"])
 
@@ -348,7 +349,7 @@ class ECOsteamPlugin:
                     assets.append(asset.orderNo)
 
             return assets
-    
+
     # 轮询实现
     def sync_shelf(self, tc):
         main_platform = tc["main_platform"]
