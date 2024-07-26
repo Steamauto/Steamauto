@@ -119,7 +119,7 @@ class ECOsteamPlugin:
 
     def exec(self):
         self.logger.info(
-            f"ECOsteam插件已启动！{Fore.YELLOW+Style.BRIGHT}如果你绑定了多个Steam账号，所有操作仅对SteamID为{self.steam_id}的账号生效！{Style.RESET_ALL}"
+            f"ECOsteam插件已启动"
         )
         self.logger.info("正在登录ECOsteam...")
         try:
@@ -147,6 +147,21 @@ class ECOsteamPlugin:
             handle_caught_exception(e)
             exit_code.set(1)
             return 1
+        
+        # 检查当前登录的Steam账号是否在ECOsteam绑定账号列表内
+        exist = False
+        accounts_list = self.client.QuerySteamAccountList().json()["StatusData"]["ResultData"]
+        for account in accounts_list:
+            if account["SteamId"] == self.steam_id:
+                exist = True
+                break
+        if not exist:
+            self.logger.error(f"当前登录的Steam账号{self.steam_id}不在ECOsteam绑定账号列表内！插件将退出。")
+            exit_code.set(1)
+            return 1
+        if exist and len(accounts_list) > 1:
+            self.logger.warning(f"检测到你的ECOsteam绑定了多个Steam账号。插件的所有操作仅对SteamID为{self.steam_id}生效！如需同时操作多个账号，请多开Steamauto实例！")
+        
         if self.config["ecosteam"]["auto_sync_sell_shelf"]["enable"]:
             threads = []
             threads.append(Thread(target=self.auto_accept_offer))

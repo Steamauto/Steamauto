@@ -44,8 +44,9 @@ class ECOsteamClient:
         if not resp.ok:
             raise Exception(f"POST {api} {data} {resp.text}")
         resp_json = resp.json()
-        if resp_json["ResultCode"] != "0":
-            raise Exception(f"POST {api} {data} {resp.text}")
+        if 'ResultCode' in resp_json:
+            if resp_json["ResultCode"] != "0":
+                raise Exception(f"POST {api} {data} {resp.text}")
         return resp
 
     def GetTotalMoney(self):
@@ -138,3 +139,6 @@ class ECOsteamClient:
 
     def RefreshUserSteamStock(self):
         return self.post("/Api/Selling/RefreshUserSteamStock", data={})
+
+    def QuerySteamAccountList(self):
+        return self.post("/Api/Merchant/QuerySteamAccountList", data={})

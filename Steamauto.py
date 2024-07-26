@@ -33,20 +33,14 @@ except:
 
 
 from utils.logger import handle_caught_exception
-from utils.static import (
-    CONFIG_FILE_PATH,
-    CONFIG_FOLDER,
-    CURRENT_VERSION,
-    DEFAULT_CONFIG_JSON,
-    DEFAULT_STEAM_ACCOUNT_JSON,
-    DEV_FILE_FOLDER,
-    SESSION_FOLDER,
-    STEAM_ACCOUNT_INFO_FILE_PATH,
-    STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
-    set_no_pause,
-    set_is_latest_version,
-)
-from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
+from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
+                          CURRENT_VERSION, DEFAULT_CONFIG_JSON,
+                          DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
+                          SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH,
+                          STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
+                          set_is_latest_version, set_no_pause)
+from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
+                         logger, pause)
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -234,7 +228,7 @@ def init_files_and_params() -> int:
     logger.info(
         f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n"
     )
-    logger.info(f"当前版本: {CURRENT_VERSION}")
+    logger.info(f"当前版本: {CURRENT_VERSION}   编译信息: {BUILD_INFO}")
     logger.info("正在检查更新...")
     try:
         response_json = requests.get(
