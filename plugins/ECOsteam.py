@@ -149,7 +149,7 @@ class ECOsteamPlugin:
 
         # 检查当前登录的Steam账号是否在ECOsteam绑定账号列表内
         exist = False
-        accounts_list = self.client.QuerySteamAccountList().json()["StatusData"]["ResultData"]
+        accounts_list = self.client.QuerySteamAccountList().json()["ResultData"]
         for account in accounts_list:
             if account["SteamId"] == self.steam_id:
                 exist = True
