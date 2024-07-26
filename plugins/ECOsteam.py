@@ -160,7 +160,7 @@ class ECOsteamPlugin:
             return 1
         if exist and len(accounts_list) > 1:
             self.logger.warning(
-                f"检测到你的ECOsteam绑定了多个Steam账号。插件的所有操作仅对SteamID为{self.steam_id}生效！如需同时操作多个账号，请多开Steamauto实例！"
+                f"检测到你的ECOsteam绑定了多个Steam账号。插件的所有操作仅对SteamID为{self.steam_id}的账号生效！如需同时操作多个账号，请多开Steamauto实例！"
             )
 
         if self.config["ecosteam"]["auto_sync_sell_shelf"]["enable"]:
@@ -305,7 +305,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    self.logger.warning(f"检测到ECOsteam上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
+                    self.logger.warning(f"检测到ECOsteam上架物品 {item['GoodsName']} 不在Steam库存中！即将下架！")
                     assets.append(asset.orderNo)
             return assets
         elif platform == "buff":
@@ -316,7 +316,6 @@ class ECOsteamPlugin:
                 asset.assetid = item["asset_info"]["assetid"]
                 asset.orderNo = item["id"]
                 asset.price = float(item["price"])
-
                 try:
                     asset.appid = inventory[asset.assetid]["appid"]
                     asset.classid = inventory[asset.assetid]["classid"]
@@ -325,7 +324,9 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    self.logger.warning(f"检测到BUFF上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
+                    self.logger.warning(
+                        f"检测到BUFF上架物品 {data['goods_infos'][str(item['goods_id'])]['market_hash_name']} 不在Steam库存中！即将下架！"
+                    )
                     assets.append(asset.orderNo)
 
             return assets
@@ -345,7 +346,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    self.logger.warning(f"检测到悠悠上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
+                    self.logger.warning(f"检测到悠悠上架物品不在Steam库存中！即将下架！")  # TODO: 提示物品名
                     assets.append(asset.orderNo)
 
             return assets
@@ -467,10 +468,10 @@ class ECOsteamPlugin:
             assets = [{"GoodsNum": asset["orderNo"], "SellingPrice": asset["price"]} for asset in difference["change"]]
             if len(assets) > 0:
                 self.logger.info(f"即将在{platform.upper()}平台修改{len(assets)}个商品的价格")
-                if len(assets)>100:
+                if len(assets) > 100:
                     self.logger.warning("ECOsteam平台一次最多支持100个商品修改价格，将分批次修改")
                     for i in range(0, len(assets), 100):
-                        self.client.GoodsPublishedBatchEdit({"goodsBatchEditList": assets[i:i+100]})
+                        self.client.GoodsPublishedBatchEdit({"goodsBatchEditList": assets[i : i + 100]})
                         self.logger.info(f"修改{len(assets[i:i+100])}个商品的价格成功！")
                         self.logger.info(f"等待5秒后继续修改...")
                         time.sleep(5)

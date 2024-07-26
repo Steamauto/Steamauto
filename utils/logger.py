@@ -8,13 +8,11 @@ import colorlog
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from steampy.exceptions import (ApiException, ConfirmationExpected,
-                                EmptyResponse, InvalidCredentials, SteamError)
-from utils.static import (BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER,
-                          get_is_latest_version)
+from steampy.exceptions import ApiException, ConfirmationExpected, EmptyResponse, InvalidCredentials, SteamError
+from utils.static import BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version
 
 sensitive_data = []
-sensitive_keys = ["ApiKey","TradeLink","JoinTime","NickName"]
+sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token"]
 
 
 class LogFilter(logging.Filter):
@@ -25,16 +23,32 @@ class LogFilter(logging.Filter):
     def filter(self, record):
         for sensitive in sensitive_data:
             record.msg = record.msg.replace(sensitive, "*" * len(sensitive))
+
+        def mask_value(value):
+            return "*" * len(value)
+
+        # 处理 JSON 数据中的敏感信息
         for key in sensitive_keys:
             pattern = rf'"{key}"\s*:\s*("(.*?)"|(\d+)|(true|false|null))'
+
             def replace_match(match):
                 if match.group(2):  # 如果匹配到的是带引号的字符串
-                    return f'"{key}": "{len(match.group(2)) * "*"}"'
+                    return f'"{key}": "{mask_value(match.group(2))}"'
                 elif match.group(3):  # 如果匹配到的是数字
-                    return f'"{key}": {"*" * len(match.group(3))}'
+                    return f'"{key}": {mask_value(match.group(3))}'
                 elif match.group(4):  # 如果匹配到的是true, false或null
-                    return f'"{key}": {"*" * len(match.group(4))}'
+                    return f'"{key}": {mask_value(match.group(4))}'
+
             record.msg = re.sub(pattern, replace_match, record.msg, flags=re.IGNORECASE)
+
+        # 处理 URL 参数中的敏感信息
+        for key in sensitive_keys:
+            pattern = rf"({key}=)([^&\s]+)"
+            def replace_url_match(match):
+                return f"{match.group(1)}{mask_value(match.group(2))}"
+
+            record.msg = re.sub(pattern, replace_url_match, record.msg, flags=re.IGNORECASE)
+
         return True
 
 
@@ -185,6 +199,7 @@ f_handler.setLevel(logging.DEBUG)
 f_handler.setFormatter(log_formatter)
 logger.addHandler(f_handler)
 logger.addFilter(LogFilter())
+logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 logger.debug(f"Steamauto {CURRENT_VERSION} started")
 logger.debug(f"Running on {platform.system()} {platform.release()}({platform.version()})")
 logger.debug(f"Python version: {os.sys.version}")
@@ -241,6 +256,8 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
             f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})\n编译信息：{BUILD_INFO}\n"
         )
         plogger.error("发生未知异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 建议反馈至开发者！")
+        if BUILD_INFO == '正在使用源码运行':
+            plogger.error(e,exc_info=True)
 
 
 class PluginLogger:
