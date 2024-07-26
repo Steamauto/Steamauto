@@ -218,7 +218,7 @@ DEFAULT_CONFIG_JSON = r"""
     "interval": 300
   },
   // ECOSteam.cn 插件配置
-  // 请提前接入开放平台 RSAKey请放置在config目录下的rsakey.txt文件中
+  // 请提前接入开放平台 私钥请放置在config目录下的rsakey.txt文件中
   "ecosteam": {
     "enable": false,
     "partnerId": "", // 必填！用于登录ECOsteam平台

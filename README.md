@@ -77,10 +77,12 @@ ECOSteam 新CSGO皮肤交易平台
   // 请注意：开启此功能必须关闭Steam登录SSL验证，即steam_login_ignore_ssl_error必须设置为true
   "steam_local_accelerate": false,
 
-  // 是否使用Steam代理功能(该功能只会代理Steam)
+  // 关于代理功能的说明：默认情况下，程序会使用系统代理。
+  // 如果你使用了Clash或v2RayN或ShadowSocksR等代理软件并启用系统代理，不需要在此配置文件内额外配置。
+  // 是否手动指定Steam代理(该功能只会代理Steam)
   "use_proxies": false,
 
-  // 本地代理地址, 使用前需要确保use_proxies已经设置为true
+  // 本地代理地址。代理设置只会应用于Steam。使用前需要确保use_proxies已经设置为true
   // 这里以clash为例，clash默认监听7890端口，如果你使用的是其他代理软件，请自行修改端口
   "proxies": {
     "http": "http://127.0.0.1:7890",
@@ -222,7 +224,9 @@ ECOSteam 新CSGO皮肤交易平台
     // 价格低于 filter_price 的物品不会上架，默认100
     "filter_price": 100,
     // 插件每天定时运行时间
-    "run_time": "16:30"
+    "run_time": "16:30",
+    // 轮询间隔，单位为分钟
+    "interval": 31
   },
   // Steam 自动接受礼物报价插件配置
   "steam_auto_accept_offer": {
@@ -232,22 +236,22 @@ ECOSteam 新CSGO皮肤交易平台
     "interval": 300
   },
   // ECOSteam.cn 插件配置
-  // 请提前接入开放平台 RSAKey请放置在config目录下的rsakey.txt文件中
+  // 请提前接入开放平台 私钥请放置在config目录下的rsakey.txt文件中
   "ecosteam": {
     "enable": false,
     "partnerId": "", // 必填！用于登录ECOsteam平台
     "auto_accept_offer": {
-      "interval": 300
+      "interval": 30
     },
-    "auto_sync_sell_shelf": { // 自动同步各平台的上架商品, 与主平台一致, 目前仅支持buff
+    "auto_sync_sell_shelf": { // 自动同步各平台的上架商品, 与主平台一致
       "enable": false,
-      "main_platform": "buff", // 填buff/eco/uu,不可以填其它内容！
-      "enabled_platforms": ["buff"], // 填buff/uu,不可以填其它内容！
-       "ratio":{ // 各平台上架价格的比例
-          "eco" : 0.98,
-          "uu" : 0.99,
-          "buff" : 1
-       },
+      "main_platform": "buff", // 主平台。主平台的上架信息不会被程序改动，按照价格比例自动同步到其他平台。可选值为"buff"/"uu"/"eco"，不可重复
+      "enabled_platforms": ["buff"], // 可以填入多个平台，如["buff", "uu"]，可选值为"buff"或"uu"，不可重复。ECO平台已经强制开启，无需手动填写
+      "ratio":{ // 各平台上架价格的比例
+        "eco" : 1,
+        "uu" : 1,
+        "buff" : 1
+      },
       "interval": 60 // 不建议设置太长，因为同步上架带来的问题是ECO发货后BUFF/UU未及时下架，如果此时有人购买库存中没有的饰品，可能会导致封号
 
     },
@@ -348,7 +352,7 @@ pip install urllib3==1.25.11
    7. 等待审核；  // 备注: 实际上是自动审核, 申请后立刻可用
 2. 审核通过后流程
    1. 审核通过的用户，可回到页面点击【查看身份ID】；
-   2. 输入RSA公钥后，获取身份ID；  // 备注: RSA公钥在插件运行后需要填写进在config目录下的rsakey.txt中, 请自行生成RSA密钥对, 建议使用2048位或4096位密钥, 如果你不会生成且不想学习, 可以使用在线生成工具生成, 例如[https://www.ssleye.com/ssltool/pass_double.html](https://www.ssleye.com/ssltool/pass_double.html) (若使用此网站, 请设置算法: RSA, 强度: 2048或4096, 密码留空, 安全性我们不能作保证, 请自行判断)
+   2. 输入RSA公钥后，获取身份ID；  // 备注: RSA私钥在插件运行后需要填写进在config目录下的rsakey.txt中, 请自行生成RSA密钥对, 建议使用2048位或4096位密钥, 如果你不会生成且不想学习, 可以使用在线生成工具生成, 例如[https://www.ssleye.com/ssltool/pass_double.html](https://www.ssleye.com/ssltool/pass_double.html) (若使用此网站, 请设置算法: RSA, 强度: 2048或4096, 密码留空, 安全性我们不能作保证, 请自行判断)
       ~~只使用**不带换行格式**的密钥内容部分。~~ ECOSteam已经支持完整格式的密钥内容部分
    3. 如开启回调通知，则需配置回调地址和获取ECO的回调公钥；
 
