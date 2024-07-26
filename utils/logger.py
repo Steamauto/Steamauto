@@ -7,8 +7,9 @@ import colorlog
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from steampy.exceptions import ConfirmationExpected, EmptyResponse, InvalidCredentials, SteamError, ApiException
-from utils.static import CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version
+from steampy.exceptions import (ApiException, ConfirmationExpected,
+                                EmptyResponse, InvalidCredentials, SteamError)
+from utils.static import CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version, BUILD_INFO
 
 STEAM_ERROR_CODES = {
     1: "成功",
@@ -156,7 +157,10 @@ f_handler = logging.FileHandler(
 f_handler.setLevel(logging.DEBUG)
 f_handler.setFormatter(log_formatter)
 logger.addHandler(f_handler)
-
+logger.debug(f'Steamauto {CURRENT_VERSION} started')
+logger.debug(f'Running on {platform.system()} {platform.release()}({platform.version()})')
+logger.debug(f'Python version: {os.sys.version}')
+logger.debug(f'Build info: {BUILD_INFO}')
 
 def handle_caught_exception(e: Exception, prefix: str = ""):
     plogger = logger
@@ -205,7 +209,7 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
         plogger.error("Steam API 异常, 异常信息:" + str(e))
     else:
         plogger.error(
-            f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})"
+            f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})\n编译信息：{BUILD_INFO}\n"
         )
         plogger.error("发生未知异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 建议反馈至开发者！")
 

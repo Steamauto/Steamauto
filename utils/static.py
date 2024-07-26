@@ -27,6 +27,7 @@ TO_DELIVER_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "to_deliver_{game}.json
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 UU_ARG_FILE_PATH = "uu.txt"
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
+BUILD_INFO = "正在使用源码运行"
 
 DEFAULT_STEAM_ACCOUNT_JSON = """
 {
