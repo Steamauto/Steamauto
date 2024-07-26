@@ -305,7 +305,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    self.logger.error(f"检测到ECOsteam上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
+                    self.logger.warning(f"检测到ECOsteam上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
                     assets.append(asset.orderNo)
             return assets
         elif platform == "buff":
@@ -325,7 +325,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    self.logger.error(f"检测到BUFF上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
+                    self.logger.warning(f"检测到BUFF上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
                     assets.append(asset.orderNo)
 
             return assets
@@ -345,7 +345,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    self.logger.error(f"检测到悠悠上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
+                    self.logger.warning(f"检测到悠悠上架物品{item['GoodsName']}不在Steam库存中！即将下架！")
                     assets.append(asset.orderNo)
 
             return assets
@@ -467,7 +467,13 @@ class ECOsteamPlugin:
             assets = [{"GoodsNum": asset["orderNo"], "SellingPrice": asset["price"]} for asset in difference["change"]]
             if len(assets) > 0:
                 self.logger.info(f"即将在{platform.upper()}平台修改{len(assets)}个商品的价格")
-                response = self.client.GoodsPublishedBatchEdit({"goodsBatchEditList": assets})
+                if len(assets)>100:
+                    self.logger.warning("ECOsteam平台一次最多支持100个商品修改价格，将分批次修改")
+                    for i in range(0, len(assets), 100):
+                        self.client.GoodsPublishedBatchEdit({"goodsBatchEditList": assets[i:i+100]})
+                        self.logger.info(f"修改{len(assets[i:i+100])}个商品的价格成功！")
+                        self.logger.info(f"等待5秒后继续修改...")
+                        time.sleep(5)
                 self.logger.info(f"修改{len(assets)}个商品的价格成功！")
 
         elif platform == "buff":
