@@ -91,6 +91,8 @@ class ECOsteamClient:
             else:
                 index += 1
                 goods += res["ResultData"]["PageResult"]
+                if len(res["ResultData"]["PageResult"]) < 50:
+                    break
         return goods
 
     def PublishStock(self, Assets: list):
