@@ -14,8 +14,8 @@
 import copy
 import json
 import random
-import re
 import time
+from sre_constants import SUCCESS
 
 import requests
 
@@ -266,7 +266,7 @@ class BuffAccount:
         """
         仅支持CSGO 返回上架成功商品的id
         """
-        return self.post(
+        response = self.post(
             "https://buff.163.com/api/market/sell_order/create/manual_plus",
             json={
                 "appid": "730",
@@ -275,8 +275,16 @@ class BuffAccount:
             },
             headers=self.CSRF_Fucker(),
         )
+        success = []
+        for good in response.json()["data"].keys():
+            if response.json()["data"][good] == "OK":
+                success.append(good)
+        return success
 
     def cancel_sale(self, sell_orders: list, exclude_sell_orders: list = []):
+        """
+        返回下架成功数量
+        """
         success = 0
         for index in range(0, len(sell_orders), 50):
             response = self.post(
@@ -309,15 +317,28 @@ class BuffAccount:
         )
 
     def change_price(self, sell_orders: list):
-
-        return self.post(
-            "https://buff.163.com/api/market/sell_order/change",
-            json={
-                "appid": "730",
-                "sell_orders": sell_orders,
-            },
-            headers=self.CSRF_Fucker(),
-        )
+        """
+        problem的key是订单ID
+        """
+        success = 0
+        problems = {}
+        for index in range(0, len(sell_orders), 50):
+            response = self.post(
+                "https://buff.163.com/api/market/sell_order/change",
+                json={
+                    "appid": "730",
+                    "sell_orders": sell_orders[index : index + 50],
+                },
+                headers=self.CSRF_Fucker(),
+            )
+            if response.json()["code"] != "OK":
+                raise Exception(response.json().get("msg", None))
+            for key in response.json()["data"].keys():
+                if response.json()["data"][key] == "OK":
+                    success += 1
+                else:
+                    problems[key] = response.json()["data"][key]
+        return success, problems
 
     def CSRF_Fucker(self):
         self.get("https://buff.163.com/api/market/steam_trade")

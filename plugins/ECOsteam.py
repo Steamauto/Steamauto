@@ -2,6 +2,7 @@ import copy
 import datetime
 import json
 import os
+from sre_constants import SUCCESS
 import time
 from threading import Thread
 from typing import List
@@ -365,13 +366,15 @@ class ECOsteamPlugin:
                 self.logger.info(f"正在从{platform.upper()}平台获取上架物品信息...")
                 shelves[platform] = self.get_shelf(platform, inventory)
                 # 判断是否需要下架
-                if len(shelves[platform]) > 0 :
+                if len(shelves[platform]) > 0:
                     offshelf_list = []
                     for good in shelves[platform]:
                         if not isinstance(good, Asset):
                             offshelf_list.append(good)
                     if len(offshelf_list) > 0:
-                        self.logger.warning(f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！")
+                        self.logger.warning(
+                            f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！"
+                        )
                         if platform == "eco":
                             response = self.client.OffshelfGoods(
                                 {"goodsNumList": [{"GoodsNum": good, "SteamGameId": 730} for good in offshelf_list]}
@@ -388,8 +391,8 @@ class ECOsteamPlugin:
                                 self.logger.info(f"下架{count}个商品成功！下架{len(offshelf_list) - count}个商品失败！")
                             except Exception as e:
                                 handle_caught_exception(e, "ECOsteam.cn")
-                                self.logger.error(f"下架{len(offshelf_list)}个商品失败！")
-                            
+                                self.logger.error(f"下架商品失败！可能有部分下架成功")
+
                         elif platform == "uu":
                             response = self.uu_client.off_shelf(offshelf_list)
                             if int(response.json()["code"]) == "0":
@@ -475,8 +478,9 @@ class ECOsteamPlugin:
                     for i in range(0, len(assets), 100):
                         self.client.GoodsPublishedBatchEdit({"goodsBatchEditList": assets[i : i + 100]})
                         self.logger.info(f"修改{len(assets[i:i+100])}个商品的价格成功！")
-                        self.logger.info(f"等待5秒后继续修改...")
-                        time.sleep(5)
+                        if i + 100 < len(assets):
+                            self.logger.info(f"等待5秒后继续修改...")
+                            time.sleep(5)
                 self.logger.info(f"修改{len(assets)}个商品的价格成功！")
 
         elif platform == "buff":
@@ -500,13 +504,14 @@ class ECOsteamPlugin:
                     for asset in assets
                 ]
                 self.logger.info(f"即将上架{len(assets)}个商品到BUFF")
-                response = self.buff_client.on_sale(buff_assets)
-                if response.json()["code"] == "OK":
-                    self.logger.info(f"上架{len(assets)}个商品到BUFF成功！")
-                else:
-                    self.logger.error(
-                        f'上架{len(assets)}个商品到BUFF失败(可能部分上架成功)！错误信息：{response.json().get("msg", None)}'
+                try:
+                    success = self.buff_client.on_sale(buff_assets)
+                    self.logger.info(
+                        f"上架{len(success)}个商品到BUFF成功！上架{len(assets) - len(success)}个商品失败！"
                     )
+                except Exception as e:
+                    handle_caught_exception(e, "ECOsteam.cn")
+                    self.logger.error(f"上架商品失败！可能部分上架成功！")
 
             # 下架商品
             assets = difference["delete"]
@@ -533,13 +538,12 @@ class ECOsteamPlugin:
                     for asset in assets
                 ]
                 self.logger.info(f"即将在{platform.upper()}平台修改{len(assets)}个商品的价格")
-                response = self.buff_client.change_price(sell_orders)
-                if response.json()["code"] == "OK":
-                    self.logger.info(f"修改{len(assets)}个商品的价格成功！")
-                else:
-                    self.logger.error(
-                        f'修改{len(assets)}个商品的价格失败(可能部分修改成功)！错误信息：{response.json().get("msg", None)}'
-                    )
+                success, problem_sell_orders = self.buff_client.change_price(sell_orders)
+                for sell_order in problem_sell_orders.keys():
+                    for asset in assets:
+                        if sell_order == asset["orderNo"]:
+                            self.logger.error(f"修改 {asset['market_hash_name']}(ID:{asset['assetid']}) 的价格失败！错误信息: {problem_sell_orders[sell_order]}")
+                self.logger.info(f"修改{success}个商品的价格成功！")
         elif platform == "uu":
             # 上架商品
             add = difference["add"]

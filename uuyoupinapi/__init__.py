@@ -1,3 +1,4 @@
+import json
 import random
 import string
 
@@ -5,7 +6,7 @@ import requests
 
 from utils.logger import PluginLogger
 
-logger = PluginLogger("UUAutoAcceptOffer")
+logger = PluginLogger("uuyoupinapi")
 
 
 def generate_random_string(length):
@@ -135,6 +136,7 @@ class UUAccount:
         :return:
         """
         url = "https://api.youpin898.com" + path
+        logger.debug(f"{method} {path} {json.dumps(data)}" )
         if method == "GET":
             return self.session.get(url, params=data)
         elif method == "POST":
