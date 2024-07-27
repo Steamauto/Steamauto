@@ -285,7 +285,7 @@ class ECOsteamPlugin:
             time.sleep(tc["interval"])
 
     def get_shelf(self, platform, inventory):
-        # 如果需要下架，则返回orderNo列表，否则返回assets列表
+        # 如果需要下架
         assets = list()
         if platform == "eco":
             result = self.client.getFullSellGoodsList(self.steam_id)
@@ -505,9 +505,14 @@ class ECOsteamPlugin:
                 ]
                 self.logger.info(f"即将上架{len(assets)}个商品到BUFF")
                 try:
-                    success = self.buff_client.on_sale(buff_assets)
+                    success, failure = self.buff_client.on_sale(buff_assets)
+                    for asset in assets:
+                        if asset["assetid"] in failure:
+                            self.logger.error(
+                                f"上架 {asset['market_hash_name']}(ID:{asset['assetid']}) 失败！错误信息: {failure[asset['assetid']]}"
+                            )
                     self.logger.info(
-                        f"上架{len(success)}个商品到BUFF成功！上架{len(assets) - len(success)}个商品失败！"
+                        f"上架{len(success)}个商品到BUFF成功！上架{len(failure)}个商品失败！"
                     )
                 except Exception as e:
                     handle_caught_exception(e, "ECOsteam.cn")
@@ -519,8 +524,13 @@ class ECOsteamPlugin:
                 sell_orders = [asset["orderNo"] for asset in difference["delete"]]
                 self.logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
                 try:
-                    count = self.buff_client.cancel_sale(sell_orders)
-                    self.logger.info(f"下架{count}个商品成功！下架{len(assets) - count}个商品失败！")
+                    success,failure = self.buff_client.cancel_sale(sell_orders)
+                    for asset in assets:
+                        if asset["orderNo"] in failure:
+                            self.logger.error(
+                                f"下架 {asset['market_hash_name']}(ID:{asset['assetid']}) 失败！错误信息: {failure[asset['orderNo']]}"
+                            )
+                    self.logger.info(f"下架{success}个商品成功！下架{len(failure)}个商品失败！")
                 except Exception as e:
                     handle_caught_exception(e, "ECOsteam.cn")
                     self.logger.error(f"下架商品失败！可能部分下架成功！")
@@ -539,11 +549,12 @@ class ECOsteamPlugin:
                 ]
                 self.logger.info(f"即将在{platform.upper()}平台修改{len(assets)}个商品的价格")
                 success, problem_sell_orders = self.buff_client.change_price(sell_orders)
-                for sell_order in problem_sell_orders.keys():
-                    for asset in assets:
-                        if sell_order == asset["orderNo"]:
-                            self.logger.error(f"修改 {asset['market_hash_name']}(ID:{asset['assetid']}) 的价格失败！错误信息: {problem_sell_orders[sell_order]}")
-                self.logger.info(f"修改{success}个商品的价格成功！")
+                for asset in assets:
+                    if asset["orderNo"] in problem_sell_orders.keys():
+                        self.logger.error(
+                            f"修改 {asset['market_hash_name']}(ID:{asset['assetid']}) 的价格失败！错误信息: {problem_sell_orders[asset['orderNo']]}"
+                        )
+                self.logger.info(f"修改{success}个商品的价格成功！修改{len(problem_sell_orders)}个商品失败！")
         elif platform == "uu":
             # 上架商品
             add = difference["add"]

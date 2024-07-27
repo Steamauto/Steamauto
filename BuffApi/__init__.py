@@ -276,16 +276,20 @@ class BuffAccount:
             headers=self.CSRF_Fucker(),
         )
         success = []
+        problem_assets = {}
         for good in response.json()["data"].keys():
             if response.json()["data"][good] == "OK":
                 success.append(good)
-        return success
+            else:
+                problem_assets[good] = response.json()["data"][good]
+        return success, problem_assets
 
     def cancel_sale(self, sell_orders: list, exclude_sell_orders: list = []):
         """
         返回下架成功数量
         """
         success = 0
+        problem_sell_orders = {}
         for index in range(0, len(sell_orders), 50):
             response = self.post(
                 "https://buff.163.com/api/market/sell_order/cancel",
@@ -301,7 +305,9 @@ class BuffAccount:
             for key in response.json()["data"].keys():
                 if response.json()["data"][key] == "OK":
                     success += 1
-        return success
+                else:
+                    problem_sell_orders[key] = response.json()["data"][key]
+        return success, problem_sell_orders
 
     def get_on_sale(self, page_num=1, page_size=1000, mode="2,5", fold="0"):
         return self.get(
