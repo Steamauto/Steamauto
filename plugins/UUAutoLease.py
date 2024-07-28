@@ -10,6 +10,16 @@ from utils.tools import exit_code
 from utils.uu_helper import get_valid_token_for_uu
 
 
+def is_subsequence(s, t):
+    t_index = 0
+    s_index = 0
+    while t_index < len(t) and s_index < len(s):
+        if s[s_index] == t[t_index]:
+            s_index += 1
+        t_index += 1
+    return s_index == len(s)
+
+
 class UUAutoLeaseItem:
     def __init__(self, config):
         self.leased_inventory_list = None
@@ -226,14 +236,16 @@ class UUAutoLeaseItem:
                         continue
                     asset_id = item["SteamAssetId"]
                     item_id = item["TemplateInfo"]["Id"]
+                    short_name = item["ShotName"]
                     price = item["TemplateInfo"]["MarkPrice"]
                     if (
                             price < self.config["uu_auto_lease_item"]["filter_price"]
                             or (item["Tradable"] is False)
                             or item["AssetStatus"] != 0
+                            or any(s != "" and is_subsequence(s, short_name) for s in self.config["uu_auto_lease_item"]["filter_name"])
                     ):
                         continue
-                    self.operate_sleep()
+                    self.operate_sleep(20)
 
                     price_rsp = self.get_market_lease_price(item_id, min_price=price)
                     if price_rsp["LeaseUnitPrice"] == 0:
@@ -293,7 +305,12 @@ class UUAutoLeaseItem:
             for i, item in enumerate(self.leased_inventory_list):
                 asset_id = item["id"]
                 item_id = item["templateId"]
+                short_name = item["name"]
                 price = float(item["referencePrice"][1:])
+
+                if any(s != "" and is_subsequence(s, short_name) for s in self.config["uu_auto_lease_item"]["filter_name"]):
+                    continue
+
                 price_rsp = self.get_market_lease_price(item_id, min_price=price)
                 if price_rsp["LeaseUnitPrice"] == 0:
                     continue
@@ -344,9 +361,11 @@ class UUAutoLeaseItem:
         else:
             self.uuyoupin = uuyoupinapi.UUAccount(token)
 
+        self.logger.info(f"以下物品不会出租: {self.config['uu_auto_lease_item']['filter_name']}")
+
         self.pre_check_price()
         self.auto_lease()
-        self.auto_change_price()
+        # self.auto_change_price()
 
         run_time = self.config['uu_auto_lease_item']['run_time']
         interval = self.config['uu_auto_lease_item']['interval']
