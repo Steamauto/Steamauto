@@ -255,6 +255,7 @@ class ECOsteamPlugin:
         # BUFF登录
         if "buff" in tc["enabled_platforms"]:
             self.logger.info("由于已经启用BUFF平台，正在联系BuffLoginSolver获取有效的session...")
+            buff_session = ""
             with self.steam_client_mutex:
                 buff_session = get_valid_session_for_buff(self.steam_client, self.logger)
             if not buff_session:

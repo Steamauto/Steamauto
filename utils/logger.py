@@ -15,7 +15,7 @@ from utils.static import (BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER,
                           get_is_latest_version)
 
 sensitive_data = []
-sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token"]
+sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token", "trade_url","TransactionUrl","RealName","IdCard"]
 
 
 class LogFilter(logging.Filter):

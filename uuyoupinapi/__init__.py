@@ -76,7 +76,7 @@ class UUAccount:
         )
 
     @staticmethod
-    def send_login_sms_code(phone, session: str, headers=""):
+    def send_login_sms_code(phone, session: str, headers={}):
         """
         发送登录短信验证码
         :param phone: 手机号
@@ -90,7 +90,7 @@ class UUAccount:
         ).json()
 
     @staticmethod
-    def sms_sign_in(phone, code, session, headers=""):
+    def sms_sign_in(phone, code, session, headers={}):
         """
         通过短信验证码登录，返回值内包含Token
         :param phone: 发送验证码时的手机号
@@ -136,17 +136,19 @@ class UUAccount:
         :return:
         """
         url = "https://api.youpin898.com" + path
-        logger.debug(f"{method} {path} {json.dumps(data)}" )
+        
         if method == "GET":
-            return self.session.get(url, params=data)
+            response = self.session.get(url, params=data)
         elif method == "POST":
-            return self.session.post(url, json=data)
+            response = self.session.post(url, json=data)
         elif method == "PUT":
-            return self.session.put(url, json=data)
+            response = self.session.put(url, json=data)
         elif method == "DELETE":
-            return self.session.delete(url)
+            response = self.session.delete(url)
         else:
             raise Exception("Method not supported")
+        logger.debug(f"{method} {path} {json.dumps(data)} {response.content.decode()}" )
+        return response
 
     def get_wait_deliver_list(self, game_id=730, return_offer_id=True):
         """

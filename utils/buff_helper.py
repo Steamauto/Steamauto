@@ -12,8 +12,7 @@ from apprise import AppriseAsset, AppriseAttachment
 from bs4 import BeautifulSoup
 
 from steampy.client import SteamClient
-from utils.static import (APPRISE_ASSET_FOLDER, BUFF_COOKIES_FILE_PATH,
-                          CONFIG_FILE_PATH)
+from utils.static import APPRISE_ASSET_FOLDER, BUFF_COOKIES_FILE_PATH, CONFIG_FILE_PATH
 from utils.tools import get_encoding, logger
 
 
@@ -44,9 +43,7 @@ def login_to_buff_by_steam(steam_client: SteamClient) -> str:
 
 def login_to_buff_by_qrcode() -> str:
     session = requests.session()
-    response_json = session.get(
-        "https://buff.163.com/account/api/qr_code_login_open", params={"_": str(int(time.time() * 1000))}
-    ).json()
+    response_json = session.get("https://buff.163.com/account/api/qr_code_login_open", params={"_": str(int(time.time() * 1000))}).json()
     if response_json["code"] != "OK":
         return ""
     qr_code_create_url = "https://buff.163.com/account/api/qr_code_create"
@@ -60,11 +57,11 @@ def login_to_buff_by_qrcode() -> str:
     img = qrcode.make(qr_code_url)
     img.save("qrcode.png")
     config = {}
-    
+
     # 读取本地图片文件内容编码为Base64
     with open("qrcode.png", "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
-    
+
     html_content = f"<br/><img src='data:image/png;base64,{encoded_string}' />"
 
     try:
@@ -79,9 +76,9 @@ def login_to_buff_by_qrcode() -> str:
             apprise_obj.add(server)
         # 检查是否应包括HTML内容
         if (
-          "buff_login_notification" in config["buff_auto_accept_offer"]
-          and "include_qrcode_html_enable" in config["buff_auto_accept_offer"]["buff_login_notification"]
-          and  config["buff_auto_accept_offer"]["buff_login_notification"]["include_qrcode_html_enable"]
+            "buff_login_notification" in config["buff_auto_accept_offer"]
+            and "include_qrcode_html_enable" in config["buff_auto_accept_offer"]["buff_login_notification"]
+            and config["buff_auto_accept_offer"]["buff_login_notification"]["include_qrcode_html_enable"]
         ):
             body_content = "保存图片到手机，用Buff扫码登陆" + html_content
         else:
@@ -164,6 +161,8 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
     else:
         with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
             f.write("session=" + session.replace("session=", ""))
+    if "session=" not in session:
+        session = "session=" + session
     return session
 
 
