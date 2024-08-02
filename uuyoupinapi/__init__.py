@@ -238,7 +238,8 @@ class UUAccount:
                 break
             else:
                 for item in response.json()["data"]["commodityInfoList"]:
-                    shelf.append(item)
+                    if "steamAssetId" in item:
+                        shelf.append(item)
         return shelf
 
     def off_shelf(self, commodity_ids: list):
