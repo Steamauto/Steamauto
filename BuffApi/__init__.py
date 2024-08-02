@@ -15,7 +15,7 @@ import copy
 import json
 import random
 import time
-from sre_constants import SUCCESS
+from typing import no_type_check
 
 import requests
 
@@ -221,14 +221,14 @@ class BuffAccount:
         # 获取最新csrf_token
         self.get("https://buff.163.com/api/message/notification")
         self.session.cookies.get("csrf_token")
-        headers["x-csrftoken"] = self.session.cookies.get("csrf_token")
+        headers["x-csrftoken"] = str(self.session.cookies.get("csrf_token"))
         response = json.loads(self.post("https://buff.163.com/api/market/goods/buy", json=load, headers=headers).text)
         bill_id = response.get("data").get("id")
         self.get(
             "https://buff.163.com/api/market/bill_order/batch/info",
             params={"bill_orders": bill_id},
         )
-        headers["x-csrftoken"] = self.session.cookies.get("csrf_token")
+        headers["x-csrftoken"] = str(self.session.cookies.get("csrf_token"))
         time.sleep(0.5)  # 由于Buff服务器处理支付需要一定的时间，所以一定要在这里加上sleep，否则无法发送下一步请求
         if ask_seller_send_offer:
             load = {"bill_orders": [bill_id], "game": game_name}
@@ -346,6 +346,7 @@ class BuffAccount:
                     problems[key] = response.json()["data"][key]
         return success, problems
 
+    @no_type_check
     def CSRF_Fucker(self):
         self.get("https://buff.163.com/api/market/steam_trade")
         csrf_token = self.session.cookies.get("csrf_token", domain="buff.163.com")
@@ -357,5 +358,5 @@ class BuffAccount:
                 "Content-Type": "application/json",
                 "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
             }
-        )
+        )  
         return headers

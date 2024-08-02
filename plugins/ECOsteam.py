@@ -2,7 +2,6 @@ import copy
 import datetime
 import json
 import os
-from sre_constants import SUCCESS
 import time
 from threading import Thread
 from typing import List
@@ -22,7 +21,7 @@ sync_shelf_enabled = False
 
 
 class Asset:
-    assetid: int
+    assetid = ''
     appid: int = 730
     classid: int
     instanceid: int
@@ -133,15 +132,11 @@ class ECOsteamPlugin:
             )
             user_info = self.client.GetTotalMoney().json()
             if user_info["ResultData"].get("UserName", None):
-                self.logger.info(
-                    f'登录成功，用户ID为{user_info["ResultData"]["UserName"]}，当前余额为{user_info["ResultData"]["Money"]}元'
-                )
+                self.logger.info(f'登录成功，用户ID为{user_info["ResultData"]["UserName"]}，当前余额为{user_info["ResultData"]["Money"]}元')
             else:
                 raise Exception
         except Exception as e:
-            self.logger.error(
-                f"登录失败！请检查{ECOSTEAM_RSAKEY_FILE}和parterId是否正确！由于无法登录ECOsteam，插件将退出。"
-            )
+            self.logger.error(f"登录失败！请检查{ECOSTEAM_RSAKEY_FILE}和parterId是否正确！由于无法登录ECOsteam，插件将退出。")
             handle_caught_exception(e)
             exit_code.set(1)
             return 1
@@ -191,9 +186,9 @@ class ECOsteamPlugin:
         last_month = today - datetime.timedelta(days=30)
         tomorrow = tomorrow.strftime("%Y-%m-%d")
         last_month = last_month.strftime("%Y-%m-%d")
-        wait_deliver_orders = self.client.GetSellerOrderList(
-            last_month, tomorrow, DetailsState=8, SteamId=self.steam_id
-        ).json()["ResultData"]["PageResult"]
+        wait_deliver_orders = self.client.GetSellerOrderList(last_month, tomorrow, DetailsState=8, SteamId=self.steam_id).json()["ResultData"][
+            "PageResult"
+        ]
         self.logger.info(f"检测到{len(wait_deliver_orders)}个待发货订单！")
         if len(wait_deliver_orders) > 0:
             for order in wait_deliver_orders:
@@ -221,7 +216,7 @@ class ECOsteamPlugin:
         inventory = None
         try:
             with self.steam_client_mutex:
-                inventory = self.steam_client.get_my_inventory(game=GameOptions.CS)
+                inventory = self.steam_client.get_my_inventory(game=GameOptions.CS)  # type: ignore
         except Exception as e:
             handle_caught_exception(e, "ECOsteam.cn")
             self.logger.error("Steam异常, 暂时无法获取库存, 请稍后再试! ")
@@ -324,9 +319,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    self.logger.warning(
-                        f"检测到BUFF上架物品 {data['goods_infos'][str(item['goods_id'])]['market_hash_name']} 不在Steam库存中！"
-                    )
+                    self.logger.warning(f"检测到BUFF上架物品 {data['goods_infos'][str(item['goods_id'])]['market_hash_name']} 不在Steam库存中！")
                     assets.append(asset.orderNo)
 
             return assets
@@ -373,22 +366,16 @@ class ECOsteamPlugin:
                         if not isinstance(good, Asset):
                             offshelf_list.append(good)
                     if len(offshelf_list) > 0:
-                        self.logger.warning(
-                            f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！"
-                        )
+                        self.logger.warning(f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！")
                         if platform == "eco":
-                            response = self.client.OffshelfGoods(
-                                {"goodsNumList": [{"GoodsNum": good, "SteamGameId": 730} for good in offshelf_list]}
-                            )
+                            response = self.client.OffshelfGoods([{"GoodsNum": good, "SteamGameId": 730} for good in offshelf_list])
                             if response.json()["ResultCode"] == "0":
                                 self.logger.info(f"下架{len(offshelf_list)}个商品成功！")
                             else:
-                                self.logger.error(
-                                    f'下架{len(offshelf_list)}个商品失败！错误信息{response.json().get("ResultMsg", None)}'
-                                )
+                                self.logger.error(f'下架{len(offshelf_list)}个商品失败！错误信息{response.json().get("ResultMsg", None)}')
                         elif platform == "buff":
                             try:
-                                count = self.buff_client.cancel_sale(offshelf_list)
+                                count, problems = self.buff_client.cancel_sale(offshelf_list)
                                 self.logger.info(f"下架{count}个商品成功！下架{len(offshelf_list) - count}个商品失败！")
                             except Exception as e:
                                 handle_caught_exception(e, "ECOsteam.cn")
@@ -438,7 +425,7 @@ class ECOsteamPlugin:
                 try:
                     batches = publish_assets_in_batches(assets)
                     for batch in batches:
-                        response = self.client.PublishStock({"Assets": batch})
+                        response = self.client.PublishStock(batch)
                         self.logger.info(f"上架{len(batch)}个商品到ECOsteam成功！")
                 except Exception as e:
                     if "饰品状态变化" in str(e):
@@ -449,7 +436,7 @@ class ECOsteamPlugin:
                         self.logger.info("正在重新尝试上架...")
                         try:
                             for batch in batches:
-                                response = self.client.PublishStock({"Assets": batch})
+                                response = self.client.PublishStock(batch)
                                 self.logger.info(f"上架{len(batch)}个商品到ECOsteam成功！")
                         except Exception as e:
                             handle_caught_exception(e, "ECOsteam.cn")
@@ -464,9 +451,7 @@ class ECOsteamPlugin:
             assets = [asset["orderNo"] for asset in difference["delete"]]
             if len(assets) > 0:
                 self.logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
-                response = self.client.OffshelfGoods(
-                    {"goodsNumList": [{"GoodsNum": good, "SteamGameId": 730} for good in assets]}
-                )
+                response = self.client.OffshelfGoods([{"GoodsNum": good, "SteamGameId": 730} for good in assets])
 
                 self.logger.info(f"下架{len(assets)}个商品成功！")
 
@@ -477,7 +462,7 @@ class ECOsteamPlugin:
                 if len(assets) > 100:
                     self.logger.warning("ECOsteam平台一次最多支持100个商品修改价格，将分批次修改")
                     for i in range(0, len(assets), 100):
-                        self.client.GoodsPublishedBatchEdit({"goodsBatchEditList": assets[i : i + 100]})
+                        self.client.GoodsPublishedBatchEdit(assets[i : i + 100])
                         self.logger.info(f"修改{len(assets[i:i+100])}个商品的价格成功！")
                         if i + 100 < len(assets):
                             self.logger.info(f"等待5秒后继续修改...")
@@ -509,12 +494,8 @@ class ECOsteamPlugin:
                     success, failure = self.buff_client.on_sale(buff_assets)
                     for asset in assets:
                         if asset["assetid"] in failure:
-                            self.logger.error(
-                                f"上架 {asset['market_hash_name']}(ID:{asset['assetid']}) 失败！错误信息: {failure[asset['assetid']]}"
-                            )
-                    self.logger.info(
-                        f"上架{len(success)}个商品到BUFF成功！上架{len(failure)}个商品失败！"
-                    )
+                            self.logger.error(f"上架 {asset['market_hash_name']}(ID:{asset['assetid']}) 失败！错误信息: {failure[asset['assetid']]}")
+                    self.logger.info(f"上架{len(success)}个商品到BUFF成功！上架{len(failure)}个商品失败！")
                 except Exception as e:
                     handle_caught_exception(e, "ECOsteam.cn")
                     self.logger.error(f"上架商品失败！可能部分上架成功！")
@@ -525,12 +506,10 @@ class ECOsteamPlugin:
                 sell_orders = [asset["orderNo"] for asset in difference["delete"]]
                 self.logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
                 try:
-                    success,failure = self.buff_client.cancel_sale(sell_orders)
+                    success, failure = self.buff_client.cancel_sale(sell_orders)
                     for asset in assets:
                         if asset["orderNo"] in failure:
-                            self.logger.error(
-                                f"下架 {asset['market_hash_name']}(ID:{asset['assetid']}) 失败！错误信息: {failure[asset['orderNo']]}"
-                            )
+                            self.logger.error(f"下架 {asset['market_hash_name']}(ID:{asset['assetid']}) 失败！错误信息: {failure[asset['orderNo']]}")
                     self.logger.info(f"下架{success}个商品成功！下架{len(failure)}个商品失败！")
                 except Exception as e:
                     handle_caught_exception(e, "ECOsteam.cn")
@@ -568,9 +547,7 @@ class ECOsteamPlugin:
                 if int(response.json()["Code"]) == 0:
                     self.logger.info(f"上架{len(assets)}个商品到UU有品成功！")
                 else:
-                    self.logger.error(
-                        f'上架{len(assets)}个商品到UU有品失败(可能部分上架成功)！错误信息：{str(response.json()["Msg"])}'
-                    )
+                    self.logger.error(f'上架{len(assets)}个商品到UU有品失败(可能部分上架成功)！错误信息：{str(response.json()["Msg"])}')
 
             # 下架商品
             delete = difference["delete"]
@@ -594,6 +571,4 @@ class ECOsteamPlugin:
                 if int(response.json()["Code"]) == 0:
                     self.logger.info(f"修改{len(assets)}个商品的价格成功！悠悠平台刷新可能有延迟，请稍候几分钟后查看！")
                 else:
-                    self.logger.error(
-                        f'修改{len(assets)}个商品的价格失败(可能部分修改成功)！错误信息：{str(response.json()["Msg"])}'
-                    )
+                    self.logger.error(f'修改{len(assets)}个商品的价格失败(可能部分修改成功)！错误信息：{str(response.json()["Msg"])}')

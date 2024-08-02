@@ -28,7 +28,6 @@ class ECOsteamClient:
         scheduler.add_job(self.__rps_counter, "interval", seconds=1)
         scheduler.start()
 
-        
     def post(self, api: str, data: dict):
         data["PartnerId"] = self.partnerId
         data["Timestamp"] = int(time.time())
@@ -95,14 +94,14 @@ class ECOsteamClient:
                     break
         return goods
 
-    def PublishStock(self, Assets: list):
-        return self.post("/Api/Selling/PublishStock", data=Assets)
+    def PublishStock(self, assets: list):
+        return self.post("/Api/Selling/PublishStock", data={"Assets": assets})
 
     def OffshelfGoods(self, goodsNumList: list):
-        return self.post("/Api/Selling/OffshelfGoods", data=goodsNumList)
+        return self.post("/Api/Selling/OffshelfGoods", data={"goodsNumList": goodsNumList})
 
     def GoodsPublishedBatchEdit(self, goodsBatchEditList: list):
-        return self.post("/Api/Selling/GoodsPublishedBatchEdit", data=goodsBatchEditList)
+        return self.post("/Api/Selling/GoodsPublishedBatchEdit", data={"goodsBatchEditList": goodsBatchEditList})
 
     def QueryStock(self, index, PageSize=100):
         return self.post("/Api/Selling/QueryStock", data={"PageIndex": index, "PageSize": PageSize})
@@ -130,9 +129,7 @@ class ECOsteamClient:
             elif res["ResultData"]["PageResult"] == []:
                 break
             else:
-                self.logger.debug(
-                    f'已经进行到第{index}次遍历,本次遍历获取到的库存数量为{len(res["ResultData"]["PageResult"])}'
-                )
+                self.logger.debug(f'已经进行到第{index}次遍历,本次遍历获取到的库存数量为{len(res["ResultData"]["PageResult"])}')
                 index += 1
                 for item in res["ResultData"]["PageResult"]:
                     if item["AssetId"] in assetId:
