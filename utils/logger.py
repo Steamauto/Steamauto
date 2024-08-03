@@ -42,7 +42,7 @@ class LogFilter(logging.Filter):
                 elif match.group(4):  # 如果匹配到的是true, false或null
                     return f'"{key}": {mask_value(match.group(4))}'
 
-            record.msg = re.sub(pattern, replace_match, record.msg, flags=re.IGNORECASE)
+            record.msg = re.sub(pattern, replace_match, record.msg, flags=re.IGNORECASE) # type: ignore
 
         # 处理 URL 参数中的敏感信息
         for key in sensitive_keys:
@@ -205,7 +205,7 @@ logger.addFilter(LogFilter())
 logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 logger.debug(f"Steamauto {CURRENT_VERSION} started")
 logger.debug(f"Running on {platform.system()} {platform.release()}({platform.version()})")
-logger.debug(f"Python version: {os.sys.version}")
+logger.debug(f"Python version: {os.sys.version}") # type: ignore
 logger.debug(f"Build info: {BUILD_INFO}")
 
 
@@ -215,7 +215,7 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
         plogger = PluginLogger(prefix)
     if not get_is_latest_version():
         plogger.warning("当前Steamauto版本可能不是最新版本！请在更新到新版本后再次尝试！")
-    plogger.debug(e, exc_info=True)
+    logger.debug(e, exc_info=True)
 
     if isinstance(e, KeyboardInterrupt):
         plogger.info("检测到键盘中断,程序即将退出...")
