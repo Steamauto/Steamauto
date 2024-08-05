@@ -1,3 +1,4 @@
+import datetime
 import time
 
 import json5
@@ -28,6 +29,7 @@ class UUAutoLeaseItem:
         self.config = config
         self.timeSleep = 10.0
         self.inventory_list = []
+        self.lease_price_cache = {}
 
     def init(self) -> bool:
         token = get_valid_token_for_uu()
@@ -83,6 +85,25 @@ class UUAutoLeaseItem:
         self.leased_inventory_list = leased_inventory_list
 
     def get_market_lease_price(self, item_id, min_price, cnt=15, max_price=20000):
+
+        if item_id in self.lease_price_cache:
+            if datetime.datetime.now() - self.lease_price_cache[item_id]["cache_time"] <= datetime.timedelta(
+                    minutes=20):
+                commodity_name = self.lease_price_cache[item_id]["commodity_name"]
+                lease_unit_price = self.lease_price_cache[item_id]["lease_unit_price"]
+                long_lease_unit_price = self.lease_price_cache[item_id]["long_lease_unit_price"]
+                lease_deposit = self.lease_price_cache[item_id]["lease_deposit"]
+                self.logger.info(
+                    f"{commodity_name} 使用缓存价格设置, "
+                    f"lease_unit_price: {lease_unit_price:.2f}, long_lease_unit_price: {long_lease_unit_price:.2f}, "
+                    f"lease_deposit: {lease_deposit:.2f}"
+                )
+                return {
+                    "LeaseUnitPrice": lease_unit_price,
+                    "LongLeaseUnitPrice": long_lease_unit_price,
+                    "LeaseDeposit": lease_deposit,
+                }
+
         lease_price_rsp = self.uuyoupin.call_api(
             "POST",
             "/api/homepage/v3/detail/commodity/list/lease",
@@ -107,17 +128,19 @@ class UUAutoLeaseItem:
         ).json()
         if lease_price_rsp["Code"] == 0:
             rsp_list = lease_price_rsp["Data"]["CommodityList"]
+            rsp_cnt = len(rsp_list)
             commodity_name = rsp_list[0]["CommodityName"]
 
             lease_unit_price_list = []
             long_lease_unit_price_list = []
             lease_deposit_list = []
+            cnt = min(cnt, rsp_cnt)
             for i in range(cnt):
                 if (
                         rsp_list[i]["LeaseDeposit"]
                         and min_price < float(rsp_list[i]["LeaseDeposit"]) < max_price
                 ):
-                    if rsp_list[i]["LeaseUnitPrice"] and i < max(10, cnt - 5):
+                    if rsp_list[i]["LeaseUnitPrice"] and i < min(10, cnt):
                         lease_unit_price_list.append(
                             float(rsp_list[i]["LeaseUnitPrice"])
                         )
@@ -130,8 +153,9 @@ class UUAutoLeaseItem:
                         rsp_list[i]["LeaseDeposit"]
                         and float(rsp_list[i]["LeaseDeposit"]) < max_price
                         and rsp_list[i]["LeaseUnitPrice"]
-                        and i < max(10, cnt - 5)
+                        and i < min(10, cnt)
                 ):
+
                     lease_deposit_list.append(float(rsp_list[i]["LeaseDeposit"]))
 
             lease_unit_price = np.mean(lease_unit_price_list) * 0.97
@@ -158,15 +182,29 @@ class UUAutoLeaseItem:
             )
         else:
             lease_unit_price = long_lease_unit_price = lease_deposit = 0
+            commodity_name = ""
             self.logger.error(
                 f"Get Lease Price Failed. "
                 f"Response code:{lease_price_rsp['Code']}, body:{lease_price_rsp}"
             )
 
+        lease_unit_price = round(lease_unit_price, 2)
+        long_lease_unit_price = round(long_lease_unit_price, 2)
+        lease_deposit = round(lease_deposit, 2)
+
+        if lease_unit_price != 0:
+            self.lease_price_cache[item_id] = {
+                "commodity_name": commodity_name,
+                "lease_unit_price": lease_unit_price,
+                "long_lease_unit_price": long_lease_unit_price,
+                "lease_deposit": lease_deposit,
+                "cache_time": datetime.datetime.now(),
+            }
+
         return {
-            "LeaseUnitPrice": round(lease_unit_price, 2),
-            "LongLeaseUnitPrice": round(long_lease_unit_price, 2),
-            "LeaseDeposit": round(lease_deposit, 2),
+            "LeaseUnitPrice": lease_unit_price,
+            "LongLeaseUnitPrice": long_lease_unit_price,
+            "LeaseDeposit": lease_deposit,
         }
 
     def put_lease_item_on_shelf(self, items):
@@ -242,7 +280,8 @@ class UUAutoLeaseItem:
                             price < self.config["uu_auto_lease_item"]["filter_price"]
                             or (item["Tradable"] is False)
                             or item["AssetStatus"] != 0
-                            or any(s != "" and is_subsequence(s, short_name) for s in self.config["uu_auto_lease_item"]["filter_name"])
+                            or any(s != "" and is_subsequence(s, short_name) for s in
+                                   self.config["uu_auto_lease_item"]["filter_name"])
                     ):
                         continue
                     self.operate_sleep(20)
@@ -308,7 +347,8 @@ class UUAutoLeaseItem:
                 short_name = item["name"]
                 price = float(item["referencePrice"][1:])
 
-                if any(s != "" and is_subsequence(s, short_name) for s in self.config["uu_auto_lease_item"]["filter_name"]):
+                if any(s != "" and is_subsequence(s, short_name) for s in
+                       self.config["uu_auto_lease_item"]["filter_name"]):
                     continue
 
                 price_rsp = self.get_market_lease_price(item_id, min_price=price)
@@ -331,7 +371,7 @@ class UUAutoLeaseItem:
                     del lease_item["LongLeaseUnitPrice"]
                 new_leased_item_list.append(lease_item)
             self.logger.info(f"{len(new_leased_item_list)} item changed lease price.")
-            self.operate_sleep()
+            self.operate_sleep(30)
             self.change_leased_price(new_leased_item_list)
 
         except TypeError as e:
@@ -390,6 +430,7 @@ class UUAutoLeaseItem:
         self.get_market_lease_price(44444, 1000)
         self.logger.info("请检查押金设置是否有问题，如有请终止程序，否则15s后开始运行该插件")
         self.operate_sleep(15)
+
 
 if __name__ == "__main__":
     # 调试代码
