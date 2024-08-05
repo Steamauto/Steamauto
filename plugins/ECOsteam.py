@@ -383,7 +383,7 @@ class ECOsteamPlugin:
 
                         elif platform == "uu":
                             response = self.uu_client.off_shelf(offshelf_list)
-                            if int(response.json()["code"]) == "0":
+                            if int(response.json()["Code"]) == "0":
                                 self.logger.info(f"下架{len(offshelf_list)}个商品成功！")
                             else:
                                 self.logger.error(f"下架{len(offshelf_list)}个商品失败！错误信息{str(response.json())}")
