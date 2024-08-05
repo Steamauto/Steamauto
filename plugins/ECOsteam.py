@@ -467,6 +467,8 @@ class ECOsteamPlugin:
                         if i + 100 < len(assets):
                             self.logger.info(f"等待5秒后继续修改...")
                             time.sleep(5)
+                else:
+                    self.client.GoodsPublishedBatchEdit(assets)
                 self.logger.info(f"修改{len(assets)}个商品的价格成功！")
 
         elif platform == "buff":
