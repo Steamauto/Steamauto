@@ -8,14 +8,11 @@ import colorlog
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from steampy.exceptions import (ApiException, ConfirmationExpected,
-                                EmptyResponse, InvalidCredentials,
-                                InvalidResponse, SteamError)
-from utils.static import (BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER,
-                          get_is_latest_version)
+from steampy.exceptions import ApiException, ConfirmationExpected, EmptyResponse, InvalidCredentials, InvalidResponse, SteamError
+from utils.static import BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version
 
 sensitive_data = []
-sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token", "trade_url","TransactionUrl","RealName","IdCard"]
+sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token", "trade_url", "TransactionUrl", "RealName", "IdCard"]
 
 
 class LogFilter(logging.Filter):
@@ -24,6 +21,8 @@ class LogFilter(logging.Filter):
         sensitive_data.append(data)
 
     def filter(self, record):
+        if not isinstance(record.msg, str):
+            return True
         for sensitive in sensitive_data:
             record.msg = record.msg.replace(sensitive, "*" * len(sensitive))
 
@@ -42,11 +41,12 @@ class LogFilter(logging.Filter):
                 elif match.group(4):  # 如果匹配到的是true, false或null
                     return f'"{key}": {mask_value(match.group(4))}'
 
-            record.msg = re.sub(pattern, replace_match, record.msg, flags=re.IGNORECASE) # type: ignore
+            record.msg = re.sub(pattern, replace_match, record.msg, flags=re.IGNORECASE)  # type: ignore
 
         # 处理 URL 参数中的敏感信息
         for key in sensitive_keys:
             pattern = rf"({key}=)([^&\s]+)"
+
             def replace_url_match(match):
                 return f"{match.group(1)}{mask_value(match.group(2))}"
 
@@ -195,9 +195,7 @@ s_handler.setFormatter(log_formatter)
 logger.addHandler(s_handler)
 if not os.path.exists(LOGS_FOLDER):
     os.mkdir(LOGS_FOLDER)
-f_handler = logging.FileHandler(
-    os.path.join(LOGS_FOLDER, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".log"), encoding="utf-8"
-)
+f_handler = logging.FileHandler(os.path.join(LOGS_FOLDER, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".log"), encoding="utf-8")
 f_handler.setLevel(logging.DEBUG)
 f_handler.setFormatter(log_formatter)
 logger.addHandler(f_handler)
@@ -205,7 +203,7 @@ logger.addFilter(LogFilter())
 logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 logger.debug(f"Steamauto {CURRENT_VERSION} started")
 logger.debug(f"Running on {platform.system()} {platform.release()}({platform.version()})")
-logger.debug(f"Python version: {os.sys.version}") # type: ignore
+logger.debug(f"Python version: {os.sys.version}")  # type: ignore
 logger.debug(f"Build info: {BUILD_INFO}")
 
 
@@ -229,9 +227,7 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
         plogger.error("Steam返回空响应, 可能是IP受到Steam风控, 请更换IP或稍后再试")
     elif isinstance(e, requests.exceptions.ProxyError):
         plogger.error("代理异常。建议关闭代理。如果你连接Steam有困难，可单独打开配置文件内的Steam代理功能。")
-    elif isinstance(
-        e, (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError, ReadTimeout, InvalidResponse)
-    ):
+    elif isinstance(e, (ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError, ReadTimeout, InvalidResponse)):
         plogger.error("网络异常, 请检查网络连接")
         plogger.error("这个错误可能是由于代理或VPN引起的, 本软件可不使用代理或任何VPN")
         plogger.error("如果你正在使用代理或VPN, 请尝试关闭后重启软件")
@@ -246,12 +242,7 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
     elif isinstance(e, SystemError):
         plogger.error("无法连接至Steam，请检查Steam账户状态、网络连接、或重启Steamauto")
     elif isinstance(e, SteamError):
-        plogger.error(
-            "Steam 异常, 异常id:"
-            + str(e.error_code)
-            + ", 异常信息:"
-            + STEAM_ERROR_CODES.get(e.error_code, "未知Steam错误")
-        )
+        plogger.error("Steam 异常, 异常id:" + str(e.error_code) + ", 异常信息:" + STEAM_ERROR_CODES.get(e.error_code, "未知Steam错误"))
     elif isinstance(e, ApiException):
         plogger.error("Steam API 异常, 异常信息:" + str(e))
     else:
@@ -260,7 +251,7 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
         )
         plogger.error("发生未知异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 建议反馈至开发者！")
         if BUILD_INFO == '正在使用源码运行':
-            plogger.error(e,exc_info=True)
+            plogger.error(e, exc_info=True)
 
 
 class PluginLogger:
