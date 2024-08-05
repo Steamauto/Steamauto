@@ -247,7 +247,7 @@ class UUAccount:
             "PUT",
             "/api/commodity/Commodity/OffShelf",
             data={
-                "Ids": ",".join(commodity_ids),
+                "Ids": ",".join([str(id) for id in commodity_ids]),
                 "IsDeleteCommodityCache": 1,
                 "IsForceOffline": True,
             },
