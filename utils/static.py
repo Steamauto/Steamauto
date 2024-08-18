@@ -213,6 +213,21 @@ DEFAULT_CONFIG_JSON = r"""
     // 不出租的物品名字列表，示例：["物品A", "物品B"]（名字可以不写全，但是要写对，比如M4A1印花集）
     "filter_name": ["物品A", "物品B"]
   },
+  // 悠悠有品出售自动上架配置
+  "uu_auto_sell_item": {
+    // 悠悠有品出售自动上架功能是否启用，默认为false
+    "enable": false,
+    // 按照止盈率设置定价
+    "take_profile": false,
+    // 止盈率
+    "take_profile_ratio": 0.1,
+    // 自动上架每天定时运行时间
+    "run_time": "15:30",
+    // 已上架的物品可以定时修改价格。设置的轮询间隔，单位为分钟
+    "interval": 51,
+    // 出售的物品名字列表，示例：["物品A", "物品B"]（名字可以不写全，但是要写对，比如M4A1印花集）
+    "name": ["物品A", "物品B"]
+  },
   // Steam 自动接受礼物报价插件配置
   "steam_auto_accept_offer": {
     // 是否开启自动接受Steam礼物报价（无需支出任何Steam库存中的物品的报价）

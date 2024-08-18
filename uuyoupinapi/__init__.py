@@ -242,6 +242,28 @@ class UUAccount:
                         shelf.append(item)
         return shelf
 
+    def get_inventory(self):
+        inventory_list_rsp = self.call_api(
+            "POST",
+            "/api/commodity/Inventory/GetUserInventoryDataListV3",
+            data={
+                "pageIndex": 1,
+                "pageSize": 1000,
+                "AppType": 4,
+                "IsMerge": 0,
+                "Sessionid": self.device_info["deviceId"],
+            },
+        ).json()
+        inventory_list = []
+        if inventory_list_rsp["Code"] == 0:
+            inventory_list = inventory_list_rsp["Data"]["ItemsInfos"]
+            logger.info(f"库存数量 {len(inventory_list)}")
+        else:
+            logger.error(inventory_list_rsp)
+            logger.error("获取UU库存失败!")
+
+        return inventory_list
+
     def off_shelf(self, commodity_ids: list):
         return self.call_api(
             "PUT",
