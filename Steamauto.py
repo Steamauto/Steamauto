@@ -21,6 +21,7 @@ from plugins.ECOsteam import ECOsteamPlugin
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from plugins.UUAutoLease import UUAutoLeaseItem
+from plugins.UUAutoSell import UUAutoSellItem
 from steampy.client import SteamClient
 from steampy.exceptions import ApiException
 
@@ -344,6 +345,13 @@ def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
     ):
         uu_auto_lease_on_shelf = UUAutoLeaseItem(config)
         plugins_enabled.append(uu_auto_lease_on_shelf)
+    if (
+        "uu_auto_sale_item" in config
+        and "enable" in config["uu_auto_sale_item"]
+        and config["uu_auto_sale_item"]["enable"]
+    ):
+        uu_auto_sale_on_shelf = UUAutoSellItem(config)
+        plugins_enabled.append(uu_auto_sale_on_shelf)
     if (
         "steam_auto_accept_offer" in config
         and "enable" in config["steam_auto_accept_offer"]

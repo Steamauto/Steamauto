@@ -60,7 +60,7 @@ class UUAutoLeaseItem:
             self.logger.error(inventory_list_rsp)
             self.logger.error("获取UU库存失败!")
 
-        self.inventory_list = inventory_list
+        return inventory_list
 
     def get_uu_leased_inventory(self):
         rsp = self.uuyoupin.call_api(
@@ -267,7 +267,10 @@ class UUAutoLeaseItem:
                 lease_item_list = []
                 self.uuyoupin.send_device_info()
                 self.logger.info("正在获取悠悠有品库存...")
-                self.get_uu_inventory()
+                self.inventory_list = self.get_uu_inventory()
+                self.operate_sleep(10)
+
+                self.inventory_list = self.get_uu_inventory()
 
                 for i, item in enumerate(self.inventory_list):
                     if item["AssetInfo"] is None:
