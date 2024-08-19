@@ -87,7 +87,7 @@ def login_to_steam():
                 if config["steam_login_ignore_ssl_error"]:
                     logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
                     client._session.verify = False
-                    requests.packages.urllib3.disable_warnings()
+                    requests.packages.urllib3.disable_warnings() # type: ignore
                 else:
                     client._session.verify = True
                 if config["steam_local_accelerate"]:
@@ -146,7 +146,7 @@ def login_to_steam():
             if config["steam_login_ignore_ssl_error"]:
                 logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
                 client._session.verify = False
-                requests.packages.urllib3.disable_warnings()
+                requests.packages.urllib3.disable_warnings() # type: ignore
             if config["steam_local_accelerate"]:
                 if config["use_proxies"]:
                     logger.warning('检测到你已经同时开启内置加速和代理功能！正常情况下不推荐通过这种方式使用软件。')

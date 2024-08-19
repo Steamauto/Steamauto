@@ -8,16 +8,17 @@ from utils.logger import logger
 from utils.static import get_no_pause
 
 
+current_exit_code = int()
 class exit_code:
     @staticmethod
-    def set(code):
-        global exit_code
-        exit_code = code
+    def set(code: int):
+        global current_exit_code
+        current_exit_code = code 
 
     @staticmethod
-    def get():
-        global exit_code
-        return exit_code
+    def get() -> int:
+        global current_exit_code
+        return current_exit_code
 
 
 # 用于解决读取文件时的编码问题
@@ -57,9 +58,11 @@ class accelerator:
         domain_list = [
             "steamcommunity-a.akamaihd.net",
         ]
-        domain = re.search(r"(https?://)([^/\s]+)", r.url).group(2)
-        r.headers["Host"] = domain
-        r.url = re.sub(r"(https?://)([^/\s]+)(.*)", r"\1" + random.choice(domain_list) + r"\3", r.url)
+        match = re.search(r"(https?://)([^/\s]+)", r.url)
+        if match:
+            domain = match.group(2)
+            r.headers["Host"] = domain
+            r.url = re.sub(r"(https?://)([^/\s]+)(.*)", r"\1" + random.choice(domain_list) + r"\3", r.url)
         return r
 
 def is_subsequence(s, t):
