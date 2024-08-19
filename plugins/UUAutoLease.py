@@ -25,7 +25,6 @@ class UUAutoLeaseItem:
     def __init__(self, config):
         self.leased_inventory_list = None
         self.logger = PluginLogger("UUAutoLeaseItem")
-        self.uuyoupin = None
         self.config = config
         self.timeSleep = 10.0
         self.inventory_list = []
@@ -37,10 +36,10 @@ class UUAutoLeaseItem:
             self.logger.error("悠悠有品登录失败！即将关闭程序！")
             exit_code.set(1)
             return True
+        self.uuyoupin = uuyoupinapi.UUAccount(token)
         return False
 
     def get_uu_inventory(self):
-
         inventory_list_rsp = self.uuyoupin.call_api(
             "POST",
             "/api/commodity/Inventory/GetUserInventoryDataListV3",
@@ -157,19 +156,18 @@ class UUAutoLeaseItem:
                 ):
 
                     lease_deposit_list.append(float(rsp_list[i]["LeaseDeposit"]))
-
-            lease_unit_price = np.mean(lease_unit_price_list) * 0.97
-            lease_unit_price = max(lease_unit_price, lease_unit_price_list[0], 0.01)
+            lease_unit_price = float(np.mean(lease_unit_price_list)) * 0.97
+            lease_unit_price = max(lease_unit_price, float(lease_unit_price_list[0]), 0.01)
 
             long_lease_unit_price = min(
-                lease_unit_price * 0.98, np.mean(long_lease_unit_price_list) * 0.95
+                lease_unit_price * 0.98, float(np.mean(long_lease_unit_price_list)) * 0.95
             )
             if len(long_lease_unit_price_list) == 0:
                 long_lease_unit_price = max(lease_unit_price - 0.01, 0.01)
             else:
-                long_lease_unit_price = max(long_lease_unit_price, long_lease_unit_price_list[0], 0.01)
+                long_lease_unit_price = max(long_lease_unit_price, float(long_lease_unit_price_list[0]), 0.01)
 
-            lease_deposit = max(np.mean(lease_deposit_list) * 0.98, min(lease_deposit_list))
+            lease_deposit = max(float(np.mean(lease_deposit_list)) * 0.98, float(min(lease_deposit_list)))
 
             self.logger.info(
                 f"{commodity_name}, "
@@ -344,6 +342,8 @@ class UUAutoLeaseItem:
             self.get_uu_leased_inventory()
 
             new_leased_item_list = []
+            if self.leased_inventory_list is None:
+                self.leased_inventory_list = []
             for i, item in enumerate(self.leased_inventory_list):
                 asset_id = item["id"]
                 item_id = item["templateId"]
@@ -395,15 +395,6 @@ class UUAutoLeaseItem:
                 return 1
 
     def exec(self):
-        self.logger.info("run func exec.")
-        token = get_valid_token_for_uu()
-        if not token:
-            self.logger.error("由于登录失败，插件将自动退出")
-            exit_code.set(1)
-            return 1
-        else:
-            self.uuyoupin = uuyoupinapi.UUAccount(token)
-
         self.logger.info(f"以下物品不会出租: {self.config['uu_auto_lease_item']['filter_name']}")
 
         self.pre_check_price()

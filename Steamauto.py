@@ -26,9 +26,8 @@ from steampy.client import SteamClient
 from steampy.exceptions import ApiException
 
 try:
-    from steampy.utils import ping_proxy
+    from steampy.utils import ping_proxy # type: ignore
 except:
-
     def ping_proxy(nothing):
         return False
 
