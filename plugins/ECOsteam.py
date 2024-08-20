@@ -418,12 +418,11 @@ class ECOsteamPlugin:
             if len(assets) > 0:
                 self.logger.info(f"即将上架{len(assets)}个商品到ECOsteam")
 
-                def publish_assets_in_batches(assets, batch_size=100):
+                def publish_assets_in_batches(assets, batch_size=100) -> list:
                     batches = [assets[i : i + batch_size] for i in range(0, len(assets), batch_size)]
                     return batches
-
+                batches = publish_assets_in_batches(assets)
                 try:
-                    batches = publish_assets_in_batches(assets)
                     for batch in batches:
                         response = self.client.PublishStock(batch)
                         self.logger.info(f"上架{len(batch)}个商品到ECOsteam成功！")
