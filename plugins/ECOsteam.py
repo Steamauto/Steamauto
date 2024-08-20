@@ -7,7 +7,7 @@ from threading import Thread
 from typing import List
 
 from BuffApi import BuffAccount
-from PyECOsteam import ECOsteamClient
+from PyECOsteam import ECOsteamClient, models
 from steampy.client import SteamClient
 from steampy.models import GameOptions
 from utils.buff_helper import get_valid_session_for_buff
@@ -30,10 +30,6 @@ class Asset:
     orderNo: str
     price: float
     eco_stockid: int
-
-
-def toECO(obj: dict):
-    return {"AssetId": obj["assetid"], "Price": obj["price"], "Description": "", "SteamGameId": obj["appid"]}
 
 
 def shelf_processor(assets: List[Asset]):
@@ -170,7 +166,6 @@ class ECOsteamPlugin:
                 thread.join()
         else:
             self.auto_accept_offer()
-                
 
     # 自动发货相关功能
     def auto_accept_offer(self):
@@ -220,15 +215,15 @@ class ECOsteamPlugin:
         try:
             with self.steam_client_mutex:
                 inventory = self.steam_client.get_my_inventory(game=GameOptions.CS)  # type: ignore
+                self.logger.debug('获取到的Steam库存:' + json.dumps(inventory, ensure_ascii=False))
         except Exception as e:
             handle_caught_exception(e, "ECOsteam.cn")
-            self.logger.error("Steam异常, 暂时无法获取库存, 请稍后再试! ")
         return inventory
-    
+
     def auto_sync_lease_shelf(self):
         self.logger.info("自动同步租赁上架已经启动，请稍等以与其它线程错开运行！")
         time.sleep(6)
-        
+
         # 悠悠登录
         if not (hasattr(self, "uu_client") and self.uu_client):
             self.logger.info("由于已经启用悠悠平台，正在联系UULoginSolver获取有效的session...")
@@ -238,7 +233,7 @@ class ECOsteamPlugin:
             else:
                 self.logger.warning("无法获取有效的悠悠token，悠悠有品平台自动同步租赁上架已经自动关闭")
                 return
-        
+
     def sync_lease_shelves(self):
         self.logger.info("")
 
@@ -375,6 +370,9 @@ class ECOsteamPlugin:
             ratios[platform] = tc["ratio"][platform]
         self.logger.info("正在从Steam获取库存信息...")
         inventory = self.get_steam_inventory()
+        if not inventory:
+            self.logger.error("Steam异常, 暂时无法获取库存, 请稍后再试! ")
+            return
 
         try:
             for platform in tc["enabled_platforms"]:
@@ -389,7 +387,7 @@ class ECOsteamPlugin:
                     if len(offshelf_list) > 0:
                         self.logger.warning(f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！")
                         if platform == "eco":
-                            response = self.client.OffshelfGoods([{"GoodsNum": good, "SteamGameId": 730} for good in offshelf_list])
+                            response = self.client.OffshelfGoods([models.GoodsNum(GoodsNum=good, SteamGameId='730') for good in offshelf_list])
                             if response.json()["ResultCode"] == "0":
                                 self.logger.info(f"下架{len(offshelf_list)}个商品成功！")
                             else:
@@ -435,13 +433,14 @@ class ECOsteamPlugin:
     def solve_platform_difference(self, platform, difference):
         if platform == "eco":
             # 上架商品
-            assets = [toECO(asset) for asset in difference["add"]]
+            assets = [models.ECOPublishStockAsset.from_dict(asset) for asset in difference["add"]]
             if len(assets) > 0:
                 self.logger.info(f"即将上架{len(assets)}个商品到ECOsteam")
 
                 def publish_assets_in_batches(assets, batch_size=100) -> list:
                     batches = [assets[i : i + batch_size] for i in range(0, len(assets), batch_size)]
                     return batches
+
                 batches = publish_assets_in_batches(assets)
                 try:
                     for batch in batches:
@@ -471,7 +470,7 @@ class ECOsteamPlugin:
             assets = [asset["orderNo"] for asset in difference["delete"]]
             if len(assets) > 0:
                 self.logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
-                response = self.client.OffshelfGoods([{"GoodsNum": good, "SteamGameId": 730} for good in assets])
+                response = self.client.OffshelfGoods([models.GoodsNum(GoodsNum=goodsNum, SteamGameId='730') for goodsNum in assets])
 
                 self.logger.info(f"下架{len(assets)}个商品成功！")
 
@@ -504,9 +503,7 @@ class ECOsteamPlugin:
                         "contextid": asset["contextid"],
                         "market_hash_name": asset["market_hash_name"],
                         "price": asset["price"],
-                        "market_hash_name": asset["market_hash_name"],
-                        "price": asset["price"],
-                        "income": asset["price"],
+                        # "income": asset["price"],
                         "desc": "",
                     }
                     for asset in assets

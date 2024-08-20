@@ -6,11 +6,11 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import timezone
 
+import PyECOsteam.models as models
 from PyECOsteam.sign import generate_rsa_signature
 from utils.logger import PluginLogger
 from utils.static import CURRENT_VERSION
 from utils.tools import jobHandler
-import PyECOsteam.models as models
 
 
 class ECOsteamClient:
@@ -99,10 +99,10 @@ class ECOsteamClient:
                     break
         return goods
 
-    def PublishStock(self, assets: list):
-        return self.post("/Api/Selling/PublishStock", data={"Assets": assets})
+    def PublishStock(self, assets: list[models.ECOPublishStockAsset]):
+        return self.post("/Api/Selling/PublishStock", data={"Assets": [asset.model_dump(exclude_none=True) for asset in assets]})
 
-    def OffshelfGoods(self, goodsNumList: list):
+    def OffshelfGoods(self, goodsNumList: list[models.GoodsNum]):
         return self.post("/Api/Selling/OffshelfGoods", data={"goodsNumList": goodsNumList})
 
     def GoodsPublishedBatchEdit(self, goodsBatchEditList: list):
@@ -156,8 +156,7 @@ class ECOsteamClient:
             "/Api/Rent/PublishRentGoods", data={"Assets": [asset.model_dump_json(exclude_none=True) for asset in Assets], "SteamId": SteamId}
         )
 
-    def OffshelfRentGoods(self, GoodsNumList: list[models.goodsNum]):
+    def OffshelfRentGoods(self, GoodsNumList: list[models.GoodsNum]):
         return self.post(
             "/Api/Rent/OffshelfRentGoods", data={"goodsNumList": [goodsNum.model_dump_json(exclude_none=True) for goodsNum in GoodsNumList]}
         )
-

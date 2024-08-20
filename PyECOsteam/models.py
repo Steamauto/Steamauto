@@ -13,8 +13,19 @@ class RentAsset(BaseModel):
     RentDeposits: float
     RentDescription: Union[str, None] = None
 
-class goodsNum(BaseModel):
+
+class GoodsNum(BaseModel):
     # GoodsNum和AssetId二选一
     GoodsNum: Union[str, None] = None
     AssetId: Union[str, None] = None
     SteamGameId: str = '730'
+
+class ECOPublishStockAsset(BaseModel):
+    AssetId: str
+    Price:float
+    Description: Union[str, None] = None
+    SteamGameId: str = '730'
+    
+    @classmethod
+    def from_dict(cls,obj):
+        return cls(AssetId=obj["assetid"],Price=obj["price"],Description=obj.get('Description',''),SteamGameId=obj['appid'])
