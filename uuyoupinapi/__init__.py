@@ -1,3 +1,4 @@
+from calendar import c
 import json
 import random
 import string
@@ -54,9 +55,7 @@ class UUAccount:
         self.ignore_list = []
         random.seed(token)
         self.device_info = generate_device_info()
-        self.session.headers.update(
-            generate_headers(self.device_info["deviceId"], self.device_info["deviceId"], token=token)
-        )
+        self.session.headers.update(generate_headers(self.device_info["deviceId"], self.device_info["deviceId"], token=token))
         try:
             info = self.call_api("GET", "/api/user/Account/getUserInfo").json()
             self.nickname = info["Data"]["NickName"]
@@ -136,7 +135,7 @@ class UUAccount:
         :return:
         """
         url = "https://api.youpin898.com" + path
-        
+
         if method == "GET":
             response = self.session.get(url, params=data)
         elif method == "POST":
@@ -147,8 +146,65 @@ class UUAccount:
             response = self.session.delete(url)
         else:
             raise Exception("Method not supported")
-        logger.debug(f"{method} {path} {json.dumps(data)} {response.content.decode()}" )
+        try:
+            logger.debug(f"{method} {path} {json.dumps(data)} {response.content.decode()}")
+        except Exception as e:
+            raise Exception(f"网络错误！！！请求失败: {e}")
         return response
+
+    def change_leased_price(self, item_infos):
+        '''
+        请求范例：
+        {
+            "Commoditys": [{
+                "CommodityId": 814953269,
+                "CompensationType": 0,
+                "IsCanLease": true,
+                "IsCanSold": false,
+                "LeaseDeposit": "1000.0",
+                "LeaseMaxDays": 8,
+                "LeaseUnitPrice": 90,
+                "NomarlChargePercent": "0.25",
+                "OpenLeaseActivity": false,
+                "Remark": "",
+                "SupportZeroCD": 0,
+                "UseDepositSafeguard": 1,
+                "VipChargePercent": "0.2",
+                "VipSwitchStatus": 1
+            }],
+            "Sessionid": "Zmh...mYv4p"
+        }
+        返回范例：
+        {
+            "Code": 0,
+            "Msg": "请求成功",
+            "TipType": 10,
+            "Data": {
+                "SuccessCount": 1,
+                "FailCount": 0,
+                "Commoditys": [{
+                    "CommodityId": 814953269,
+                    "IsSuccess": 1,
+                    "Message": null
+                }]
+            }
+        }
+        '''
+        num = len(item_infos)
+
+        rsp = self.call_api(
+            "PUT",
+            "/api/commodity/Commodity/PriceChangeWithLeaseV2",
+            data={
+                "Commoditys": item_infos,
+                "Sessionid": self.device_info["deviceId"],
+            },
+        ).json()
+        success_count = 0
+        for commodity in rsp["Data"]["Commoditys"]:
+            if commodity["IsSuccess"] == 1:
+                success_count += 1
+        return success_count
 
     def get_wait_deliver_list(self, game_id=730, return_offer_id=True):
         """
@@ -242,6 +298,75 @@ class UUAccount:
                         shelf.append(item)
         return shelf
 
+    def put_items_on_lease_shelf(self, item_infos, GameId=730):
+        '''
+        请求范例：
+        {
+            "AppType": 3,
+            "AppVersion": "5.20.1",
+            "GameId": 730,
+            "ItemInfos": [{
+                "AssetId": 38872746818,
+                "IsCanLease": true,
+                "IsCanSold": false,
+                "LeaseDeposit": "30000.0",
+                "LeaseMaxDays": 30,
+                "LeaseUnitPrice": 10,
+                "LongLeaseUnitPrice": 10,
+            }],
+            "Sessionid": "..."
+        }
+        返回范例：
+        {
+            "Code": 0,
+            "Msg": "成功",
+            "TipType": 10,
+            "Data": [{
+                "AssetId": 38872746818,
+                "CommodityId": 814835547,
+                "CommodityNo": "2024082046...90528",
+                "Status": 1,
+                "Remark": ""
+            }]
+        }
+        '''
+        lease_on_shelf_rsp = self.call_api(
+            "POST",
+            "/api/commodity/Inventory/SellInventoryWithLeaseV2",
+            data={
+                "GameId": GameId,
+                "itemInfos": item_infos,
+                "Sessionid": self.device_info["deviceId"],
+            },
+        ).json()
+        success_count = 0
+        for asset in lease_on_shelf_rsp["Data"]:
+            if asset["Status"] == 1:
+                success_count += 1
+        return success_count
+
+    def get_uu_leased_inventory(self) -> list:
+        rsp = self.call_api(
+            "POST",
+            "/api/youpin/bff/new/commodity/v1/commodity/list/lease",
+            data={
+                "pageIndex": 1,
+                "pageSize": 100,
+                "whetherMerge": 0,
+                "Sessionid": self.device_info["deviceId"],
+            },
+        ).json()
+        leased_inventory_list = []
+        if rsp["code"] == 0:
+            leased_inventory_list = rsp["data"]["commodityInfoList"]
+            logger.info(f"上架数量 {len(leased_inventory_list)}")
+        elif rsp["code"] == 9004001:
+            logger.info("暂无自租商品")
+        else:
+            logger.error(leased_inventory_list)
+            logger.error("获取UU上架物品失败!")
+        return leased_inventory_list
+    
     def get_inventory(self):
         inventory_list_rsp = self.call_api(
             "POST",
@@ -287,10 +412,7 @@ class UUAccount:
         )
 
     def change_price(self, assets: dict):
-        item_infos = [
-            {"CommodityId": int(asset), "Price": str(assets[asset]), "Remark": None, "IsCanSold": True}
-            for asset in assets.keys()
-        ]
+        item_infos = [{"CommodityId": int(asset), "Price": str(assets[asset]), "Remark": None, "IsCanSold": True} for asset in assets.keys()]
         return self.call_api(
             "PUT",
             "/api/commodity/Commodity/PriceChangeWithLeaseV2",
