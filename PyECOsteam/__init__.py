@@ -10,6 +10,7 @@ from PyECOsteam.sign import generate_rsa_signature
 from utils.logger import PluginLogger
 from utils.static import CURRENT_VERSION
 from utils.tools import jobHandler
+import PyECOsteam.models as models
 
 
 class ECOsteamClient:
@@ -147,3 +148,16 @@ class ECOsteamClient:
 
     def QuerySteamAccountList(self):
         return self.post("/Api/Merchant/QuerySteamAccountList", data={})
+
+    def PublishRentGoods(self, SteamId: str, Assets: list[models.RentAsset]):
+        if len(Assets) > 100:
+            raise Exception("每次租赁上架数量不能超过100")
+        return self.post(
+            "/Api/Rent/PublishRentGoods", data={"Assets": [asset.model_dump_json(exclude_none=True) for asset in Assets], "SteamId": SteamId}
+        )
+
+    def OffshelfRentGoods(self, GoodsNumList: list[models.goodsNum]):
+        return self.post(
+            "/Api/Rent/OffshelfRentGoods", data={"goodsNumList": [goodsNum.model_dump_json(exclude_none=True) for goodsNum in GoodsNumList]}
+        )
+

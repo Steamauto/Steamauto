@@ -122,7 +122,7 @@ class ECOsteamPlugin:
             with open(ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)) as f:
                 rsa_key = f.read()
             if "PUBLIC" in rsa_key:
-                self.logger.error("请使用私钥文件(Private key)！")
+                self.logger.error("你在rsakey文件中放入的不是私钥！请填入私钥信息(Private key)！")
                 return 1
             LogFilter.add_sensitive_data(self.config["ecosteam"]["partnerId"])
             self.client = ECOsteamClient(
@@ -157,17 +157,20 @@ class ECOsteamPlugin:
                 f"检测到你的ECOsteam绑定了多个Steam账号。插件的所有操作仅对SteamID为{self.steam_id}的账号生效！如需同时操作多个账号，请多开Steamauto实例！"
             )
 
+        threads = []
+        threads.append(Thread(target=self.auto_accept_offer))
         if self.config["ecosteam"]["auto_sync_sell_shelf"]["enable"]:
-            threads = []
-            threads.append(Thread(target=self.auto_accept_offer))
             threads.append(Thread(target=self.auto_sync_sell_shelf))
+        if self.config["ecosteam"]['auto_sync_lease_shelf']['enable']:
+            threads.append(Thread(target=self.auto_sync_lease_shelf))
+        if not len(threads) == 1:
             for thread in threads:
-                thread.daemon = True
                 thread.start()
             for thread in threads:
                 thread.join()
         else:
             self.auto_accept_offer()
+                
 
     # 自动发货相关功能
     def auto_accept_offer(self):
@@ -221,26 +224,44 @@ class ECOsteamPlugin:
             handle_caught_exception(e, "ECOsteam.cn")
             self.logger.error("Steam异常, 暂时无法获取库存, 请稍后再试! ")
         return inventory
+    
+    def auto_sync_lease_shelf(self):
+        self.logger.info("自动同步租赁上架已经启动，请稍等以与其它线程错开运行！")
+        time.sleep(6)
+        
+        # 悠悠登录
+        if not (hasattr(self, "uu_client") and self.uu_client):
+            self.logger.info("由于已经启用悠悠平台，正在联系UULoginSolver获取有效的session...")
+            token = get_valid_token_for_uu()
+            if token:
+                self.uu_client = UUAccount(token)
+            else:
+                self.logger.warning("无法获取有效的悠悠token，悠悠有品平台自动同步租赁上架已经自动关闭")
+                return
+        
+    def sync_lease_shelves(self):
+        self.logger.info("")
 
     # 自动同步上架启动线程
     def auto_sync_sell_shelf(self):
-        time.sleep(3)  # 与自动发货错开运行
+        self.logger.info("自动同步平台上架(出售)已经启动，请稍等以与其它线程错开运行！")
+        time.sleep(3)
 
         # 配置检查
-        tc = copy.deepcopy(self.config["ecosteam"]["auto_sync_sell_shelf"])
+        config_sync_sell_shelf = copy.deepcopy(self.config["ecosteam"]["auto_sync_sell_shelf"])
         sync_shelf_enabled = True
-        tc["enabled_platforms"].append("eco")
-        if not tc["main_platform"] in tc["enabled_platforms"]:
+        config_sync_sell_shelf["enabled_platforms"].append("eco")
+        if not config_sync_sell_shelf["main_platform"] in config_sync_sell_shelf["enabled_platforms"]:
             self.logger.error("主平台必须在enabled_platforms中！请重新修改检查配置文件！")
             sync_shelf_enabled = False
-        platforms = list(copy.deepcopy(tc["enabled_platforms"]))
+        platforms = list(copy.deepcopy(config_sync_sell_shelf["enabled_platforms"]))
         while len(platforms) > 0:
             platform = platforms.pop()
             if not (platform == "uu" or platform == "eco" or platform == "buff"):
                 self.logger.error("当前仅支持UU/ECO/BUFF平台，请检查配置！")
                 sync_shelf_enabled = False
                 break
-        if not tc["main_platform"] in tc["enabled_platforms"]:
+        if not config_sync_sell_shelf["main_platform"] in config_sync_sell_shelf["enabled_platforms"]:
             self.logger.error("由于主平台未启用，自动同步平台功能已经自动关闭")
             sync_shelf_enabled = False
         if not sync_shelf_enabled:
@@ -248,37 +269,37 @@ class ECOsteamPlugin:
             return
 
         # BUFF登录
-        if "buff" in tc["enabled_platforms"]:
+        if "buff" in config_sync_sell_shelf["enabled_platforms"]:
             self.logger.info("由于已经启用BUFF平台，正在联系BuffLoginSolver获取有效的session...")
             buff_session = ""
             with self.steam_client_mutex:
                 buff_session = get_valid_session_for_buff(self.steam_client, self.logger)
             if not buff_session:
                 self.logger.warning("无法获取有效的BUFF session，BUFF平台相关已经自动关闭")
-                tc["enabled_platforms"].remove("buff")
+                config_sync_sell_shelf["enabled_platforms"].remove("buff")
             else:
                 self.buff_client = BuffAccount(buff_session)
                 self.logger.info(f"已经获取到有效的BUFF session")
 
         # 悠悠登录
-        if "uu" in tc["enabled_platforms"]:
+        if "uu" in config_sync_sell_shelf["enabled_platforms"] and not (hasattr(self, "uu_client") and self.uu_client):
             self.logger.info("由于已经启用悠悠平台，正在联系UULoginSolver获取有效的session...")
             token = get_valid_token_for_uu()
             if token:
                 self.uu_client = UUAccount(token)
             else:
-                self.logger.warning("无法获取有效的悠悠token，悠悠有品平台相关已经自动关闭")
-                tc["enabled_platforms"].remove("uu")
+                self.logger.warning("无法获取有效的悠悠token，悠悠有品平台自动同步售卖上架已经自动关闭")
+                config_sync_sell_shelf["enabled_platforms"].remove("uu")
 
         # 检查是否有平台可用
-        if len(tc["enabled_platforms"]) == 1:
+        if len(config_sync_sell_shelf["enabled_platforms"]) == 1:
             self.logger.error("无平台可用。已经关闭自动同步平台功能！")
             sync_shelf_enabled = False
 
         while sync_shelf_enabled:
-            self.sync_shelf(tc)
-            self.logger.info(f'等待{tc["interval"]}秒后重新检查多平台上架物品')
-            time.sleep(tc["interval"])
+            self.sync_shelf(config_sync_sell_shelf)
+            self.logger.info(f'等待{config_sync_sell_shelf["interval"]}秒后重新检查多平台上架物品')
+            time.sleep(config_sync_sell_shelf["interval"])
 
     def get_shelf(self, platform, inventory):
         # 如果需要下架
@@ -543,12 +564,12 @@ class ECOsteamPlugin:
             for item in add:
                 assets[item["assetid"]] = item["price"]
             if len(assets) > 0:
-                self.logger.info(f"即将上架{len(assets)}个商品到UU有品")
+                self.logger.info(f"即将上架{len(assets)}个商品到悠悠有品")
                 response = self.uu_client.sell_items(assets)
                 if int(response.json()["Code"]) == 0:
-                    self.logger.info(f"上架{len(assets)}个商品到UU有品成功！")
+                    self.logger.info(f"上架{len(assets)}个商品到悠悠有品成功！")
                 else:
-                    self.logger.error(f'上架{len(assets)}个商品到UU有品失败(可能部分上架成功)！错误信息：{str(response.json()["Msg"])}')
+                    self.logger.error(f'上架{len(assets)}个商品到悠悠有品失败(可能部分上架成功)！错误信息：{str(response.json()["Msg"])}')
 
             # 下架商品
             delete = difference["delete"]
