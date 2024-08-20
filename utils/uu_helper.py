@@ -21,18 +21,17 @@ def get_valid_token_for_uu():
                 logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
                 return token
             except Exception as e:
-                handle_caught_exception(e, "[UULoginSolver]")
                 logger.warning("缓存的悠悠有品Token无效")
     else:
         logger.info("未检测到存储的悠悠token")
     logger.info("即将重新登录悠悠有品！")
-    token = get_token_automatically()
+    token = str(get_token_automatically())
     try:
         uuyoupin = uuyoupinapi.UUAccount(token)
         logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
         with open(UU_TOKEN_FILE_PATH, "w", encoding="utf-8") as f:
             f.write(token)
-        logger.info("悠悠有品token已保存到文件")
+        logger.info("悠悠有品Token已自动缓存到本地")
         return token
     except TypeError:
         logger.error('获取Token失败！可能是验证码填写错误或者未发送验证短信！')

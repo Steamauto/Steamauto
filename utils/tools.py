@@ -7,8 +7,10 @@ import chardet
 from utils.logger import logger
 from utils.static import get_no_pause
 
+from apscheduler.job import Job
 
-current_exit_code = int()
+current_exit_code = 0
+jobs = []
 class exit_code:
     @staticmethod
     def set(code: int):
@@ -20,6 +22,19 @@ class exit_code:
         global current_exit_code
         return current_exit_code
 
+class jobHandler:
+    @staticmethod
+    def add(job:Job):
+        global jobs
+        jobs.append(job)
+
+    @staticmethod
+    def terminate_all():
+        global jobs
+        for job in jobs:
+            job.pause()
+            job.remove()
+            del jobs[jobs.index(job)]
 
 # 用于解决读取文件时的编码问题
 def get_encoding(file_path):

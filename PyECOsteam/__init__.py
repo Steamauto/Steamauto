@@ -9,12 +9,16 @@ from pytz import timezone
 from PyECOsteam.sign import generate_rsa_signature
 from utils.logger import PluginLogger
 from utils.static import CURRENT_VERSION
+from utils.tools import jobHandler
 
 
 class ECOsteamClient:
     # https://openapi.ecosteam.cn/index.html/ 查看API文档
     def __rps_counter(self):
-        self.rps = 0
+        try:
+            self.rps = 0
+        except RuntimeError:
+            pass
 
     def __init__(self, partnerId, RSAKey, qps=10) -> None:
         self.logger = PluginLogger("ECOsteam.cn")
@@ -25,7 +29,7 @@ class ECOsteamClient:
         logging.getLogger("apscheduler").propagate = False
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
         scheduler = BackgroundScheduler(timezone=timezone("Asia/Shanghai"))
-        scheduler.add_job(self.__rps_counter, "interval", seconds=1)
+        jobHandler.add(scheduler.add_job(self.__rps_counter, "interval", seconds=1))
         scheduler.start()
 
     def post(self, api: str, data: dict):

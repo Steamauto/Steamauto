@@ -24,9 +24,10 @@ from plugins.UUAutoLease import UUAutoLeaseItem
 from plugins.UUAutoSell import UUAutoSellItem
 from steampy.client import SteamClient
 from steampy.exceptions import ApiException
+from utils.tools import jobHandler
 
 try:
-    from steampy.utils import ping_proxy # type: ignore
+    from steampy.utils import ping_proxy  # type: ignore
 except:
     def ping_proxy(nothing):
         return False
@@ -432,12 +433,13 @@ def main():
 
     logger.info("由于所有插件已经关闭,程序即将退出...")
     pause()
-    sys.exit(exit_code.get())
+    return 1
 
 
 def exit_app(signal_, frame):
-    logger.info("正在退出...")
-    sys.exit()
+    jobHandler.terminate_all()
+    logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
+    sys.exit(exit_code.get())
 
 
 if __name__ == "__main__":
@@ -447,8 +449,5 @@ if __name__ == "__main__":
         os.mkdir(DEV_FILE_FOLDER)
     if not os.path.exists(SESSION_FOLDER):
         os.mkdir(SESSION_FOLDER)
-    exit_code.set(main())
-    if exit_code is not None:
-        sys.exit(exit_code.get())
-    else:
-        sys.exit()
+    exit_code.set(main()) # type: ignore
+    exit_app(None, None)
