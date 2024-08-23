@@ -72,9 +72,9 @@ def login_to_steam():
 
     steam_session_path = os.path.join(SESSION_FOLDER, steam_account_info.get("steam_username", "").lower() + ".pkl")  # type: ignore
     if not os.path.exists(steam_session_path):
-        logger.info("检测到首次登录Steam，正在尝试登录...登录完成后会自动缓存session")
+        logger.info("检测到首次登录Steam，正在尝试登录...登录完成后会自动缓存登录信息")
     else:
-        logger.info("检测到缓存的steam_session, 正在尝试登录...")
+        logger.info("检测到缓存的Steam登录信息, 正在尝试登录...")
         try:
             with open(steam_session_path, "rb") as f:
                 client = pickle.load(f)
@@ -93,14 +93,14 @@ def login_to_steam():
                     steam_client = client
         except requests.exceptions.ConnectionError as e:
             handle_caught_exception(e)
-            logger.error("使用缓存的session登录失败!可能是网络异常")
+            logger.error("使用缓存的登录信息登录失败!可能是网络异常")
             steam_client = None
         except (EOFError, pickle.UnpicklingError) as e:
             handle_caught_exception(e)
             shutil.rmtree(SESSION_FOLDER)
             os.mkdir(SESSION_FOLDER)
             steam_client = None
-            logger.error("检测到session文件异常，已自动清空session文件夹")
+            logger.error("检测到缓存的登录信息异常，已自动清空session文件夹")
         except AssertionError as e:
             handle_caught_exception(e)
             if config["steam_local_accelerate"]:
@@ -375,11 +375,18 @@ def main():
     pause()
     return 1
 
-
+tried_exit = False
 def exit_app(signal_, frame):
-    jobHandler.terminate_all()
-    logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
-    sys.exit(exit_code.get())
+    global tried_exit
+    if not tried_exit:
+        tried_exit = True
+        jobHandler.terminate_all()
+        logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
+        sys.exit(exit_code.get())
+    else:
+        logger.warning("程序已经强制退出")
+        pid = os.getpid()
+        os.kill(pid, signal.SIGTERM)
 
 
 if __name__ == "__main__":
