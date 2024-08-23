@@ -9,6 +9,7 @@ import uuyoupinapi
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.tools import exit_code
 from utils.uu_helper import get_valid_token_for_uu
+from uuyoupinapi import models
 
 
 def is_subsequence(s, t):
@@ -28,10 +29,10 @@ class UUAutoLeaseItem:
         self.timeSleep = 10.0
         self.inventory_list = []
         self.lease_price_cache = {}
-    
+
     @property
     def leased_inventory_list(self) -> list:
-        return self.uuyoupin.get_uu_leased_inventory()
+        return self.uuyoupin.legacy_get_uu_leased_inventory()
 
     def init(self) -> bool:
         token = get_valid_token_for_uu()
@@ -41,7 +42,6 @@ class UUAutoLeaseItem:
             return True
         self.uuyoupin = uuyoupinapi.UUAccount(token)
         return False
-
 
     def get_market_lease_price(self, item_id, min_price, cnt=15, max_price=20000):
 
@@ -149,8 +149,6 @@ class UUAutoLeaseItem:
             "LeaseDeposit": lease_deposit,
         }
 
-
-
     def auto_lease(self):
         self.logger.info("UU自动租赁上架插件已启动, 休眠3秒, 与自动接收报价插件错开运行时间")
         self.operate_sleep()
@@ -183,23 +181,18 @@ class UUAutoLeaseItem:
                     price_rsp = self.get_market_lease_price(item_id, min_price=price)
                     if price_rsp["LeaseUnitPrice"] == 0:
                         continue
-
-                    lease_item = {
-                        "AssetId": asset_id,
-                        "IsCanLease": True,
-                        "IsCanSold": False,
-                        # "SupportZeroCD": 1,
-                        "LeaseMaxDays": self.config["uu_auto_lease_item"]["lease_max_days"],
-                        "LeaseUnitPrice": price_rsp["LeaseUnitPrice"],
-                        "LongLeaseUnitPrice": price_rsp["LongLeaseUnitPrice"],
-                        "LeaseDeposit": price_rsp["LeaseDeposit"],
-                        "OpenLeaseActivity": False,
-                        "PrivateLeaseCommodity": 0,
-                        "NomarlChargePercent": "0.25",
-                        "Remark": "",
-                    }
+                    
+                    lease_item = models.UUOnLeaseShelfItem(
+                        AssetId=asset_id,
+                        IsCanLease=True,
+                        IsCanSold=False,
+                        LeaseMaxDays=self.config["uu_auto_lease_item"]["lease_max_days"],
+                        LeaseUnitPrice=price_rsp["LeaseUnitPrice"],
+                        LongLeaseUnitPrice=price_rsp["LongLeaseUnitPrice"],
+                        LeaseDeposit=float(price_rsp["LeaseDeposit"]) # type: ignore
+                    )
                     if self.config["uu_auto_lease_item"]["lease_max_days"] <= 8:
-                        del lease_item["LongLeaseUnitPrice"]
+                        lease_item.LongLeaseUnitPrice = None
 
                     lease_item_list.append(lease_item)
 
@@ -270,7 +263,7 @@ class UUAutoLeaseItem:
             self.logger.info(f"{len(new_leased_item_list)} item changed lease price.")
             self.operate_sleep(30)
             if len(new_leased_item_list) > 0:
-                success_count = self.uuyoupin.change_leased_price(new_leased_item_list)
+                success_count = self.uuyoupin.legacy_change_leased_price(new_leased_item_list)
                 self.logger.info(f"lease {success_count} items Succ.")
                 if len(new_leased_item_list) - success_count > 0:
                     self.logger.error(f"lease {len(new_leased_item_list) - success_count} items Fail.")

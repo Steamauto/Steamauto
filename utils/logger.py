@@ -257,19 +257,22 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
 
 class PluginLogger:
     def __init__(self, pluginName):
-        self.pluginName = pluginName
+        if '[' and ']' not in pluginName:
+            self.pluginName = f'[{pluginName}]'
+        else:
+            self.pluginName = pluginName
 
     def debug(self, msg, *args, **kwargs):
-        logger.debug(f"[{self.pluginName}] {msg}", *args, **kwargs)
+        logger.debug(f"{self.pluginName} {msg}", *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        logger.info(f"[{self.pluginName}] {msg}", *args, **kwargs)
+        logger.info(f"{self.pluginName} {msg}", *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        logger.warning(f"[{self.pluginName}] {msg}", *args, **kwargs)
+        logger.warning(f"{self.pluginName} {msg}", *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
-        logger.error(f"[{self.pluginName}] {msg}", *args, **kwargs)
+        logger.error(f"{self.pluginName} {msg}", *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        logger.critical(f"[{self.pluginName}] {msg}", *args, **kwargs)
+        logger.critical(f"{self.pluginName} {msg}", *args, **kwargs)

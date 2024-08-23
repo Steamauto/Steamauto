@@ -1,6 +1,9 @@
-from typing import Union
+from typing import no_type_check
 
 from pydantic import BaseModel
+
+from utils.models import Asset
+
 
 class BuffOnSaleAsset(BaseModel):
     assetid: str
@@ -11,5 +14,17 @@ class BuffOnSaleAsset(BaseModel):
     market_hash_name: str
     orderNo: str
     price: float
-    income: float
     desc: str = ''
+    
+    @classmethod
+    @no_type_check
+    def from_Asset(cls,obj:Asset) -> 'BuffOnSaleAsset':
+        return cls(
+            assetid=obj.assetid,
+            classid=obj.classid,
+            instanceid=obj.instanceid,
+            market_hash_name=obj.market_hash_name,
+            orderNo=obj.orderNo,
+            price=obj.price,
+            desc=''
+        )
