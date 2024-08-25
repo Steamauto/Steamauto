@@ -411,10 +411,20 @@ class UUAccount:
         return success_count
 
     def get_uu_leased_inventory(self, pageIndex=1, pageSize=100) -> list[LeaseAsset]:
-        # todo: 加入转租的列表 /api/youpin/bff/new/commodity/v1/commodity/list/zeroCDLease
+        new_leased_inventory_list = self.get_one_channel_leased_inventory(
+            "/api/youpin/bff/new/commodity/v1/commodity/list/lease",
+            pageIndex, pageSize
+        )
+        zero_leased_inventory_list = self.get_one_channel_leased_inventory(
+            "/api/youpin/bff/new/commodity/v1/commodity/list/zeroCDLease",
+            pageIndex, pageSize
+        )
+        return new_leased_inventory_list + zero_leased_inventory_list
+
+    def get_one_channel_leased_inventory(self, path, pageIndex=1, pageSize=100) -> list[LeaseAsset]:
         rsp = self.call_api(
             "POST",
-            "/api/youpin/bff/new/commodity/v1/commodity/list/lease",
+            path,
             data={
                 "pageIndex": pageIndex,
                 "pageSize": pageSize,
@@ -445,6 +455,7 @@ class UUAccount:
             raise Exception("获取悠悠租赁已上架物品失败!")
         logger.info(f"上架数量 {len(leased_inventory_list)}")
         return leased_inventory_list
+
 
     def get_inventory(self):
         inventory_list_rsp = self.call_api(
