@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
@@ -24,3 +24,9 @@ class UUOnLeaseShelfItem(BaseModel):
             LongLeaseUnitPrice=leaseAsset.LongLeaseUnitPrice
         )
 
+
+class UUMarketLeaseItem(BaseModel):
+    LeaseDeposit: Optional[str] = None
+    LeaseUnitPrice: Optional[float] = None
+    LongLeaseUnitPrice: Optional[float] = None
+    CommodityName: Optional[str] = None

@@ -8,6 +8,7 @@ import requests
 from utils.logger import PluginLogger
 from utils.models import LeaseAsset
 from uuyoupinapi import models
+from uuyoupinapi.models import UUMarketLeaseItem
 
 logger = PluginLogger("uuyoupinapi")
 
@@ -43,7 +44,6 @@ def generate_headers(devicetoken, deviceid, token=""):
         "devicetoken": devicetoken,
         "deviceid": deviceid,
         "platform": "android",
-        "package-type": "uuyp",
         "accept-encoding": "gzip",
     }
 
@@ -456,7 +456,6 @@ class UUAccount:
         logger.info(f"上架数量 {len(leased_inventory_list)}")
         return leased_inventory_list
 
-
     def get_inventory(self):
         inventory_list_rsp = self.call_api(
             "POST",
@@ -478,6 +477,49 @@ class UUAccount:
             logger.error("获取悠悠库存失败!")
 
         return inventory_list
+
+    def get_market_lease_price(self, template_id: int, min_price=0, cnt=15) -> list[UUMarketLeaseItem]:
+        rsp = self.call_api(
+            "POST",
+            "/api/homepage/v3/detail/commodity/list/lease",
+            data={
+                "hasLease": "true",
+                "haveBuZhangType": 0,
+                "listSortType": "2",
+                "listType": 30,
+                "mergeFlag": 0,
+                "pageIndex": 1,
+                "pageSize": 50,
+                "sortType": "1",
+                "sortTypeKey": "LEASE_DEFAULT",
+                "status": "20",
+                "stickerAbrade": 0,
+                "stickersIsSort": False,
+                "templateId": f"{template_id}",
+                "ultraLongLeaseMoreZones": 0,
+                "userId": self.userId,
+                "Sessionid": self.device_info["deviceId"],
+            },
+        ).json()
+        lease_list = []
+        if rsp["Code"] == 0:
+            rsp_list = rsp["Data"]["CommodityList"]
+            rsp_cnt = len(rsp_list)
+            cnt = min(cnt, rsp_cnt)
+            for i in range(cnt):
+                item = rsp_list[i]
+                if item["LeaseDeposit"] and min_price < float(item["LeaseDeposit"]):
+                    lease_list.append(
+                        UUMarketLeaseItem(
+                            LeaseUnitPrice=item["LeaseUnitPrice"] if item["LeaseUnitPrice"] else None,
+                            LongLeaseUnitPrice=item["LongLeaseUnitPrice"] if item["LongLeaseUnitPrice"] else None,
+                            LeaseDeposit=item["LeaseDeposit"] if item["LeaseDeposit"] else None,
+                            CommodityName=item["CommodityName"]
+                        )
+                    )
+        else:
+            logger.error(f"查询出租价格失败，返回结果：{rsp['Code']}，全部内容：{rsp}")
+        return lease_list
 
     def off_shelf(self, commodity_ids: list):  # 这个API出售和租赁都能用。。。不知道悠悠程序员是怎么想的
         return self.call_api(
