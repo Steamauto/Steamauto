@@ -37,7 +37,7 @@ def generate_headers(devicetoken, deviceid, token=""):
         "authorization": "Bearer " + token,
         "content-type": "application/json; charset=utf-8",
         "user-agent": "okhttp/3.14.9",
-        "app-version": "5.18.1",
+        "app-version": "5.20.1",
         "apptype": "4",
         "package-type": "uuyp",
         "devicetoken": devicetoken,
@@ -153,21 +153,6 @@ class UUAccount:
         except Exception as e:
             raise Exception(f"网络错误！！！请求失败: {e}")
         return response
-
-    def legacy_change_leased_price(self, item_infos):
-        rsp = self.call_api(
-            "PUT",
-            "/api/commodity/Commodity/PriceChangeWithLeaseV2",
-            data={
-                "Commoditys": item_infos,
-                "Sessionid": self.device_info["deviceId"],
-            },
-        ).json()
-        success_count = 0
-        for commodity in rsp["Data"]["Commoditys"]:
-            if commodity["IsSuccess"] == 1:
-                success_count += 1
-        return success_count
 
     def change_leased_price(self, items: list[LeaseAsset]):
         '''
@@ -425,28 +410,8 @@ class UUAccount:
                 logger.error(f"上架物品 {asset['AssetId']}(AssetId) 失败，原因：{asset['Remark']}")
         return success_count
 
-    def legacy_get_uu_leased_inventory(self) -> list:  # TODO: remove this function
-        rsp = self.call_api(
-            "POST",
-            "/api/youpin/bff/new/commodity/v1/commodity/list/lease",
-            data={
-                "pageIndex": 1,
-                "pageSize": 100,
-                "whetherMerge": 0,
-                "Sessionid": self.device_info["deviceId"],
-            },
-        ).json()
-        leased_inventory_list = []
-        if rsp["code"] == 0:
-            leased_inventory_list = rsp["data"]["commodityInfoList"]
-            logger.info(f"租赁物品上架数量 {len(leased_inventory_list)}")
-        elif rsp["code"] == 9004001:
-            logger.info("暂无自租商品")
-        else:
-            logger.error("获取悠悠租赁货架失败!")
-        return leased_inventory_list
-
     def get_uu_leased_inventory(self, pageIndex=1, pageSize=100) -> list[LeaseAsset]:
+        # todo: 加入转租的列表 /api/youpin/bff/new/commodity/v1/commodity/list/zeroCDLease
         rsp = self.call_api(
             "POST",
             "/api/youpin/bff/new/commodity/v1/commodity/list/lease",
@@ -463,6 +428,8 @@ class UUAccount:
                 leased_inventory_list.append(
                     LeaseAsset(
                         assetid=str(item['steamAssetId']),
+                        templateid=item['templateId'],
+                        short_name=item['name'],
                         LeaseDeposit=float(item['depositAmount']),
                         LeaseUnitPrice=float(item['shortLeaseAmount']),
                         LongLeaseUnitPrice=float(item['longLeaseAmount']) if item['longLeaseAmount'] else float(0),
@@ -475,7 +442,8 @@ class UUAccount:
         elif rsp["code"] == 9004001:
             pass
         else:
-            raise Exception("获取悠悠租赁货架失败!")
+            raise Exception("获取悠悠租赁已上架物品失败!")
+        logger.info(f"上架数量 {len(leased_inventory_list)}")
         return leased_inventory_list
 
     def get_inventory(self):
@@ -496,7 +464,7 @@ class UUAccount:
             logger.info(f"库存数量 {len(inventory_list)}")
         else:
             logger.error(inventory_list_rsp)
-            logger.error("获取UU库存失败!")
+            logger.error("获取悠悠库存失败!")
 
         return inventory_list
 

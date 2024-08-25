@@ -15,7 +15,7 @@ class UUAutoSellItem:
     def __init__(self, config):
         self.sale_inventory_list = None
         self.logger = PluginLogger("UUAutoSellItem")
-        self.uuyoupin = None
+        self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu())
         self.config = config
         self.timeSleep = 10.0
         self.inventory_list = []
@@ -23,9 +23,7 @@ class UUAutoSellItem:
         self.item_buy_price_cache = {}
 
     def init(self) -> bool:
-        self.logger.info("[UUAutoSellItem]")
-        token = get_valid_token_for_uu()
-        if not token:
+        if not get_valid_token_for_uu():
             self.logger.error("悠悠有品登录失败！即将关闭程序！")
             exit_code.set(1)
             return True
@@ -44,7 +42,7 @@ class UUAutoSellItem:
         sale_inventory_list = []
         if rsp["code"] == 0:
             sale_inventory_list = rsp["data"]["commodityInfoList"]
-            self.logger.info(f"上架数量 {len(sale_inventory_list)}")
+            self.logger.info(f"已上架物品数量 {len(sale_inventory_list)}")
         else:
             self.logger.error(sale_inventory_list)
             self.logger.error("获取UU上架物品失败!")
@@ -57,10 +55,7 @@ class UUAutoSellItem:
                     minutes=20):
                 commodity_name = self.sale_price_cache[item_id]["commodity_name"]
                 sale_price = self.sale_price_cache[item_id]["sale_price"]
-                self.logger.info(
-                    f"{commodity_name} 使用缓存价格设置, "
-                    f"sale_price: {sale_price:.2f}"
-                )
+                self.logger.info(f"{commodity_name} 使用缓存结果，出售价格： {sale_price:.2f}")
                 return sale_price
 
         sale_price_rsp = self.uuyoupin.call_api(
@@ -88,18 +83,11 @@ class UUAutoSellItem:
             sale_price = np.mean(sale_price_list) * 0.99
             sale_price = max(sale_price, sale_price_list[0], 0.01)
 
-            self.logger.info(
-                f"{commodity_name}, "
-                f"sale_price: {sale_price:.2f}, \n"
-                f"sale_price_list: {sale_price_list}"
-            )
+            self.logger.info(f"物品名称：{commodity_name}，出售价格：{sale_price:.2f}, \n 参考价格列表：{sale_price_list}")
         else:
             sale_price = 0
             commodity_name = ""
-            self.logger.error(
-                f"Get Sale Price Failed. "
-                f"Response code:{sale_price_rsp['Code']}, body:{sale_price_rsp}"
-            )
+            self.logger.error(f"查询出售价格失败，返回结果：{sale_price_rsp['Code']}，全部内容：{sale_price_rsp}")
 
         sale_price = round(sale_price, 2)
 
@@ -116,7 +104,7 @@ class UUAutoSellItem:
         item_infos = items
         num = len(item_infos)
         if num == 0:
-            self.logger.info(f"没有物品可以出售.")
+            self.logger.info(f"没有物品可以出售。")
             return True
 
         sale_on_shelf_rsp = self.uuyoupin.call_api(
@@ -128,13 +116,10 @@ class UUAutoSellItem:
             },
         ).json()
         if sale_on_shelf_rsp["Code"] == 0:
-            self.logger.info(f"sale {num} items Succ.")
+            self.logger.info(f"成功上架 {num} 个物品。")
             return num
         else:
-            self.logger.error(
-                f"Put on Sale Failed. "
-                f"Response code:{sale_on_shelf_rsp['Code']}, body:{sale_on_shelf_rsp}"
-            )
+            self.logger.error(f"上架失败，返回结果：{sale_on_shelf_rsp['Code']}， 全部内容：{sale_on_shelf_rsp}")
             return -1
 
     def change_sale_price(self, items):
@@ -152,18 +137,15 @@ class UUAutoSellItem:
             },
         ).json()
         if rsp["Code"] == 0:
-            self.logger.info(f"成功修改 {num} 件物品价格。")
+            self.logger.info(f"成功修改 {num} 件物品出售价格。")
             return num
         else:
-            self.logger.error(
-                f"change item sale price failed. "
-                f"Response code:{rsp['Code']}, body:{rsp}"
-            )
+            self.logger.error(f"修改出售价格失败，返回结果：{rsp['Code']}， 全部内容：{rsp}")
             return -1
 
     def auto_sell(self):
         self.logger.info("悠悠有品出售自动上架插件已启动")
-        self.operate_sleep(5)
+        self.operate_sleep()
 
         if self.uuyoupin is not None:
             try:
@@ -222,7 +204,7 @@ class UUAutoSellItem:
 
             except TypeError as e:
                 handle_caught_exception(e, "UUAutoSellItem")
-                self.logger.error("悠悠有品出售自动上架出现错误")
+                self.logger.error("悠悠有品出售自动上架出现错误。")
                 exit_code.set(1)
                 return 1
             except Exception as e:
@@ -238,12 +220,12 @@ class UUAutoSellItem:
                     return 1
 
     def auto_change_price(self):
-        self.logger.info("[UUAutoSellChangePrice] 悠悠有品出售自动修改价格已启动")
-        self.operate_sleep(10)
+        self.logger.info("悠悠有品出售自动修改价格已启动")
+        self.operate_sleep()
 
         try:
             self.uuyoupin.send_device_info()
-            self.logger.info("[UUAutoSellChangePrice] 正在获取悠悠有品已上架物品...")
+            self.logger.info("正在获取悠悠有品出售已上架物品...")
             self.get_uu_sale_inventory()
 
             new_sale_item_list = []
@@ -264,7 +246,7 @@ class UUAutoSellItem:
                         self.logger.debug(sale_price)
                         self.logger.debug(self.get_take_profile_price(buy_price))
                         sale_price = max(sale_price, self.get_take_profile_price(buy_price))
-                        self.logger.info(f"最终出售价格{sale_price:.2f}。")
+                        self.logger.info(f"最终出售价格{sale_price:.2f}")
                     else:
                         self.logger.info("未获取到购入价格。")
 
@@ -279,7 +261,7 @@ class UUAutoSellItem:
                 }
                 new_sale_item_list.append(sale_item)
             self.logger.info(f"{len(new_sale_item_list)} 件物品可以更新出售价格。")
-            self.operate_sleep(30)
+            self.operate_sleep()
             self.change_sale_price(new_sale_item_list)
 
         except TypeError as e:
@@ -300,24 +282,16 @@ class UUAutoSellItem:
                 return 1
 
     def exec(self):
-        self.logger.info("run func exec.")
-        token = get_valid_token_for_uu()
-        if not token:
-            self.logger.error("由于登录失败，插件将自动退出")
-            exit_code.set(1)
-            return 1
-        else:
-            self.uuyoupin = uuyoupinapi.UUAccount(token)
 
-        self.logger.info(f"以下物品会出售: {self.config['uu_auto_sell_item']['name']}")
+        self.logger.info(f"以下物品会出售：{self.config['uu_auto_sell_item']['name']}")
 
         self.auto_sell()
 
         run_time = self.config['uu_auto_sell_item']['run_time']
         interval = self.config['uu_auto_sell_item']['interval']
 
-        self.logger.info(f"[AUTO SALE] 等待到 {run_time} 开始执行.")
-        self.logger.info(f"[AUTO SALE CHANGE PRICE] 每隔 {interval} 分钟执行一次.")
+        self.logger.info(f"[自动出售] 等待到 {run_time} 开始执行。")
+        self.logger.info(f"[自动修改价格] 每隔 {interval} 分钟执行一次。")
 
         schedule.every().day.at(f"{run_time}").do(self.auto_sell)
         schedule.every(interval).minutes.do(self.auto_change_price)

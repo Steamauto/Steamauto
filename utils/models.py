@@ -6,11 +6,13 @@ from pydantic import BaseModel
 
 class Asset(BaseModel):
     assetid: str
+    templateid: Union[int, None] = None
     appid: Union[str, int, None] = '730'
     classid: Union[str, int, None] = None
     instanceid: Union[str, int, None] = None
     contextid: Union[int, str, None] = 2
     market_hash_name: Union[str, int, None] = None
+    short_name: Union[str, None] = None
     orderNo: Union[str, int, None] = None
     price: Union[float, int, None] = None
 
