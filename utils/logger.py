@@ -205,6 +205,7 @@ logger.debug(f"Steamauto {CURRENT_VERSION} started")
 logger.debug(f"Running on {platform.system()} {platform.release()}({platform.version()})")
 logger.debug(f"Python version: {os.sys.version}")  # type: ignore
 logger.debug(f"Build info: {BUILD_INFO}")
+logger.debug(f"日志已经经过脱敏处理，请放心转发至公共平台！")
 
 
 def handle_caught_exception(e: Exception, prefix: str = ""):
@@ -237,8 +238,8 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
         plogger.error(str(e))
     elif isinstance(e, ConfirmationExpected):
         plogger.error("Steam Session已经过期, 请删除session文件夹并重启Steamauto")
-    elif isinstance(e, ValueError):
-        plogger.error("Steam 宵禁限制, 请稍后再试!")
+    # elif isinstance(e, ValueError):
+    #     plogger.error("Steam 宵禁限制, 请稍后再试!")
     elif isinstance(e, SystemError):
         plogger.error("无法连接至Steam，请检查Steam账户状态、网络连接、或重启Steamauto")
     elif isinstance(e, SteamError):
@@ -247,7 +248,7 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
         plogger.error("Steam API 异常, 异常信息:" + str(e))
     else:
         plogger.error(
-            f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})\n编译信息：{BUILD_INFO}\n"
+            f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})\n编译信息：{BUILD_INFO}\n" # type: ignore
         )
         plogger.error("发生未知异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 建议反馈至开发者！")
         if BUILD_INFO == '正在使用源码运行':
@@ -256,19 +257,22 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
 
 class PluginLogger:
     def __init__(self, pluginName):
-        self.pluginName = pluginName
+        if '[' and ']' not in pluginName:
+            self.pluginName = f'[{pluginName}]'
+        else:
+            self.pluginName = pluginName
 
     def debug(self, msg, *args, **kwargs):
-        logger.debug(f"[{self.pluginName}] {msg}", *args, **kwargs)
+        logger.debug(f"{self.pluginName} {msg}", *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        logger.info(f"[{self.pluginName}] {msg}", *args, **kwargs)
+        logger.info(f"{self.pluginName} {msg}", *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        logger.warning(f"[{self.pluginName}] {msg}", *args, **kwargs)
+        logger.warning(f"{self.pluginName} {msg}", *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
-        logger.error(f"[{self.pluginName}] {msg}", *args, **kwargs)
+        logger.error(f"{self.pluginName} {msg}", *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        logger.critical(f"[{self.pluginName}] {msg}", *args, **kwargs)
+        logger.critical(f"{self.pluginName} {msg}", *args, **kwargs)

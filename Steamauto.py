@@ -38,7 +38,6 @@ from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           CURRENT_VERSION, DEFAULT_CONFIG_JSON,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
                           SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH,
-                          STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
                           set_is_latest_version, set_no_pause)
 from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
                          logger, pause)
@@ -61,34 +60,28 @@ def set_exit_code(code):
 def login_to_steam():
     global config
     steam_client = None
-    with open(
-        STEAM_ACCOUNT_INFO_FILE_PATH,
-        "r",
-        encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH),
-    ) as f:
+    steam_account_info = dict()
+    with open(STEAM_ACCOUNT_INFO_FILE_PATH, "r", encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
         try:
-            acc = json5.load(f)
-            # convert to json
-            acc = json.loads(json.dumps(acc))
-            with open(STEAM_ACCOUNT_JSON_INFO_FILE_PATH, "w", encoding="utf-8") as f:
-                f.write(json.dumps(acc, indent=4))
+            steam_account_info = json5.loads(f.read())
         except Exception as e:
             handle_caught_exception(e)
             logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
             pause()
             return None
-    steam_session_path = os.path.join(SESSION_FOLDER, acc.get("steam_username").lower() + ".pkl")
+
+    steam_session_path = os.path.join(SESSION_FOLDER, steam_account_info.get("steam_username", "").lower() + ".pkl")  # type: ignore
     if not os.path.exists(steam_session_path):
-        logger.info("检测到首次登录Steam，正在尝试登录...登录完成后会自动缓存session")
+        logger.info("检测到首次登录Steam，正在尝试登录...登录完成后会自动缓存登录信息")
     else:
-        logger.info("检测到缓存的steam_session, 正在尝试登录...")
+        logger.info("检测到缓存的Steam登录信息, 正在尝试登录...")
         try:
             with open(steam_session_path, "rb") as f:
                 client = pickle.load(f)
                 if config["steam_login_ignore_ssl_error"]:
                     logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
                     client._session.verify = False
-                    requests.packages.urllib3.disable_warnings() # type: ignore
+                    requests.packages.urllib3.disable_warnings()  # type: ignore
                 else:
                     client._session.verify = True
                 if config["steam_local_accelerate"]:
@@ -100,14 +93,14 @@ def login_to_steam():
                     steam_client = client
         except requests.exceptions.ConnectionError as e:
             handle_caught_exception(e)
-            logger.error("使用缓存的session登录失败!可能是网络异常")
+            logger.error("使用缓存的登录信息登录失败!可能是网络异常")
             steam_client = None
         except (EOFError, pickle.UnpicklingError) as e:
             handle_caught_exception(e)
             shutil.rmtree(SESSION_FOLDER)
             os.mkdir(SESSION_FOLDER)
             steam_client = None
-            logger.error("检测到session文件异常，已自动清空session文件夹")
+            logger.error("检测到缓存的登录信息异常，已自动清空session文件夹")
         except AssertionError as e:
             handle_caught_exception(e)
             if config["steam_local_accelerate"]:
@@ -136,9 +129,7 @@ def login_to_steam():
                     return None
                 else:
                     logger.info("代理服务器可用")
-                    logger.warning(
-                        "警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动"
-                    )
+                    logger.warning("警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动")
 
                 client = SteamClient(api_key="", proxies=config["proxies"])
 
@@ -147,7 +138,7 @@ def login_to_steam():
             if config["steam_login_ignore_ssl_error"]:
                 logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
                 client._session.verify = False
-                requests.packages.urllib3.disable_warnings() # type: ignore
+                requests.packages.urllib3.disable_warnings()  # type: ignore
             if config["steam_local_accelerate"]:
                 if config["use_proxies"]:
                     logger.warning('检测到你已经同时开启内置加速和代理功能！正常情况下不推荐通过这种方式使用软件。')
@@ -155,9 +146,9 @@ def login_to_steam():
                 client._session.auth = accelerator()
             logger.info("正在登录...")
             client.login(
-                acc.get("steam_username"),
-                acc.get("steam_password"),
-                STEAM_ACCOUNT_JSON_INFO_FILE_PATH,
+                steam_account_info.get("steam_username"),  # type: ignore
+                steam_account_info.get("steam_password"),  # type: ignore
+                json.dumps(steam_account_info),
             )
             if client.is_session_alive():
                 logger.info("登录成功")
@@ -170,26 +161,15 @@ def login_to_steam():
             steam_client = client
         except FileNotFoundError as e:
             handle_caught_exception(e)
-            logger.error(
-                "未检测到"
-                + STEAM_ACCOUNT_INFO_FILE_PATH
-                + ", 请添加到"
-                + STEAM_ACCOUNT_INFO_FILE_PATH
-                + "后再进行操作! "
-            )
+            logger.error("未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加到" + STEAM_ACCOUNT_INFO_FILE_PATH + "后再进行操作! ")
             pause()
             return None
         except (SSLCertVerificationError, SSLError) as e:
             handle_caught_exception(e)
             if config["steam_local_accelerate"]:
-                logger.error(
-                    "登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true"
-                )
+                logger.error("登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true")
             else:
-                logger.error(
-                    "登录失败. SSL证书验证错误! "
-                    "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n"
-                )
+                logger.error("登录失败. SSL证书验证错误! " "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n")
             pause()
             return None
         except (requests.exceptions.ConnectionError, TimeoutError) as e:
@@ -206,9 +186,7 @@ def login_to_steam():
             return None
         except (TypeError, AttributeError) as e:
             handle_caught_exception(e)
-            logger.error(
-                "登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录"
-            )
+            logger.error("登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录")
             pause()
             return None
         except Exception as e:
@@ -226,15 +204,11 @@ def init_files_and_params() -> int:
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! \n")
-    logger.info(
-        f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n"
-    )
+    logger.info(f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n")
     logger.info(f"当前版本: {CURRENT_VERSION}   编译信息: {BUILD_INFO}")
     logger.info("正在检查更新...")
     try:
-        response_json = requests.get(
-            "https://steamauto.jiajiaxd.com/versions", params={"version": CURRENT_VERSION}, timeout=5
-        )
+        response_json = requests.get("https://steamauto.jiajiaxd.com/versions", params={"version": CURRENT_VERSION}, timeout=5)
         data = response_json.json()
         latest_version = data["latest_version"]["version"]
         broadcast = data.get("broadcast", None)
@@ -275,9 +249,7 @@ def init_files_and_params() -> int:
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
             f.write(DEFAULT_STEAM_ACCOUNT_JSON)
-            logger.info(
-                "检测到首次运行, 已为您生成" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请按照README提示填写配置文件! "
-            )
+            logger.info("检测到首次运行, 已为您生成" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请按照README提示填写配置文件! ")
             first_run = True
 
     if not first_run:
@@ -303,60 +275,28 @@ def init_files_and_params() -> int:
 def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
     global config
     plugins_enabled = []
-    if (
-        "buff_auto_accept_offer" in config
-        and "enable" in config["buff_auto_accept_offer"]
-        and config["buff_auto_accept_offer"]["enable"]
-    ):
+    if "buff_auto_accept_offer" in config and "enable" in config["buff_auto_accept_offer"] and config["buff_auto_accept_offer"]["enable"]:
         buff_auto_accept_offer = BuffAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_accept_offer)
-    if (
-        "buff_auto_comment" in config
-        and "enable" in config["buff_auto_comment"]
-        and config["buff_auto_comment"]["enable"]
-    ):
+    if "buff_auto_comment" in config and "enable" in config["buff_auto_comment"] and config["buff_auto_comment"]["enable"]:
         buff_auto_comment = BuffAutoComment(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_comment)
-    if (
-        "buff_profit_report" in config
-        and "enable" in config["buff_profit_report"]
-        and config["buff_profit_report"]["enable"]
-    ):
+    if "buff_profit_report" in config and "enable" in config["buff_profit_report"] and config["buff_profit_report"]["enable"]:
         buff_profit_report = BuffProfitReport(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_profit_report)
-    if (
-        "buff_auto_on_sale" in config
-        and "enable" in config["buff_auto_on_sale"]
-        and config["buff_auto_on_sale"]["enable"]
-    ):
+    if "buff_auto_on_sale" in config and "enable" in config["buff_auto_on_sale"] and config["buff_auto_on_sale"]["enable"]:
         buff_auto_on_sale = BuffAutoOnSale(logger, steam_client, steam_client_mutex, config)
         plugins_enabled.append(buff_auto_on_sale)
-    if (
-        "uu_auto_accept_offer" in config
-        and "enable" in config["uu_auto_accept_offer"]
-        and config["uu_auto_accept_offer"]["enable"]
-    ):
+    if "uu_auto_accept_offer" in config and "enable" in config["uu_auto_accept_offer"] and config["uu_auto_accept_offer"]["enable"]:
         uu_auto_accept_offer = UUAutoAcceptOffer(steam_client, steam_client_mutex, config)
         plugins_enabled.append(uu_auto_accept_offer)
-    if (
-        "uu_auto_lease_item" in config
-        and "enable" in config["uu_auto_lease_item"]
-        and config["uu_auto_lease_item"]["enable"]
-    ):
+    if "uu_auto_lease_item" in config and "enable" in config["uu_auto_lease_item"] and config["uu_auto_lease_item"]["enable"]:
         uu_auto_lease_on_shelf = UUAutoLeaseItem(config)
         plugins_enabled.append(uu_auto_lease_on_shelf)
-    if (
-        "uu_auto_sale_item" in config
-        and "enable" in config["uu_auto_sale_item"]
-        and config["uu_auto_sale_item"]["enable"]
-    ):
+    if "uu_auto_sale_item" in config and "enable" in config["uu_auto_sale_item"] and config["uu_auto_sale_item"]["enable"]:
         uu_auto_sale_on_shelf = UUAutoSellItem(config)
         plugins_enabled.append(uu_auto_sale_on_shelf)
-    if (
-        "steam_auto_accept_offer" in config
-        and "enable" in config["steam_auto_accept_offer"]
-        and config["steam_auto_accept_offer"]["enable"]
-    ):
+    if "steam_auto_accept_offer" in config and "enable" in config["steam_auto_accept_offer"] and config["steam_auto_accept_offer"]["enable"]:
         steam_auto_accept_offer = SteamAutoAcceptOffer(steam_client, steam_client_mutex, config)
         plugins_enabled.append(steam_auto_accept_offer)
     if "ecosteam" in config and "enable" in config["ecosteam"] and config["ecosteam"]["enable"]:
@@ -435,11 +375,18 @@ def main():
     pause()
     return 1
 
-
+tried_exit = False
 def exit_app(signal_, frame):
-    jobHandler.terminate_all()
-    logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
-    sys.exit(exit_code.get())
+    global tried_exit
+    if not tried_exit:
+        tried_exit = True
+        jobHandler.terminate_all()
+        logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
+        sys.exit(exit_code.get())
+    else:
+        logger.warning("程序已经强制退出")
+        pid = os.getpid()
+        os.kill(pid, signal.SIGTERM)
 
 
 if __name__ == "__main__":
@@ -449,5 +396,5 @@ if __name__ == "__main__":
         os.mkdir(DEV_FILE_FOLDER)
     if not os.path.exists(SESSION_FOLDER):
         os.mkdir(SESSION_FOLDER)
-    exit_code.set(main()) # type: ignore
+    exit_code.set(main())  # type: ignore
     exit_app(None, None)
