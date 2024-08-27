@@ -183,7 +183,7 @@ class tasks:
             elif isinstance(self.client, UUAccount):
                 success_count, failure_count = self.client.onshelf_sell_and_lease(self.sell_queue, self.lease_queue)
             self.sell_queue = []
-            self.lease_queue = []
+            self.sell_change_queue = []
             if failure_count != 0:
                 logger.error(f'上架失败 {failure_count} 个商品')
             logger.info(f'上架成功 {success_count} 个商品')
