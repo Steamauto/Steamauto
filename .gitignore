@@ -16,3 +16,4 @@ steamauto.spec
 *.spec
 *bak
 .vscode
+launch.json

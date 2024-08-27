@@ -15,3 +15,4 @@ PySocks
 schedule
 numpy
 pytz
+pydantic

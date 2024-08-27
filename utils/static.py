@@ -5,7 +5,7 @@ global is_latest_version
 is_latest_version = False
 no_pause = False
 
-CURRENT_VERSION = "4.1.4"
+CURRENT_VERSION = "4.2.0"
 
 VERSION_FILE = "version.json"
 APPRISE_ASSET_FOLDER = "Apprise"
@@ -15,7 +15,6 @@ CONFIG_FILE_PATH = os.path.join(CONFIG_FOLDER, "config.json5")
 BUFF_COOKIES_FILE_PATH = os.path.join(CONFIG_FOLDER, "buff_cookies.txt")
 UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token.txt")
 STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
-STEAM_ACCOUNT_JSON_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account.json")
 SESSION_FOLDER = "session"
 DEV_FILE_FOLDER = "dev"
 BUFF_ACCOUNT_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "buff_account.json")
@@ -245,16 +244,23 @@ DEFAULT_CONFIG_JSON = r"""
     },
     "auto_sync_sell_shelf": { // 自动同步各平台的上架商品, 与主平台一致
       "enable": false,
-      "main_platform": "buff", // 主平台。主平台的上架信息不会被程序改动，按照价格比例自动同步到其他平台。可选值为"buff"/"uu"/"eco"，不可重复
-      "enabled_platforms": ["buff"], // 可以填入多个平台，如["buff", "uu"]，可选值为"buff"或"uu"，不可重复。ECO平台已经强制开启，无需手动填写
-      "ratio":{ // 各平台上架价格的比例
-        "eco" : 1,
-        "uu" : 1,
-        "buff" : 1
-      },
-      "interval": 60 // 不建议设置太长，因为同步上架带来的问题是ECO发货后BUFF/UU未及时下架，如果此时有人购买库存中没有的饰品，可能会导致封号
-
+      "main_platform": "eco", // 主平台。主平台的上架信息不会被程序改动，按照价格比例自动同步到其他平台。可选值为"buff"/"uu"/"eco"，不可重复
+      "enabled_platforms": ["uu"], // 可以填入多个平台，如["buff", "uu"]，可选值为"buff"或"uu"，不可重复。ECO平台已经强制开启，无需手动填写
+      "ratio": { // 各平台上架价格的比例
+        "eco": 1,
+        "uu": 1,
+        "buff": 1
+      }
     },
+    "auto_sync_lease_shelf": { // 与悠悠有品平台同步租赁商品
+      "enable": false,
+      "main_platform": "eco", // 主平台。主平台的上架信息不会被程序改动，按照价格比例自动同步到其他平台。可选值为""uu"/"eco"，不可重复
+      "ratio": { // 各平台租赁价格的比例
+        "eco": 1,
+        "uu": 1
+      }
+    },
+    "sync_interval": 60, // 同步间隔时间，单位为秒。不建议设置太长，否则可能会导致同步不及时，导致平台账号被封禁
     "qps": 10 //每秒最大请求数。如果你是白名单大会员，建议设置为30。如果你不知道这是什么，请保持默认值。
   },
   // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！！！
