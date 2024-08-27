@@ -1,6 +1,5 @@
 import copy
 import decimal
-import time
 
 import bs4
 import urllib.parse as urlparse
