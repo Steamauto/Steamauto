@@ -6,8 +6,10 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import timezone
 
+import PyECOsteam.models as models
 from PyECOsteam.sign import generate_rsa_signature
 from utils.logger import PluginLogger
+from utils.models import Asset, LeaseAsset
 from utils.static import CURRENT_VERSION
 from utils.tools import jobHandler
 
@@ -45,19 +47,25 @@ class ECOsteamClient:
             headers={"User-Agent": "Steamauto " + CURRENT_VERSION, "Content-Type": "application/json"},
         )
         data["Sign"] = "******"
-        self.logger.debug(f"POST {api} {data} {resp.text}")
-        if not resp.ok:
-            raise Exception(f"POST {api} {data} {resp.text}")
+        self.logger.debug(f"POST {api} {json.dumps(data,ensure_ascii=False)} {resp.text}")
+        # if not resp.ok:
+        #     raise Exception(f"POST {api} {data} {resp.text}")
         resp_json = resp.json()
         if "ResultCode" in resp_json:
             if resp_json["ResultCode"] != "0":
-                raise Exception(f"POST {api} {data} {resp.text}")
+                if (
+                    api == '/Api/Selling/OffshelfGoods'
+                    and resp.text == '{"ResultCode":"1","ResultMsg":"操作失败","ResultData":false}'
+                ):
+                    self.logger.warning(f"下架操作出现异常,可能是因为商品已经下架,一般不影响程序运行,请忽略")
+                else:
+                    raise Exception(f"{resp.text}")
         return resp
 
     def GetTotalMoney(self):
         return self.post("/Api/Merchant/GetTotalMoney", {})
 
-    def GetSellerOrderList(self, StartTime, EndTime, DetailsState=None, PageIndex=1, PageSize=80, SteamId=None):
+    def GetSellerOrderList(self, StartTime, EndTime, DetailsState=None, PageIndex=1, PageSize=100, SteamId=None):
         return self.post(
             "/Api/open/order/SellerOrderList",
             {
@@ -70,13 +78,29 @@ class ECOsteamClient:
             },
         )
 
+    def getFullSellerOrderList(self, StartTime, EndTime, DetailsState=None, SteamId=None) -> list:
+        index = 1
+        orders = list()
+        while True:
+            res = self.GetSellerOrderList(StartTime, EndTime, DetailsState, PageIndex=index, SteamId=SteamId).json()
+            if res["ResultCode"] != "0":
+                raise Exception(res["ResultMsg"])
+            elif res["ResultData"]["PageResult"] == []:
+                break
+            else:
+                index += 1
+                orders += res["ResultData"]["PageResult"]
+                if len(res["ResultData"]["PageResult"]) < 100:
+                    break
+        return orders
+
     def GetSellerOrderDetail(self, OrderNum=None, MerchantNo=None):
         return self.post(
             "/Api/open/order/SellerOrderDetail",
             {"OrderNum": OrderNum, "MerchantNo": MerchantNo},
         )
 
-    def GetSellGoodsList(self, PageIndex=1, PageSize=50, steam_id=None):
+    def GetSellGoodsList(self, PageIndex=1, PageSize=100, steam_id=None):
         return self.post(
             "/Api/Selling/GetSellGoodsList",
             {"PageIndex": PageIndex, "PageSize": PageSize, "SteamId": steam_id},
@@ -94,18 +118,15 @@ class ECOsteamClient:
             else:
                 index += 1
                 goods += res["ResultData"]["PageResult"]
-                if len(res["ResultData"]["PageResult"]) < 50:
+                if len(res["ResultData"]["PageResult"]) < 100:
                     break
         return goods
 
-    def PublishStock(self, assets: list):
-        return self.post("/Api/Selling/PublishStock", data={"Assets": assets})
+    def OffshelfGoods(self, goodsNumList: list[models.GoodsNum]):
+        return self.post("/Api/Selling/OffshelfGoods", data={"goodsNumList": [goodNum.model_dump(exclude_none=True) for goodNum in goodsNumList]})
 
-    def OffshelfGoods(self, goodsNumList: list):
-        return self.post("/Api/Selling/OffshelfGoods", data={"goodsNumList": goodsNumList})
-
-    def GoodsPublishedBatchEdit(self, goodsBatchEditList: list):
-        return self.post("/Api/Selling/GoodsPublishedBatchEdit", data={"goodsBatchEditList": goodsBatchEditList})
+    # def GoodsPublishedBatchEdit(self, goodsBatchEditList: list):
+    #     return self.post("/Api/Selling/GoodsPublishedBatchEdit", data={"goodsBatchEditList": goodsBatchEditList})
 
     def QueryStock(self, index, PageSize=100):
         return self.post("/Api/Selling/QueryStock", data={"PageIndex": index, "PageSize": PageSize})
@@ -147,3 +168,170 @@ class ECOsteamClient:
 
     def QuerySteamAccountList(self):
         return self.post("/Api/Merchant/QuerySteamAccountList", data={})
+
+    # def PublishRentGoods(self, PublishType: int, SteamId: str, Assets: list[models.ECORentAsset]):
+    #     '''
+    #     PublishType: 发布上架=1 改价=2
+    #     '''
+    #     if len(Assets) > 100:
+    #         raise Exception("每次租赁上架数量不能超过100")
+    #     return self.post(
+    #         "/Api/Rent/PublishRentGoods",
+    #         data={
+    #             "PublishType": PublishType,
+    #             "Assets": [asset.model_dump(exclude_none=True) for asset in Assets],
+    #             "SteamId": SteamId,
+    #         },
+    #     )
+
+    def OffshelfRentGoods(self, GoodsNumList: list[models.GoodsNum]):
+        return self.post(
+            "/Api/Rent/OffshelfRentGoods",
+            data={"goodsNumList": [goodsNum.model_dump(exclude_none=True) for goodsNum in GoodsNumList]},
+        )
+
+    def QuerySelfRentGoods(self, steam_id, SteamGameId='730', State=1, PageIndex=1, PageSize=100, ShowType=0):
+        return self.post(
+            "/Api/Rent/QuerySelfRentGoods",
+            data={
+                "SteamId": steam_id,
+                "SteamGameId": SteamGameId,
+                "State": State,
+                "PageIndex": PageIndex,
+                "PageSize": PageSize,
+                "ShowType": ShowType,
+            },
+        )
+
+    def getFulRentGoodsList(self, steam_id) -> list[LeaseAsset]:
+        index = 1
+        goods = list()
+        while True:
+            res = self.QuerySelfRentGoods(steam_id, PageIndex=index).json()
+            if res["ResultCode"] != "0":
+                raise Exception(res["ResultMsg"])
+            elif res["ResultData"]["PageResult"] == []:
+                break
+            else:
+                index += 1
+                goods += res["ResultData"]["PageResult"]
+                if len(res["ResultData"]["PageResult"]) < 100:
+                    break
+        lease_assets = list()
+        for good in goods:
+            lease_assets.append(
+                LeaseAsset(
+                    assetid=good["AssetId"],
+                    orderNo=good["GoodsNum"],
+                    LeaseMaxDays=good["RentMaxDay"],
+                    LeaseUnitPrice=good["Price"],
+                    LeaseDeposit=good["Deposits"],
+                    LongLeaseUnitPrice=good["LongRentPrice"],
+                    market_hash_name=good['GoodsName'],
+                )
+            )
+        return lease_assets
+
+    def PublishRentAndSaleGoods(self, steamid, publishType, sell_assets: list[Asset] = [], lease_assets: list[LeaseAsset] = []):
+        """
+        :param publishType: 1-发布上架 2-改价上架
+        请求示例：{
+        "SteamId": "",
+        "PublishType": {},
+        "Assets": [
+            {
+            "AssetId": "",
+            "SteamGameId": "",
+            "TradeTypes": [
+            ],
+            "SellPrice": 0,
+            "SellDescription": "",
+            "RentMaxDay": 0,
+            "RentPrice": 0,
+            "LongRentPrice": 0,
+            "RentDeposits": 0,
+            "RentDescription": ""
+            }
+        ],
+        "PartnerId": "",
+        "Timestamp": "",
+        "Sign": ""
+        }
+        """
+        assets = []
+        sell_assets_dict = dict({asset.assetid: asset for asset in sell_assets})
+        lease_assets_dict = dict({asset.assetid: asset for asset in lease_assets})
+        sell_lease_assets_id = set(sell_assets_dict.keys()) & set(lease_assets_dict.keys())
+        # 若传入两个可选参数，则去重并合并
+        for asset_id in sell_lease_assets_id:
+            rsp_asset = {
+                "AssetId": asset_id,
+                "SteamGameId": sell_assets_dict[asset_id].appid,
+                "TradeTypes": [1, 2],
+                "SellPrice": sell_assets_dict[asset_id].price,
+                "RentMaxDay": lease_assets_dict[asset_id].LeaseMaxDays,
+                "RentPrice": lease_assets_dict[asset_id].LeaseUnitPrice,
+                "RentDeposits": lease_assets_dict[asset_id].LeaseDeposit,
+            }
+            if lease_assets_dict[asset_id].LongLeaseUnitPrice:
+                rsp_asset["LongRentPrice"] = lease_assets_dict[asset_id].LongLeaseUnitPrice
+            del sell_assets_dict[asset_id]
+            del lease_assets_dict[asset_id]
+            assets.append(rsp_asset)
+
+        for rsp_asset in sell_assets_dict.values():
+            assets.append(models.ECOPublishStockAsset.fromAsset(rsp_asset).model_dump(exclude_none=True))
+
+        for rsp_asset in lease_assets_dict.values():
+            assets.append(models.ECORentAsset.fromLeaseAsset(rsp_asset).model_dump(exclude_none=True))
+
+        batches = [assets[i : i + 100] for i in range(0, len(assets), 100)]
+        change_reonshelf_list=[]
+        success_count = 0
+        for batch in batches:
+            rsp = self.post(
+                "/Api/Rent/PublishRentAndSaleGoods", {"SteamId": steamid, "PublishType": publishType, "Assets": batch}
+            ).json()
+            for rsp_asset in rsp['ResultData']:
+                if not rsp_asset['IsSuccess']:
+                    if '已上架' in rsp_asset['ErrorMsg'] and publishType == 1:
+                        self.logger.warning(f"资产编号: {rsp_asset['AssetId']} 可能已经在租赁/出售货架上架(通常为可租可售商品需要以此方式上架) 稍后通过改价方式上架")
+                        for asset in assets:
+                            if asset['AssetId'] == rsp_asset['AssetId']:
+                                change_reonshelf_list.append(asset)
+                    else:
+                        self.logger.error(f"有商品上架失败！资产编号: {rsp_asset['AssetId']} 错误信息:{rsp_asset['ErrorMsg']}")
+                else:
+                    success_count += 1
+        if change_reonshelf_list:
+            self.logger.info(f"即将通过改价方式上架{len(change_reonshelf_list)}个商品")
+            sell_shelf = self.getFullSellGoodsList(steamid)
+            lease_shelf = self.getFulRentGoodsList(steamid)
+            for asset in change_reonshelf_list:
+                if asset['TradeTypes'][0] == 1:
+                    for lease_asset in lease_shelf:
+                        if lease_asset.assetid == asset['AssetId']:
+                            asset['RentPrice'] = lease_asset.LeaseUnitPrice
+                            asset['RentDeposits'] =lease_asset.LeaseDeposit
+                            asset['RentMaxDay']=lease_asset.LeaseMaxDays
+                            if lease_asset.LongLeaseUnitPrice:
+                                asset['LongRentPrice'] = lease_asset.LongLeaseUnitPrice
+                            break
+                elif asset['TradeTypes'][0] == 2:
+                    for sell_asset in sell_shelf:
+                        if sell_asset['AssetId'] == asset['AssetId']:
+                            asset['SellPrice'] = sell_asset['Price']
+                            break   
+                asset['TradeTypes'] = [1, 2]
+            batches = [change_reonshelf_list[i : i + 100] for i in range(0, len(change_reonshelf_list), 100)]
+            for batch in batches:
+                rsp = self.post(
+                    "/Api/Rent/PublishRentAndSaleGoods", {"SteamId": steamid, "PublishType": 2, "Assets": batch}
+                ).json()
+                for rsp_asset in rsp['ResultData']:
+                    if not rsp_asset['IsSuccess']:
+                        self.logger.error(f"有商品上架失败！资产编号: {rsp_asset['AssetId']} 错误信息:{rsp_asset['ErrorMsg']}")
+                    else:
+                        success_count += 1
+        failure_count = len(assets) - success_count
+        return success_count,failure_count
