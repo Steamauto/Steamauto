@@ -59,6 +59,7 @@ def compare_shelves(A: List[Asset], B: List[Asset], ratio: float) -> Union[bool,
         if assetid in B_dict:
             A_price = A_dict[assetid].price
             B_price = B_dict[assetid].price
+            logger.debug(f'价格比例差值{round(A_price / B_price, 2) - ratio}')
             if abs(round(A_price / B_price, 2) - ratio) >= 0.01:
                 # 调整B表中字典的price
                 adjusted_dict = B_dict[assetid].model_copy()
@@ -99,12 +100,14 @@ def compare_lease_shelf(A: List[LeaseAsset], B: List[LeaseAsset], ratio: float) 
 
             if A_item.LeaseMaxDays != B_item.LeaseMaxDays:
                 changes_needed = True
-
-            if round(A_item.LeaseUnitPrice / B_item.LeaseUnitPrice, 2) != ratio:
+            
+            logger.debug(f'短租价格比例差值{round(A_item.LeaseUnitPrice / B_item.LeaseUnitPrice, 2) - ratio}')
+            if abs(round(A_item.LeaseUnitPrice / B_item.LeaseUnitPrice, 2) - ratio) >= 0.01:
                 changes_needed = True
 
             if A_item.LongLeaseUnitPrice and B_item.LongLeaseUnitPrice:
-                if round(A_item.LongLeaseUnitPrice / B_item.LongLeaseUnitPrice, 2) != ratio:
+                logger.debug(f'长租价格比例差值{round(A_item.LongLeaseUnitPrice / B_item.LongLeaseUnitPrice, 2) - ratio}')
+                if abs(round(A_item.LongLeaseUnitPrice / B_item.LongLeaseUnitPrice, 2) - ratio) >= 0.01:
                     changes_needed = True
             elif A_item.LongLeaseUnitPrice != B_item.LongLeaseUnitPrice:
                 changes_needed = True
@@ -508,7 +511,7 @@ class ECOsteamPlugin:
             if self.lease_other_platform == "uu":
                 # 上架商品
                 if len(difference['add']) > 0:
-                    if isinstance(uu_queue,tasks):
+                    if isinstance(uu_queue, tasks):
                         uu_queue.lease_add(difference['add'])
                         lease_logger.info(f"已经添加{len(difference['add'])}个商品到悠悠有品租赁上架队列")
                     else:
@@ -631,9 +634,10 @@ class ECOsteamPlugin:
                     shelves[platform],
                     ratios[main_platform] / ratios[platform],
                 )
-                sell_logger.debug(f"当前平台：{platform.upper()}\nDifference: {json.dumps(difference,cls=ModelEncoder)}")
+                sell_logger.debug(
+                    f"当前平台：{platform.upper()}\nDifference: {json.dumps(difference,cls=ModelEncoder,ensure_ascii=False)}"
+                )
                 if difference != {"add": [], "delete": [], "change": []}:
-                    sell_logger.debug(json.dumps(difference, cls=ModelEncoder))
                     sell_logger.warning(f"{platform.upper()}平台需要更新上架商品/价格")
                     try:
                         self.solve_platform_difference(platform, difference)
