@@ -20,6 +20,7 @@ from typing import no_type_check
 import requests
 
 from utils.logger import PluginLogger
+from BuffApi import models
 
 logger = PluginLogger("BuffApi")
 
@@ -262,7 +263,7 @@ class BuffAccount:
     def get_steam_trade(self) -> dict:
         return json.loads(self.get("https://buff.163.com/api/market/steam_trade").text).get("data")
 
-    def on_sale(self, assets: list):
+    def on_sale(self, assets: list[models.BuffOnSaleAsset]):
         """
         仅支持CSGO 返回上架成功商品的id
         """
@@ -271,7 +272,7 @@ class BuffAccount:
             json={
                 "appid": "730",
                 "game": "csgo",
-                "assets": assets,
+                "assets": [asset.model_dump(exclude_none=True) for asset in assets],
             },
             headers=self.CSRF_Fucker(),
         )
