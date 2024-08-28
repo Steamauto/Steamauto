@@ -1,15 +1,17 @@
 import datetime
 import logging
+from math import log
 import os
 import platform
 import re
 
 import colorlog
+import json5
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
 from steampy.exceptions import ApiException, ConfirmationExpected, EmptyResponse, InvalidCredentials, InvalidResponse, SteamError
-from utils.static import BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version
+from utils.static import BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version, STEAM_ERROR_CODES, CONFIG_FILE_PATH
 
 sensitive_data = []
 sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token", "trade_url", "TransactionUrl", "RealName", "IdCard"]
@@ -54,136 +56,26 @@ class LogFilter(logging.Filter):
 
         return True
 
-
-STEAM_ERROR_CODES = {
-    1: "成功",
-    2: "失败",
-    3: "无连接",
-    4: "无连接，重试",
-    5: "无效密码",
-    6: "已在其他地方登录",
-    7: "无效协议版本",
-    8: "无效参数",
-    9: "文件未找到",
-    10: "忙碌",
-    11: "无效状态",
-    12: "无效名称",
-    13: "无效电子邮件",
-    14: "重复名称",
-    15: "访问被拒绝",
-    16: "超时",
-    17: "已封禁",
-    18: "账户未找到",
-    19: "无效Steam ID",
-    20: "服务不可用",
-    21: "未登录",
-    22: "待定",
-    23: "加密失败",
-    24: "权限不足",
-    25: "超出限制",
-    26: "已吊销",
-    27: "已过期",
-    28: "已被兑换",
-    29: "重复请求",
-    30: "已拥有",
-    31: "IP未找到",
-    32: "持久化失败",
-    33: "锁定失败",
-    34: "登录会话被替换",
-    35: "连接失败",
-    36: "握手失败",
-    37: "IO失败",
-    38: "远程断开连接",
-    39: "购物车未找到",
-    40: "被阻止",
-    41: "被忽略",
-    42: "无匹配项",
-    43: "账户已禁用",
-    44: "服务只读",
-    45: "账户未特色",
-    46: "管理员操作成功",
-    47: "内容版本错误",
-    48: "尝试切换CM失败",
-    49: "需要密码以踢出会话",
-    50: "已在其他地方登录",
-    51: "已暂停",
-    52: "已取消",
-    53: "数据损坏",
-    54: "磁盘已满",
-    55: "远程调用失败",
-    56: "密码未设置",
-    57: "外部帐户已取消链接",
-    58: "PSN票证无效",
-    59: "外部帐户已链接",
-    60: "远程文件冲突",
-    61: "密码不合法",
-    62: "与上一个值相同",
-    63: "账户登录被拒绝",
-    64: "无法使用旧密码",
-    65: "无效登录验证代码",
-    66: "账户登录被拒绝，无邮件",
-    67: "硬件不支持IPT",
-    68: "IPT初始化错误",
-    69: "受家长控制限制",
-    70: "Facebook查询错误",
-    71: "过期的登录验证代码",
-    72: "IP登录限制失败",
-    73: "账户被锁定",
-    74: "需要验证电子邮件",
-    75: "没有匹配的URL",
-    76: "响应错误",
-    77: "需要重新输入密码",
-    78: "值超出范围",
-    79: "意外错误",
-    80: "已禁用",
-    81: "无效CEG提交",
-    82: "受限设备",
-    83: "地区限制",
-    84: "速率限制已超出",
-    85: "需要双因素验证登录",
-    86: "物品已删除",
-    87: "账户登录被限速",
-    88: "双因素验证码不匹配, 请检查shared_secret是否正确",
-    89: "双因素激活码不匹配",
-    90: "关联多个合作伙伴账户",
-    91: "未修改",
-    92: "无手机设备",
-    93: "时间未同步",
-    94: "短信验证码失败",
-    95: "账户限制超出",
-    96: "账户活动限制超出",
-    97: "电话活动限制超出",
-    98: "退款到钱包",
-    99: "电子邮件发送失败",
-    100: "未解决",
-    101: "需要验证码",
-    102: "GSLT拒绝",
-    103: "GSLT所有者拒绝",
-    104: "无效物品类型",
-    105: "IP封禁",
-    106: "GSLT已过期",
-    107: "资金不足",
-    108: "待处理事务过多",
-    109: "未找到站点许可证",
-    110: "WG网络发送超出限制",
-    111: "账户未添加好友",
-    112: "有限用户账户",
-    113: "无法移除物品",
-    114: "账户已删除",
-    115: "现有用户取消许可证",
-    116: "社区冷却中",
-    117: "未指定启动器",
-    118: "必须同意用户协议",
-    119: "启动器已迁移",
-    120: "Steam领域不匹配",
-    121: "无效签名",
-    122: "解析失败",
-    123: "无验证手机",
-}
-
+log_retention_days = None
+log_level = None
+try:
+    with open(CONFIG_FILE_PATH, "r", encoding='utf-8') as f:
+            config = json5.loads(f.read())
+            if isinstance(config, dict):
+                log_level = str(config.get("log_level", "DEBUG")).upper()
+                log_retention_days = int(config.get("log_retention_days", 7))
+except Exception as e:
+    pass
+    
+if log_retention_days:
+    for log_file in os.listdir(LOGS_FOLDER):
+        if log_file.endswith(".log"):
+            log_file_path = os.path.join(LOGS_FOLDER, log_file)
+            if (datetime.datetime.now() - datetime.datetime.fromtimestamp(os.path.getmtime(log_file_path))) > datetime.timedelta(days=log_retention_days):
+                os.remove(log_file_path)
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(0)
 s_handler = logging.StreamHandler()
 s_handler.setLevel(logging.INFO)
 log_formatter = colorlog.ColoredFormatter(
@@ -196,7 +88,16 @@ logger.addHandler(s_handler)
 if not os.path.exists(LOGS_FOLDER):
     os.mkdir(LOGS_FOLDER)
 f_handler = logging.FileHandler(os.path.join(LOGS_FOLDER, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".log"), encoding="utf-8")
-f_handler.setLevel(logging.DEBUG)
+if log_level and log_level.isdigit():
+    f_handler.setLevel(int(log_level))
+elif log_level=="INFO":
+    f_handler.setLevel(logging.INFO)
+elif log_level=="WARNING":
+    f_handler.setLevel(logging.WARNING)
+elif log_level=="ERROR":
+    f_handler.setLevel(logging.ERROR)
+else:
+    f_handler.setLevel(logging.DEBUG)
 f_handler.setFormatter(log_formatter)
 logger.addHandler(f_handler)
 logger.addFilter(LogFilter())
@@ -206,7 +107,6 @@ logger.debug(f"Running on {platform.system()} {platform.release()}({platform.ver
 logger.debug(f"Python version: {os.sys.version}")  # type: ignore
 logger.debug(f"Build info: {BUILD_INFO}")
 logger.debug(f"日志已经经过脱敏处理，请放心转发至公共平台！")
-
 
 def handle_caught_exception(e: Exception, prefix: str = ""):
     plogger = logger
@@ -276,3 +176,6 @@ class PluginLogger:
 
     def critical(self, msg, *args, **kwargs):
         logger.critical(f"{self.pluginName} {msg}", *args, **kwargs)
+    
+    def log(self, level, msg, *args, **kwargs):
+        logger.log(level, f"{self.pluginName} {msg}", *args, **kwargs)

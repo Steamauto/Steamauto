@@ -343,7 +343,7 @@ class ECOsteamPlugin:
         try:
             with self.steam_client_mutex:
                 inventory = self.steam_client.get_my_inventory(game=GameOptions.CS)  # type: ignore
-                logger.debug('获取到的Steam库存:' + json.dumps(inventory, ensure_ascii=False))
+                logger.log(5,'获取到的Steam库存:' + json.dumps(inventory, ensure_ascii=False))
         except Exception as e:
             handle_caught_exception(e, "ECOsteam.cn")
         return inventory
