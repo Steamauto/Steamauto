@@ -392,6 +392,8 @@ class ECOsteamPlugin:
 
     # 自动同步上架启动线程
     def auto_sync_shelves(self):
+        global sync_lease_shelf_enabled
+        global sync_sell_shelf_enabled
         # 配置检查
         if self.config["ecosteam"]["auto_sync_sell_shelf"]["enable"]:
             config_sync_sell_shelf = self.config["ecosteam"]["auto_sync_sell_shelf"]
