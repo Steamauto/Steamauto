@@ -549,7 +549,7 @@ class ECOsteamPlugin:
                             if rsp['ResultCode'] == '0':
                                 success_count += len(batch)
                             else:
-                                lease_logger.error(f"下架过程中出现失败！错误信息：{rsp['ResultMsg']}")
+                                lease_logger.error(f"下架租赁商品过程中出现失败！错误信息：{rsp['ResultMsg']}")
                         except Exception as e:
                             handle_caught_exception(e, "ECOsteam.cn")
                             lease_logger.error("发生未知错误，请稍候再试！")
@@ -596,15 +596,12 @@ class ECOsteamPlugin:
                             f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！"
                         )
                         if platform == "eco":
-                            response = self.client.OffshelfGoods(
+                            success_count,failure_count = self.client.OffshelfGoods(
                                 [models.GoodsNum(GoodsNum=good, SteamGameId='730') for good in offshelf_list]
                             )
-                            if response.json()["ResultCode"] == "0":
-                                sell_logger.info(f"下架{len(offshelf_list)}个商品成功！")
-                            else:
-                                sell_logger.error(
-                                    f'下架{len(offshelf_list)}个商品失败！错误信息{response.json().get("ResultMsg", None)}'
-                                )
+                            sell_logger.info(f'下架{success_count}个商品成功！')
+                            if failure_count != 0:
+                                sell_logger.error(f'下架{failure_count}个商品失败！')
                         elif platform == "buff":
                             try:
                                 count, problems = self.buff_client.cancel_sale(offshelf_list)
@@ -657,10 +654,12 @@ class ECOsteamPlugin:
             assets = [asset.orderNo for asset in difference["delete"]]
             if len(assets) > 0:
                 sell_logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
-                response = self.client.OffshelfGoods(
+                success_count,failure_count = self.client.OffshelfGoods(
                     [models.GoodsNum(GoodsNum=goodsNum, SteamGameId='730') for goodsNum in assets]
                 )
-                sell_logger.info(f"下架{len(assets)}个商品成功！")
+                sell_logger.info(f"下架{success_count}个商品成功！")
+                if failure_count != 0:
+                    sell_logger.error(f"下架{failure_count}个商品失败！")
 
             # 修改价格
             if len(difference["change"]) > 0:

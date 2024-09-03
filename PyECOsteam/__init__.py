@@ -123,7 +123,20 @@ class ECOsteamClient:
         return goods
 
     def OffshelfGoods(self, goodsNumList: list[models.GoodsNum]):
-        return self.post("/Api/Selling/OffshelfGoods", data={"goodsNumList": [goodNum.model_dump(exclude_none=True) for goodNum in goodsNumList]})
+        batches = [goodsNumList[i : i + 100] for i in range(0, len(goodsNumList), 100)]
+        success_count = 0
+        for batch in batches:
+            rsp = self.post(
+                "/Api/Selling/OffshelfGoods",
+                data={"goodsNumList": [goodNum.model_dump(exclude_none=True) for goodNum in batch]},
+            )
+            for good in rsp.json()['ResultData']:
+                if good['IsSuccess']:
+                    success_count += 1
+                else:
+                    self.logger.error('下架在售商品时出现异常！错误信息：' + good['ErrorMsg'])
+        failure_count = len(goodsNumList) - success_count
+        return success_count, failure_count
 
     # def GoodsPublishedBatchEdit(self, goodsBatchEditList: list):
     #     return self.post("/Api/Selling/GoodsPublishedBatchEdit", data={"goodsBatchEditList": goodsBatchEditList})
@@ -168,21 +181,6 @@ class ECOsteamClient:
 
     def QuerySteamAccountList(self):
         return self.post("/Api/Merchant/QuerySteamAccountList", data={})
-
-    # def PublishRentGoods(self, PublishType: int, SteamId: str, Assets: list[models.ECORentAsset]):
-    #     '''
-    #     PublishType: 发布上架=1 改价=2
-    #     '''
-    #     if len(Assets) > 100:
-    #         raise Exception("每次租赁上架数量不能超过100")
-    #     return self.post(
-    #         "/Api/Rent/PublishRentGoods",
-    #         data={
-    #             "PublishType": PublishType,
-    #             "Assets": [asset.model_dump(exclude_none=True) for asset in Assets],
-    #             "SteamId": SteamId,
-    #         },
-    #     )
 
     def OffshelfRentGoods(self, GoodsNumList: list[models.GoodsNum]):
         return self.post(
@@ -286,7 +284,7 @@ class ECOsteamClient:
             assets.append(models.ECORentAsset.fromLeaseAsset(rsp_asset).model_dump(exclude_none=True))
 
         batches = [assets[i : i + 100] for i in range(0, len(assets), 100)]
-        change_reonshelf_list=[]
+        change_reonshelf_list = []
         success_count = 0
         for batch in batches:
             rsp = self.post(
@@ -295,7 +293,9 @@ class ECOsteamClient:
             for rsp_asset in rsp['ResultData']:
                 if not rsp_asset['IsSuccess']:
                     if '已上架' in rsp_asset['ErrorMsg'] and publishType == 1:
-                        self.logger.warning(f"资产编号: {rsp_asset['AssetId']} 可能已经在租赁/出售货架上架(通常为可租可售商品需要以此方式上架) 稍后通过改价方式上架")
+                        self.logger.warning(
+                            f"资产编号: {rsp_asset['AssetId']} 可能已经在租赁/出售货架上架(通常为可租可售商品需要以此方式上架) 稍后通过改价方式上架"
+                        )
                         for asset in assets:
                             if asset['AssetId'] == rsp_asset['AssetId']:
                                 change_reonshelf_list.append(asset)
@@ -312,8 +312,8 @@ class ECOsteamClient:
                     for lease_asset in lease_shelf:
                         if lease_asset.assetid == asset['AssetId']:
                             asset['RentPrice'] = lease_asset.LeaseUnitPrice
-                            asset['RentDeposits'] =lease_asset.LeaseDeposit
-                            asset['RentMaxDay']=lease_asset.LeaseMaxDays
+                            asset['RentDeposits'] = lease_asset.LeaseDeposit
+                            asset['RentMaxDay'] = lease_asset.LeaseMaxDays
                             if lease_asset.LongLeaseUnitPrice:
                                 asset['LongRentPrice'] = lease_asset.LongLeaseUnitPrice
                             break
@@ -321,7 +321,7 @@ class ECOsteamClient:
                     for sell_asset in sell_shelf:
                         if sell_asset['AssetId'] == asset['AssetId']:
                             asset['SellPrice'] = sell_asset['Price']
-                            break   
+                            break
                 asset['TradeTypes'] = [1, 2]
             batches = [change_reonshelf_list[i : i + 100] for i in range(0, len(change_reonshelf_list), 100)]
             for batch in batches:
@@ -334,4 +334,4 @@ class ECOsteamClient:
                     else:
                         success_count += 1
         failure_count = len(assets) - success_count
-        return success_count,failure_count
+        return success_count, failure_count
