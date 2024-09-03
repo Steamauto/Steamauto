@@ -6,8 +6,6 @@ import time
 from threading import Thread
 from typing import Dict, List, Union
 
-from numpy import isin
-
 from BuffApi import BuffAccount
 from BuffApi.models import BuffOnSaleAsset
 from PyECOsteam import ECOsteamClient, models
@@ -20,7 +18,6 @@ from utils.static import ECOSTEAM_RSAKEY_FILE
 from utils.tools import exit_code, get_encoding
 from utils.uu_helper import get_valid_token_for_uu
 from uuyoupinapi import UUAccount
-from uuyoupinapi.models import UUOnLeaseShelfItem
 
 sync_sell_shelf_enabled = False
 sync_lease_shelf_enabled = False
