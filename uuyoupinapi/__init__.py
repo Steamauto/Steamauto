@@ -687,11 +687,14 @@ class UUAccount:
                         "Sessionid": self.device_info["deviceId"],
                     },
                 ).json()
-                for asset in rsp["Data"]['Commoditys']:
-                    if asset["IsSuccess"] == 1:
-                        success_count += 1
-                    else:
-                        logger.error(f"上架物品 {asset['CommodityId']}(悠悠商品编号) 失败，原因：{asset['Remark']}")
+                try:
+                    for asset in rsp["Data"]['Commoditys']:
+                        if asset["IsSuccess"] == 1:
+                            success_count += 1
+                        else:
+                            logger.error(f"上架物品 {asset['CommodityId']}(悠悠商品编号) 失败，原因：{asset['Remark']}")
+                except TypeError:
+                    logger.error(f"上架物品失败，原因可能由于该物品处于待发货列表")
         failure_count = len(item_infos) - success_count
         return success_count, failure_count
     
