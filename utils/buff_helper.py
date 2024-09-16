@@ -1,4 +1,5 @@
 import base64
+from json import JSONDecodeError
 import os
 import time
 from typing import Dict
@@ -158,18 +159,22 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
             session = got_cookies["session"]
     if not session:  # 尝试通过二维码
         logger.info("[BuffLoginSolver] 尝试通过二维码登录至BUFF")
-        session = login_to_buff_by_qrcode()
-        if (not session) or (not is_session_has_enough_permission(session)):
-            logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
-        else:
-            logger.info('[BuffLoginSolver] 使用二维码登录至BUFF成功')
+        try:
+            session = login_to_buff_by_qrcode()
+            if (not session) or (not is_session_has_enough_permission(session)):
+                logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
+            else:
+                logger.info('[BuffLoginSolver] 使用二维码登录至BUFF成功')
+        except JSONDecodeError:
+            logger.error('[BuffLoginSolver] 你的服务器IP被BUFF封禁。请尝试更换服务器！')
+            session = ""
     if not session:  # 无法登录至BUFF
         logger.error("[BuffLoginSolver] 无法登录至BUFF, 请手动更新BUFF cookies! ")
     else:
         with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
             f.write("session=" + session.replace("session=", ""))
     if "session=" not in session:
-        session = "session=" + session
+        session = "session=" + session-
     return session
 
 
