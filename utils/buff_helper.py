@@ -115,10 +115,13 @@ def login_to_buff_by_qrcode() -> str:
 def is_session_has_enough_permission(session: str) -> bool:
     if "session=" not in session:
         session = "session=" + session
-    response_json = requests.get("https://buff.163.com/api/market/steam_trade", headers={"Cookie": session}).json()
-    if "data" not in response_json:
+    try:
+        response_json = requests.get("https://buff.163.com/api/market/steam_trade", headers={"Cookie": session}).json()
+        if "data" not in response_json:
+            return False
+        return True
+    except:
         return False
-    return True
 
 
 def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
