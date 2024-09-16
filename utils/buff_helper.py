@@ -174,7 +174,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
         with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
             f.write("session=" + session.replace("session=", ""))
     if "session=" not in session:
-        session = "session=" + session-
+        session = "session=" + session
     return session
 
 
