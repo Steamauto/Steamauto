@@ -605,7 +605,7 @@ class ECOsteamPlugin:
                         elif platform == "buff":
                             try:
                                 count, problems = self.buff_client.cancel_sale(offshelf_list)
-                                sell_logger.info(f"下架{count}个商品成功！下架{len(offshelf_list) - count}个商品失败！")
+                                sell_logger.info(f"下架{count}个商品成功！下架{len(problems)}个商品失败！")
                             except Exception as e:
                                 handle_caught_exception(e, "ECOsteam.cn")
                                 sell_logger.error(f"下架商品失败！可能有部分下架成功")
