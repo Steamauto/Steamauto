@@ -1,6 +1,9 @@
+import importlib
+import inspect
 import json
 import os
 import pickle
+import re
 import shutil
 import signal
 import sys
@@ -38,7 +41,7 @@ from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           CURRENT_VERSION, DEFAULT_CONFIG_JSON,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
                           SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH,
-                          set_is_latest_version, set_no_pause)
+                          set_is_latest_version, set_no_pause, PLUGIN_FOLDER)
 from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
                          logger, pause)
 
@@ -272,36 +275,52 @@ def init_files_and_params() -> int:
         return 2
 
 
+def import_all_plugins():
+    # 自动导入所有插件
+    plugin_files = [f for f in os.listdir(PLUGIN_FOLDER) if f.endswith(".py") and f != "__init__.py"]
+
+    for plugin_file in plugin_files:
+        module_name = f"{PLUGIN_FOLDER}.{plugin_file[:-3]}"
+        importlib.import_module(module_name)
+
+
+def camel_to_snake(name):
+    if name == "ECOsteamPlugin":  # 特殊处理
+        return "ecosteam"
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def get_plugin_classes():
+    plugin_classes = {}
+    for name, obj in globals().items():
+        if inspect.isclass(obj) and obj.__module__.startswith(PLUGIN_FOLDER):
+            plugin_name = camel_to_snake(obj.__name__)  # 将驼峰命名转换为下划线命名
+            plugin_classes[plugin_name] = obj
+    return plugin_classes
+
+
 def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
     global config
     plugins_enabled = []
-    if "buff_auto_accept_offer" in config and "enable" in config["buff_auto_accept_offer"] and config["buff_auto_accept_offer"]["enable"]:
-        buff_auto_accept_offer = BuffAutoAcceptOffer(logger, steam_client, steam_client_mutex, config)
-        plugins_enabled.append(buff_auto_accept_offer)
-    if "buff_auto_comment" in config and "enable" in config["buff_auto_comment"] and config["buff_auto_comment"]["enable"]:
-        buff_auto_comment = BuffAutoComment(logger, steam_client, steam_client_mutex, config)
-        plugins_enabled.append(buff_auto_comment)
-    if "buff_profit_report" in config and "enable" in config["buff_profit_report"] and config["buff_profit_report"]["enable"]:
-        buff_profit_report = BuffProfitReport(logger, steam_client, steam_client_mutex, config)
-        plugins_enabled.append(buff_profit_report)
-    if "buff_auto_on_sale" in config and "enable" in config["buff_auto_on_sale"] and config["buff_auto_on_sale"]["enable"]:
-        buff_auto_on_sale = BuffAutoOnSale(logger, steam_client, steam_client_mutex, config)
-        plugins_enabled.append(buff_auto_on_sale)
-    if "uu_auto_accept_offer" in config and "enable" in config["uu_auto_accept_offer"] and config["uu_auto_accept_offer"]["enable"]:
-        uu_auto_accept_offer = UUAutoAcceptOffer(steam_client, steam_client_mutex, config)
-        plugins_enabled.append(uu_auto_accept_offer)
-    if "uu_auto_lease_item" in config and "enable" in config["uu_auto_lease_item"] and config["uu_auto_lease_item"]["enable"]:
-        uu_auto_lease_on_shelf = UUAutoLeaseItem(config)
-        plugins_enabled.append(uu_auto_lease_on_shelf)
-    if "uu_auto_sell_item" in config and "enable" in config["uu_auto_sell_item"] and config["uu_auto_sell_item"]["enable"]:
-        uu_auto_sale_on_shelf = UUAutoSellItem(config)
-        plugins_enabled.append(uu_auto_sale_on_shelf)
-    if "steam_auto_accept_offer" in config and "enable" in config["steam_auto_accept_offer"] and config["steam_auto_accept_offer"]["enable"]:
-        steam_auto_accept_offer = SteamAutoAcceptOffer(steam_client, steam_client_mutex, config)
-        plugins_enabled.append(steam_auto_accept_offer)
-    if "ecosteam" in config and "enable" in config["ecosteam"] and config["ecosteam"]["enable"]:
-        ecosteam = ECOsteamPlugin(steam_client, steam_client_mutex, config)
-        plugins_enabled.append(ecosteam)
+    plugin_classes = get_plugin_classes()  # 获取所有插件类
+
+    for plugin_key, plugin_class in plugin_classes.items():
+        if plugin_key in config and "enable" in config[plugin_key] and config[plugin_key]["enable"]:
+            args = []
+            if hasattr(plugin_class, '__init__'):
+                init_signature = inspect.signature(plugin_class.__init__)
+                for param in init_signature.parameters.values():
+                    if param.name == "logger":
+                        args.append(logger)
+                    elif param.name == "steam_client":
+                        args.append(steam_client)
+                    elif param.name == "steam_client_mutex":
+                        args.append(steam_client_mutex)
+                    elif param.name == "config":
+                        args.append(config)
+            plugin_instance = plugin_class(*args)
+            plugins_enabled.append(plugin_instance)
 
     return plugins_enabled
 
@@ -360,6 +379,7 @@ def main():
         return 1
     steam_client_mutex = threading.Lock()
     # 仅用于获取启用的插件
+    import_all_plugins()
     plugins_enabled = get_plugins_enabled(steam_client, steam_client_mutex)
     # 检查插件是否正确初始化
     plugins_check_status = plugins_check(plugins_enabled)

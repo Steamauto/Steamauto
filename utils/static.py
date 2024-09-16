@@ -11,6 +11,7 @@ VERSION_FILE = "version.json"
 APPRISE_ASSET_FOLDER = "Apprise"
 LOGS_FOLDER = "logs"
 CONFIG_FOLDER = "config"
+PLUGIN_FOLDER = "plugins"
 CONFIG_FILE_PATH = os.path.join(CONFIG_FOLDER, "config.json5")
 BUFF_COOKIES_FILE_PATH = os.path.join(CONFIG_FOLDER, "buff_cookies.txt")
 UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token.txt")
