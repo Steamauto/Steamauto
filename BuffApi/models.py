@@ -12,7 +12,6 @@ class BuffOnSaleAsset(BaseModel):
     instanceid: int
     contextid: int = 2
     market_hash_name: str
-    orderNo: str
     price: float
     desc: str = ''
     
@@ -24,7 +23,6 @@ class BuffOnSaleAsset(BaseModel):
             classid=obj.classid,
             instanceid=obj.instanceid,
             market_hash_name=obj.market_hash_name,
-            orderNo=obj.orderNo,
             price=obj.price,
             desc=''
         )
