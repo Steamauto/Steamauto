@@ -78,12 +78,13 @@ logger = logging.getLogger()
 logger.setLevel(0)
 s_handler = logging.StreamHandler()
 s_handler.setLevel(logging.INFO)
-log_formatter = colorlog.ColoredFormatter(
+log_formatter_colored = colorlog.ColoredFormatter(
     fmt="%(log_color)s[%(asctime)s] - %(levelname)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     log_colors={"DEBUG": "cyan", "INFO": "green", "WARNING": "yellow", "ERROR": "red", "CRITICAL": "bold_red"},
 )
-s_handler.setFormatter(log_formatter)
+s_handler.setFormatter(log_formatter_colored)
+log_formatter = logging.Formatter("[%(asctime)s] - %(levelname)s: %(message)s", "%Y-%m-%d %H:%M:%S")
 logger.addHandler(s_handler)
 if not os.path.exists(LOGS_FOLDER):
     os.mkdir(LOGS_FOLDER)
