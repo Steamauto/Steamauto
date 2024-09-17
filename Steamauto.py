@@ -275,9 +275,22 @@ def init_files_and_params() -> int:
         return 2
 
 
+def get_base_path():
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller
+        return os.path.join(sys._MEIPASS)
+    else:
+        return os.path.dirname(os.path.abspath(__file__))
+
+
+def get_plugins_folder():
+    base_path = get_base_path()
+    return os.path.join(base_path, PLUGIN_FOLDER)
+
+
 def import_all_plugins():
     # 自动导入所有插件
-    plugin_files = [f for f in os.listdir(PLUGIN_FOLDER) if f.endswith(".py") and f != "__init__.py"]
+    plugin_files = [f for f in os.listdir(get_plugins_folder()) if f.endswith(".py") and f != "__init__.py"]
 
     for plugin_file in plugin_files:
         module_name = f"{PLUGIN_FOLDER}.{plugin_file[:-3]}"
