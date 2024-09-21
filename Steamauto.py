@@ -25,6 +25,7 @@ from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from plugins.UUAutoLease import UUAutoLeaseItem
 from plugins.UUAutoSell import UUAutoSellItem
+from plugins.BuyPriceSync import BuyPriceSync
 from steampy.client import SteamClient
 from steampy.exceptions import ApiException
 from utils.tools import jobHandler

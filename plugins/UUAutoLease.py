@@ -1,3 +1,4 @@
+import copy
 import datetime
 import time
 
@@ -188,8 +189,8 @@ class UUAutoLeaseItem:
         try:
             self.uuyoupin.send_device_info()
             self.logger.info("正在获取悠悠有品出租已上架物品...")
-            leased_item_list = self.leased_inventory_list
-            for i, item in enumerate(leased_item_list):
+            new_leased_item_list = []
+            for i, item in enumerate(self.leased_inventory_list):
 
                 template_id = item.templateid
                 short_name = item.short_name
@@ -200,21 +201,24 @@ class UUAutoLeaseItem:
                 price_rsp = self.get_lease_price(template_id)
                 if price_rsp["LeaseUnitPrice"] == 0:
                     continue
+                new_item = copy.copy(item)
 
-                item.LeaseUnitPrice = price_rsp["LeaseUnitPrice"]
-                item.LongLeaseUnitPrice = price_rsp["LongLeaseUnitPrice"]
-                item.LeaseDeposit = price_rsp["LeaseDeposit"]
-                item.LeaseMaxDays = self.config["uu_auto_lease_item"]["lease_max_days"]
+                new_item.LeaseUnitPrice = price_rsp["LeaseUnitPrice"]
+                new_item.LongLeaseUnitPrice = price_rsp["LongLeaseUnitPrice"]
+                new_item.LeaseDeposit = price_rsp["LeaseDeposit"]
+                new_item.LeaseMaxDays = self.config["uu_auto_lease_item"]["lease_max_days"]
                 if self.config["uu_auto_lease_item"]["lease_max_days"] <= 8:
-                    item.LongLeaseUnitPrice = None
+                    new_item.LongLeaseUnitPrice = None
 
-            self.logger.info(f"{len(leased_item_list)} 件物品可以更新出租价格。")
+                new_leased_item_list.append(new_item)
+
+            self.logger.info(f"{len(new_leased_item_list)} 件物品可以更新出租价格。")
             self.operate_sleep()
-            if len(leased_item_list) > 0:
-                success_count = self.uuyoupin.change_leased_price(leased_item_list)
+            if len(new_leased_item_list) > 0:
+                success_count = self.uuyoupin.change_leased_price(new_leased_item_list)
                 self.logger.info(f"成功修改 {success_count} 件物品出租价格。")
-                if len(leased_item_list) - success_count > 0:
-                    self.logger.error(f"{len(leased_item_list) - success_count} 件物品出租价格修改失败。")
+                if len(new_leased_item_list) - success_count > 0:
+                    self.logger.error(f"{len(new_leased_item_list) - success_count} 件物品出租价格修改失败。")
             else:
                 self.logger.info(f"没有物品可以修改价格。")
 
@@ -280,6 +284,6 @@ if __name__ == "__main__":
         exit_code.set(1)
     else:
         uu_auto_lease.uuyoupin = uuyoupinapi.UUAccount(token)
-    uu_auto_lease.pre_check_price()
+    # uu_auto_lease.pre_check_price()
     # time.sleep(64)
-    # uu_auto_lease.auto_change_price()
+    uu_auto_lease.auto_change_price()

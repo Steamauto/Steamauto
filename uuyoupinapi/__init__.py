@@ -772,3 +772,48 @@ class UUAccount:
                     logger.error(f"上架物品 {asset['CommodityId']}(悠悠商品编号) 失败，原因：{asset['Remark']}")
         failure_count = len(item_infos) - success_count
         return success_count, failure_count
+
+    def get_trend_inventory(self):
+        inventory_list_rsp = self.call_api(
+            "POST",
+            "/api/youpin/commodity/user/inventory/price/trend",
+            data={
+                "pageIndex": 1,
+                "pageSize": 1000,
+                "IsMerge": 0
+            },
+        ).json()
+        inventory_list = []
+        if inventory_list_rsp["code"] == 0:
+            inventory_list = inventory_list_rsp["data"]["itemsInfos"]
+            logger.info(f"库存数量 {len(inventory_list)}")
+        else:
+            logger.error(inventory_list_rsp)
+            logger.error("获取悠悠库存失败!")
+
+        return inventory_list
+
+    def save_buy_price(self, assets: list):
+        """
+        {"productUniqueKeyList":[{"steamAssetId":"39605491748","marketHashName":"USP-S | Printstream (Minimal Wear)",
+        "buyPrice":"341","abrade":"0.1401326358318328900"}]}
+        """
+        item_infos = [
+            {
+                "steamAssetId": asset["steamAssetId"],
+                "marketHashName": asset["marketHashName"],
+                "buyPrice": asset["buyPrice"],
+                "abrade": asset["abrade"]
+            }
+            for asset in assets
+        ]
+        rsp = self.call_api(
+            "POST",
+            "/api/youpin/commodity/product/user/batch/save/buy/price",
+            data={"productUniqueKeyList": item_infos},
+        ).json()
+
+        if "code" in rsp and rsp["code"] == 0:
+            logger.info(f"同步购入价格成功。")
+        else:
+            logger.error(f"同步购入价格失败，原因：{rsp}")

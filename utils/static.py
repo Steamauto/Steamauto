@@ -228,6 +228,15 @@ DEFAULT_CONFIG_JSON = r"""
     // 出售的物品名字列表，示例：["物品A", "物品B"]（名字可以不写全，但是要写对，比如M4A1印花集）
     "name": ["物品A", "物品B"]
   },
+  // 自动同步buff购买价格到uu中
+  "buy_price_sync": {
+    // 功能是否启用，默认为false
+    "enable": false,
+    // 每天定时运行时间
+    "run_time": "00:30",
+    // 从buff中获取的订单数量 (实际值为count * 20)
+    "count": 5
+  },
   // Steam 自动接受礼物报价插件配置
   "steam_auto_accept_offer": {
     // 是否开启自动接受Steam礼物报价（无需支出任何Steam库存中的物品的报价）
