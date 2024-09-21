@@ -1,7 +1,6 @@
 import os
 import pickle
 import time
-from webbrowser import get
 
 import json5
 

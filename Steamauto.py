@@ -278,7 +278,7 @@ def init_files_and_params() -> int:
 def get_base_path():
     if hasattr(sys, '_MEIPASS'):
         # PyInstaller
-        return os.path.join(sys._MEIPASS)
+        return os.path.join(sys._MEIPASS) # type: ignore
     else:
         return os.path.dirname(os.path.abspath(__file__))
 
@@ -294,7 +294,10 @@ def import_all_plugins():
 
     for plugin_file in plugin_files:
         module_name = f"{PLUGIN_FOLDER}.{plugin_file[:-3]}"
-        importlib.import_module(module_name)
+        if module_name.startswith(f'{PLUGIN_FOLDER}.External'):
+            globals()[module_name] = importlib.import_module(module_name)
+        else:
+            importlib.import_module(module_name)
 
 
 def camel_to_snake(name):
@@ -303,13 +306,19 @@ def camel_to_snake(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
-
+# 添加自定义插件的方法：在plugins文件夹下新建.py文件, 文件名需要以External开头, 然后在文件中定义一个类, 类名需要以External开头, 且有且只有一个类名以External开头
 def get_plugin_classes():
     plugin_classes = {}
     for name, obj in globals().items():
         if inspect.isclass(obj) and obj.__module__.startswith(PLUGIN_FOLDER):
             plugin_name = camel_to_snake(obj.__name__)  # 将驼峰命名转换为下划线命名
             plugin_classes[plugin_name] = obj
+        if (inspect.ismodule(obj) and obj.__name__.startswith(f'{PLUGIN_FOLDER}.External')):
+            for name, obj2 in inspect.getmembers(obj):
+                if inspect.isclass(obj2) and name.startswith("External"):
+                    plugin_name = camel_to_snake(obj.__name__)
+                    plugin_classes[plugin_name] = obj2
+                    
     return plugin_classes
 
 
@@ -319,7 +328,9 @@ def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
     plugin_classes = get_plugin_classes()  # 获取所有插件类
 
     for plugin_key, plugin_class in plugin_classes.items():
-        if plugin_key in config and "enable" in config[plugin_key] and config[plugin_key]["enable"]:
+        if (plugin_key in config and "enable" in config[plugin_key] and config[plugin_key]["enable"]) or plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external'):
+            if plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external'):
+                logger.info('已加载自定义插件: ' + plugin_key)
             args = []
             if hasattr(plugin_class, '__init__'):
                 init_signature = inspect.signature(plugin_class.__init__)
