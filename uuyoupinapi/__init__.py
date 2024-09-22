@@ -495,7 +495,7 @@ class UUAccount:
 
         return inventory_list
 
-    def get_market_lease_price(self, template_id: int, min_price=0, cnt=15) -> list[UUMarketLeaseItem]:
+    def get_market_lease_price(self, template_id: int, min_price=0, cnt=15,sortTypeKey='LEASE_DEFAULT') -> list[UUMarketLeaseItem]:
         rsp = self.call_api(
             "POST",
             "/api/homepage/v3/detail/commodity/list/lease",
@@ -508,7 +508,7 @@ class UUAccount:
                 "pageIndex": 1,
                 "pageSize": 50,
                 "sortType": "1",
-                "sortTypeKey": "LEASE_DEFAULT",
+                "sortTypeKey": sortTypeKey,
                 "status": "20",
                 "stickerAbrade": 0,
                 "stickersIsSort": False,
