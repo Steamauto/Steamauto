@@ -3,6 +3,7 @@ import random
 import string
 import time
 
+from annotated_types import Le
 import requests
 
 from utils.logger import PluginLogger
@@ -47,7 +48,12 @@ def generate_headers(devicetoken, deviceid, token=""):
         "accept-encoding": "gzip",
     }
 
-
+def is_json( data):
+    try:
+        json.loads(data)
+    except Exception:
+        return False
+    return True
 class UUAccount:
     def __init__(self, token: str):
         """
@@ -128,6 +134,8 @@ class UUAccount:
             },
         )
 
+
+    
     def call_api(self, method, path, data=None):
         """
         调用API
@@ -149,7 +157,10 @@ class UUAccount:
         else:
             raise Exception("Method not supported")
         try:
-            logger.debug(f"{method} {path} {json.dumps(data)} {response.content.decode()}")
+            log_output = response.content.decode()
+            if is_json(log_output):
+                log_output = json.dumps(json.loads(log_output), ensure_ascii=False)
+            logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
         except Exception as e:
             raise Exception(f"网络错误！！！请求失败: {e}")
         return response
@@ -772,3 +783,27 @@ class UUAccount:
                     logger.error(f"上架物品 {asset['CommodityId']}(悠悠商品编号) 失败，原因：{asset['Remark']}")
         failure_count = len(item_infos) - success_count
         return success_count, failure_count
+    
+    def get_leased_out_list(self):
+        data = {"gameId": 730, "pageIndex": 0, "pageSize": 50,"sortType": 0,"keywords":""}
+        result = []
+        while True:
+            data['pageIndex'] += 1
+            response = self.call_api("POST", "/api/youpin/bff/trade/v1/order/lease/out/list", data=data).json()
+            result += response["data"]["orderDataList"]
+            if len(response["data"]["orderDataList"]) < 50:
+                break 
+        return result
+    
+    def get_template_id_by_order_id(self, order_id):
+        response = self.call_api("POST", "/api/youpin/bff/order/v2/detail", data={"orderId": order_id}).json()
+        return response['data']['orderDetail']['productDetail']['commodityTemplateId']
+    
+    def get_least_market_price(self, template_id):
+        response = self.call_api("POST", "/api/homepage/v2/detail/commodity/list/sell", data={"templateId": template_id}).json()
+        if response['Code'] == 84104:
+            raise SystemError('悠悠风控，暂时无法获取价格')
+        try:
+            return response['Data']['CommodityList'][0]['Price']
+        except:
+            return 0
