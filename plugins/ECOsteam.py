@@ -364,6 +364,9 @@ class ECOsteamPlugin:
         tomorrow = tomorrow.strftime("%Y-%m-%d")
         last_month = last_month.strftime("%Y-%m-%d")
         wait_deliver_orders = self.client.getFullSellerOrderList(last_month, tomorrow, DetailsState=8, SteamId=self.steam_id)
+        for order in wait_deliver_orders:
+            if order['OrderStateCode'] == 2:
+                wait_deliver_orders.remove(order)
         accept_offer_logger.info(f"检测到{len(wait_deliver_orders)}个待发货订单！")
         if len(wait_deliver_orders) > 0:
             for order in wait_deliver_orders:
