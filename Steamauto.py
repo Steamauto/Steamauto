@@ -144,9 +144,17 @@ class Steamauto:
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "r", encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
             try:
                 steam_account_info = json5.loads(f.read())
+            except FileNotFoundError:
+                logger.error(f"未检测到 {STEAM_ACCOUNT_INFO_FILE_PATH}, 请添加后再进行操作!")
+                pause()
+                return None
+            except ValueError:
+                logger.error(f"检测到 {STEAM_ACCOUNT_INFO_FILE_PATH} 格式错误, 请检查配置文件格式是否正确!")
+                pause()
+                return None
             except Exception as e:
                 handle_caught_exception(e)
-                logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
+                logger.error(f"读取 {STEAM_ACCOUNT_INFO_FILE_PATH} 时发生未知错误: {e}")
                 pause()
                 return None
 
