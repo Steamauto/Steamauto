@@ -1,3 +1,5 @@
+# plugins\BuffAutoAcceptOffer.py
+
 import datetime
 import json
 import os
@@ -11,22 +13,22 @@ from apprise import AppriseAsset
 
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import PluginLogger, handle_caught_exception
-from utils.static import (APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH,
-                          BUFF_COOKIES_FILE_PATH,
-                          MESSAGE_NOTIFICATION_DEV_FILE_PATH,
-                          SELL_ORDER_HISTORY_DEV_FILE_PATH, SESSION_FOLDER,
-                          SHOP_LISTING_DEV_FILE_PATH,
-                          STEAM_TRADE_DEV_FILE_PATH, SUPPORT_GAME_TYPES,
-                          TO_DELIVER_DEV_FILE_PATH)
+from utils.static import (
+    APPRISE_ASSET_FOLDER,
+    BUFF_ACCOUNT_DEV_FILE_PATH,
+    BUFF_COOKIES_FILE_PATH,
+    MESSAGE_NOTIFICATION_DEV_FILE_PATH,
+    SELL_ORDER_HISTORY_DEV_FILE_PATH,
+    SESSION_FOLDER,
+    SHOP_LISTING_DEV_FILE_PATH,
+    STEAM_TRADE_DEV_FILE_PATH,
+    SUPPORT_GAME_TYPES,
+    TO_DELIVER_DEV_FILE_PATH,
+)
 from utils.tools import exit_code, get_encoding
 
 
 class BuffAutoAcceptOffer:
-    buff_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
-    }
-
     def __init__(self, logger, steam_client, steam_client_mutex, config):
         self.logger = PluginLogger("BuffAutoAcceptOffer")
         self.steam_client = steam_client
@@ -36,6 +38,10 @@ class BuffAutoAcceptOffer:
         self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
         self.lowest_on_sale_price_cache = {}
         self.order_info = {}
+        self.buff_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
+        }
 
     def init(self) -> bool:
         if get_valid_session_for_buff(self.steam_client, self.logger) == "":

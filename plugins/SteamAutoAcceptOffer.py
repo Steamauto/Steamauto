@@ -1,3 +1,5 @@
+# plugins\SteamAutoAcceptOffer.py
+
 import os
 import pickle
 import time
@@ -15,8 +17,8 @@ class SteamAutoAcceptOffer:
         self.steam_client_mutex = steam_client_mutex
         self.config = config
 
-    def init(self):
-        return False
+    def init(self) -> bool:
+        return False  # 不需要初始化文件
 
     def exec(self):
         self.logger.info("Steam自动接受礼物报价插件已启动, 休眠30秒, 与其它插件错开运行时间")
@@ -54,10 +56,10 @@ class SteamAutoAcceptOffer:
                                 try:
                                     with self.steam_client_mutex:
                                         self.steam_client.accept_trade_offer(trade_offer["tradeofferid"])
+                                    self.logger.info(f'报价[{trade_offer["tradeofferid"]}]接受成功！')
                                 except Exception as e:
                                     handle_caught_exception(e, "SteamAutoAcceptOffer")
                                     self.logger.error("Steam异常! 稍后再试...")
-                                self.logger.info(f'报价[{trade_offer["tradeofferid"]}]接受成功！')
                             else:
                                 self.logger.info(
                                     f'检测到报价[{trade_offer["tradeofferid"]}]' f"需要支出物品，自动跳过处理"

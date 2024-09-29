@@ -117,18 +117,19 @@ def compare_lease_shelf(A: List[LeaseAsset], B: List[LeaseAsset], ratio: float) 
     return result
 
 
-class tasks:
+class TaskQueue:
+    """
+    任务队列类，用于管理上架、下架和改价任务
+    """
+
     def __init__(self, client, steamid) -> None:
-        self.sell_queue = []
-        self.sell_change_queue = []
-        self.lease_queue = []
-        self.lease_change_queue = []
+        self.sell_queue: List[Asset] = []
+        self.sell_change_queue: List[Asset] = []
+        self.lease_queue: List[LeaseAsset] = []
+        self.lease_change_queue: List[LeaseAsset] = []
         self.client = client
         self.steamid = steamid
-        if isinstance(self.client, ECOsteamClient):
-            self.platform = "ECOsteam"
-        elif isinstance(self.client, UUAccount):
-            self.platform = "悠悠有品"
+        self.platform = "ECOsteam" if isinstance(self.client, ECOsteamClient) else "悠悠有品"
 
     def sell_add(self, assets: List[Asset]):
         self.sell_queue += assets
@@ -137,10 +138,7 @@ class tasks:
         self.sell_change_queue += assets
 
     def sell_remove(self, assetId: str):
-        for asset in self.sell_queue:
-            if asset.assetid == assetId:
-                self.sell_queue.remove(asset)
-                break
+        self.sell_queue = [asset for asset in self.sell_queue if asset.assetid != assetId]
 
     def lease_add(self, assets: List[LeaseAsset]):
         self.lease_queue += assets
@@ -149,25 +147,18 @@ class tasks:
         self.lease_change_queue += assets
 
     def lease_remove(self, assetId: str):
-        for asset in self.lease_queue:
-            if asset.assetid == assetId:
-                self.lease_queue.remove(asset)
-                break
+        self.lease_queue = [asset for asset in self.lease_queue if asset.assetid != assetId]
 
     def process(self):
-        logger.debug(self.platform + "出售队列：" + json.dumps(self.sell_queue, cls=ModelEncoder, ensure_ascii=False))
-        logger.debug(self.platform + "租赁队列：" + json.dumps(self.lease_queue, cls=ModelEncoder, ensure_ascii=False))
-        logger.debug(self.platform + "出售改价队列：" + json.dumps(self.sell_change_queue, cls=ModelEncoder, ensure_ascii=False))
-        logger.debug(self.platform + "租赁改价队列：" + json.dumps(self.lease_change_queue, cls=ModelEncoder, ensure_ascii=False))
-        if (
-            len(self.sell_queue) > 0
-            or len(self.lease_queue) > 0
-            or len(self.sell_change_queue) > 0
-            or len(self.lease_change_queue) > 0
-        ):
-            logger.info(self.platform + '平台任务队列开始执行')
+        logger = PluginLogger(self.platform)
+        logger.debug(f"{self.platform} 出售队列：" + json.dumps(self.sell_queue, cls=ModelEncoder, ensure_ascii=False))
+        logger.debug(f"{self.platform} 租赁队列：" + json.dumps(self.lease_queue, cls=ModelEncoder, ensure_ascii=False))
+        logger.debug(f"{self.platform} 出售改价队列：" + json.dumps(self.sell_change_queue, cls=ModelEncoder, ensure_ascii=False))
+        logger.debug(f"{self.platform} 租赁改价队列：" + json.dumps(self.lease_change_queue, cls=ModelEncoder, ensure_ascii=False))
+        if any([self.sell_queue, self.lease_queue, self.sell_change_queue, self.lease_change_queue]):
+            logger.info(f"{self.platform} 平台任务队列开始执行")
         else:
-            logger.info(self.platform + '平台任务队列为空，不需要处理')
+            logger.info(f"{self.platform} 平台任务队列为空，不需要处理")
 
         if len(self.sell_queue) > 0 or len(self.lease_queue) > 0:
             logger.info(f'即将向出售货架上架 {len(self.sell_queue)} 个商品')
@@ -197,23 +188,30 @@ class tasks:
                 success_count, failure_count = self.client.change_price_sell_and_lease(
                     self.sell_change_queue, self.lease_change_queue
                 )
-            self.lease_queue = []
-            self.lease_change_queue = []
             if failure_count != 0:
                 logger.error(f'改价失败 {failure_count} 个商品')
             logger.info(f'改价成功 {success_count} 个商品')
+        # 清空队列
+        self.sell_queue = []
+        self.sell_change_queue = []
+        self.lease_queue = []
+        self.lease_change_queue = []
 
 
 class ECOsteamPlugin:
     def __init__(self, steam_client: SteamClient, steam_client_mutex, config):
+        self.logger = PluginLogger("ECOsteamPlugin")
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.config = config
         self.ignored_offer = []
         with steam_client_mutex:
             self.steam_id = steam_client.get_steam64id_from_cookies()
+        self.client = None  # ECOsteamClient 实例
+        self.buff_client = None  # BuffAccount 实例
+        self.uu_client = None  # UUAccount 实例
 
-    def init(self):
+    def init(self) -> bool:
         if not os.path.exists(ECOSTEAM_RSAKEY_FILE):
             with open(ECOSTEAM_RSAKEY_FILE, "w", encoding="utf-8") as f:
                 f.write("")
@@ -221,13 +219,13 @@ class ECOsteamPlugin:
         return False
 
     def exec(self):
-        logger.info(f"ECOsteam插件已启动")
-        logger.info("正在登录ECOsteam...")
+        self.logger.info("ECOsteam插件已启动")
+        self.logger.info("正在登录ECOsteam...")
         try:
             with open(ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)) as f:
                 rsa_key = f.read()
             if "PUBLIC" in rsa_key:
-                logger.error("你在rsakey文件中放入的不是私钥！请填入私钥信息(Private key)！")
+                self.logger.error("你在rsakey文件中放入的不是私钥！请填入私钥信息(Private key)！")
                 return 1
             LogFilter.add_sensitive_data(self.config["ecosteam"]["partnerId"])
             self.client = ECOsteamClient(
@@ -237,13 +235,13 @@ class ECOsteamPlugin:
             )
             user_info = self.client.GetTotalMoney().json()
             if user_info["ResultData"].get("UserName", None):
-                logger.info(
+                self.logger.info(
                     f'登录成功，用户ID为{user_info["ResultData"]["UserName"]}，当前余额为{user_info["ResultData"]["Money"]}元'
                 )
             else:
                 raise Exception
         except Exception as e:
-            logger.error(f"登录失败！请检查{ECOSTEAM_RSAKEY_FILE}和parterId是否正确！由于无法登录ECOsteam，插件将退出。")
+            self.logger.error(f"登录失败！请检查{ECOSTEAM_RSAKEY_FILE}和parterId是否正确！由于无法登录ECOsteam，插件将退出。")
             handle_caught_exception(e)
             exit_code.set(1)
             return 1
@@ -462,8 +460,8 @@ class ECOsteamPlugin:
         global uu_queue
         global eco_queue
         if hasattr(self, "uu_client") and self.uu_client:
-            uu_queue = tasks(self.uu_client, self.steam_id)
-        eco_queue = tasks(self.client, self.steam_id)
+            uu_queue = TaskQueue(self.uu_client, self.steam_id)
+        eco_queue = TaskQueue(self.client, self.steam_id)
 
         while True:
             if sync_sell_shelf_enabled:
@@ -471,7 +469,7 @@ class ECOsteamPlugin:
             if sync_lease_shelf_enabled:
                 self.sync_lease_shelves()
             eco_queue.process()
-            if isinstance(uu_queue, tasks):
+            if isinstance(uu_queue, TaskQueue):
                 uu_queue.process()
             logger.info(f'等待 {self.config["ecosteam"]["sync_interval"]} 秒后重新检查多平台上架物品')
             time.sleep(self.config["ecosteam"]["sync_interval"])
@@ -510,7 +508,7 @@ class ECOsteamPlugin:
             if self.lease_other_platform == "uu":
                 # 上架商品
                 if len(difference['add']) > 0:
-                    if isinstance(uu_queue, tasks):
+                    if isinstance(uu_queue, TaskQueue):
                         uu_queue.lease_add(difference['add'])
                         lease_logger.info(f"已经添加{len(difference['add'])}个商品到悠悠有品租赁上架队列")
                     else:
@@ -525,7 +523,7 @@ class ECOsteamPlugin:
                         lease_logger.error(f"下架过程中出现失败！错误信息：{rsp['Msg']}")
                 # 修改价格
                 if len(difference['change']) > 0:
-                    if isinstance(uu_queue, tasks):
+                    if isinstance(uu_queue, TaskQueue):
                         uu_queue.lease_change(difference['change'])
                         lease_logger.info(f"已经添加{len(difference['change'])}个商品到悠悠有品租赁改价队列")
                     else:
@@ -533,7 +531,7 @@ class ECOsteamPlugin:
             elif self.lease_other_platform == "eco":
                 # 上架商品
                 if len(difference['add']) > 0:
-                    if isinstance(eco_queue, tasks):
+                    if isinstance(eco_queue, TaskQueue):
                         eco_queue.lease_add(difference['add'])
                         lease_logger.info(f"已经添加{len(difference['add'])}个商品到ECOsteam租赁上架队列")
                     else:
@@ -560,7 +558,7 @@ class ECOsteamPlugin:
 
                 # 修改价格
                 if len(difference['change']) > 0:
-                    if isinstance(eco_queue, tasks):
+                    if isinstance(eco_queue, TaskQueue):
                         eco_queue.lease_change(difference['change'])
                         lease_logger.info(f"已经添加{len(difference['change'])}个商品到ECOsteam租赁改价队列")
                     else:
@@ -647,7 +645,7 @@ class ECOsteamPlugin:
         if platform == "eco":
             # 上架商品
             if len(difference["add"]) > 0:
-                if isinstance(eco_queue, tasks):
+                if isinstance(eco_queue, TaskQueue):
                     eco_queue.sell_add(difference["add"])
                     sell_logger.info(f"已经添加 {len(difference['add'])} 个商品到ECOsteam出售上架队列")
                 else:
@@ -666,7 +664,7 @@ class ECOsteamPlugin:
 
             # 修改价格
             if len(difference["change"]) > 0:
-                if isinstance(eco_queue, tasks):
+                if isinstance(eco_queue, TaskQueue):
                     eco_queue.sell_change(difference["change"])
                     sell_logger.info(f"已经添加 {len(difference['change'])} 个商品到ECOsteam出售改价队列")
                 else:
@@ -730,7 +728,7 @@ class ECOsteamPlugin:
         elif platform == "uu":
             # 上架商品
             if len(difference["add"]) > 0:
-                if isinstance(uu_queue, tasks):
+                if isinstance(uu_queue, TaskQueue):
                     uu_queue.sell_add(difference["add"])
                     sell_logger.info(f"已经添加 {len(difference['add'])} 个商品到悠悠有品出售上架队列")
                 else:
@@ -749,7 +747,7 @@ class ECOsteamPlugin:
 
             # 修改价格
             if len(difference["change"]) > 0:
-                if isinstance(uu_queue, tasks):
+                if isinstance(uu_queue, TaskQueue):
                     uu_queue.sell_change(difference["change"])
                     sell_logger.info(f"已经添加 {len(difference['change'])} 个商品到悠悠有品出售改价队列")
                 else:

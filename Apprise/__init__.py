@@ -1,2 +1,3 @@
-from .pushplus import *
-from .server_chan import *
+# Apprise\__init__.py
+
+from .pushplus import PushPlusNotifier

@@ -1,9 +1,11 @@
+# plugins\BuffAutoOnSale.py
+
 import datetime
 import os
 import pickle
 import random
 import time
-from typing import Any
+from typing import Any, Dict, List
 
 import apprise
 import json5
@@ -13,73 +15,41 @@ from bs4 import BeautifulSoup
 
 from utils.ApiCrypt import ApiCrypt
 from utils.buff_helper import get_valid_session_for_buff
-from utils.logger import handle_caught_exception
-from utils.static import (APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH,
-                          BUFF_COOKIES_FILE_PATH, SESSION_FOLDER,
-                          SUPPORT_GAME_TYPES)
+from utils.logger import handle_caught_exception, PluginLogger
+from utils.static import (
+    APPRISE_ASSET_FOLDER,
+    BUFF_ACCOUNT_DEV_FILE_PATH,
+    BUFF_COOKIES_FILE_PATH,
+    SESSION_FOLDER,
+    SUPPORT_GAME_TYPES
+)
 from utils.tools import get_encoding
 
 
-def format_str(text: str, trade):
-    for good in trade["goods_infos"]:
-        good_item = trade["goods_infos"][good]
-        created_at_time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(trade["created_at"]))
-        text = text.format(
-            item_name=good_item["name"],
-            steam_price=good_item["steam_price"],
-            steam_price_cny=good_item["steam_price_cny"],
-            buyer_name=trade["bot_name"],
-            buyer_avatar=trade["bot_avatar"],
-            order_time=created_at_time_str,
-            game=good_item["game"],
-            good_icon=good_item["original_icon_url"],
-        )
-    return text
-
-
-def merge_buy_orders(response_data: dict):
-    orders = response_data["items"]
-    user_info = response_data["user_infos"]
-    for order in orders:
-        order["user"] = user_info[order["user_id"]]
-        del order["user_id"]
-        pay_method = order["pay_method"]
-        if pay_method == 43:
-            order["supported_pay_method"] = ["支付宝", "微信"]
-        elif pay_method == 3:
-            order["supported_pay_method"] = ["支付宝"]
-        elif pay_method == 1:
-            order["supported_pay_method"] = ["微信"]
-        else:
-            order["supported_pay_method"] = []
-    return orders
-
-
 class BuffAutoOnSale:
-    buff_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
-    }
-
     def __init__(self, logger, steam_client, steam_client_mutex, config):
-        self.logger = logger
+        self.logger = PluginLogger("BuffAutoOnSale")
         self.steam_client = steam_client
         self.config = config
         self.steam_client_mutex = steam_client_mutex
-        self.development_mode = self.config["development_mode"]
+        self.development_mode = self.config.get("development_mode", False)
         self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
         self.session = requests.session()
+        self.buff_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
+        }
         self.lowest_price_cache = {}
-        self.unfinish_supply_order_list = [] # 等待buff发起报价, 之后进行确认报价的订单, [{order_id, create_time}]
+        self.unfinish_supply_order_list = []  # 等待buff发起报价, 之后进行确认报价的订单, [{order_id, create_time}]
 
     def init(self) -> bool:
         if get_valid_session_for_buff(self.steam_client, self.logger) == "":
             return True
         return False
 
-    def check_buff_account_state(self, dev=False):
+    def check_buff_account_state(self, dev=False) -> str:
         if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
-            self.logger.info("[BuffAutoOnSale] 开发模式, 使用本地账号")
+            self.logger.info("开发模式, 使用本地账号")
             with open(BUFF_ACCOUNT_DEV_FILE_PATH, "r", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
                 buff_account_data = json5.load(f)
             return buff_account_data["data"]["nickname"]
@@ -91,33 +61,58 @@ class BuffAutoOnSale:
                 with open(BUFF_ACCOUNT_DEV_FILE_PATH, "w", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
                     json5.dump(response_json, f, indent=4)
             if response_json["code"] == "OK":
-                if "data" in response_json:
-                    if "nickname" in response_json["data"]:
-                        return response_json["data"]["nickname"]
-            self.logger.error("[BuffAutoOnSale] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
+                if "data" in response_json and "nickname" in response_json["data"]:
+                    return response_json["data"]["nickname"]
+            self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
+            return ""
 
-    def get_buff_inventory(self, page_num=1, page_size=60, sort_by="time.desc", state="all", force=0, force_wear=0,
-                           game="csgo", app_id=730):
+    def get_buff_inventory(self, **kwargs) -> Dict[str, Any]:
+        """
+        获取BUFF库存
+
+        :param kwargs: 请求参数
+        :return: 库存数据
+        """
         url = "https://buff.163.com/api/market/steam_inventory"
-        params = {
-            "page_num": page_num,
-            "page_size": page_size,
-            "sort_by": sort_by,
-            "state": state,
-            "force": force,
-            "force_wear": force_wear,
-            "game": game,
-            "appid": app_id
-        }
-        response_json = self.session.get(url, headers=self.buff_headers, params=params).json()
+        response_json = self.session.get(url, headers=self.buff_headers, params=kwargs).json()
         if response_json["code"] == "OK":
             return response_json["data"]
         else:
             self.logger.error(response_json)
-            self.logger.error("[BuffAutoOnSale] 获取BUFF库存失败, 请检查buff_cookies.txt或稍后再试! ")
+            self.logger.error("获取BUFF库存失败, 请检查buff_cookies.txt或稍后再试! ")
             return {}
 
-    def put_item_on_sale(self, items, price, description="", game="csgo", app_id=730, use_range_price=False):
+    @staticmethod
+    def merge_buy_orders(response_data: dict):
+        orders = response_data["items"]
+        user_info = response_data["user_infos"]
+        for order in orders:
+            order["user"] = user_info[order["user_id"]]
+            del order["user_id"]
+            pay_method = order["pay_method"]
+            if pay_method == 43:
+                order["supported_pay_method"] = ["支付宝", "微信"]
+            elif pay_method == 3:
+                order["supported_pay_method"] = ["支付宝"]
+            elif pay_method == 1:
+                order["supported_pay_method"] = ["微信"]
+            else:
+                order["supported_pay_method"] = []
+        return orders
+
+    def put_item_on_sale(self, items: List[Dict[str, Any]], price: float, description: str = "", game: str = "csgo",
+                         app_id: int = 730, use_range_price: bool = False) -> Dict[str, Any]:
+        """
+        上架物品
+
+        :param items: 物品列表
+        :param price: 价格
+        :param description: 描述
+        :param game: 游戏名称
+        :param app_id: 应用ID
+        :param use_range_price: 是否使用磨损区间最低价
+        :return: 响应数据
+        """
         if game != "csgo" and use_range_price:
             self.logger.warning("[BuffAutoOnSale] 仅支持CSGO使用磨损区间最低价上架, 已自动关闭磨损区间最低价上架")
             use_range_price = False
@@ -382,7 +377,7 @@ class BuffAutoOnSale:
         response = self.session.get(url, headers=self.buff_headers).json()
         if response["code"] != "OK":
             return {}
-        buy_orders = merge_buy_orders(response["data"])
+        buy_orders = self.merge_buy_orders(response["data"])
         if len(buy_orders) == 0:
             return {}
         for order in buy_orders:
@@ -484,18 +479,18 @@ class BuffAutoOnSale:
                 return -1
 
     def exec(self):
-        self.logger.info("[BuffAutoOnSale] BUFF自动上架插件已启动, 休眠30秒, 与自动接收报价插件错开运行时间")
+        self.logger.info("BUFF自动上架插件已启动, 休眠30秒, 与自动接收报价插件错开运行时间")
         # time.sleep(30)
         try:
-            self.logger.info("[BuffAutoOnSale] 正在准备登录至BUFF...")
+            self.logger.info("正在准备登录至BUFF...")
             with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
                 self.session.cookies["session"] = f.read().replace("session=", "").replace("\n", "").split(";")[0]
-            self.logger.info("[BuffAutoOnSale] 已检测到cookies, 尝试登录")
-            self.logger.info("[BuffAutoOnSale] 已经登录至BUFF 用户名: " +
+            self.logger.info("已检测到cookies, 尝试登录")
+            self.logger.info("已经登录至BUFF 用户名: " +
                              self.check_buff_account_state(dev=self.development_mode))
         except TypeError as e:
             handle_caught_exception(e)
-            self.logger.error("[BuffAutoOnSale] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
+            self.logger.error("BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
             return
         sleep_interval = int(self.config["buff_auto_on_sale"]["interval"])
         black_list_time = []

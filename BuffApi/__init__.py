@@ -1,3 +1,4 @@
+# BuffApi\__init__.py
 #
 #   ____         __  __                  _
 #  |  _ \       / _|/ _|     /\         (_)
@@ -15,44 +16,14 @@ import copy
 import json
 import random
 import time
-from typing import no_type_check
+from typing import List, Dict, no_type_check
 
 import requests
 
 from utils.logger import PluginLogger
-from BuffApi import models
+from BuffApi.models import BuffOnSaleAsset
 
 logger = PluginLogger("BuffApi")
-
-
-def get_ua():
-    first_num = random.randint(55, 62)
-    third_num = random.randint(0, 3200)
-    fourth_num = random.randint(0, 140)
-    os_type = [
-        "(Windows NT 6.1; WOW64)",
-        "(Windows NT 10.0; WOW64)",
-        "(X11; Linux x86_64)",
-        "(Macintosh; Intel Mac OS X 10_12_6)",
-    ]
-    chrome_version = "Chrome/{}.0.{}.{}".format(first_num, third_num, fourth_num)
-
-    ua = " ".join(
-        [
-            "Mozilla/5.0",
-            random.choice(os_type),
-            "AppleWebKit/537.36",
-            "(KHTML, like Gecko)",
-            chrome_version,
-            "Safari/537.36",
-        ]
-    )
-    return ua
-
-
-def get_random_header() -> dict:
-    return {"User-Agent": get_ua()}
-
 
 class BuffAccount:
     """
@@ -66,12 +37,40 @@ class BuffAccount:
     Buff的每个商品的每种磨损（品质）均有一个独立的goods_id,每一件商品都有一个独立的id
     """
 
-    def __init__(self, buffcookie, user_agent=get_ua()):
+    def __init__(self, buffcookie, user_agent=None):
         self.session = requests.session()
-        self.session.headers = {"User-Agent": user_agent}
+        self.session.headers = {"User-Agent": user_agent or self.get_ua()}
         headers = copy.deepcopy(self.session.headers)
         headers["Cookie"] = buffcookie
         self.get_notification(headers=headers)
+
+    @staticmethod
+    def get_ua():
+        first_num = random.randint(55, 62)
+        third_num = random.randint(0, 3200)
+        fourth_num = random.randint(0, 140)
+        os_type = [
+            "(Windows NT 6.1; WOW64)",
+            "(Windows NT 10.0; WOW64)",
+            "(X11; Linux x86_64)",
+            "(Macintosh; Intel Mac OS X 10_12_6)",
+        ]
+        chrome_version = "Chrome/{}.0.{}.{}".format(first_num, third_num, fourth_num)
+
+        ua = " ".join(
+            [
+                "Mozilla/5.0",
+                random.choice(os_type),
+                "AppleWebKit/537.36",
+                "(KHTML, like Gecko)",
+                chrome_version,
+                "Safari/537.36",
+            ]
+        )
+        return ua
+
+    def get_random_header(self) -> dict:
+        return {"User-Agent": self.get_ua()}
 
     def get(self, url, **kwargs):
         response = self.session.get(url, **kwargs)
@@ -130,7 +129,7 @@ class BuffAccount:
                 self.get(
                     "https://buff.163.com/api/market/goods/sell_order",
                     params=params,
-                    headers=get_random_header(),
+                    headers=self.get_random_header(),
                     proxies=proxy,
                 ).text
             ).get("data")
@@ -139,7 +138,7 @@ class BuffAccount:
                 requests.get(
                     "https://buff.163.com/api/market/goods/sell_order",
                     params=params,
-                    headers=get_random_header(),
+                    headers=self.get_random_header(),
                     proxies=proxy,
                 ).text
             ).get("data")
@@ -176,13 +175,13 @@ class BuffAccount:
         return available_methods
 
     def buy_goods(
-        self,
-        sell_order_id,
-        goods_id,
-        price,
-        pay_method: str,
-        ask_seller_send_offer: bool,
-        game_name="csgo",
+            self,
+            sell_order_id,
+            goods_id,
+            price,
+            pay_method: str,
+            ask_seller_send_offer: bool,
+            game_name="csgo",
     ):
         """
         由于部分卖家禁用了由卖家发起报价，因此不推荐使用此API
@@ -274,7 +273,7 @@ class BuffAccount:
                 "game": "csgo",
                 "assets": [asset.model_dump(exclude_none=True) for asset in assets],
             },
-            headers=self.CSRF_Fucker(),
+            headers=self.refresh_csrf_token(),
         )
         success = []
         problem_assets = {}
@@ -285,12 +284,25 @@ class BuffAccount:
                 problem_assets[good] = response.json()["data"][good]
         return success, problem_assets
 
+    @staticmethod
+    def process_problem(response):
+        success = 0
+        problem = {}
+        if response.json()["code"] != "OK":
+            raise Exception(response.json().get("msg", None))
+        for key in response.json()["data"].keys():
+            if response.json()["data"][key] == "OK":
+                success += 1
+            else:
+                problem[key] = response.json()["data"][key]
+        return success, problem
+
     def cancel_sale(self, sell_orders: list, exclude_sell_orders: list = []):
         """
         返回下架成功数量
         """
         success = 0
-        problem_sell_orders = {}
+        problem_total = {}
         for index in range(0, len(sell_orders), 50):
             response = self.post(
                 "https://buff.163.com/api/market/sell_order/cancel",
@@ -299,16 +311,12 @@ class BuffAccount:
                     "sell_orders": sell_orders[index : index + 50],
                     "exclude_sell_orders": exclude_sell_orders,
                 },
-                headers=self.CSRF_Fucker(),
+                headers=self.refresh_csrf_token(),
             )
-            if response.json()["code"] != "OK":
-                raise Exception(response.json().get("msg", None))
-            for key in response.json()["data"].keys():
-                if response.json()["data"][key] == "OK":
-                    success += 1
-                else:
-                    problem_sell_orders[key] = response.json()["data"][key]
-        return success, problem_sell_orders
+            _success, problem = self.process_problem(response)
+            success += _success
+            problem_total.update(problem)
+        return success, problem_total
 
     def get_on_sale(self, page_num=1, page_size=1000, mode="2,5", fold="0"):
         return self.get(
@@ -336,19 +344,15 @@ class BuffAccount:
                     "appid": "730",
                     "sell_orders": sell_orders[index : index + 50],
                 },
-                headers=self.CSRF_Fucker(),
+                headers=self.refresh_csrf_token(),
             )
-            if response.json()["code"] != "OK":
-                raise Exception(response.json().get("msg", None))
-            for key in response.json()["data"].keys():
-                if response.json()["data"][key] == "OK":
-                    success += 1
-                else:
-                    problems[key] = response.json()["data"][key]
+            _success, problem = self.process_problem(response)
+            success += _success
+            problems.update(problem)
         return success, problems
 
     @no_type_check
-    def CSRF_Fucker(self):
+    def refresh_csrf_token(self):
         self.get("https://buff.163.com/api/market/steam_trade")
         csrf_token = self.session.cookies.get("csrf_token", domain="buff.163.com")
         headers = copy.deepcopy(self.session.headers)
@@ -359,5 +363,5 @@ class BuffAccount:
                 "Content-Type": "application/json",
                 "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
             }
-        )  
+        )
         return headers

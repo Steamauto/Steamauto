@@ -1,63 +1,70 @@
+# plugins\BuffProfitReport.py
+
 import os
 import pickle
 import time
+from decimal import Decimal
+from typing import Dict, List
 
 import apprise
 import json5
 import requests
-from _decimal import Decimal
-from apprise import AppriseAsset
-from apprise import AppriseAttachment
+from apprise import AppriseAsset, AppriseAttachment
 
 from utils.buff_helper import get_valid_session_for_buff
-from utils.logger import handle_caught_exception
-from utils.static import (APPRISE_ASSET_FOLDER, BUFF_COOKIES_FILE_PATH,
-                          SESSION_FOLDER, SUPPORT_GAME_TYPES)
+from utils.logger import handle_caught_exception, PluginLogger
+from utils.static import (
+    APPRISE_ASSET_FOLDER,
+    BUFF_COOKIES_FILE_PATH,
+    SESSION_FOLDER,
+    SUPPORT_GAME_TYPES
+)
 from utils.tools import get_encoding
 
 
 class BuffProfitReport:
-    buff_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
-    }
-
     def __init__(self, logger, steam_client, steam_client_mutex, config):
-        self.logger = logger
+        self.logger = PluginLogger("BuffProfitReport")
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.config = config
         self.session = requests.session()
         self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
+        self.buff_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
+        }
 
     def init(self) -> bool:
         if get_valid_session_for_buff(self.steam_client, self.logger) == "":
             return True
         return False
 
-    def get_all_buff_inventory(self, game="csgo"):
-        self.logger.info("[BuffProfitReport] 正在获取 " + game + " BUFF 库存...")
+    def get_all_buff_inventory(self, game: str = "csgo") -> List[dict]:
+        """
+        获取 BUFF 库存
+
+        :param game: 游戏名称
+        :return: 库存列表
+        """
+        self.logger.info(f"正在获取 {game} BUFF 库存...")
         page_num = 1
         page_size = 300
-        sort_by = "time.desc"
-        state = "all"
-        force = 0
-        force_wear = 0
-        url = "https://buff.163.com/api/market/steam_inventory"
         total_items = []
         while True:
             params = {
                 "page_num": page_num,
                 "page_size": page_size,
-                "sort_by": sort_by,
-                "state": state,
-                "force": force,
-                "force_wear": force_wear,
+                "sort_by": "time.desc",
+                "state": "all",
+                "force": 0,
+                "force_wear": 0,
                 "game": game
             }
-            self.logger.info("[BuffProfitReport] 避免被封号, 休眠15秒")
+            self.logger.info("避免被封号, 休眠15秒")
             time.sleep(15)
-            response_json = self.session.get(url, headers=self.buff_headers, params=params).json()
+            response_json = self.session.get("https://buff.163.com/api/market/steam_inventory",
+                                             headers=self.buff_headers, params=params).json()
             if response_json["code"] == "OK":
                 items = response_json["data"]["items"]
                 total_items.extend(items)
@@ -70,26 +77,32 @@ class BuffProfitReport:
         return total_items
 
     def get_sell_history(self, game: str) -> dict:
+        """
+        获取卖出历史记录
+
+        :param game: 游戏名称
+        :return: 卖出历史记录字典
+        """
         page_size = 100
         page_num = 1
         result = {}
         local_sell_history = {}
-        history_file_path = os.path.join(SESSION_FOLDER, "sell_history_" + game + "_full.json")
+        history_file_path = os.path.join(SESSION_FOLDER, f"sell_history_{game}_full.json")
         try:
             if os.path.exists(history_file_path):
                 with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
                     local_sell_history = json5.load(f)
         except Exception as e:
-            self.logger.error("[BuffProfitReport] 读取本地历史订单失败, 错误信息: " + str(e), exc_info=True)
+            self.logger.error("读取本地历史订单失败, 错误信息: " + str(e), exc_info=True)
         while True:
             should_break = False
-            self.logger.info("[BuffProfitReport] 为了避免被封号, 休眠15秒")
+            self.logger.info("避免被封号, 休眠15秒")
             time.sleep(15)
-            url = ('https://buff.163.com/api/market/sell_order/history?page_num=' + str(page_num) +
-                   '&page_size=' + str(page_size) + '&game=' + game)
+            url = (f'https://buff.163.com/api/market/sell_order/history?page_num={page_num}'
+                   f'&page_size={page_size}&game={game}')
             response_json = self.session.get(url, headers=self.buff_headers).json()
             if response_json["code"] != "OK":
-                self.logger.error("[BuffProfitReport] 获取历史订单失败")
+                self.logger.error("获取历史订单失败")
                 break
             items = response_json["data"]["items"]
             for item in items:
@@ -100,7 +113,7 @@ class BuffProfitReport:
                 item_copy["item_details"] = response_json["data"]["goods_infos"][str(item_copy["goods_id"])]
                 result[trade_id] = item_copy
                 if not should_break and trade_id in local_sell_history:
-                    self.logger.info("[BuffProfitReport] 后面没有新的订单了, 无需继续获取")
+                    self.logger.info("后面没有新的订单了, 无需继续获取")
                     should_break = True
             if should_break or len(items) < page_size:
                 break
@@ -115,23 +128,29 @@ class BuffProfitReport:
         return result
 
     def get_buy_history(self, game: str) -> dict:
+        """
+        获取购买历史记录
+
+        :param game: 游戏名称
+        :return: 购买历史记录字典
+        """
         local_history = {}
-        history_file_path = os.path.join(SESSION_FOLDER, "buy_history_" + game + "_full.json")
+        history_file_path = os.path.join(SESSION_FOLDER, f"buy_history_{game}_full.json")
         try:
             if os.path.exists(history_file_path):
                 with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
                     local_history = json5.load(f)
         except Exception as e:
-            self.logger.error("[BuffProfitReport] 读取本地历史订单失败, 错误信息: " + str(e), exc_info=True)
+            self.logger.error("读取本地历史订单失败, 错误信息: " + str(e), exc_info=True)
         page_num = 1
         result = {}
         while True:
-            self.logger.debug("[BuffProfitReport] 正在获取" + game + " 购买记录, 页数: " + str(page_num))
-            url = ("https://buff.163.com/api/market/buy_order/history?page_num=" + str(page_num) +
-                   "&page_size=300&game=" + game)
+            self.logger.debug(f"正在获取 {game} 购买记录, 页数: {page_num}")
+            url = (f"https://buff.163.com/api/market/buy_order/history?page_num={page_num}"
+                   f"&page_size=300&game={game}")
             response_json = self.session.get(url, headers=self.buff_headers).json()
             if response_json["code"] != "OK":
-                self.logger.error("[BuffProfitReport] 获取历史订单失败")
+                self.logger.error("获取历史订单失败")
                 break
             items = response_json["data"]["items"]
             should_break = False
@@ -140,11 +159,9 @@ class BuffProfitReport:
                 trade_id = item_copy["id"]
                 item_copy["item_details"] = response_json["data"]["goods_infos"][str(item_copy["goods_id"])]
                 if not should_break and trade_id in local_history:
-                    self.logger.info("[BuffProfitReport] 后面没有新的订单了, 无需继续获取")
+                    self.logger.info("后面没有新的订单了, 无需继续获取")
                     should_break = True
-                transact_time = 0
-                if "transact_time" in item_copy and item_copy["transact_time"]:
-                    transact_time = item_copy["transact_time"]  # 1705534605
+                transact_time = item_copy.get("transact_time", 0)
                 # 只读取最近1.5年的订单
                 if transact_time != 0 and time.time() - transact_time > int(365 * 1.5 * 24 * 60 * 60):
                     should_break = True
@@ -154,7 +171,7 @@ class BuffProfitReport:
             if len(items) < 300 or should_break:
                 break
             page_num += 1
-            self.logger.info("[BuffProfitReport] 避免被封号, 休眠15秒")
+            self.logger.info("避免被封号, 休眠15秒")
             time.sleep(15)
         if local_history:
             for key in local_history:
@@ -165,79 +182,81 @@ class BuffProfitReport:
                 json5.dump(result, f, indent=4)
         return result
 
-    def get_lowest_price(self, goods_id, game="csgo"):
+    def get_lowest_price(self, goods_id: int, game: str = "csgo") -> Decimal:
+        """
+        获取商品的最低价格
+
+        :param goods_id: 商品ID
+        :param game: 游戏名称
+        :return: 最低价格
+        """
         sleep_seconds_to_prevent_buff_ban = 30
-        self.logger.info("[BuffProfitReport] 获取BUFF商品最低价")
-        self.logger.info("[BuffProfitReport] 为了避免被封IP, 休眠" +
-                         str(sleep_seconds_to_prevent_buff_ban) + "秒")
+        self.logger.info("获取BUFF商品最低价")
+        self.logger.info(f"为了避免被封IP, 休眠{sleep_seconds_to_prevent_buff_ban}秒")
         time.sleep(sleep_seconds_to_prevent_buff_ban)
-        url = (
-                "https://buff.163.com/api/market/goods/sell_order?goods_id="
-                + str(goods_id)
-                + "&page_num=1&page_size=24&allow_tradable_cooldown=1&sort_by=default&game="
-                + game)
+        url = (f"https://buff.163.com/api/market/goods/sell_order?goods_id={goods_id}"
+               f"&page_num=1&page_size=24&allow_tradable_cooldown=1&sort_by=default&game={game}")
         response_json = self.session.get(url, headers=self.buff_headers).json()
         if response_json["code"] == "OK":
-            if len(response_json["data"]["items"]) == 0:  # 无商品
-                self.logger.info("[BuffProfitReport] 无商品")
+            if len(response_json["data"]["items"]) == 0:
+                self.logger.info("无商品")
                 return Decimal("-1")
             lowest_price = Decimal(response_json["data"]["items"][0]["price"])
             return lowest_price
         else:
             self.logger.error(response_json)
-            self.logger.error("[BuffProfitReport] 获取BUFF商品最低价失败, 请检查buff_cookies.txt或稍后再试! ")
+            self.logger.error("获取BUFF商品最低价失败, 请检查buff_cookies.txt或稍后再试! ")
             return Decimal("-1")
 
-    def check_buff_account_state(self):
+    def check_buff_account_state(self) -> str:
+        """
+        检查BUFF账户状态
+
+        :return: 用户昵称
+        """
         response_json = self.session.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
         if response_json["code"] == "OK":
-            if "data" in response_json:
-                if "nickname" in response_json["data"]:
-                    return response_json["data"]["nickname"]
-        self.logger.error("[BuffProfitReport] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
+            if "data" in response_json and "nickname" in response_json["data"]:
+                return response_json["data"]["nickname"]
+        self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
         raise TypeError
 
     def exec(self):
         sleep_interval = 20
-        self.logger.info("[BuffProfitReport] BUFF利润报告插件已启动, 休眠90秒, 与其他插件错开运行时间")
+        self.logger.info("BUFF利润报告插件已启动, 休眠90秒, 与其他插件错开运行时间")
         time.sleep(90)
-        send_report_time = "20:30"
-        servers = []
-        if "buff_profit_report" in self.config:
-            if "send_report_time" in self.config["buff_profit_report"]:
-                send_report_time = self.config["buff_profit_report"]["send_report_time"]
-            if "servers" in self.config["buff_profit_report"]:
-                servers = self.config["buff_profit_report"]["servers"]
+        send_report_time = self.config.get("buff_profit_report", {}).get("send_report_time", "20:30")
+        servers = self.config.get("buff_profit_report", {}).get("servers", [])
         if not servers:
-            self.logger.error("[BuffProfitReport] 未配置服务器, 无法发送报告")
+            self.logger.error("未配置服务器, 无法发送报告")
             return
         try:
-            self.logger.info("[BuffProfitReport] 正在准备登录至BUFF...")
+            self.logger.info("正在准备登录至BUFF...")
             with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
                 self.session.cookies["session"] = f.read().replace("session=", "").replace("\n", "").split(";")[0]
-            self.logger.info("[BuffProfitReport] 已检测到cookies, 尝试登录")
-            self.logger.info("[BuffProfitReport] 已经登录至BUFF 用户名: " + self.check_buff_account_state())
+            self.logger.info("已检测到cookies, 尝试登录")
+            self.logger.info("已经登录至BUFF 用户名: " + self.check_buff_account_state())
         except TypeError as e:
-            handle_caught_exception(e, "[BuffProfitReport]")
-            self.logger.error("[BuffProfitReport] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
+            handle_caught_exception(e, "BuffProfitReport")
+            self.logger.error("BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
             return
         while True:
             try:
                 with self.steam_client_mutex:
                     if not self.steam_client.is_session_alive():
-                        self.logger.info("[BuffProfitReport] Steam会话已过期, 正在重新登录...")
+                        self.logger.info("Steam会话已过期, 正在重新登录...")
                         self.steam_client._session.cookies.clear()
                         self.steam_client.login(
                             self.steam_client.username, self.steam_client._password,
                             json5.dumps(self.steam_client.steam_guard)
                         )
-                        self.logger.info("[BuffProfitReport] Steam会话已更新")
+                        self.logger.info("Steam会话已更新")
                         steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
                         with open(steam_session_path, "wb") as f:
                             pickle.dump(self.steam_client.session, f)
             except Exception as e:
-                self.logger.error("[BuffProfitReport] 出现错误, 错误信息: " + str(e), exc_info=True)
-                self.logger.info("[BuffProfitReport] 休眠" + str(sleep_interval) + "秒")
+                self.logger.error("出现错误, 错误信息: " + str(e), exc_info=True)
+                self.logger.info("休眠" + str(sleep_interval) + "秒")
                 time.sleep(sleep_interval)
                 continue
             if time.strftime("%H:%M", time.localtime()) != send_report_time:
