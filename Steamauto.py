@@ -58,9 +58,105 @@ class Steamauto:
         self.tried_exit = False
 
     @staticmethod
+    def load_json5(file_path):
+        """
+        加载JSON5文件，如果文件不存在则返回空字典。
+        """
+        if not os.path.exists(file_path):
+            return {}
+        with open(file_path, 'r', encoding='utf-8') as f:
+            try:
+                return json5.load(f)
+            except Exception as e:
+                print(f"解析 {file_path} 时出错: {e}")
+                return {}
+
+    @staticmethod
+    def save_json5(data, file_path):
+        """
+        保存字典到JSON5文件。
+        """
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json5.dump(data, f, indent=4, ensure_ascii=False)
+
+    @staticmethod
+    def merge_configs(example_config, user_config, path=""):
+        """
+        递归合并示例配置到用户配置，添加缺失的字段。
+
+        :param example_config: 示例配置字典
+        :param user_config: 用户配置字典
+        :param path: 当前递归路径，用于打印日志
+        :return: 更新后的用户配置字典
+        """
+        for key, value in example_config.items():
+            current_path = f"{path}.{key}" if path else key
+            if key not in user_config:
+                user_config[key] = value
+                print(f"添加缺失字段: {current_path} = {value}")
+            else:
+                if isinstance(value, dict) and isinstance(user_config[key], dict):
+                    Steamauto.merge_configs(value, user_config[key], current_path)
+                # 如果需要处理列表或其他类型，可以在这里添加相应的逻辑
+        return user_config
+
+    @staticmethod
+    def backup_file(file_path):
+        """
+        创建文件的备份副本。
+        """
+        backup_path = f"{file_path}.bak"
+        shutil.copyfile(file_path, backup_path)
+        print(f"已创建配置文件备份: {backup_path}")
+
+    @staticmethod
+    def auto_update_config(user_config_path):
+        """
+        自动更新用户的config.json5文件，添加示例配置文件中缺失的字段。
+
+        :param user_config_path: 用户配置文件的路径 (e.g., "config/config.json5")
+        """
+
+        # 加载示例配置和用户配置
+        example_config = json5.loads(DEFAULT_CONFIG_JSON)
+        user_config = Steamauto.load_json5(user_config_path)
+
+        # 识别需要添加的新字段
+        missing_fields = []
+
+        def find_missing(example, user, path=""):
+            for key, value in example.items():
+                current_path = f"{path}.{key}" if path else key
+                if key not in user:
+                    missing_fields.append((current_path, value))
+                else:
+                    if isinstance(value, dict) and isinstance(user[key], dict):
+                        find_missing(value, user[key], current_path)
+
+        find_missing(example_config, user_config)
+
+        if not missing_fields:
+            print("配置文件已是最新，无需更新。")
+            return
+
+        print(f"检测到 {len(missing_fields)} 个缺失字段，将自动添加到配置文件中。")
+
+        # 备份用户配置文件
+        Steamauto.backup_file(user_config_path)
+
+        # 合并缺失字段
+        updated_config = Steamauto.merge_configs(example_config, user_config)
+
+        # 保存更新后的配置文件
+        Steamauto.save_json5(updated_config, user_config_path)
+
+        print(f"已更新配置文件，添加了 {len(missing_fields)} 个新字段。")
+
+    @staticmethod
     def check_update():
         try:
-            response_json = requests.get("https://steamauto.jiajiaxd.com/versions", params={"version": CURRENT_VERSION}, timeout=5)
+            response_json = requests.get("https://steamauto.jiajiaxd.com/versions", params={"version": CURRENT_VERSION},
+                                         timeout=5)
             data = response_json.json()
             latest_version = data["latest_version"]["version"]
             broadcast = data.get("broadcast", None)
@@ -94,7 +190,8 @@ class Steamauto:
         logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
         logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
         logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! \n")
-        logger.info(f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n")
+        logger.info(
+            f"{Fore.RED + Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n")
         logger.info(f"当前版本: {CURRENT_VERSION}   编译信息: {BUILD_INFO}")
         logger.info("正在检查更新...")
 
@@ -111,6 +208,10 @@ class Steamauto:
             logger.info("检测到首次运行, 已为您生成" + CONFIG_FILE_PATH + ", 请按照README提示填写配置文件! ")
             first_run = True
         else:
+            try:
+                self.auto_update_config(CONFIG_FILE_PATH)
+            except Exception as e:
+                logger.error(f"更新配置文件时出错: {e}", exc_info=True)
             with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
                 try:
                     self.config = json5.load(f)
@@ -122,7 +223,8 @@ class Steamauto:
         if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
             with open(STEAM_ACCOUNT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
                 f.write(DEFAULT_STEAM_ACCOUNT_JSON)
-                logger.info("检测到首次运行, 已为您生成" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请按照README提示填写配置文件! ")
+                logger.info(
+                    "检测到首次运行, 已为您生成" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请按照README提示填写配置文件! ")
                 first_run = True
 
         if not first_run:
@@ -198,7 +300,8 @@ class Steamauto:
                         return None
                     else:
                         logger.info("代理服务器可用")
-                        logger.warning("警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动")
+                        logger.warning(
+                            "警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动")
 
                     client = SteamClient(api_key="", proxies=self.config["proxies"])
 
@@ -230,15 +333,18 @@ class Steamauto:
                 steam_client = client
             except FileNotFoundError as e:
                 handle_caught_exception(e)
-                logger.error("未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加到" + STEAM_ACCOUNT_INFO_FILE_PATH + "后再进行操作! ")
+                logger.error(
+                    "未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加到" + STEAM_ACCOUNT_INFO_FILE_PATH + "后再进行操作! ")
                 pause()
                 return None
             except (SSLCertVerificationError, SSLError) as e:
                 handle_caught_exception(e)
                 if self.config["steam_local_accelerate"]:
-                    logger.error("登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true")
+                    logger.error(
+                        "登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true")
                 else:
-                    logger.error("登录失败. SSL证书验证错误! " "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n")
+                    logger.error(
+                        "登录失败. SSL证书验证错误! " "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n")
                 pause()
                 return None
             except (requests.exceptions.ConnectionError, TimeoutError) as e:
@@ -255,7 +361,8 @@ class Steamauto:
                 return None
             except (TypeError, AttributeError) as e:
                 handle_caught_exception(e)
-                logger.error("登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录")
+                logger.error(
+                    "登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录")
                 pause()
                 return None
             except Exception as e:
@@ -280,7 +387,8 @@ class Steamauto:
 
     @staticmethod
     def import_all_plugins():
-        plugin_files = [f for f in os.listdir(Steamauto.get_plugins_folder()) if f.endswith(".py") and f != "__init__.py"]
+        plugin_files = [f for f in os.listdir(Steamauto.get_plugins_folder()) if
+                        f.endswith(".py") and f != "__init__.py"]
 
         for plugin_file in plugin_files:
             module_name = f"{PLUGIN_FOLDER}.{plugin_file[:-3]}"
@@ -315,7 +423,8 @@ class Steamauto:
         plugin_classes = self.get_plugin_classes()
 
         for plugin_key, plugin_class in plugin_classes.items():
-            if (plugin_key in self.config and "enable" in self.config[plugin_key] and self.config[plugin_key]["enable"]) or plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external'):
+            if (plugin_key in self.config and "enable" in self.config[plugin_key] and self.config[plugin_key][
+                "enable"]) or plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external'):
                 if plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external'):
                     logger.info('已加载自定义插件: ' + plugin_key)
                 args = []
