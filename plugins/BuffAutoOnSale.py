@@ -18,7 +18,6 @@ from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception, PluginLogger
 from utils.static import (
     APPRISE_ASSET_FOLDER,
-    BUFF_ACCOUNT_DEV_FILE_PATH,
     BUFF_COOKIES_FILE_PATH,
     SESSION_FOLDER,
     SUPPORT_GAME_TYPES
@@ -223,7 +222,7 @@ class BuffAutoOnSale:
                                 done = True
                                 break
                         if not done:
-                            self.logger.error("[BuffAutoOnSale] 代码出现错误, 无法解析磨损: " + paint_wear)
+                            self.logger.error(f"[BuffAutoOnSale] 代码出现错误, 无法解析磨损: {paint_wear}")
                             self.logger.error("[BuffAutoOnSale] 使用同类型最低价上架")
                             done = True
                             break

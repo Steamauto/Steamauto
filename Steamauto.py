@@ -18,6 +18,7 @@ import requests
 from colorama import Fore, Style
 from requests.exceptions import SSLError
 
+from ConfigManager import ConfigManager
 from steampy.client import SteamClient
 from steampy.exceptions import ApiException
 
@@ -56,101 +57,6 @@ class Steamauto:
         self.plugins_enabled = []
         self.exit_code = 0
         self.tried_exit = False
-
-    @staticmethod
-    def load_json5(file_path):
-        """
-        加载JSON5文件，如果文件不存在则返回空字典。
-        """
-        if not os.path.exists(file_path):
-            return {}
-        with open(file_path, 'r', encoding='utf-8') as f:
-            try:
-                return json5.load(f)
-            except Exception as e:
-                print(f"解析 {file_path} 时出错: {e}")
-                return {}
-
-    @staticmethod
-    def save_json5(data, file_path):
-        """
-        保存字典到JSON5文件。
-        """
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json5.dump(data, f, indent=4, ensure_ascii=False)
-
-    @staticmethod
-    def merge_configs(example_config, user_config, path=""):
-        """
-        递归合并示例配置到用户配置，添加缺失的字段。
-
-        :param example_config: 示例配置字典
-        :param user_config: 用户配置字典
-        :param path: 当前递归路径，用于打印日志
-        :return: 更新后的用户配置字典
-        """
-        for key, value in example_config.items():
-            current_path = f"{path}.{key}" if path else key
-            if key not in user_config:
-                user_config[key] = value
-                print(f"添加缺失字段: {current_path} = {value}")
-            else:
-                if isinstance(value, dict) and isinstance(user_config[key], dict):
-                    Steamauto.merge_configs(value, user_config[key], current_path)
-                # 如果需要处理列表或其他类型，可以在这里添加相应的逻辑
-        return user_config
-
-    @staticmethod
-    def backup_file(file_path):
-        """
-        创建文件的备份副本。
-        """
-        backup_path = f"{file_path}.bak"
-        shutil.copyfile(file_path, backup_path)
-        print(f"已创建配置文件备份: {backup_path}")
-
-    @staticmethod
-    def auto_update_config(user_config_path):
-        """
-        自动更新用户的config.json5文件，添加示例配置文件中缺失的字段。
-
-        :param user_config_path: 用户配置文件的路径 (e.g., "config/config.json5")
-        """
-
-        # 加载示例配置和用户配置
-        example_config = json5.loads(DEFAULT_CONFIG_JSON)
-        user_config = Steamauto.load_json5(user_config_path)
-
-        # 识别需要添加的新字段
-        missing_fields = []
-
-        def find_missing(example, user, path=""):
-            for key, value in example.items():
-                current_path = f"{path}.{key}" if path else key
-                if key not in user:
-                    missing_fields.append((current_path, value))
-                else:
-                    if isinstance(value, dict) and isinstance(user[key], dict):
-                        find_missing(value, user[key], current_path)
-
-        find_missing(example_config, user_config)
-
-        if not missing_fields:
-            print("配置文件已是最新，无需更新。")
-            return
-
-        print(f"检测到 {len(missing_fields)} 个缺失字段，将自动添加到配置文件中。")
-
-        # 备份用户配置文件
-        Steamauto.backup_file(user_config_path)
-
-        # 合并缺失字段
-        updated_config = Steamauto.merge_configs(example_config, user_config)
-
-        # 保存更新后的配置文件
-        Steamauto.save_json5(updated_config, user_config_path)
-
-        print(f"已更新配置文件，添加了 {len(missing_fields)} 个新字段。")
 
     @staticmethod
     def check_update():
@@ -208,17 +114,10 @@ class Steamauto:
             logger.info("检测到首次运行, 已为您生成" + CONFIG_FILE_PATH + ", 请按照README提示填写配置文件! ")
             first_run = True
         else:
-            try:
-                self.auto_update_config(CONFIG_FILE_PATH)
-            except Exception as e:
-                logger.error(f"更新配置文件时出错: {e}", exc_info=True)
-            with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
-                try:
-                    self.config = json5.load(f)
-                except Exception as e:
-                    handle_caught_exception(e)
-                    logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
-                    return 0
+            config = ConfigManager(CONFIG_FILE_PATH)
+            if not config.load_config():
+                return 0
+            self.config = config.config
 
         if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
             with open(STEAM_ACCOUNT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
