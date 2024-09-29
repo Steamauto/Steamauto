@@ -46,24 +46,14 @@ class BuffAutoOnSale:
             return True
         return False
 
-    def check_buff_account_state(self, dev=False) -> str:
-        if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
-            self.logger.info("开发模式, 使用本地账号")
-            with open(BUFF_ACCOUNT_DEV_FILE_PATH, "r", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
-                buff_account_data = json5.load(f)
-            return buff_account_data["data"]["nickname"]
-        else:
-            response_json = self.session.get("https://buff.163.com/account/api/user/info",
-                                             headers=self.buff_headers).json()
-            if dev:
-                self.logger.info("开发者模式, 保存账户信息到本地")
-                with open(BUFF_ACCOUNT_DEV_FILE_PATH, "w", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
-                    json5.dump(response_json, f, indent=4)
-            if response_json["code"] == "OK":
-                if "data" in response_json and "nickname" in response_json["data"]:
-                    return response_json["data"]["nickname"]
-            self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
-            return ""
+    def check_buff_account_state(self) -> str:
+        response_json = self.session.get("https://buff.163.com/account/api/user/info",
+                                         headers=self.buff_headers).json()
+        if response_json["code"] == "OK":
+            if "data" in response_json and "nickname" in response_json["data"]:
+                return response_json["data"]["nickname"]
+        self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
+        return ""
 
     def get_buff_inventory(self, **kwargs) -> Dict[str, Any]:
         """
@@ -485,8 +475,7 @@ class BuffAutoOnSale:
             with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
                 self.session.cookies["session"] = f.read().replace("session=", "").replace("\n", "").split(";")[0]
             self.logger.info("已检测到cookies, 尝试登录")
-            self.logger.info("已经登录至BUFF 用户名: " +
-                             self.check_buff_account_state(dev=self.development_mode))
+            self.logger.info("已经登录至BUFF 用户名: " + self.check_buff_account_state())
         except TypeError as e:
             handle_caught_exception(e)
             self.logger.error("BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
