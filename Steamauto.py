@@ -11,6 +11,7 @@ import signal
 import sys
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from ssl import SSLCertVerificationError
 
 import json5
@@ -30,7 +31,6 @@ from utils.static import (
     CURRENT_VERSION,
     DEFAULT_CONFIG_JSON,
     DEFAULT_STEAM_ACCOUNT_JSON,
-    DEV_FILE_FOLDER,
     SESSION_FOLDER,
     STEAM_ACCOUNT_INFO_FILE_PATH,
     set_is_latest_version,
@@ -362,19 +362,17 @@ class Steamauto:
 
     def init_plugins_and_start(self):
         logger.info("初始化完成, 开始运行插件!")
-        print("\n")
-        time.sleep(0.1)
         if len(self.plugins_enabled) == 1:
             self.exit_code = self.plugins_enabled[0].exec()
         else:
-            threads = []
-            for plugin in self.plugins_enabled:
-                thread = threading.Thread(target=plugin.exec)
-                thread.daemon = True
-                thread.start()
-                threads.append(thread)
-            for thread in threads:
-                thread.join()
+            with ThreadPoolExecutor(max_workers=len(self.plugins_enabled)) as executor:
+                futures = [executor.submit(plugin.exec) for plugin in self.plugins_enabled]
+                for future in futures:
+                    try:
+                        future.result()
+                    except Exception as e:
+                        handle_caught_exception(e)
+                        logger.error(f"插件执行出错: {e}")
         if self.exit_code != 0:
             logger.warning("所有插件都已经退出！这不是一个正常情况，请检查配置文件！")
 
