@@ -6,11 +6,9 @@ import json
 import os
 import pickle
 import re
-import shutil
 import signal
 import sys
 import threading
-import time
 from concurrent.futures import ThreadPoolExecutor
 from ssl import SSLCertVerificationError
 from typing import Dict, Any
@@ -23,7 +21,6 @@ from requests.exceptions import SSLError
 from ConfigManager import ConfigManager
 from steampy.client import SteamClient
 from steampy.exceptions import ApiException
-
 from utils.logger import handle_caught_exception, logger
 from utils.static import (
     BUILD_INFO,
@@ -38,7 +35,7 @@ from utils.static import (
     set_no_pause,
     PLUGIN_FOLDER,
 )
-from utils.tools import accelerator, compare_version, exit_code, get_encoding, pause
+from utils.tools import accelerator, compare_version, get_encoding, pause
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
