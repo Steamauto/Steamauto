@@ -424,7 +424,7 @@ class ECOSteam:
                     sell_logger.warning("无法获取有效的BUFF session，BUFF平台相关已经自动关闭")
                     config_sync_sell_shelf["enabled_platforms"].remove("buff")
                 else:
-                    self.buff_client = BuffAccount(buff_session)
+                    self.buff_client = BuffAccount(self.steam_client)
                     sell_logger.info(f"已经获取到有效的BUFF session")
 
             # 悠悠登录

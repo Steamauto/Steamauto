@@ -35,7 +35,7 @@ class BuffAutoAcceptOffer:
 
         # 初始化BuffAccount
         buff_cookie = self._read_buff_cookie()
-        self.buff_account = BuffAccount(buffcookie=buff_cookie)
+        self.buff_account = BuffAccount(steam_client=self.steam_client)
 
         self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
         self.order_info: Dict[str, Dict[str, Any]] = {}

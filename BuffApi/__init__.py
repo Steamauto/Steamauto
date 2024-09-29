@@ -1,6 +1,7 @@
 # BuffApi/__init__.py
 
 import copy
+import datetime
 import json
 import os
 import random
@@ -15,6 +16,7 @@ import apprise
 from apprise import AppriseAsset
 from requests.structures import CaseInsensitiveDict
 
+from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import PluginLogger, handle_caught_exception
 from BuffApi.models import BuffOnSaleAsset
 from utils.static import (
@@ -23,7 +25,7 @@ from utils.static import (
     SESSION_FOLDER,
     SUPPORT_GAME_TYPES,
 )
-from utils.tools import get_encoding
+from utils.tools import get_encoding, exit_code
 
 logger = PluginLogger("BuffApi")
 
@@ -39,15 +41,34 @@ class BuffAccount:
     附：
     Buff的每个商品的每种磨损（品质）均有一个独立的goods_id,每一件商品都有一个独立的id
     """
-
-    def __init__(self, buffcookie: str, user_agent: Optional[str] = None):
+    def __init__(self, steam_client, user_agent: Optional[str] = None):
+        self.buff_headers = {}
         self.session: Session = requests.Session()
+        self.steam_client = steam_client
         self.session.headers.update({"User-Agent": user_agent or self.get_ua()})
-        self.buff_headers = self._initialize_headers(buffcookie)
-        self.asset = AppriseAsset(plugin_paths=[self._get_apprise_asset_path()])
         self.logger = PluginLogger("BuffAutoAcceptOffer")
+        if not self.login():
+            raise Exception("Buff登录失败！请稍后再试或检查cookie填写是否正确.")
+        self.asset = AppriseAsset(plugin_paths=[self._get_apprise_asset_path()])
         self.order_info: Dict[str, Dict[str, Any]] = {}
         self.lowest_on_sale_price_cache: Dict[str, Dict[str, Any]] = {}
+
+    def login(self):
+        buff_cookie = get_valid_session_for_buff(self.steam_client, logger)
+        if not buff_cookie:
+            return False
+        self.buff_headers = self._initialize_headers(buff_cookie)
+        # 获取用户昵称以验证登录状态
+        username = self.get_user_nickname()
+        self.logger.info(f"已登录至BUFF 用户名: {username}")
+
+        # 验证Steam账户与BUFF绑定的SteamID是否一致
+        buff_steamid = self.get_buff_bind_steamid()
+        steamid = self.steam_client.get_steam64id_from_cookies()
+        if steamid != buff_steamid:
+            self.logger.error("当前登录账号与BUFF绑定的Steam账号不一致!")
+            return False
+        return True
 
     def require_buyer_send_offer(self) -> None:
         """
@@ -669,3 +690,165 @@ class BuffAccount:
             else:
                 problem_assets[good_id] = status
         return success, problem_assets
+
+    def get_buy_history(self, game: str) -> Dict[str, Any]:
+        """
+        获取购买记录
+
+        :param game: 游戏名称
+        :return: 购买记录的字典
+        """
+        history_file_path = os.path.join(SESSION_FOLDER, f"buy_history_{game}.json")
+        local_history = self._load_local_history(history_file_path)
+
+        page_num = 1
+        result = {}
+        while True:
+            self.logger.debug(f"正在获取{game} 购买记录, 页数: {page_num}")
+            url = "https://buff.163.com/api/market/buy_order/history"
+            params = {
+                "page_num": page_num,
+                "page_size": 300,
+                "game": game
+            }
+            try:
+                response = self.get(url, params=params)
+                response_json = response.json()
+                if response_json.get("code") != "OK":
+                    self.logger.error("获取历史订单失败")
+                    break
+                items = response_json.get("data", {}).get("items", [])
+                should_break = False
+                for item in items:
+                    if item.get('state') != 'SUCCESS':
+                        continue
+                    key_str = self.form_key_str(item)
+                    if key_str not in result:
+                        result[key_str] = item.get("price")
+                    if key_str in local_history and item.get("price") == local_history[key_str]:
+                        self.logger.info("后面没有新的订单了, 无需继续获取")
+                        should_break = True
+                        break
+                if len(items) < 300 or should_break:
+                    break
+                page_num += 1
+                self.logger.info("避免被封号, 休眠15秒")
+                time.sleep(15)
+            except Exception as e:
+                handle_caught_exception(e, "BuffAccount")
+                self.logger.error(f"获取购买记录失败: {e}")
+                break
+
+        # 合并本地历史记录
+        if local_history:
+            for key, price in local_history.items():
+                result.setdefault(key, price)
+
+        # 保存最新的购买记录
+        if result:
+            self._save_local_history(history_file_path, result)
+
+        return result
+
+    def get_all_buff_inventory(self, game: str = "csgo") -> List[Dict[str, Any]]:
+        """
+        获取BUFF库存
+
+        :param game: 游戏名称
+        :return: 库存列表
+        """
+        self.logger.info(f"正在获取 {game} BUFF 库存...")
+        page_num = 1
+        page_size = 300
+        sort_by = "time.desc"
+        state = "all"
+        force = 0
+        force_wear = 0
+        url = "https://buff.163.com/api/market/steam_inventory"
+        total_items = []
+        while True:
+            params = {
+                "page_num": page_num,
+                "page_size": page_size,
+                "sort_by": sort_by,
+                "state": state,
+                "force": force,
+                "force_wear": force_wear,
+                "game": game
+            }
+            try:
+                self.logger.info("避免被封号, 休眠15秒")
+                time.sleep(15)
+                response = self.get(url, params=params)
+                response_json = response.json()
+                if response_json.get("code") == "OK":
+                    items = response_json.get("data", {}).get("items", [])
+                    total_items.extend(items)
+                    if len(items) < page_size:
+                        break
+                    page_num += 1
+                else:
+                    self.logger.error(response_json)
+                    break
+            except Exception as e:
+                handle_caught_exception(e, "BuffAccount")
+                self.logger.error(f"获取BUFF库存失败: {e}")
+                break
+        return total_items
+
+    @staticmethod
+    def form_key_str(item: Dict[str, Any]) -> str:
+        """
+        根据订单信息生成唯一的键字符串
+
+        :param item: 订单项
+        :return: 唯一键字符串
+        """
+        keys = ["appid", "assetid", "classid", "contextid"]
+        key_list = [str(item["asset_info"].get(key, "")) for key in keys]
+        return "_".join(key_list)
+
+    def _load_local_history(self, history_file_path: str) -> Dict[str, Any]:
+        """加载本地购买记录"""
+        try:
+            if os.path.exists(history_file_path):
+                with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
+                    return json.load(f)
+        except Exception as e:
+            self.logger.debug(f"读取本地购买记录失败, 错误信息: {e}", exc_info=True)
+        return {}
+
+    def _save_local_history(self, history_file_path: str, history: Dict[str, Any]) -> None:
+        """保存购买记录到本地"""
+        try:
+            with open(history_file_path, "w", encoding="utf-8") as f:
+                json.dump(history, f, indent=4)
+        except Exception as e:
+            self.logger.error(f"保存购买记录失败: {e}")
+
+    def update_asset_remarks(self, app_id: str, assets: List[Dict[str, str]]) -> bool:
+        """
+        更新资产备注
+
+        :param app_id: 游戏ID
+        :param assets: 资产列表，包含assetid和remark
+        :return: 是否成功
+        """
+        url = "https://buff.163.com/api/market/steam_asset_remark/change"
+        payload = {
+            "appid": app_id,
+            "assets": assets
+        }
+        headers = self._refresh_csrf_token()
+        try:
+            response = self.post(url, json=payload, headers=headers)
+            response_json = response.json()
+            if response_json.get("code") == "OK":
+                return True
+            else:
+                self.logger.error(f"更新备注失败: {response_json.get('msg', '未知错误')}")
+                return False
+        except Exception as e:
+            handle_caught_exception(e, "BuffAccount")
+            self.logger.error(f"更新备注请求失败: {e}")
+            return False

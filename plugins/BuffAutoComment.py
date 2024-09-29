@@ -1,156 +1,53 @@
-# plugins\BuffAutoComment.py
+# plugins/BuffAutoComment.py
 
 import os
 import pickle
 import time
+from typing import List, Dict, Any
 
 import json5
-import requests
-
-from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception, PluginLogger
 from utils.static import BUFF_COOKIES_FILE_PATH, SESSION_FOLDER, SUPPORT_GAME_TYPES
-from utils.tools import get_encoding
+from utils.tools import get_encoding, exit_code
+
+from BuffApi import BuffAccount
 
 
 class BuffAutoComment:
-    def __init__(self, logger, steam_client, steam_client_mutex, config):
-        self.logger = PluginLogger("BuffAutoComment")
+    def __init__(self, logger: PluginLogger, steam_client: Any, steam_client_mutex: Any, config: Dict[str, Any]):
+        self.logger = logger
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.config = config
-        self.session = requests.session()
-        self.buff_headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
-        }
+        # 初始化 BuffAccount
+        buff_cookie = self._read_buff_cookie()
+        self.buff_account = BuffAccount(steam_client=self.steam_client)
 
-    def init(self) -> bool:
-        if get_valid_session_for_buff(self.steam_client, self.logger) == "":
-            return True
-        return False
-
-    def get_buy_history(self, game: str) -> dict:
-        """
-        获取购买记录
-
-        :param game: 游戏名称
-        :return: 购买记录的字典
-        """
-        local_history = {}
-        history_file_path = os.path.join(SESSION_FOLDER, "buy_history_" + game + ".json")
+    def _read_buff_cookie(self) -> str:
+        """读取BUFF的cookie"""
         try:
-            if os.path.exists(history_file_path):
-                with open(history_file_path, "r", encoding=get_encoding(history_file_path)) as f:
-                    local_history = json5.load(f)
-        except Exception as e:
-            self.logger.debug("读取本地购买记录失败, 错误信息: " + str(e), exc_info=True)
-
-        page_num = 1
-        result = {}
-        while True:
-            self.logger.debug("正在获取" + game + " 购买记录, 页数: " + str(page_num))
-            url = ("https://buff.163.com/api/market/buy_order/history?page_num=" + str(page_num) +
-                   "&page_size=300&game=" + game)
-            response_json = self.session.get(url, headers=self.buff_headers).json()
-            if response_json["code"] != "OK":
-                self.logger.error("获取历史订单失败")
-                break
-            items = response_json["data"]["items"]
-            should_break = False
-            for item in items:
-                if item['state'] != 'SUCCESS':
-                    continue
-                keys_to_form_dict_key = ["appid", "assetid", "classid", "contextid"]
-                keys_list = [str(item["asset_info"][key]) for key in keys_to_form_dict_key]
-                key_str = "_".join(keys_list)
-                if key_str not in result:
-                    result[key_str] = item["price"]
-                if key_str in local_history and item["price"] == local_history[key_str]:
-                    self.logger.info("后面没有新的订单了, 无需继续获取")
-                    should_break = True
-                    break
-            if len(items) < 300 or should_break:
-                break
-            page_num += 1
-            self.logger.info("避免被封号, 休眠15秒")
-            time.sleep(15)
-        if local_history:
-            for key in local_history:
-                if key not in result:
-                    result[key] = local_history[key]
-        if result:
-            with open(history_file_path, "w", encoding="utf-8") as f:
-                json5.dump(result, f, indent=4)
-        return result
-
-    def check_buff_account_state(self) -> str:
-        """
-        检查BUFF账户状态
-
-        :return: 用户昵称
-        """
-        response_json = self.session.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
-        if response_json["code"] == "OK":
-            if "data" in response_json and "nickname" in response_json["data"]:
-                return response_json["data"]["nickname"]
-        self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
-        raise TypeError
-
-    def get_all_buff_inventory(self, game="csgo") -> list:
-        """
-        获取BUFF库存
-
-        :param game: 游戏名称
-        :return: 库存列表
-        """
-        self.logger.info("正在获取 " + game + " BUFF 库存...")
-        page_num = 1
-        page_size = 300
-        sort_by = "time.desc"
-        state = "all"
-        force = 0
-        force_wear = 0
-        url = "https://buff.163.com/api/market/steam_inventory"
-        total_items = []
-        while True:
-            params = {
-                "page_num": page_num,
-                "page_size": page_size,
-                "sort_by": sort_by,
-                "state": state,
-                "force": force,
-                "force_wear": force_wear,
-                "game": game
-            }
-            self.logger.info("避免被封号, 休眠15秒")
-            time.sleep(15)
-            response_json = self.session.get(url, headers=self.buff_headers, params=params).json()
-            if response_json["code"] == "OK":
-                items = response_json["data"]["items"]
-                total_items.extend(items)
-                if len(items) < page_size:
-                    break
-                page_num += 1
-            else:
-                self.logger.error(response_json)
-                break
-        return total_items
-
-    def exec(self):
-        self.logger.info("BUFF自动备注已启动, 休眠60秒, 与其他插件错开运行时间")
-        time.sleep(60)
-        sleep_interval = 60 * 60 * 2  # 2小时
-        try:
-            self.logger.info("正在准备登录至BUFF...")
             with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
-                self.session.cookies["session"] = f.read().replace("session=", "").replace("\n", "").split(";")[0]
-            self.logger.info("已检测到cookies, 尝试登录")
-            self.logger.info("已经登录至BUFF 用户名: " + self.check_buff_account_state())
-        except TypeError as e:
-            handle_caught_exception(e)
-            self.logger.error("BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
-            return
+                buff_cookie = f.read().strip()
+                self.logger.info("已检测到BUFF cookies")
+                return buff_cookie
+        except FileNotFoundError:
+            self.logger.error(f"未找到 {BUFF_COOKIES_FILE_PATH}, 请检查文件路径!")
+            exit_code.set(1)
+            raise
+        except Exception as e:
+            handle_caught_exception(e, "BuffAutoComment")
+            self.logger.error(f"读取 {BUFF_COOKIES_FILE_PATH} 时发生错误: {e}")
+            exit_code.set(1)
+            raise
+
+    def run(self) -> None:
+        """插件的主执行方法"""
+        self.logger.info("BUFF自动备注插件已启动. 请稍候...")
+
+        self.logger.info("开始执行BUFF自动备注任务...")
+
+        sleep_interval = 60 * 60 * 2  # 2小时
+
         while True:
             try:
                 with self.steam_client_mutex:
@@ -158,69 +55,61 @@ class BuffAutoComment:
                         self.logger.info("Steam会话已过期, 正在重新登录...")
                         self.steam_client._session.cookies.clear()
                         self.steam_client.login(
-                            self.steam_client.username, self.steam_client._password, json5.dumps(self.steam_client.steam_guard)
+                            self.steam_client.username,
+                            self.steam_client._password,
+                            json5.dumps(self.steam_client.steam_guard),
                         )
                         self.logger.info("Steam会话已更新")
                         steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
                         with open(steam_session_path, "wb") as f:
                             pickle.dump(self.steam_client.session, f)
-            except Exception as e:
-                handle_caught_exception(e, "BuffAutoComment")
-                self.logger.info("休眠" + str(sleep_interval) + "秒")
-                time.sleep(sleep_interval)
-                continue
-            try:
+
                 for game in SUPPORT_GAME_TYPES:
-                    self.logger.info("正在获取" + game["game"] + " 购买记录...")
-                    trade_history = self.get_buy_history(game["game"])
+                    game_name = game["game"]
+                    app_id = game["app_id"]
+
+                    self.logger.info(f"正在获取{game_name} 购买记录...")
+                    trade_history = self.buff_account.get_buy_history(game_name)
                     if not trade_history:
-                        self.logger.error(game["game"] + " 无购买记录")
+                        self.logger.error(f"{game_name} 无购买记录")
                         continue
+
                     self.logger.info("避免被封号, 休眠20秒")
                     time.sleep(20)
-                    self.logger.info("正在获取" + game["game"] + " BUFF 库存...")
-                    game_inventory = self.get_all_buff_inventory(game=game["game"])
+
+                    self.logger.info(f"正在获取{game_name} BUFF 库存...")
+                    game_inventory = self.buff_account.get_all_buff_inventory(game=game_name)
                     if not game_inventory:
-                        self.logger.error(game["game"] + " 无库存")
+                        self.logger.error(f"{game_name} 无库存")
                         continue
+
                     assets = []
                     for item in game_inventory:
-                        keys_to_form_dict_key = ["appid", "assetid", "classid", "contextid"]
-                        keys_list = [str(item["asset_info"][key]) for key in keys_to_form_dict_key]
-                        key_str = "_".join(keys_list)
-                        price = ''
-                        if key_str in trade_history:
-                            self.logger.debug(key_str + " 购买价格为: " + str(trade_history[key_str]))
-                            price = trade_history[key_str]
-                        else:
-                            self.logger.debug(key_str + " 无购买价格")
+                        key_str = self.buff_account.form_key_str(item)
+                        price = trade_history.get(key_str, '')
+                        if not price:
+                            self.logger.debug(f"{key_str} 无购买价格")
                             continue
+
                         current_comment = item.get("asset_extra", {}).get("remark", "")
                         if current_comment.startswith(price):
-                            self.logger.debug(key_str + " 已备注, 跳过")
+                            self.logger.debug(f"{key_str} 已备注, 跳过")
                             continue
-                        self.logger.debug(key_str + " 未备注, 开始备注")
-                        comment = price + " " + current_comment if current_comment else price
+
+                        self.logger.debug(f"{key_str} 未备注, 开始备注")
+                        comment = f"{price} {current_comment}" if current_comment else str(price)
                         assets.append({
                             "assetid": item["asset_info"]["assetid"],
                             "remark": comment
                         })
+
                     if assets:
-                        post_url = "https://buff.163.com/api/market/steam_asset_remark/change"
-                        post_data = {
-                            "appid": game["app_id"],
-                            "assets": assets
-                        }
                         self.logger.info("避免被封号, 休眠20秒")
                         time.sleep(20)
+
                         self.logger.info("正在提交备注...")
-                        self.session.get("https://buff.163.com/api/market/steam_trade", headers=self.buff_headers)
-                        csrf_token = self.session.cookies.get("csrf_token")
-                        headers = self.buff_headers.copy()
-                        headers["X-CSRFToken"] = csrf_token
-                        headers["Referer"] = "https://buff.163.com/market/?game=" + game["game"]
-                        response_json = self.session.post(post_url, headers=headers, json=post_data).json()
-                        if response_json["code"] == "OK":
+                        success = self.buff_account.update_asset_remarks(app_id, assets)
+                        if success:
                             self.logger.info("备注成功")
                         else:
                             self.logger.error("备注失败")
@@ -228,5 +117,9 @@ class BuffAutoComment:
                         self.logger.info("无需备注")
             except Exception as e:
                 handle_caught_exception(e, "BuffAutoComment")
-            self.logger.info("休眠" + str(sleep_interval) + "秒")
+                self.logger.info(f"出现错误, 休眠{sleep_interval}秒后重试")
+                time.sleep(sleep_interval)
+                continue
+
+            self.logger.info(f"休眠{sleep_interval}秒后继续执行备注任务")
             time.sleep(sleep_interval)
