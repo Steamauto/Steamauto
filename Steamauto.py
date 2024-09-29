@@ -48,39 +48,6 @@ def handle_global_exception(exc_type, exc_value, exc_traceback):
     pause()
 
 
-def check_update():
-    try:
-        response_json = requests.get("https://steamauto.jiajiaxd.com/versions", params={"version": CURRENT_VERSION}, timeout=5)
-        data = response_json.json()
-        latest_version = data["latest_version"]["version"]
-        broadcast = data.get("broadcast", None)
-        if broadcast:
-            logger.info(f"Steamauto官方公告:\n {broadcast}\n")
-        if compare_version(CURRENT_VERSION, latest_version) == -1:
-            logger.info(f"检测到最新版本: {latest_version}")
-            changelog_to_output = str()
-            for version in data["history_versions"]:
-                if compare_version(CURRENT_VERSION, version["version"]) == -1:
-                    changelog_to_output += f"版本: {version['version']}\n更新日志: {version['changelog']}\n\n"
-
-            logger.info(f"\n{changelog_to_output}")
-            set_is_latest_version(False)
-            logger.warning("当前版本不是最新版本,为了您的使用体验,请及时更新!")
-        else:
-            set_is_latest_version(True)
-            logger.info("当前版本已经是最新版本")
-    except Exception as e:
-        logger.warning("检查更新失败, 跳过检查更新")
-
-
-def ping_proxy(proxies: dict):
-    try:
-        requests.get('https://steamcommunity.com/login/dologin', proxies=proxies)
-        return True
-    except (requests.exceptions.ConnectionError, TimeoutError) as e:
-        return False
-
-
 class SteamAuto:
     def __init__(self):
         self.config = {}
@@ -89,6 +56,39 @@ class SteamAuto:
         self.plugins_enabled = []
         self.exit_code = 0
         self.tried_exit = False
+
+    @staticmethod
+    def check_update():
+        try:
+            response_json = requests.get("https://steamauto.jiajiaxd.com/versions", params={"version": CURRENT_VERSION}, timeout=5)
+            data = response_json.json()
+            latest_version = data["latest_version"]["version"]
+            broadcast = data.get("broadcast", None)
+            if broadcast:
+                logger.info(f"Steamauto官方公告:\n {broadcast}\n")
+            if compare_version(CURRENT_VERSION, latest_version) == -1:
+                logger.info(f"检测到最新版本: {latest_version}")
+                changelog_to_output = str()
+                for version in data["history_versions"]:
+                    if compare_version(CURRENT_VERSION, version["version"]) == -1:
+                        changelog_to_output += f"版本: {version['version']}\n更新日志: {version['changelog']}\n\n"
+
+                logger.info(f"\n{changelog_to_output}")
+                set_is_latest_version(False)
+                logger.warning("当前版本不是最新版本,为了您的使用体验,请及时更新!")
+            else:
+                set_is_latest_version(True)
+                logger.info("当前版本已经是最新版本")
+        except Exception as e:
+            logger.warning("检查更新失败, 跳过检查更新")
+
+    @staticmethod
+    def ping_proxy(proxies: dict):
+        try:
+            requests.get('https://steamcommunity.com/login/dologin', proxies=proxies)
+            return True
+        except (requests.exceptions.ConnectionError, TimeoutError) as e:
+            return False
 
     def init_files_and_params(self) -> int:
         logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
@@ -99,7 +99,7 @@ class SteamAuto:
         logger.info("正在检查更新...")
 
         # 检查更新
-        check_update()
+        self.check_update()
 
         logger.info("正在初始化...")
         first_run = False
@@ -191,7 +191,7 @@ class SteamAuto:
                         pause()
                         return None
                     logger.info("正在检查代理服务器可用性...")
-                    proxy_status = ping_proxy(self.config["proxies"])
+                    proxy_status = self.ping_proxy(self.config["proxies"])
                     if proxy_status is False:
                         logger.error("代理服务器不可用，请检查配置文件，或者将use_proxies配置项设置为false")
                         pause()
