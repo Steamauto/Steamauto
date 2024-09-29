@@ -115,7 +115,9 @@ DEFAULT_CONFIG_JSON = r"""
   // BUFF 自动备注购买价格插件配置
   "buff_auto_comment": {
     // 是否启用BUFF自动备注购买价格功能
-    "enable": false
+    "enable": false,
+    // 每次请求历史交易记录数量, 过大可能会导致失败
+    "page_size": 300
   },
   // BUFF 自动计算利润插件配置
   "buff_profit_report": {

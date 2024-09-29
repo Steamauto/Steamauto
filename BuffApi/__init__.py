@@ -655,10 +655,11 @@ class BuffAccount:
             self.logger.error("刷新CSRF Token失败!")
             return {}
 
-    def get_buy_history(self, game: str) -> Dict[str, Any]:
+    def get_buy_history(self, game: str, page_size: int = 300) -> Dict[str, Any]:
         """
         获取购买记录
 
+        :param page_size: 每次请求的数量
         :param game: 游戏名称
         :return: 购买记录的字典
         """
@@ -672,7 +673,7 @@ class BuffAccount:
             url = "https://buff.163.com/api/market/buy_order/history"
             params = {
                 "page_num": page_num,
-                "page_size": 300,
+                "page_size": page_size,
                 "game": game
             }
             try:
@@ -680,6 +681,7 @@ class BuffAccount:
                 response_json = response.json()
                 if response_json.get("code") != "OK":
                     self.logger.error("获取历史订单失败")
+                    self.logger.info(f"当前每次请求的数量: {page_size}, 请尝试减少数量")
                     break
                 items = response_json.get("data", {}).get("items", [])
                 should_break = False
@@ -693,7 +695,7 @@ class BuffAccount:
                         self.logger.info("后面没有新的订单了, 无需继续获取")
                         should_break = True
                         break
-                if len(items) < 300 or should_break:
+                if len(items) < page_size or should_break:
                     break
                 page_num += 1
                 self.logger.info("避免被封号, 休眠15秒")

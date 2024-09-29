@@ -69,7 +69,8 @@ class BuffAutoComment:
                     app_id = game["app_id"]
 
                     self.logger.info(f"正在获取{game_name} 购买记录...")
-                    trade_history = self.buff_account.get_buy_history(game_name)
+                    page_size = self.config.get("buff_auto_comment", {}).get("page_size", 300)
+                    trade_history = self.buff_account.get_buy_history(game_name, page_size=page_size)
                     if not trade_history:
                         self.logger.error(f"{game_name} 无购买记录")
                         continue
