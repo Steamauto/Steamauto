@@ -8,7 +8,7 @@ from typing import Dict, List, Union
 
 from BuffApi import BuffAccount
 from BuffApi.models import BuffOnSaleAsset
-from PyECOsteam import ECOsteamClient, models
+from PyECOSteam import ECOSteamClient, models
 from steampy.client import SteamClient
 from steampy.models import GameOptions
 from utils.buff_helper import get_valid_session_for_buff
@@ -25,10 +25,10 @@ sync_lease_shelf_enabled = False
 uu_queue = None
 eco_queue = None
 
-logger = PluginLogger("ECOsteam.cn")
-sell_logger = PluginLogger("[ECOsteam.cn] [同步多平台出售]")
-lease_logger = PluginLogger("[ECOsteam.cn] [同步租赁货架]")
-accept_offer_logger = PluginLogger("[ECOsteam.cn] [自动发货]")
+logger = PluginLogger("ECOSteam.cn")
+sell_logger = PluginLogger("[ECOSteam.cn] [同步多平台出售]")
+lease_logger = PluginLogger("[ECOSteam.cn] [同步租赁货架]")
+accept_offer_logger = PluginLogger("[ECOSteam.cn] [自动发货]")
 
 
 def compare_shelves(A: List[Asset], B: List[Asset], ratio: float) -> Union[bool, dict[str, list[Asset]]]:
@@ -129,7 +129,7 @@ class TaskQueue:
         self.lease_change_queue: List[LeaseAsset] = []
         self.client = client
         self.steamid = steamid
-        self.platform = "ECOsteam" if isinstance(self.client, ECOsteamClient) else "悠悠有品"
+        self.platform = "ECOSteam" if isinstance(self.client, ECOSteamClient) else "悠悠有品"
 
     def sell_add(self, assets: List[Asset]):
         self.sell_queue += assets
@@ -164,7 +164,7 @@ class TaskQueue:
             logger.info(f'即将向出售货架上架 {len(self.sell_queue)} 个商品')
             logger.info(f'即将向租赁货架上架 {len(self.lease_queue)} 个商品')
             success_count, failure_count = 0, 0
-            if isinstance(self.client, ECOsteamClient):
+            if isinstance(self.client, ECOSteamClient):
                 success_count, failure_count = self.client.PublishRentAndSaleGoods(
                     self.steamid, 1, self.sell_queue, self.lease_queue
                 )
@@ -180,7 +180,7 @@ class TaskQueue:
             logger.info(f'即将在出售货架改价 {len(self.sell_change_queue)} 个商品')
             logger.info(f'即将在租赁货架改价 {len(self.lease_change_queue)} 个商品')
             success_count, failure_count = 0, 0
-            if isinstance(self.client, ECOsteamClient):
+            if isinstance(self.client, ECOSteamClient):
                 success_count, failure_count = self.client.PublishRentAndSaleGoods(
                     self.steamid, 2, self.sell_change_queue, self.lease_change_queue
                 )
@@ -198,16 +198,16 @@ class TaskQueue:
         self.lease_change_queue = []
 
 
-class ECOsteamPlugin:
+class ECOSteam:
     def __init__(self, steam_client: SteamClient, steam_client_mutex, config):
-        self.logger = PluginLogger("ECOsteamPlugin")
+        self.logger = PluginLogger("ECOSteamPlugin")
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.config = config
         self.ignored_offer = []
         with steam_client_mutex:
             self.steam_id = steam_client.get_steam64id_from_cookies()
-        self.client = None  # ECOsteamClient 实例
+        self.client = None  # ECOSteamClient 实例
         self.buff_client = None  # BuffAccount 实例
         self.uu_client = None  # UUAccount 实例
 
@@ -219,8 +219,8 @@ class ECOsteamPlugin:
         return False
 
     def exec(self):
-        self.logger.info("ECOsteam插件已启动")
-        self.logger.info("正在登录ECOsteam...")
+        self.logger.info("ECOSteam插件已启动")
+        self.logger.info("正在登录ECOSteam...")
         try:
             with open(ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)) as f:
                 rsa_key = f.read()
@@ -228,7 +228,7 @@ class ECOsteamPlugin:
                 self.logger.error("你在rsakey文件中放入的不是私钥！请填入私钥信息(Private key)！")
                 return 1
             LogFilter.add_sensitive_data(self.config["ecosteam"]["partnerId"])
-            self.client = ECOsteamClient(
+            self.client = ECOSteamClient(
                 self.config["ecosteam"]["partnerId"],
                 rsa_key,
                 qps=self.config["ecosteam"]["qps"],
@@ -241,12 +241,12 @@ class ECOsteamPlugin:
             else:
                 raise Exception
         except Exception as e:
-            self.logger.error(f"登录失败！请检查{ECOSTEAM_RSAKEY_FILE}和parterId是否正确！由于无法登录ECOsteam，插件将退出。")
+            self.logger.error(f"登录失败！请检查{ECOSTEAM_RSAKEY_FILE}和parterId是否正确！由于无法登录ECOSteam，插件将退出。")
             handle_caught_exception(e)
             exit_code.set(1)
             return 1
 
-        # 检查当前登录的Steam账号是否在ECOsteam绑定账号列表内
+        # 检查当前登录的Steam账号是否在ECOSteam绑定账号列表内
         exist = False
         accounts_list = self.client.QuerySteamAccountList().json()["ResultData"]
         for account in accounts_list:
@@ -254,12 +254,12 @@ class ECOsteamPlugin:
                 exist = True
                 break
         if not exist:
-            logger.error(f"当前登录的Steam账号{self.steam_id}不在ECOsteam绑定账号列表内！插件将退出。")
+            logger.error(f"当前登录的Steam账号{self.steam_id}不在ECOSteam绑定账号列表内！插件将退出。")
             exit_code.set(1)
             return 1
         if exist and len(accounts_list) > 1:
             logger.warning(
-                f"检测到你的ECOsteam绑定了多个Steam账号。插件的所有操作仅对SteamID为{self.steam_id}的账号生效！如需同时操作多个账号，请多开Steamauto实例！"
+                f"检测到你的ECOSteam绑定了多个Steam账号。插件的所有操作仅对SteamID为{self.steam_id}的账号生效！如需同时操作多个账号，请多开Steamauto实例！"
             )
 
         threads = []
@@ -295,7 +295,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    sell_logger.warning(f"检测到ECOsteam上架物品 {item['GoodsName']} 不在Steam库存中！")
+                    sell_logger.warning(f"检测到ECOSteam上架物品 {item['GoodsName']} 不在Steam库存中！")
                     assets.append(asset.orderNo)
             return assets
         elif platform == "buff":
@@ -340,7 +340,7 @@ class ECOsteamPlugin:
                 inventory = self.steam_client.get_my_inventory(game=GameOptions.CS)  # type: ignore
                 logger.log(5,'获取到的Steam库存:' + json.dumps(inventory, ensure_ascii=False))
         except Exception as e:
-            handle_caught_exception(e, "ECOsteam.cn")
+            handle_caught_exception(e, "ECOSteam.cn")
         return inventory
 
     # 自动发货线程
@@ -349,7 +349,7 @@ class ECOsteamPlugin:
             try:
                 self.__auto_accept_offer()
             except Exception as e:
-                handle_caught_exception(e, "ECOsteam.cn")
+                handle_caught_exception(e, "ECOSteam.cn")
                 accept_offer_logger.error("发生未知错误，请稍候再试！")
                 time.sleep(self.config["ecosteam"]["auto_accept_offer"]["interval"])
 
@@ -380,7 +380,7 @@ class ECOsteamPlugin:
                         self.ignored_offer.append(tradeOfferId)
                         accept_offer_logger.info(f"已接受报价号{tradeOfferId}！")
                     except Exception as e:
-                        handle_caught_exception(e, "ECOsteam.cn")
+                        handle_caught_exception(e, "ECOSteam.cn")
                         accept_offer_logger.error("Steam异常, 暂时无法接受报价, 请稍后再试! ")
                 else:
                     accept_offer_logger.info(f"已经自动忽略报价号{tradeOfferId}，商品名{goodsName}，因为它已经被程序处理过！")
@@ -476,11 +476,11 @@ class ECOsteamPlugin:
 
     # 自动同步租赁货架实现
     def sync_lease_shelves(self):
-        lease_logger.info("正在从ECOsteam获取租赁上架物品信息...")
+        lease_logger.info("正在从ECOSteam获取租赁上架物品信息...")
         lease_shelves = {}
         lease_shelves['eco'] = self.client.getFulRentGoodsList(self.steam_id)
         lease_logger.debug(f'ECO租赁货架：{json.dumps(lease_shelves["eco"], cls=ModelEncoder)}')
-        lease_logger.info(f"ECOsteam共上架{len(lease_shelves['eco'])}个租赁物品")
+        lease_logger.info(f"ECOSteam共上架{len(lease_shelves['eco'])}个租赁物品")
 
         lease_logger.info("正在从悠悠有品获取租赁上架物品信息...")
         lease_shelves['uu'] = self.uu_client.get_uu_leased_inventory()
@@ -488,7 +488,7 @@ class ECOsteamPlugin:
         lease_logger.info(f"悠悠有品共上架{len(lease_shelves['uu'])}个租赁物品")
 
         if self.lease_main_platform == "eco":
-            lease_logger.info('当前同步主平台为ECOsteam')
+            lease_logger.info('当前同步主平台为ECOSteam')
             self.lease_other_platform = "uu"
         else:
             lease_logger.info('当前同步主平台为悠悠有品')
@@ -533,13 +533,13 @@ class ECOsteamPlugin:
                 if len(difference['add']) > 0:
                     if isinstance(eco_queue, TaskQueue):
                         eco_queue.lease_add(difference['add'])
-                        lease_logger.info(f"已经添加{len(difference['add'])}个商品到ECOsteam租赁上架队列")
+                        lease_logger.info(f"已经添加{len(difference['add'])}个商品到ECOSteam租赁上架队列")
                     else:
-                        lease_logger.error('ECOsteam.cn任务队列未初始化！')
+                        lease_logger.error('ECOSteam.cn任务队列未初始化！')
 
                 # 下架商品
                 if len(difference['delete']) > 0:
-                    lease_logger.info(f"即将在ECOsteam租赁货架下架{len(difference['delete'])}个商品")
+                    lease_logger.info(f"即将在ECOSteam租赁货架下架{len(difference['delete'])}个商品")
                     batches = [difference['delete'][i : i + 100] for i in range(0, len(difference['delete']), 100)]
                     success_count = 0
                     for batch in batches:
@@ -552,7 +552,7 @@ class ECOsteamPlugin:
                             else:
                                 lease_logger.error(f"下架租赁商品过程中出现失败！错误信息：{rsp['ResultMsg']}")
                         except Exception as e:
-                            handle_caught_exception(e, "ECOsteam.cn")
+                            handle_caught_exception(e, "ECOSteam.cn")
                             lease_logger.error("发生未知错误，请稍候再试！")
                     lease_logger.info(f"下架{success_count}个商品成功！")
 
@@ -560,9 +560,9 @@ class ECOsteamPlugin:
                 if len(difference['change']) > 0:
                     if isinstance(eco_queue, TaskQueue):
                         eco_queue.lease_change(difference['change'])
-                        lease_logger.info(f"已经添加{len(difference['change'])}个商品到ECOsteam租赁改价队列")
+                        lease_logger.info(f"已经添加{len(difference['change'])}个商品到ECOSteam租赁改价队列")
                     else:
-                        lease_logger.error('ECOsteam.cn任务队列未初始化！')
+                        lease_logger.error('ECOSteam.cn任务队列未初始化！')
 
     # 自动同步出售货架实现
     def sync_sell_shelves(self):
@@ -608,7 +608,7 @@ class ECOsteamPlugin:
                                 count, problems = self.buff_client.cancel_sale(offshelf_list)
                                 sell_logger.info(f"下架{count}个商品成功！下架{len(problems)}个商品失败！")
                             except Exception as e:
-                                handle_caught_exception(e, "ECOsteam.cn")
+                                handle_caught_exception(e, "ECOSteam.cn")
                                 sell_logger.error(f"下架商品失败！可能有部分下架成功")
                         elif platform == "uu":
                             response = self.uu_client.off_shelf(offshelf_list)
@@ -619,7 +619,7 @@ class ECOsteamPlugin:
                         # 重新获取上架物品
                         shelves[platform] = self.get_shelf(platform, inventory)
         except Exception as e:
-            handle_caught_exception(e, "ECOsteam.cn")
+            handle_caught_exception(e, "ECOSteam.cn")
 
         for platform in tc["enabled_platforms"]:
             if platform != main_platform:
@@ -636,7 +636,7 @@ class ECOsteamPlugin:
                     try:
                         self.solve_platform_difference(platform, difference)
                     except Exception as e:
-                        handle_caught_exception(e, "ECOsteam.cn")
+                        handle_caught_exception(e, "ECOSteam.cn")
                         sell_logger.error("发生未知错误，请稍候再试！")
                 else:
                     sell_logger.info(f"{platform.upper()}平台已经保持同步")
@@ -647,9 +647,9 @@ class ECOsteamPlugin:
             if len(difference["add"]) > 0:
                 if isinstance(eco_queue, TaskQueue):
                     eco_queue.sell_add(difference["add"])
-                    sell_logger.info(f"已经添加 {len(difference['add'])} 个商品到ECOsteam出售上架队列")
+                    sell_logger.info(f"已经添加 {len(difference['add'])} 个商品到ECOSteam出售上架队列")
                 else:
-                    sell_logger.error('ECOsteam.cn任务队列未初始化！')
+                    sell_logger.error('ECOSteam.cn任务队列未初始化！')
 
             # 下架商品
             assets = [asset.orderNo for asset in difference["delete"]]
@@ -666,9 +666,9 @@ class ECOsteamPlugin:
             if len(difference["change"]) > 0:
                 if isinstance(eco_queue, TaskQueue):
                     eco_queue.sell_change(difference["change"])
-                    sell_logger.info(f"已经添加 {len(difference['change'])} 个商品到ECOsteam出售改价队列")
+                    sell_logger.info(f"已经添加 {len(difference['change'])} 个商品到ECOSteam出售改价队列")
                 else:
-                    sell_logger.error('ECOsteam.cn任务队列未初始化！')
+                    sell_logger.error('ECOSteam.cn任务队列未初始化！')
 
         elif platform == "buff":
             # 上架商品
@@ -685,7 +685,7 @@ class ECOsteamPlugin:
                             )
                     sell_logger.info(f"上架{len(success)}个商品到BUFF成功！上架{len(failure)}个商品失败！")
                 except Exception as e:
-                    handle_caught_exception(e, "ECOsteam.cn")
+                    handle_caught_exception(e, "ECOSteam.cn")
                     sell_logger.error(f"上架商品失败！可能部分上架成功！")
 
             # 下架商品
@@ -702,7 +702,7 @@ class ECOsteamPlugin:
                             )
                     sell_logger.info(f"下架{success}个商品成功！下架{len(failure)}个商品失败！")
                 except Exception as e:
-                    handle_caught_exception(e, "ECOsteam.cn")
+                    handle_caught_exception(e, "ECOSteam.cn")
                     sell_logger.error(f"下架商品失败！可能部分下架成功！")
 
             # 更改价格
