@@ -146,6 +146,7 @@ class Steamauto:
             return None
         if self.steam_login_with_session() is None:
             return self.steam_login_with_account_info()
+        return self.steam_client
 
     def load_steam_account_info(self):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "r", encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:

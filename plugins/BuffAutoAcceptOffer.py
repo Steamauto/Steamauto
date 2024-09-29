@@ -16,13 +16,8 @@ from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import (
     APPRISE_ASSET_FOLDER,
     BUFF_COOKIES_FILE_PATH,
-    MESSAGE_NOTIFICATION_DEV_FILE_PATH,
-    SELL_ORDER_HISTORY_DEV_FILE_PATH,
     SESSION_FOLDER,
-    SHOP_LISTING_DEV_FILE_PATH,
-    STEAM_TRADE_DEV_FILE_PATH,
     SUPPORT_GAME_TYPES,
-    TO_DELIVER_DEV_FILE_PATH,
 )
 from utils.tools import exit_code, get_encoding
 
@@ -225,21 +220,11 @@ class BuffAutoAcceptOffer:
                             body=self.config["buff_auto_accept_offer"]["buff_cookie_expired_notification"]["body"],
                         )
                     return
-                if os.path.exists(MESSAGE_NOTIFICATION_DEV_FILE_PATH):
-                    self.logger.info("使用本地消息通知文件")
-                    with open(
-                            MESSAGE_NOTIFICATION_DEV_FILE_PATH,
-                            "r",
-                            encoding=get_encoding(MESSAGE_NOTIFICATION_DEV_FILE_PATH),
-                    ) as f:
-                        message_notification = json5.load(f)
-                        to_deliver_order = message_notification["data"]["to_deliver_order"]
-                else:
-                    response_json = requests.get(
-                        "https://buff.163.com/api/message/notification",
-                        headers=self.buff_headers,
-                    ).json()
-                    to_deliver_order = response_json["data"]["to_deliver_order"]
+                response_json = requests.get(
+                    "https://buff.163.com/api/message/notification",
+                    headers=self.buff_headers,
+                ).json()
+                to_deliver_order = response_json["data"]["to_deliver_order"]
                 try:
                     if ("csgo" in to_deliver_order and int(to_deliver_order["csgo"]) != 0) or (
                             "dota2" in to_deliver_order and int(to_deliver_order["dota2"]) != 0
@@ -257,20 +242,11 @@ class BuffAutoAcceptOffer:
                     handle_caught_exception(e, "BuffAutoAcceptOffer")
                     self.logger.error("Buff接口返回数据异常! 请检查网络连接或稍后再试! ")
                 trade_supply = {}
-                if os.path.exists(STEAM_TRADE_DEV_FILE_PATH):
-                    self.logger.info("使用本地待发货文件")
-                    with open(
-                            STEAM_TRADE_DEV_FILE_PATH,
-                            "r",
-                            encoding=get_encoding(STEAM_TRADE_DEV_FILE_PATH),
-                    ) as f:
-                        trades = json5.load(f)["data"]
-                else:
-                    response_json = requests.get(
-                        "https://buff.163.com/api/market/steam_trade",
-                        headers=self.buff_headers,
-                    ).json()
-                    trades = response_json["data"]
+                response_json = requests.get(
+                    "https://buff.163.com/api/market/steam_trade",
+                    headers=self.buff_headers,
+                ).json()
+                trades = response_json["data"]
                 trade_offer_to_confirm = set()
                 for game in SUPPORT_GAME_TYPES:
                     trade_supply[game["game"]] = []
