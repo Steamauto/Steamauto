@@ -13,6 +13,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from ssl import SSLCertVerificationError
+from typing import Dict, Any
 
 import json5
 import requests
@@ -326,17 +327,14 @@ class Steamauto:
         return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
     @staticmethod
-    def get_plugin_classes():
+    def get_plugin_classes() -> Dict[str, Any]:
         plugin_classes = {}
-        for name, obj in globals().items():
-            if inspect.isclass(obj) and obj.__module__.startswith(PLUGIN_FOLDER):
-                plugin_name = Steamauto.camel_to_snake(obj.__name__)
-                plugin_classes[plugin_name] = obj
-            if inspect.ismodule(obj) and obj.__name__.startswith(f'{PLUGIN_FOLDER}.External'):
-                for name, obj2 in inspect.getmembers(obj):
-                    if inspect.isclass(obj2) and name.startswith("External"):
+        for module_name, module in sys.modules.items():
+            if module_name.startswith(PLUGIN_FOLDER):
+                for name, obj in inspect.getmembers(module, inspect.isclass):
+                    if obj.__module__ == module_name:
                         plugin_name = Steamauto.camel_to_snake(obj.__name__)
-                        plugin_classes[plugin_name] = obj2
+                        plugin_classes[plugin_name] = obj
         return plugin_classes
 
     def get_plugins_enabled(self):
@@ -407,7 +405,7 @@ class Steamauto:
         self.import_all_plugins()
         self.plugins_enabled = self.get_plugins_enabled()
         plugins_check_status = self.plugins_check()
-        if plugins_check_status == 0:
+        if plugins_check_status != 0:
             logger.info("存在插件无法正常初始化, Steamauto即将退出！ ")
             pause()
             return 1
