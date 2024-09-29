@@ -9,6 +9,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple, no_type_check
 
 import requests
+from bs4 import BeautifulSoup
 from requests import Session
 from requests.exceptions import RequestException
 
@@ -27,8 +28,6 @@ from utils.static import (
 )
 from utils.tools import get_encoding, exit_code
 
-logger = PluginLogger("BuffApi")
-
 
 class BuffAccount:
     """
@@ -42,11 +41,37 @@ class BuffAccount:
     Buff的每个商品的每种磨损（品质）均有一个独立的goods_id,每一件商品都有一个独立的id
     """
     def __init__(self, steam_client, user_agent: Optional[str] = None):
+        self.wear_ranges = [{'min': 0, 'max': 0.01},
+                            {'min': 0.01, 'max': 0.02},
+                            {'min': 0.02, 'max': 0.03},
+                            {'min': 0.03, 'max': 0.04},
+                            {'min': 0.04, 'max': 0.07},
+                            {'min': 0.07, 'max': 0.08},
+                            {'min': 0.08, 'max': 0.09},
+                            {'min': 0.09, 'max': 0.10},
+                            {'min': 0.10, 'max': 0.11},
+                            {'min': 0.11, 'max': 0.15},
+                            {'min': 0.15, 'max': 0.18},
+                            {'min': 0.18, 'max': 0.21},
+                            {'min': 0.21, 'max': 0.24},
+                            {'min': 0.24, 'max': 0.27},
+                            {'min': 0.27, 'max': 0.38},
+                            {'min': 0.38, 'max': 0.39},
+                            {'min': 0.39, 'max': 0.40},
+                            {'min': 0.40, 'max': 0.41},
+                            {'min': 0.41, 'max': 0.42},
+                            {'min': 0.42, 'max': 0.45},
+                            {'min': 0.45, 'max': 0.50},
+                            {'min': 0.50, 'max': 0.63},
+                            {'min': 0.63, 'max': 0.76},
+                            {'min': 0.76, 'max': 0.9},
+                            {'min': 0.9, 'max': 1}]
+        self.lowest_price_cache = {}
         self.buff_headers = {}
         self.session: Session = requests.Session()
         self.steam_client = steam_client
         self.session.headers.update({"User-Agent": user_agent or self.get_ua()})
-        self.logger = PluginLogger("BuffAutoAcceptOffer")
+        self.logger = PluginLogger("BuffAccount")
         if not self.login():
             raise Exception("Buff登录失败！请稍后再试或检查cookie填写是否正确.")
         self.asset = AppriseAsset(plugin_paths=[self._get_apprise_asset_path()])
@@ -54,7 +79,7 @@ class BuffAccount:
         self.lowest_on_sale_price_cache: Dict[str, Dict[str, Any]] = {}
 
     def login(self):
-        buff_cookie = get_valid_session_for_buff(self.steam_client, logger)
+        buff_cookie = get_valid_session_for_buff(self.steam_client, self.logger)
         if not buff_cookie:
             return False
         self.buff_headers = self._initialize_headers(buff_cookie)
@@ -239,7 +264,7 @@ class BuffAccount:
         try:
             response = self.session.get(url, timeout=10, **kwargs)
             response.raise_for_status()
-            logger.debug(f"GET {url} {response.status_code} {response.text}")
+            self.logger.debug(f"GET {url} {response.status_code} {response.text}")
             return response
         except RequestException as e:
             handle_caught_exception(e, "BuffAccount")
@@ -251,7 +276,7 @@ class BuffAccount:
         try:
             response = self.session.post(url, timeout=10, **kwargs)
             response.raise_for_status()
-            logger.debug(f"POST {url} {response.status_code} {response.text}")
+            self.logger.debug(f"POST {url} {response.status_code} {response.text}")
             return response
         except RequestException as e:
             handle_caught_exception(e, "BuffAccount")
@@ -818,3 +843,370 @@ class BuffAccount:
             handle_caught_exception(e, "BuffAccount")
             self.logger.error(f"更新备注请求失败: {e}")
             return False
+
+    def get_buff_inventory(self, state: str = "cansell", sort_by: str = "price.desc",
+                           game: str = "csgo", app_id: int = 730, force_refresh: bool = False) -> Dict[str, Any]:
+        """
+        获取BUFF库存
+
+        :param state: 库存状态，默认 "cansell"
+        :param sort_by: 排序方式，默认 "price.desc"
+        :param game: 游戏名称，默认 "csgo"
+        :param app_id: 游戏ID，默认 730
+        :param force_refresh: 是否强制刷新，默认 False
+        :return: 库存数据
+        """
+        url = "https://buff.163.com/api/market/steam_inventory"
+        params = {
+            "page_num": 1,
+            "page_size": 300,
+            "sort_by": sort_by,
+            "app_id": app_id,
+            "state": state,
+            "force": 0,
+            "force_wear": 0,
+            "game": game
+        }
+        total_items = []
+        while True:
+            try:
+                if not force_refresh:
+                    self.logger.info("避免被封号, 休眠15秒")
+                    time.sleep(15)
+                response = self.get(url, params=params)
+                response_json = response.json()
+                if response_json.get("code") == "OK":
+                    items = response_json.get("data", {}).get("items", [])
+                    total_items.extend(items)
+                    if len(items) < 300:
+                        break
+                    params["page_num"] += 1
+                else:
+                    self.logger.error(response_json)
+                    break
+            except Exception as e:
+                handle_caught_exception(e, "BuffAccount")
+                self.logger.error(f"获取BUFF库存失败: {e}")
+                break
+        return {"items": total_items}
+
+    def put_item_on_sale(self, assets: List[Dict[str, Any]], game: str, app_id: int) -> Dict[str, Any]:
+        """
+        上架商品
+
+        :param assets: 上架的资产列表
+        :param game: 游戏名称
+        :param app_id: 游戏ID
+        :return: 响应数据
+        """
+        if not assets:
+            self.logger.info("没有需要上架的资产")
+            return {}
+
+        url = "https://buff.163.com/api/market/sell_order/create/manual_plus"
+        payload = {
+            "appid": str(app_id),
+            "game": game,
+            "assets": assets
+        }
+        headers = self._refresh_csrf_token()
+
+        try:
+            response = self.post(url, json=payload, headers=headers)
+            response_data = response.json()
+
+            if response_data.get("code") != "OK":
+                raise Exception(response_data.get("msg", "未知错误"))
+
+            self.logger.info("成功上架资产")
+            return response_data.get("data", {})
+        except (ValueError, KeyError, Exception) as e:
+            handle_caught_exception(e, "BuffAccount")
+            self.logger.error(f"上架失败: {e}")
+            return {}
+
+    @staticmethod
+    def merge_buy_orders(response_data: dict):
+        orders = response_data["items"]
+        user_info = response_data["user_infos"]
+        for order in orders:
+            order["user"] = user_info[order["user_id"]]
+            del order["user_id"]
+            pay_method = order["pay_method"]
+            if pay_method == 43:
+                order["supported_pay_method"] = ["支付宝", "微信"]
+            elif pay_method == 3:
+                order["supported_pay_method"] = ["支付宝"]
+            elif pay_method == 1:
+                order["supported_pay_method"] = ["微信"]
+            else:
+                order["supported_pay_method"] = []
+        return orders
+
+    def get_highest_buy_order(self, goods_id, game="csgo", app_id=730, paint_wear=-1, require_auto_accept=True,
+                              supported_payment_methods=None):
+        sleep_seconds_to_prevent_buff_ban = 10
+        if supported_payment_methods is None:
+            supported_payment_methods = ["支付宝", "微信"]
+        url = (
+                "https://buff.163.com/api/market/goods/buy_order?goods_id="
+                + str(goods_id)
+                + "&page_num=1&page_size=20&same_goods=false&game="
+                + game
+                + "&appid="
+                + str(app_id)
+        )
+        self.logger.info("[BuffAutoOnSale] 为了避免被封IP, 休眠" + str(sleep_seconds_to_prevent_buff_ban) + "秒")
+        time.sleep(sleep_seconds_to_prevent_buff_ban)
+        self.logger.info("[BuffAutoOnSale] 正在获取BUFF商品最高求购")
+        response = self.session.get(url, headers=self.buff_headers).json()
+        if response["code"] != "OK":
+            return {}
+        buy_orders = self.merge_buy_orders(response["data"])
+        if len(buy_orders) == 0:
+            return {}
+        for order in buy_orders:
+            if require_auto_accept and not order["user"]["is_auto_accept"]:
+                continue
+            payment_method_supported = False
+            for supported_payment_method in supported_payment_methods:
+                if supported_payment_method in order["supported_pay_method"]:
+                    payment_method_supported = True
+                    break
+            if not payment_method_supported:
+                continue
+            if len(order["specific"]) != 0:
+                match_specific = True
+                for specific in order["specific"]:
+                    if specific["type"] == "paintwear":
+                        if paint_wear == -1:
+                            match_specific = False
+                            break
+                        min_paint_wear = specific["values"][0]
+                        max_paint_wear = specific["values"][1]
+                        if not (min_paint_wear <= paint_wear < max_paint_wear):
+                            match_specific = False
+                            break
+                    if specific["type"] == "unlock_style":  # 对模板有要求, 不进行判断直接当不符合
+                        match_specific = False
+                        break
+                if not match_specific:
+                    continue
+            return order
+        return {}
+
+    def get_lowest_sell_price(self, goods_id, game="csgo", app_id=730, min_paint_wear=0, max_paint_wear=1.0):
+        sleep_seconds_to_prevent_buff_ban = 10
+        goods_key = str(goods_id) + ',' + str(min_paint_wear) + ',' + str(max_paint_wear)
+        if goods_key in self.lowest_price_cache:
+            if (self.lowest_price_cache[goods_key]["cache_time"] >= datetime.datetime.now() -
+                    datetime.timedelta(hours=1)):
+                lowest_price = self.lowest_price_cache[goods_key]["lowest_price"]
+                return lowest_price
+        self.logger.info("[BuffAutoOnSale] 获取BUFF商品最低价")
+        self.logger.info("[BuffAutoOnSale] 为了避免被封IP, 休眠" +
+                         str(sleep_seconds_to_prevent_buff_ban) + "秒")
+        time.sleep(sleep_seconds_to_prevent_buff_ban)
+        url = (
+                "https://buff.163.com/api/market/goods/sell_order?goods_id="
+                + str(goods_id)
+                + "&page_num=1&page_size=24&allow_tradable_cooldown=1&sort_by=default&game="
+                + game
+                + "&appid="
+                + str(app_id)
+                + "&min_paintwear="
+                + str(min_paint_wear)
+                + "&max_paintwear="
+                + str(max_paint_wear)
+        )
+        if min_paint_wear == 0 and max_paint_wear == 1.0:
+            url = (
+                    "https://buff.163.com/api/market/goods/sell_order?goods_id="
+                    + str(goods_id)
+                    + "&page_num=1&page_size=24&allow_tradable_cooldown=1&sort_by=default&game="
+                    + game
+                    + "&appid="
+                    + str(app_id)
+            )
+        response_json = self.session.get(url, headers=self.buff_headers).json()
+        if response_json["code"] == "OK":
+            if len(response_json["data"]["items"]) == 0:  # 无商品
+                if min_paint_wear != 0 or max_paint_wear != 1.0:
+                    self.logger.info("[BuffAutoOnSale] 无商品, 重试使用同类型最低价上架")
+                    return self.get_lowest_sell_price(goods_id, game, app_id, 0, 1.0)
+                else:
+                    self.logger.info("[BuffAutoOnSale] 无商品")
+                    return -1
+            lowest_price = float(response_json["data"]["items"][0]["price"])
+            self.lowest_price_cache[goods_key] = {"lowest_price": lowest_price, "cache_time": datetime.datetime.now()}
+            return lowest_price
+        else:
+            if response_json["code"] == "Captcha Validate Required":
+                captcha_url = response_json["confirm_entry"]["entry"]["url"]
+                session = self.session.cookies.get("session")
+                self.logger.error("[BuffAutoOnSale] 需要验证码, 请使用session " + session + " 打开以下链接, 并完成验证")
+                self.logger.error("[BuffAutoOnSale] " + captcha_url)
+                return -1
+            else:
+                self.logger.error(response_json)
+                self.logger.error("[BuffAutoOnSale] 获取BUFF商品最低价失败, 请检查buff_cookies.txt或稍后再试! ")
+                return -1
+
+    def prepare_assets_for_sale(self, items: List[Dict[str, Any]], game: str, app_id: int,
+                                description: str, use_range_price: bool) -> List[Dict[str, Any]]:
+        """
+        准备上架所需的资产列表
+
+        :param items: 可出售的物品列表
+        :param game: 游戏名称
+        :param app_id: 游戏ID
+        :param description: 备注描述
+        :param use_range_price: 是否使用磨损区间最低价
+        :return: 上架资产列表
+        """
+        sleep_seconds_to_prevent_buff_ban = 10
+        assets = []
+        for item in items:
+            key_str = self.form_key_str(item)
+            min_paint_wear = 0
+            max_paint_wear = 1.0
+            if use_range_price:
+                done = False
+                has_requested_refresh = False
+                refresh_count = 0
+                while True:
+                    has_wear = False
+                    wear_keywords = ['(Factory New)', '(Minimal Wear)', '(Field-Tested)',
+                                     '(Well-Worn)', '(Battle-Scarred)']
+                    for wear_keyword in wear_keywords:
+                        if wear_keyword in item["market_hash_name"]:
+                            has_wear = True
+                            break
+                    if not has_wear:
+                        self.logger.info("商品无磨损, 使用同类型最低价上架")
+                        break
+                    self.logger.info("正在获取磨损区间...")
+                    self.logger.info("为了避免被封IP, 休眠" +
+                                     str(sleep_seconds_to_prevent_buff_ban) + "秒")
+                    time.sleep(sleep_seconds_to_prevent_buff_ban)
+                    asset = {
+                        "assetid": item["assetid"],
+                        "classid": item["classid"],
+                        "instanceid": item["instanceid"],
+                        "contextid": item["contextid"],
+                        "market_hash_name": item["market_hash_name"],
+                        "price": "",
+                        "income": "",
+                        "has_market_min_price": False,
+                        "game": game,
+                        "goods_id": item["goods_id"]
+                    }
+                    data = {"game": game, "assets": [asset]}
+                    self.session.get("https://buff.163.com/api/market/steam_trade", headers=self.buff_headers)
+                    csrf_token = self.session.cookies.get("csrf_token", domain='buff.163.com')
+                    headers = {
+                        "User-Agent": self.buff_headers["User-Agent"],
+                        "X-CSRFToken": csrf_token,
+                        "X-Requested-With": "XMLHttpRequest",
+                        "Content-Type": "application/json",
+                        "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
+                    }
+                    preview_url = "https://buff.163.com/market/sell_order/preview/manual_plus"
+                    response_json = self.session.post(preview_url, json=data, headers=headers).json()
+                    if 'data' not in response_json:
+                        self.logger.error(response_json)
+                        self.logger.error("[BuffAutoOnSale] 获取磨损区间失败, 使用同类型最低价上架")
+                        break
+                    response_data = response_json["data"]
+                    bs = BeautifulSoup(response_data, "html.parser")
+                    paint_wear_p = bs.find("p", {"class": "paint-wear"})
+                    try:
+                        suggested_price = int(bs.find("span", {"class": "custom-currency"}).attrs.get("data-price"))
+                    except Exception:
+                        suggested_price = -1
+                    if suggested_price != -1 and suggested_price < 10:
+                        self.logger.info("[BuffAutoOnSale] 商品价格低于10, 使用同类型最低价上架")
+                        break
+                    if paint_wear_p is not None:
+                        paint_wear = paint_wear_p.text.replace("磨损:", "").replace(" ", "").replace("\n", "")
+                        paint_wear = float(paint_wear)
+                        for wear_range in self.wear_ranges:
+                            if wear_range['min'] <= paint_wear < wear_range['max']:
+                                min_paint_wear = wear_range['min']
+                                max_paint_wear = wear_range['max']
+                                done = True
+                                break
+                        if not done:
+                            self.logger.error(f"[BuffAutoOnSale] 代码出现错误, 无法解析磨损: {paint_wear}")
+                            self.logger.error("[BuffAutoOnSale] 使用同类型最低价上架")
+                            break
+                    else:
+                        if not has_requested_refresh:
+                            has_requested_refresh = True
+                            self.logger.info("[BuffAutoOnSale] 商品未解析过, 开始请求解析...")
+                            self.logger.info("[BuffAutoOnSale] 为了避免被封IP, 休眠" +
+                                             str(sleep_seconds_to_prevent_buff_ban) + "秒")
+                            time.sleep(sleep_seconds_to_prevent_buff_ban)
+                            post_url = "https://buff.163.com/api/market/csgo_asset/change_state_cs2"
+                            data = {
+                                "assetid": item["assetid"],
+                                "contextid": item["contextid"]
+                            }
+                            self.session.get("https://buff.163.com/api/market/steam_trade",
+                                             headers=self.buff_headers)
+                            csrf_token = self.session.cookies.get("csrf_token", domain='buff.163.com')
+                            headers = {
+                                "User-Agent": self.buff_headers["User-Agent"],
+                                "X-CSRFToken": csrf_token,
+                                "X-Requested-With": "XMLHttpRequest",
+                                "Content-Type": "application/json",
+                                "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
+                            }
+                            response_json = self.session.post(post_url, json=data, headers=headers).json()
+                            if response_json["code"] == "OK":
+                                self.logger.info("[BuffAutoOnSale] 成功请求解析")
+                                continue
+                            else:
+                                self.logger.error(response_json)
+                                self.logger.error("[BuffAutoOnSale] 请求解析失败, 使用同类型最低价上架")
+                                break
+                        else:
+                            refresh_count += 1
+                            if refresh_count >= 5:
+                                self.logger.error("[BuffAutoOnSale] 商品解析失败, 使用同类型最低价上架")
+                                break
+                            self.logger.error("[BuffAutoOnSale] 商品尚未解析完成...")
+                            continue
+                    self.logger.info(
+                        "[BuffAutoOnSale] 使用磨损区间最低价上架, 磨损区间: " + str(min_paint_wear) + " - " +
+                        str(max_paint_wear))
+            price = self.get_lowest_sell_price(
+                goods_id=item["goods_id"],
+                game=game,
+                app_id=app_id,
+                min_paint_wear=min_paint_wear,
+                max_paint_wear=max_paint_wear
+            )
+            if price == -1:
+                self.logger.debug(f"{key_str} 无法获取最低价格, 跳过")
+                continue
+            sell_price = price - 0.01
+            if sell_price < 0.02:
+                sell_price = 0.02
+            self.logger.info("[BuffAutoOnSale] 商品 " + item["market_hash_name"] +
+                             " 将使用价格 " + str(sell_price) + " 进行上架")
+            assets.append(
+                {
+                    "appid": str(app_id),
+                    "assetid": item["assetid"],
+                    "classid": item["classid"],
+                    "instanceid": item["instanceid"],
+                    "contextid": item["contextid"],
+                    "market_hash_name": item["market_hash_name"],
+                    "price": sell_price,
+                    "income": sell_price,
+                    "desc": description,
+                }
+            )
+        return assets
+

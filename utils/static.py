@@ -148,8 +148,6 @@ DEFAULT_CONFIG_JSON = r"""
     "description": "",
     // 检查库存间隔时间
     "interval": 1800,
-    // 每个请求间隔时间 (秒) - 用于防止被BUFF封禁
-    "sleep_seconds_to_prevent_buff_ban": 10,
     // 供应求购相关配置
     "buy_order": {
       // 是否供应求购订单
@@ -167,17 +165,7 @@ DEFAULT_CONFIG_JSON = r"""
         "title": "游戏 {game} 成功上架 {sold_count} 件饰品",
         // 上架通知内容
         "body": "上架详情:\n{item_list}"
-    },
-    // 出现验证码通知配置(如不需要可直接删除)
-    "captcha_notification": {
-        // 出现验证码通知标题
-        "title": "上架饰品时出现验证码",
-        // 出现验证码通知内容
-        "body": "使用session={session}并使用浏览器打开以下链接并完成验证:\n{captcha_url}"
-    },
-    // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
-    "servers": [
-    ]
+    }
   },
   // 悠悠有品自动发货插件配置
   "uu_auto_accept_offer": {
