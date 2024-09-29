@@ -492,17 +492,20 @@ class BuffAccount:
             self.logger.error("获取Steam Trade信息失败!")
             return {}
 
-    def on_sale(self, assets: List[BuffOnSaleAsset]) -> Tuple[List[str], Dict[str, Any]]:
+    def on_sale(self, assets: List[BuffOnSaleAsset], app_id: str = "730", game: str = "csgo") -> (
+            Tuple)[List[str], Dict[str, Any]]:
         """
         上架商品
 
+        :param game: 游戏名称 (csgo)
+        :param app_id: 游戏ID (730)
         :param assets: 上架的资产列表
         :return: 成功上架的商品ID列表和存在问题的商品ID及其错误信息
         """
         url = "https://buff.163.com/api/market/sell_order/create/manual_plus"
         payload = {
-            "appid": "730",
-            "game": "csgo",
+            "appid": app_id,
+            "game": game,
             "assets": [asset.model_dump(exclude_none=True) for asset in assets],
         }
         headers = self._refresh_csrf_token()
@@ -581,7 +584,8 @@ class BuffAccount:
 
         return success_total, problem_total
 
-    def get_on_sale(self, page_num: int = 1, page_size: int = 1000, mode: str = "2,5", fold: str = "0") -> Dict[str, Any]:
+    def get_on_sale(self, page_num: int = 1, page_size: int = 1000, mode: str = "2,5", fold: str = "0",
+                    game: str = "csgo", app_id: str = "730") -> Dict[str, Any]:
         """获取在售商品"""
         url = "https://buff.163.com/api/market/sell_order/on_sale"
         params = {
@@ -589,8 +593,8 @@ class BuffAccount:
             "page_size": page_size,
             "mode": mode,
             "fold": fold,
-            "game": "csgo",
-            "appid": 730,
+            "game": game,
+            "appid": app_id
         }
         try:
             response = self.get(url, params=params)
@@ -600,7 +604,7 @@ class BuffAccount:
             self.logger.error("获取在售商品失败!")
             return {}
 
-    def change_price(self, sell_orders: List[str]) -> Tuple[int, Dict[str, Any]]:
+    def change_price(self, sell_orders: List[str], app_id: str = "730") -> Tuple[int, Dict[str, Any]]:
         """
         更改销售订单价格
 
@@ -615,7 +619,7 @@ class BuffAccount:
         for i in range(0, len(sell_orders), 50):
             batch = sell_orders[i:i + 50]
             payload = {
-                "appid": "730",
+                "appid": app_id,
                 "sell_orders": batch,
             }
             try:
@@ -629,7 +633,7 @@ class BuffAccount:
 
         return success_total, problems
 
-    def _refresh_csrf_token(self) -> CaseInsensitiveDict[str | bytes]:
+    def _refresh_csrf_token(self) -> dict[Any, Any] | CaseInsensitiveDict[str | bytes]:
         """刷新CSRF Token并返回更新后的请求头"""
         url = "https://buff.163.com/api/market/steam_trade"
         try:
@@ -650,46 +654,6 @@ class BuffAccount:
             handle_caught_exception(e, "BuffAccount")
             self.logger.error("刷新CSRF Token失败!")
             return {}
-
-    def on_sale(self, assets: List[BuffOnSaleAsset]) -> Tuple[List[str], Dict[str, Any]]:
-        """
-        上架商品
-
-        :param assets: 上架的资产列表
-        :return: 成功上架的商品ID列表和存在问题的商品ID及其错误信息
-        """
-        url = "https://buff.163.com/api/market/sell_order/create/manual_plus"
-        payload = {
-            "appid": "730",
-            "game": "csgo",
-            "assets": [asset.model_dump(exclude_none=True) for asset in assets],
-        }
-        headers = self._refresh_csrf_token()
-
-        try:
-            response = self.post(url, json=payload, headers=headers)
-            response_data = response.json()
-
-            if response_data.get("code") != "OK":
-                raise Exception(response_data.get("msg", "未知错误"))
-
-            success, problem_assets = self._process_sale_response(response_data)
-            return success, problem_assets
-        except (ValueError, KeyError, Exception) as e:
-            handle_caught_exception(e, "BuffAccount")
-            self.logger.error(f"上架失败: {e}")
-            return [], {}
-
-    def _process_sale_response(self, response_data: Dict[str, Any]) -> Tuple[List[str], Dict[str, Any]]:
-        """处理上架响应"""
-        success = []
-        problem_assets = {}
-        for good_id, status in response_data.get("data", {}).items():
-            if status == "OK":
-                success.append(good_id)
-            else:
-                problem_assets[good_id] = status
-        return success, problem_assets
 
     def get_buy_history(self, game: str) -> Dict[str, Any]:
         """
