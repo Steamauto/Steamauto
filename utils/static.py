@@ -101,13 +101,6 @@ DEFAULT_CONFIG_JSON = r"""
       // 出售保护通知内容（如不需要可直接删除）
       "body": "请自行至BUFF确认报价!"
     },
-    // 报价与BUFF出售商品不匹配通知配置(如不需要可直接删除)
-    "item_mismatch_notification": {
-      // 报价与BUFF出售商品不匹配通知标题
-      "title": "BUFF出售饰品与Steam报价饰品不匹配",
-      // 报价与BUFF出售商品不匹配通知内容
-      "body": "请自行至BUFF确认报价!(Offer: {offer_id})"
-    },
     // BUFF Cookies失效通知配置
     "buff_cookie_expired_notification": {
       // BUFF Cookies失效通知标题（如不需要可直接删除）
