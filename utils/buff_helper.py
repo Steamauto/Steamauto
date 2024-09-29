@@ -70,7 +70,9 @@ def login_to_buff_by_qrcode() -> str:
             config = json5.load(f)
     except:
         pass
-    if "buff_login_notification" in config["buff_auto_accept_offer"]:
+    if ("buff_login_notification" in config["buff_auto_accept_offer"]
+            and "servers" in config["buff_auto_accept_offer"]
+            and config["buff_auto_accept_offer"]["servers"]):
         asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
         apprise_obj = apprise.Apprise(asset=asset)
         for server in config["buff_auto_accept_offer"]["servers"]:

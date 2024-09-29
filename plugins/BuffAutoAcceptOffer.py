@@ -157,7 +157,9 @@ class BuffAutoAcceptOffer:
 
             if price < other_lowest_price * protection_price_percentage and other_lowest_price > protection_price:
                 self.logger.error("交易金额过低, 跳过此交易报价")
-                if "protection_notification" in self.config["buff_auto_accept_offer"]:
+                if ("protection_notification" in self.config["buff_auto_accept_offer"] and
+                        "servers" in self.config["buff_auto_accept_offer"]["protection_notification"]
+                        and self.config["buff_auto_accept_offer"]["protection_notification"]["servers"]):
                     apprise_obj = apprise.Apprise(asset=self.asset)
                     for server in self.config["buff_auto_accept_offer"]["servers"]:
                         apprise_obj.add(server)
@@ -212,7 +214,9 @@ class BuffAutoAcceptOffer:
                 username = self.check_buff_account_state()
                 if username == "":
                     self.logger.error("BUFF账户登录状态失效, 无法自动重新登录! ")
-                    if "buff_cookie_expired_notification" in self.config["buff_auto_accept_offer"]:
+                    if ("buff_cookie_expired_notification" in self.config["buff_auto_accept_offer"]
+                            and "servers" in self.config["buff_auto_accept_offer"]
+                            and self.config["buff_auto_accept_offer"]["servers"]):
                         apprise_obj = apprise.Apprise(asset=self.asset)
                         for server in self.config["buff_auto_accept_offer"]["servers"]:
                             apprise_obj.add(server)
@@ -326,11 +330,13 @@ class BuffAutoAcceptOffer:
                                                     apprise_obj.add(server)
                                                 apprise_obj.notify(
                                                     title=self.format_str(
-                                                        self.config["buff_auto_accept_offer"]["item_mismatch_notification"]["title"],
+                                                        self.config["buff_auto_accept_offer"][
+                                                            "item_mismatch_notification"]["title"],
                                                         trade,
                                                     ),
                                                     body=self.format_str(
-                                                        self.config["buff_auto_accept_offer"]["item_mismatch_notification"]["body"],
+                                                        self.config["buff_auto_accept_offer"][
+                                                            "item_mismatch_notification"]["body"],
                                                         trade,
                                                     ),
                                                 )

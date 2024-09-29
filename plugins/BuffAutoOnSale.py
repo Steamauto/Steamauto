@@ -452,7 +452,9 @@ class BuffAutoOnSale:
                 session = self.session.cookies.get("session")
                 self.logger.error("[BuffAutoOnSale] 需要验证码, 请使用session " + session + " 打开以下链接, 并完成验证")
                 self.logger.error("[BuffAutoOnSale] " + captcha_url)
-                if "captcha_notification" in self.config["buff_auto_on_sale"]:
+                if ("captcha_notification" in self.config["buff_auto_on_sale"]
+                        and "servers" in self.config["buff_auto_on_sale"]["captcha_notification"]
+                        and self.config["buff_auto_on_sale"]["captcha_notification"]["servers"]):
                     apprise_obj = apprise.Apprise(asset=self.asset)
                     for server in self.config["buff_auto_on_sale"]["servers"]:
                         apprise_obj.add(server)
