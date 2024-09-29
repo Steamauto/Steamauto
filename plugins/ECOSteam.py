@@ -200,7 +200,7 @@ class TaskQueue:
 
 class ECOSteam:
     def __init__(self, steam_client: SteamClient, steam_client_mutex, config):
-        self.logger = PluginLogger("ECOSteamPlugin")
+        self.logger = PluginLogger("ECOSteam")
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.config = config
