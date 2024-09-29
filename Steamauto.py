@@ -51,12 +51,14 @@ def handle_global_exception(exc_type, exc_value, exc_traceback):
 
 class Steamauto:
     def __init__(self):
+        self.steam_session_path = os.path.join(SESSION_FOLDER, "session.pkl")
         self.config = {}
         self.steam_client = None
         self.steam_client_mutex = threading.Lock()
         self.plugins_enabled = []
         self.exit_code = 0
         self.tried_exit = False
+        self.steam_account_info = {}
 
     @staticmethod
     def check_update():
@@ -140,10 +142,17 @@ class Steamauto:
             return 2
 
     def login_to_steam(self):
-        steam_account_info = {}
+        if not self.load_steam_account_info():
+            return None
+        if self.steam_login_with_session() is None:
+            return self.steam_login_with_account_info()
+
+    def load_steam_account_info(self):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "r", encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
             try:
                 steam_account_info = json5.loads(f.read())
+                self.steam_account_info = steam_account_info
+                return steam_account_info
             except FileNotFoundError:
                 logger.error(f"未检测到 {STEAM_ACCOUNT_INFO_FILE_PATH}, 请添加后再进行操作!")
                 pause()
@@ -158,13 +167,16 @@ class Steamauto:
                 pause()
                 return None
 
-        steam_session_path = os.path.join(SESSION_FOLDER, steam_account_info.get("steam_username", "").lower() + ".pkl")
-        if not os.path.exists(steam_session_path):
+    def steam_login_with_session(self):
+        self.steam_session_path = os.path.join(SESSION_FOLDER,
+                                               self.steam_account_info.get("steam_username",
+                                                                           "session").lower() + ".pkl")
+        if not os.path.exists(self.steam_session_path):
             logger.info("检测到首次登录Steam，正在尝试登录...登录完成后会自动缓存登录信息")
         else:
             logger.info("检测到缓存的Steam登录信息, 正在尝试登录...")
             try:
-                with open(steam_session_path, "rb") as f:
+                with open(self.steam_session_path, "rb") as f:
                     client = pickle.load(f)
                     if self.config["steam_login_ignore_ssl_error"]:
                         logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
@@ -184,7 +196,9 @@ class Steamauto:
                 handle_caught_exception(e)
                 logger.error("使用缓存的登录信息登录失败!可能是网络异常")
                 self.steam_client = None
+                return None
 
+    def steam_login_with_account_info(self):
         if self.steam_client is None:
             try:
                 logger.info("正在登录Steam...")
@@ -227,17 +241,17 @@ class Steamauto:
                 client.login(
                     steam_account_info.get("steam_username"),  # type: ignore
                     steam_account_info.get("steam_password"),  # type: ignore
-                    json.dumps(steam_account_info),
+                    json.dumps(self.steam_account_info),
                 )
                 if client.is_session_alive():
                     logger.info("登录成功")
                 else:
                     logger.error("登录失败")
                     return None
-                with open(steam_session_path, "wb") as f:
+                with open(self.steam_session_path, "wb") as f:
                     pickle.dump(client, f)
                 logger.info("已经自动缓存session.")
-                steam_client = client
+                self.steam_client = client
             except FileNotFoundError as e:
                 handle_caught_exception(e)
                 logger.error(
@@ -277,7 +291,6 @@ class Steamauto:
                 logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
                 pause()
                 return None
-
         return self.steam_client
 
     @staticmethod
@@ -330,8 +343,9 @@ class Steamauto:
         plugin_classes = self.get_plugin_classes()
 
         for plugin_key, plugin_class in plugin_classes.items():
-            if (plugin_key in self.config and "enable" in self.config[plugin_key] and self.config[plugin_key][
-                "enable"]) or plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external'):
+            if ((plugin_key in self.config and "enable" in self.config[plugin_key]
+                and self.config[plugin_key]["enable"]) or
+                    plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external')):
                 if plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external'):
                     logger.info('已加载自定义插件: ' + plugin_key)
                 args = []
@@ -419,8 +433,6 @@ if __name__ == "__main__":
     steam_auto = Steamauto()
     sys.excepthook = handle_global_exception
     signal.signal(signal.SIGINT, steam_auto.exit_app)
-    if not os.path.exists(DEV_FILE_FOLDER):
-        os.mkdir(DEV_FILE_FOLDER)
     if not os.path.exists(SESSION_FOLDER):
         os.mkdir(SESSION_FOLDER)
     steam_auto.exit_code = steam_auto.main()
