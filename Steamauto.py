@@ -48,7 +48,7 @@ def handle_global_exception(exc_type, exc_value, exc_traceback):
     pause()
 
 
-class SteamAuto:
+class Steamauto:
     def __init__(self):
         self.config = {}
         self.steam_client = None
@@ -275,12 +275,12 @@ class SteamAuto:
 
     @staticmethod
     def get_plugins_folder():
-        base_path = SteamAuto.get_base_path()
+        base_path = Steamauto.get_base_path()
         return os.path.join(base_path, PLUGIN_FOLDER)
 
     @staticmethod
     def import_all_plugins():
-        plugin_files = [f for f in os.listdir(SteamAuto.get_plugins_folder()) if f.endswith(".py") and f != "__init__.py"]
+        plugin_files = [f for f in os.listdir(Steamauto.get_plugins_folder()) if f.endswith(".py") and f != "__init__.py"]
 
         for plugin_file in plugin_files:
             module_name = f"{PLUGIN_FOLDER}.{plugin_file[:-3]}"
@@ -301,12 +301,12 @@ class SteamAuto:
         plugin_classes = {}
         for name, obj in globals().items():
             if inspect.isclass(obj) and obj.__module__.startswith(PLUGIN_FOLDER):
-                plugin_name = SteamAuto.camel_to_snake(obj.__name__)
+                plugin_name = Steamauto.camel_to_snake(obj.__name__)
                 plugin_classes[plugin_name] = obj
-            if (inspect.ismodule(obj) and obj.__name__.startswith(f'{PLUGIN_FOLDER}.External')):
+            if inspect.ismodule(obj) and obj.__name__.startswith(f'{PLUGIN_FOLDER}.External'):
                 for name, obj2 in inspect.getmembers(obj):
                     if inspect.isclass(obj2) and name.startswith("External"):
-                        plugin_name = SteamAuto.camel_to_snake(obj.__name__)
+                        plugin_name = Steamauto.camel_to_snake(obj.__name__)
                         plugin_classes[plugin_name] = obj2
         return plugin_classes
 
@@ -402,7 +402,7 @@ class SteamAuto:
 
 
 if __name__ == "__main__":
-    steam_auto = SteamAuto()
+    steam_auto = Steamauto()
     sys.excepthook = handle_global_exception
     signal.signal(signal.SIGINT, steam_auto.exit_app)
     if not os.path.exists(DEV_FILE_FOLDER):
