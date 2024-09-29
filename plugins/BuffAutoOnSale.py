@@ -32,7 +32,6 @@ class BuffAutoOnSale:
         self.steam_client = steam_client
         self.config = config
         self.steam_client_mutex = steam_client_mutex
-        self.development_mode = self.config.get("development_mode", False)
         self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
         self.session = requests.session()
         self.buff_headers = {

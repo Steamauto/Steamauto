@@ -267,9 +267,7 @@ DEFAULT_CONFIG_JSON = r"""
   // 存储在硬盘的日志等级，可选值为"debug"/"info"/"warning"/"error"
   "log_level": "debug",
   // 本地日志保留天数
-  "log_retention_days": 7,
-  // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！！！
-  "development_mode": false
+  "log_retention_days": 7
 }
 """
 

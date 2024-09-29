@@ -88,7 +88,6 @@ class SteamAuto:
         self.steam_client_mutex = threading.Lock()
         self.plugins_enabled = []
         self.exit_code = 0
-        self.development_mode = False
         self.tried_exit = False
 
     def init_files_and_params(self) -> int:
@@ -129,15 +128,10 @@ class SteamAuto:
         if not first_run:
             if "no_pause" in self.config:
                 set_no_pause(self.config["no_pause"])
-            if "development_mode" not in self.config:
-                self.config["development_mode"] = False
             if "steam_login_ignore_ssl_error" not in self.config:
                 self.config["steam_login_ignore_ssl_error"] = False
             if "steam_local_accelerate" not in self.config:
                 self.config["steam_local_accelerate"] = False
-            if self.config["development_mode"]:
-                self.development_mode = True
-                logger.info("开发者模式已开启")
 
         if first_run:
             return 1
