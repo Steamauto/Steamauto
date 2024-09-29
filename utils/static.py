@@ -29,10 +29,10 @@ DEFAULT_STEAM_ACCOUNT_JSON = """
   // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
   // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
 
-  // Steam 令牌参数（用于身份验证）
+  // Steam 令牌参数（用于登录）
   "shared_secret": "",
 
-  // Steam 令牌参数（用于身份验证）
+  // Steam 令牌参数（用于确认报价）
   "identity_secret": "",
 
   // Steam 登录时填写的用户名
