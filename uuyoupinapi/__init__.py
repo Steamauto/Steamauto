@@ -314,7 +314,8 @@ class UUAccount:
             for order in data["orderList"]:
                 if int(order["offerType"]) == 2:
                     if order["tradeOfferId"] is not None:
-                        del toDoList[order["orderNo"]]
+                        if order["orderNo"] in toDoList.keys():
+                            del toDoList[order["orderNo"]]
                         data_to_return.append(
                             {
                                 "offer_id": order["tradeOfferId"],
@@ -340,7 +341,8 @@ class UUAccount:
                                 "item_name": orderDetail["productDetail"]["commodityName"],
                             }
                         )
-                        del toDoList[order]
+                        if order in toDoList.keys():
+                            del toDoList[order]
         if len(toDoList.keys()) != 0:
             for order in list(toDoList.keys()):
                 orderDetail = self.call_api(
@@ -359,7 +361,8 @@ class UUAccount:
                             "item_name": orderDetail["commodity"]["name"],
                         }
                     )
-                    del toDoList[order]
+                    if order in toDoList.keys():
+                        del toDoList[order]
         if len(toDoList.keys()) != 0:
             logger.warning(
                 "[UUAutoAcceptOffer] 有订单未能获取到Steam交易报价号，订单号为：" + str(toDoList.keys()),
