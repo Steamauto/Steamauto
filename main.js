@@ -7,12 +7,6 @@ document.getElementById('use_proxies').addEventListener('change', (event) => {
     }
 });
 
-// 动态显示/隐藏 BUFF 自动发货插件配置的通知配置
-document.getElementById('buff_auto_accept_offer_enable').addEventListener('change', (event) => {
-    const isEnabled = event.target.value === 'true';
-    // 根据需要显示或隐藏插件配置项
-});
-
 // 生成配置文件
 document.getElementById('generateConfig').addEventListener('click', () => {
     // 收集表单数据，生成配置对象
@@ -57,6 +51,34 @@ document.getElementById('generateConfig').addEventListener('click', () => {
         send_report_time: document.getElementById('buff_profit_report_send_report_time').value
     };
 
+    // BUFF 自动上架插件配置
+    config.buff_auto_on_sale = {
+        enable: JSON.parse(document.getElementById('buff_auto_on_sale_enable').value),
+        force_refresh: JSON.parse(document.getElementById('buff_auto_on_sale_force_refresh').value),
+        use_range_price: JSON.parse(document.getElementById('buff_auto_on_sale_use_range_price').value),
+        blacklist_time: document.getElementById('buff_auto_on_sale_blacklist_time').value.split(',').map(item => parseInt(item.trim())).filter(item => !isNaN(item)),
+        whitelist_time: document.getElementById('buff_auto_on_sale_whitelist_time').value.split(',').map(item => parseInt(item.trim())).filter(item => !isNaN(item)),
+        random_chance: parseInt(document.getElementById('buff_auto_on_sale_random_chance').value),
+        description: document.getElementById('buff_auto_on_sale_description').value,
+        interval: parseInt(document.getElementById('buff_auto_on_sale_interval').value),
+        buy_order: {
+            enable: JSON.parse(document.getElementById('buff_auto_on_sale_buy_order_enable').value),
+            only_auto_accept: JSON.parse(document.getElementById('buff_auto_on_sale_buy_order_only_auto_accept').value),
+            supported_payment_method: document.getElementById('buff_auto_on_sale_buy_order_supported_payment_method').value.split(',').map(item => item.trim()).filter(item => item !== ''),
+            min_price: parseFloat(document.getElementById('buff_auto_on_sale_buy_order_min_price').value)
+        },
+        on_sale_notification: {
+            title: document.getElementById('on_sale_notification_title').value,
+            body: document.getElementById('on_sale_notification_body').value
+        }
+    };
+
+    // Steam 自动接受礼物报价插件配置
+    config.steam_auto_accept_offer = {
+        enable: JSON.parse(document.getElementById('steam_auto_accept_offer_enable').value),
+        interval: parseInt(document.getElementById('steam_auto_accept_offer_interval').value)
+    };
+
     // 日志设置
     config.log_level = document.getElementById('log_level').value;
     config.log_retention_days = parseInt(document.getElementById('log_retention_days').value);
@@ -68,10 +90,25 @@ document.getElementById('generateConfig').addEventListener('click', () => {
     document.getElementById('configOutput').textContent = configString;
 });
 
+
 // 复制到剪贴板
 document.getElementById('copyConfig').addEventListener('click', () => {
     const configText = document.getElementById('configOutput').textContent;
     navigator.clipboard.writeText(configText).then(() => {
         alert('配置内容已复制到剪贴板！');
     });
+});
+
+// 下载 config.json5 文件
+document.getElementById('downloadConfig').addEventListener('click', () => {
+    const configText = document.getElementById('configOutput').textContent;
+    const blob = new Blob([configText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'config.json5';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 });
