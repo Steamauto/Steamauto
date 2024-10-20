@@ -1,6 +1,5 @@
 import datetime
 import logging
-from math import log
 import os
 import platform
 import re
@@ -10,8 +9,12 @@ import json5
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from steampy.exceptions import ApiException, ConfirmationExpected, EmptyResponse, InvalidCredentials, InvalidResponse, SteamError
-from utils.static import BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version, STEAM_ERROR_CODES, CONFIG_FILE_PATH
+from steampy.exceptions import (ApiException, ConfirmationExpected,
+                                EmptyResponse, InvalidCredentials,
+                                InvalidResponse, SteamError)
+from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CURRENT_VERSION,
+                          LOGS_FOLDER, STEAM_ERROR_CODES,
+                          get_is_latest_version)
 
 sensitive_data = []
 sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token", "trade_url", "TransactionUrl", "RealName", "IdCard"]
@@ -86,8 +89,6 @@ log_formatter_colored = colorlog.ColoredFormatter(
 s_handler.setFormatter(log_formatter_colored)
 log_formatter = logging.Formatter("[%(asctime)s] - %(levelname)s: %(message)s", "%Y-%m-%d %H:%M:%S")
 logger.addHandler(s_handler)
-if not os.path.exists(LOGS_FOLDER):
-    os.mkdir(LOGS_FOLDER)
 f_handler = logging.FileHandler(os.path.join(LOGS_FOLDER, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".log"), encoding="utf-8")
 if log_level and log_level.isdigit():
     f_handler.setLevel(int(log_level))
