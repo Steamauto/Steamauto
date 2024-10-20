@@ -17,4 +17,4 @@ steamauto.spec
 *bak
 .vscode
 launch.json
-plugins/External*
+plugins/*External*

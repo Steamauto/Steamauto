@@ -6,6 +6,7 @@ import numpy as np
 import schedule
 
 import uuyoupinapi
+from BuffApi import BuffAccount
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.tools import exit_code, is_subsequence
 from utils.uu_helper import get_valid_token_for_uu
@@ -15,7 +16,6 @@ class UUAutoSellItem:
     def __init__(self, config):
         self.sale_inventory_list = None
         self.logger = PluginLogger("UUAutoSellItem")
-        self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu())
         self.config = config
         self.timeSleep = 10.0
         self.inventory_list = []
@@ -23,10 +23,6 @@ class UUAutoSellItem:
         self.item_buy_price_cache = {}
 
     def init(self) -> bool:
-        if not get_valid_token_for_uu():
-            self.logger.error("悠悠有品登录失败！即将关闭程序！")
-            exit_code.set(1)
-            return True
         return False
 
     def get_uu_sale_inventory(self):
@@ -49,7 +45,6 @@ class UUAutoSellItem:
         self.sale_inventory_list = sale_inventory_list
 
     def get_market_sale_price(self, item_id, cnt=10):
-
         if item_id in self.sale_price_cache:
             if datetime.datetime.now() - self.sale_price_cache[item_id]["cache_time"] <= datetime.timedelta(
                     minutes=20):
@@ -282,9 +277,12 @@ class UUAutoSellItem:
                 return 1
 
     def exec(self):
-
+        self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu()) # type: ignore
+        if not self.uuyoupin:
+            self.logger.error("由于登录失败，插件将自动退出")
+            exit_code.set(1)
+            return 1
         self.logger.info(f"以下物品会出售：{self.config['uu_auto_sell_item']['name']}")
-
         self.auto_sell()
 
         run_time = self.config['uu_auto_sell_item']['run_time']
