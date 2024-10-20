@@ -114,7 +114,7 @@ class BuffAccount:
             .get("suggestions")
         )
 
-    def get_sell_order(self, goods_id, page_num=1, game_name="csgo", sort_by="default", proxy=None) -> dict:
+    def get_sell_order(self, goods_id, page_num=1, game_name="csgo", sort_by="default", proxy=None, min_paintseed=None, max_paintseed=None) -> dict:
         """
         获取指定饰品的在售商品
         :return: dict
@@ -125,7 +125,16 @@ class BuffAccount:
             "page_num": page_num,
             "sort_by": sort_by,
         }
+        need_login = False
+        if min_paintseed:
+            params["min_paintseed"] = min_paintseed
+            need_login = True
+        if max_paintseed:
+            params["max_paintseed"] = max_paintseed
+            need_login = True
         if sort_by != "default":
+            need_login = True
+        if need_login:
             return json.loads(
                 self.get(
                     "https://buff.163.com/api/market/goods/sell_order",
