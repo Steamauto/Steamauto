@@ -9,7 +9,6 @@ document.getElementById('use_proxies').addEventListener('change', (event) => {
 
 // 生成配置文件
 document.getElementById('generateConfig').addEventListener('click', () => {
-    // 收集表单数据，生成配置对象
     const config = {};
 
     // 通用设置
@@ -77,6 +76,49 @@ document.getElementById('generateConfig').addEventListener('click', () => {
     config.steam_auto_accept_offer = {
         enable: JSON.parse(document.getElementById('steam_auto_accept_offer_enable').value),
         interval: parseInt(document.getElementById('steam_auto_accept_offer_interval').value)
+    };
+
+    // 悠悠有品自动发货插件配置
+    config.uu_auto_accept_offer = {
+        enable: JSON.parse(document.getElementById('uu_auto_accept_offer_enable').value),
+        interval: parseInt(document.getElementById('uu_auto_accept_offer_interval').value)
+    };
+
+    // 悠悠有品租赁自动上架配置
+    config.uu_auto_lease_item = {
+        enable: JSON.parse(document.getElementById('uu_auto_lease_item_enable').value),
+        lease_max_days: parseInt(document.getElementById('uu_auto_lease_item_lease_max_days').value),
+        filter_price: parseFloat(document.getElementById('uu_auto_lease_item_filter_price').value),
+        run_time: document.getElementById('uu_auto_lease_item_run_time').value,
+        interval: parseInt(document.getElementById('uu_auto_lease_item_interval').value),
+        filter_name: document.getElementById('uu_auto_lease_item_filter_name').value.split('\n').map(item => item.trim()).filter(item => item !== '')
+    };
+
+    // 悠悠有品出售自动上架配置
+    config.uu_auto_sell_item = {
+        enable: JSON.parse(document.getElementById('uu_auto_sell_item_enable').value),
+        take_profile: JSON.parse(document.getElementById('uu_auto_sell_item_take_profile').value),
+        take_profile_ratio: parseFloat(document.getElementById('uu_auto_sell_item_take_profile_ratio').value),
+        run_time: document.getElementById('uu_auto_sell_item_run_time').value,
+        interval: parseInt(document.getElementById('uu_auto_sell_item_interval').value),
+        name: document.getElementById('uu_auto_sell_item_name').value.split('\n').map(item => item.trim()).filter(item => item !== '')
+    };
+
+    // ecosteam 插件配置
+    config.ecosteam = {
+        enable: JSON.parse(document.getElementById('ecosteam_enable').value),
+        partnerId: document.getElementById('ecosteam_partnerId').value,
+        auto_accept_offer: {
+            interval: parseInt(document.getElementById('ecosteam_auto_accept_offer_interval').value)
+        },
+        auto_sync_sell_shelf: {
+            enable: JSON.parse(document.getElementById('ecosteam_auto_sync_sell_shelf_enable').value),
+            main_platform: document.getElementById('ecosteam_auto_sync_sell_shelf_main_platform').value,
+            enabled_platforms: document.getElementById('ecosteam_auto_sync_sell_shelf_enabled_platforms').value.split(',').map(item => item.trim()).filter(item => item !== ''),
+            ratio: JSON.parse(document.getElementById('ecosteam_auto_sync_sell_shelf_ratio').value)
+        },
+        sync_interval: parseInt(document.getElementById('ecosteam_sync_interval').value),
+        qps: parseInt(document.getElementById('ecosteam_qps').value)
     };
 
     // 日志设置
