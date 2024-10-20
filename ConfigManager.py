@@ -40,7 +40,7 @@ class ConfigManager:
     @staticmethod
     def save_json5_to_file(data, file_path):
         with open(file_path, 'w', encoding='utf-8') as f:
-            json5.dump(data, f, indent=4, ensure_ascii=False)
+            json5.dump(data, f, indent=4, ensure_ascii=False, quote_keys=True,trailing_commas=False)
 
     def backup_config(self):
         if os.path.exists(self.user_config_path):
