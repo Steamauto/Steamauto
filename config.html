@@ -134,7 +134,6 @@ Steam单价(参考): {steam_price_cny} RMB
             </div>
         </div>
 
-        <!-- 其他插件配置（按照上述结构添加） -->
         <!-- BUFF 自动备注购买价格插件配置 -->
         <div class="accordion-item">
             <h2 class="accordion-header" id="headingBuffAutoComment">
@@ -192,7 +191,132 @@ Steam单价(参考): {steam_price_cny} RMB
             </div>
         </div>
 
+        <!-- 其他插件配置 -->
+        <!-- BUFF 自动上架插件配置 -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingBuffAutoOnSale">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBuffAutoOnSale" aria-expanded="false" aria-controls="collapseBuffAutoOnSale">
+                    BUFF 自动上架插件配置
+                </button>
+            </h2>
+            <div id="collapseBuffAutoOnSale" class="accordion-collapse collapse" aria-labelledby="headingBuffAutoOnSale" data-bs-parent="#configAccordion">
+                <div class="accordion-body">
+                    <!-- 是否启用 -->
+                    <div class="mb-3">
+                        <label class="form-label">是否启用 BUFF 自动以最低价上架所有库存</label>
+                        <select class="form-select" id="buff_auto_on_sale_enable">
+                            <option value="false" selected>否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                    <!-- 强制刷新库存 -->
+                    <div class="mb-3">
+                        <label class="form-label">每次检查库存强制刷新 BUFF 库存</label>
+                        <select class="form-select" id="buff_auto_on_sale_force_refresh">
+                            <option value="true" selected>是</option>
+                            <option value="false">否</option>
+                        </select>
+                    </div>
+                    <!-- 使用磨损区间最低价上架 -->
+                    <div class="mb-3">
+                        <label class="form-label">使用磨损区间最低价上架</label>
+                        <select class="form-select" id="buff_auto_on_sale_use_range_price">
+                            <option value="false" selected>否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                    <!-- 黑名单时间 -->
+                    <div class="mb-3">
+                        <label class="form-label">黑名单时间（小时，多个用逗号分隔）</label>
+                        <input type="text" class="form-control" id="buff_auto_on_sale_blacklist_time" placeholder="例如：1,2,3">
+                    </div>
+                    <!-- 白名单时间 -->
+                    <div class="mb-3">
+                        <label class="form-label">白名单时间（小时，多个用逗号分隔）</label>
+                        <input type="text" class="form-control" id="buff_auto_on_sale_whitelist_time" placeholder="例如：8,12,16">
+                    </div>
+                    <!-- 随机上架几率 -->
+                    <div class="mb-3">
+                        <label class="form-label">随机上架几率（1-100）</label>
+                        <input type="number" class="form-control" id="buff_auto_on_sale_random_chance" value="100" min="1" max="100">
+                    </div>
+                    <!-- 商品上架描述 -->
+                    <div class="mb-3">
+                        <label class="form-label">商品上架描述</label>
+                        <input type="text" class="form-control" id="buff_auto_on_sale_description" placeholder="可选">
+                    </div>
+                    <!-- 检查库存间隔时间 -->
+                    <div class="mb-3">
+                        <label class="form-label">检查库存间隔时间（秒）</label>
+                        <input type="number" class="form-control" id="buff_auto_on_sale_interval" value="1800">
+                    </div>
+                    <!-- 供应求购相关配置 -->
+                    <h5>供应求购相关配置</h5>
+                    <div class="mb-3">
+                        <label class="form-label">是否供应求购订单</label>
+                        <select class="form-select" id="buff_auto_on_sale_buy_order_enable">
+                            <option value="false" selected>否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">是否只供应给开启自动收货的求购订单</label>
+                        <select class="form-select" id="buff_auto_on_sale_buy_order_only_auto_accept">
+                            <option value="true" selected>是</option>
+                            <option value="false">否</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">支持收款方式（多个用逗号分隔，如：支付宝,微信）</label>
+                        <input type="text" class="form-control" id="buff_auto_on_sale_buy_order_supported_payment_method" value="支付宝">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">低于多少金额的商品直接塞求购</label>
+                        <input type="number" class="form-control" id="buff_auto_on_sale_buy_order_min_price" value="5">
+                    </div>
+                    <!-- 上架通知配置 -->
+                    <h5>上架通知配置（可选）</h5>
+                    <div class="mb-3">
+                        <label class="form-label">上架通知标题</label>
+                        <input type="text" class="form-control" id="on_sale_notification_title" value="游戏 {game} 成功上架 {sold_count} 件饰品">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">上架通知内容</label>
+                        <textarea class="form-control" id="on_sale_notification_body" rows="4">上架详情:
+{item_list}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 更多插件配置可按照上述结构添加 -->
+
+        <!-- Steam 自动接受礼物报价插件配置 -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingSteamAutoAcceptOffer">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSteamAutoAcceptOffer" aria-expanded="false" aria-controls="collapseSteamAutoAcceptOffer">
+                    Steam 自动接受礼物报价插件配置
+                </button>
+            </h2>
+            <div id="collapseSteamAutoAcceptOffer" class="accordion-collapse collapse" aria-labelledby="headingSteamAutoAcceptOffer" data-bs-parent="#configAccordion">
+                <div class="accordion-body">
+                    <!-- 是否启用 -->
+                    <div class="mb-3">
+                        <label class="form-label">是否开启自动接受 Steam 礼物报价</label>
+                        <select class="form-select" id="steam_auto_accept_offer_enable">
+                            <option value="false" selected>否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                    <!-- 检查报价列表的间隔 -->
+                    <div class="mb-3">
+                        <label class="form-label">检查报价列表的间隔（秒）</label>
+                        <input type="number" class="form-control" id="steam_auto_accept_offer_interval" value="300">
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- 日志设置 -->
@@ -221,6 +345,7 @@ Steam单价(参考): {steam_price_cny} RMB
         <h3>生成的 config.json5 文件内容：</h3>
         <pre id="configOutput" class="bg-light p-3"></pre>
         <button class="btn btn-success mt-2" id="copyConfig">复制到剪贴板</button>
+        <button class="btn btn-secondary mt-2" id="downloadConfig">下载 config.json5 文件</button>
     </div>
 </div>
 
