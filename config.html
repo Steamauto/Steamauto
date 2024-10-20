@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>配置文件生成器</title>
+    <!-- 引入 Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入 JSON5 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/json5@2/dist/index.min.js"></script>
+    <style>
+        body {
+            font-family: "微软雅黑", "Helvetica Neue", Arial, sans-serif;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+<!-- 导航栏 -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">配置文件生成器</a>
+    </div>
+</nav>
+
+<!-- 主内容 -->
+<div class="container mt-5">
+    <!-- 通用设置 -->
+    <h2>通用设置</h2>
+    <div class="mb-3">
+        <label class="form-label">Steam 登录时是否开启 SSL 验证</label>
+        <select class="form-select" id="steam_login_ignore_ssl_error">
+            <option value="false" selected>是</option>
+            <option value="true">否</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">是否开启本地加速功能</label>
+        <select class="form-select" id="steam_local_accelerate">
+            <option value="false" selected>否</option>
+            <option value="true">是</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">是否手动指定 Steam 代理</label>
+        <select class="form-select" id="use_proxies">
+            <option value="false" selected>否</option>
+            <option value="true">是</option>
+        </select>
+    </div>
+    <!-- 代理设置 -->
+    <div class="mb-3" id="proxies_settings" style="display: none;">
+        <label class="form-label">本地代理地址</label>
+        <input type="text" class="form-control" id="proxies_http" placeholder="HTTP 代理，例如：http://127.0.0.1:7890">
+        <input type="text" class="form-control mt-2" id="proxies_https" placeholder="HTTPS 代理，例如：https://127.0.0.1:7890">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">程序错误后是否直接停止运行</label>
+        <select class="form-select" id="no_pause">
+            <option value="false" selected>否</option>
+            <option value="true">是</option>
+        </select>
+    </div>
+
+    <!-- 插件配置 -->
+    <h2 class="mt-5">插件配置</h2>
+    <div class="accordion" id="configAccordion">
+        <!-- BUFF 自动发货插件配置 -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingBuffAutoAcceptOffer">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBuffAutoAcceptOffer" aria-expanded="true" aria-controls="collapseBuffAutoAcceptOffer">
+                    BUFF 自动发货插件配置
+                </button>
+            </h2>
+            <div id="collapseBuffAutoAcceptOffer" class="accordion-collapse collapse show" aria-labelledby="headingBuffAutoAcceptOffer" data-bs-parent="#configAccordion">
+                <div class="accordion-body">
+                    <!-- 是否启用 -->
+                    <div class="mb-3">
+                        <label class="form-label">是否启用 BUFF 自动发货报价功能</label>
+                        <select class="form-select" id="buff_auto_accept_offer_enable">
+                            <option value="false" selected>否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                    <!-- 每次检查是否有新报价的间隔 -->
+                    <div class="mb-3">
+                        <label class="form-label">检查新报价的间隔（秒）</label>
+                        <input type="number" class="form-control" id="buff_auto_accept_offer_interval" value="300">
+                    </div>
+                    <!-- 是否开启出售保护 -->
+                    <div class="mb-3">
+                        <label class="form-label">是否开启出售保护</label>
+                        <select class="form-select" id="buff_auto_accept_offer_sell_protection">
+                            <option value="false" selected>否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                    <!-- 出售保护价格 -->
+                    <div class="mb-3">
+                        <label class="form-label">出售保护价格（元）</label>
+                        <input type="number" class="form-control" id="buff_auto_accept_offer_protection_price" value="30">
+                    </div>
+                    <!-- 出售价格保护比例 -->
+                    <div class="mb-3">
+                        <label class="form-label">出售价格保护比例</label>
+                        <input type="number" class="form-control" id="buff_auto_accept_offer_protection_price_percentage" value="0.9" step="0.01">
+                    </div>
+                    <!-- 出售通知配置 -->
+                    <h5>出售通知配置（可选）</h5>
+                    <div class="mb-3">
+                        <label class="form-label">出售通知标题</label>
+                        <input type="text" class="form-control" id="sell_notification_title" value="成功出售{game}饰品: {item_name} * {sold_count}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">出售通知内容</label>
+                        <textarea class="form-control" id="sell_notification_body" rows="4">![good_icon]({good_icon})
+游戏: {game}
+饰品: {item_name}
+出售单价: {buff_price} RMB
+Steam单价(参考): {steam_price} USD
+Steam单价(参考): {steam_price_cny} RMB
+![buyer_avatar]({buyer_avatar})
+买家: {buyer_name}
+订单时间: {order_time}</textarea>
+                    </div>
+                    <!-- 通知服务器列表 -->
+                    <div class="mb-3">
+                        <label class="form-label">通知服务器列表（Apprise 格式，每行一个）</label>
+                        <textarea class="form-control" id="buff_auto_accept_offer_servers" rows="3" placeholder="例如：http://localhost:8080/notify"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 其他插件配置（按照上述结构添加） -->
+        <!-- BUFF 自动备注购买价格插件配置 -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingBuffAutoComment">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBuffAutoComment" aria-expanded="false" aria-controls="collapseBuffAutoComment">
+                    BUFF 自动备注购买价格插件配置
+                </button>
+            </h2>
+            <div id="collapseBuffAutoComment" class="accordion-collapse collapse" aria-labelledby="headingBuffAutoComment" data-bs-parent="#configAccordion">
+                <div class="accordion-body">
+                    <!-- 是否启用 -->
+                    <div class="mb-3">
+                        <label class="form-label">是否启用 BUFF 自动备注购买价格功能</label>
+                        <select class="form-select" id="buff_auto_comment_enable">
+                            <option value="false" selected>否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                    <!-- 每次请求历史交易记录数量 -->
+                    <div class="mb-3">
+                        <label class="form-label">每次请求历史交易记录数量</label>
+                        <input type="number" class="form-control" id="buff_auto_comment_page_size" value="300">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BUFF 自动计算利润插件配置 -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingBuffProfitReport">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBuffProfitReport" aria-expanded="false" aria-controls="collapseBuffProfitReport">
+                    BUFF 自动计算利润插件配置
+                </button>
+            </h2>
+            <div id="collapseBuffProfitReport" class="accordion-collapse collapse" aria-labelledby="headingBuffProfitReport" data-bs-parent="#configAccordion">
+                <div class="accordion-body">
+                    <!-- 是否启用 -->
+                    <div class="mb-3">
+                        <label class="form-label">是否启用 BUFF 自动计算利润功能</label>
+                        <select class="form-select" id="buff_profit_report_enable">
+                            <option value="false" selected>否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                    <!-- 通知服务器列表 -->
+                    <div class="mb-3">
+                        <label class="form-label">通知服务器列表（Apprise 格式，每行一个）</label>
+                        <textarea class="form-control" id="buff_profit_report_servers" rows="3" placeholder="例如：http://localhost:8080/notify"></textarea>
+                    </div>
+                    <!-- 每日发送报告时间 -->
+                    <div class="mb-3">
+                        <label class="form-label">每日发送报告时间（24小时制，例如：20:30）</label>
+                        <input type="time" class="form-control" id="buff_profit_report_send_report_time" value="20:30">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 更多插件配置可按照上述结构添加 -->
+    </div>
+
+    <!-- 日志设置 -->
+    <h2 class="mt-5">日志设置</h2>
+    <div class="mb-3">
+        <label class="form-label">日志等级</label>
+        <select class="form-select" id="log_level">
+            <option value="debug">调试（debug）</option>
+            <option value="info">信息（info）</option>
+            <option value="warning">警告（warning）</option>
+            <option value="error">错误（error）</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">本地日志保留天数</label>
+        <input type="number" class="form-control" id="log_retention_days" value="7">
+    </div>
+
+    <!-- 生成配置按钮 -->
+    <div class="d-grid gap-2 mt-5">
+        <button class="btn btn-primary btn-lg" type="button" id="generateConfig">生成配置文件</button>
+    </div>
+
+    <!-- 配置结果展示区域 -->
+    <div class="mt-5">
+        <h3>生成的 config.json5 文件内容：</h3>
+        <pre id="configOutput" class="bg-light p-3"></pre>
+        <button class="btn btn-success mt-2" id="copyConfig">复制到剪贴板</button>
+    </div>
+</div>
+
+<!-- 引入 Bootstrap JS 和 Popper.js -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- 主脚本 -->
+<script src="main.js"></script>
+</body>
+</html>
