@@ -19,6 +19,8 @@ from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CURRENT_VERSION,
 sensitive_data = []
 sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token", "trade_url", "TransactionUrl", "RealName", "IdCard"]
 
+if not os.path.exists(LOGS_FOLDER):
+    os.mkdir(LOGS_FOLDER)
 
 class LogFilter(logging.Filter):
     @staticmethod
