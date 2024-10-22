@@ -19,7 +19,7 @@
 > 广告:
 > 【ECOSteam】复制整段打开ECOSteam加入「Elsa可达鸭」PN：01J0TGJPQZF7G9FK0P6QJWQGRJ「欢迎加入Elsa可达鸭的团队或点击链接https://share.ecosteam.cn/share/01J0TGJPQZF7G9FK0P6QJWQGRJ「欢迎加入Elsa可达鸭的团队
 > ECOSteam 新CSGO皮肤交易平台
-> 交易0手续费 提现1% 加入团队金额前10我还额外赠送免费提现券(20000元)
+> 交易0手续费 提现1% 满1万余额需要提现可私聊我免费领取提现券
 > 货多的还可以联系群管申请交易补贴!(2%)
 > 可租可售 上架就有利息拿 最高可拿15%利息 加入我的团队拿额外2%利息(总金额要求已经达到 只需要人数)
 > 本软件完美支持ECOSteam, 请放心使用
