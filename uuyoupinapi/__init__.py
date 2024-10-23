@@ -476,17 +476,21 @@ class UUAccount:
         # logger.info(f"上架数量 {len(leased_inventory_list)}")
         return leased_inventory_list
 
-    def get_inventory(self):
-        inventory_list_rsp = self.call_api(
-            "POST",
-            "/api/commodity/Inventory/GetUserInventoryDataListV3",
-            data={
+    def get_inventory(self,refresh = False):
+        data_to_send = {
                 "pageIndex": 1,
                 "pageSize": 1000,
                 "AppType": 4,
                 "IsMerge": 0,
                 "Sessionid": self.device_info["deviceId"],
-            },
+            }
+        if refresh:
+            data_to_send['IsRefresh'] = True
+            data_to_send['RefreshType'] = 2
+        inventory_list_rsp = self.call_api(
+            "POST",
+            "/api/commodity/Inventory/GetUserInventoryDataListV3",
+            data=data_to_send,
         ).json()
         inventory_list = []
         if inventory_list_rsp["Code"] == 0:  # 我他妈真是服了你了悠悠，Code的C一会儿大写一会儿小写
