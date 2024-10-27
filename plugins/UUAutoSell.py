@@ -208,7 +208,7 @@ class UUAutoSellItem:
                 try:
                     self.uuyoupin.get_user_nickname()
                 except KeyError as e:
-                    handle_caught_exception(e, "UUAutoSellItem")
+                    handle_caught_exception(e, "UUAutoSellItem", known=True)
                     self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                     self.logger.error("由于登录失败，插件将自动退出")
                     exit_code.set(1)
@@ -270,7 +270,7 @@ class UUAutoSellItem:
             try:
                 self.uuyoupin.get_user_nickname()
             except KeyError as e:
-                handle_caught_exception(e, "UUAutoSellItem-AutoChangePrice")
+                handle_caught_exception(e, "UUAutoSellItem-AutoChangePrice", known=True)
                 self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                 self.logger.error("由于登录失败，插件将自动退出")
                 exit_code.set(1)

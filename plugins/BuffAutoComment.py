@@ -133,7 +133,7 @@ class BuffAutoComment:
             self.logger.info("[BuffAutoComment] 已检测到cookies, 尝试登录")
             self.logger.info("[BuffAutoComment] 已经登录至BUFF 用户名: " + self.check_buff_account_state())
         except TypeError as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, known=True)
             self.logger.error("[BuffAutoComment] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
             return
         while True:
@@ -150,7 +150,7 @@ class BuffAutoComment:
                         with open(steam_session_path, "wb") as f:
                             pickle.dump(self.steam_client.session, f)
             except Exception as e:
-                handle_caught_exception(e, "[BuffAutoComment]")
+                handle_caught_exception(e, "[BuffAutoComment]", known=True)
                 self.logger.info("[BuffAutoComment] 休眠" + str(sleep_interval) + "秒")
                 time.sleep(sleep_interval)
                 continue
@@ -218,6 +218,6 @@ class BuffAutoComment:
                     else:
                         self.logger.info("[BuffAutoComment] 无需备注")
             except Exception as e:
-                handle_caught_exception(e, "[BuffAutoComment]")
+                handle_caught_exception(e, "[BuffAutoComment]", known=True)
             self.logger.info("[BuffAutoComment] 休眠" + str(sleep_interval) + "秒")
             time.sleep(sleep_interval)

@@ -494,7 +494,7 @@ class BuffAutoOnSale:
             self.logger.info("[BuffAutoOnSale] 已经登录至BUFF 用户名: " +
                              self.check_buff_account_state(dev=self.development_mode))
         except TypeError as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, known=True)
             self.logger.error("[BuffAutoOnSale] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
             return
         sleep_interval = int(self.config["buff_auto_on_sale"]["interval"])
@@ -543,7 +543,7 @@ class BuffAutoOnSale:
                     time.sleep(sleep_interval)
                     continue
             except Exception as e:
-                handle_caught_exception(e, "[BuffAutoOnSale]")
+                handle_caught_exception(e, "[BuffAutoOnSale]", known=True)
                 self.logger.info("[BuffAutoOnSale] 休眠" + str(sleep_interval) + "秒")
                 time.sleep(sleep_interval)
                 continue
@@ -585,7 +585,7 @@ class BuffAutoOnSale:
                         self.logger.info("[BuffAutoOnSale] 库存为空, 本批次上架结束!")
                         break
             except Exception as e:
-                handle_caught_exception(e, "[BuffAutoOnSale]")
+                handle_caught_exception(e, "[BuffAutoOnSale]", known=True)
                 self.logger.error("[BuffAutoOnSale] BUFF商品上架失败, 错误信息: " + str(e), exc_info=True)
             self.logger.info("[BuffAutoOnSale] 休眠" + str(sleep_interval) + "秒")
             sleep_cnt = int(sleep_interval // 60)

@@ -32,19 +32,28 @@ from utils.tools import jobHandler
 try:
     from steampy.utils import ping_proxy  # type: ignore
 except:
+
     def ping_proxy(nothing):
         return False
 
 
 from utils.logger import handle_caught_exception
-from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
-                          CURRENT_VERSION, DEFAULT_CONFIG_JSON,
-                          DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
-                          LOGS_FOLDER, PLUGIN_FOLDER, SESSION_FOLDER,
-                          STEAM_ACCOUNT_INFO_FILE_PATH, set_is_latest_version,
-                          set_no_pause)
-from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
-                         logger, pause)
+from utils.static import (
+    BUILD_INFO,
+    CONFIG_FILE_PATH,
+    CONFIG_FOLDER,
+    CURRENT_VERSION,
+    DEFAULT_CONFIG_JSON,
+    DEFAULT_STEAM_ACCOUNT_JSON,
+    DEV_FILE_FOLDER,
+    LOGS_FOLDER,
+    PLUGIN_FOLDER,
+    SESSION_FOLDER,
+    STEAM_ACCOUNT_INFO_FILE_PATH,
+    set_is_latest_version,
+    set_no_pause,
+)
+from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -69,7 +78,7 @@ def login_to_steam():
         try:
             steam_account_info = json5.loads(f.read())
         except Exception as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, known=True)
             logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
             pause()
             return None
@@ -96,17 +105,17 @@ def login_to_steam():
                     logger.info("登录成功")
                     steam_client = client
         except requests.exceptions.ConnectionError as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, known=True)
             logger.error("使用缓存的登录信息登录失败!可能是网络异常")
             steam_client = None
         except (EOFError, pickle.UnpicklingError) as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, known=True)
             shutil.rmtree(SESSION_FOLDER)
             os.mkdir(SESSION_FOLDER)
             steam_client = None
             logger.error("检测到缓存的登录信息异常，已自动清空session文件夹")
         except AssertionError as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, known=True)
             if config["steam_local_accelerate"]:
                 logger.error("由于内置加速问题,暂时无法登录.请稍等10分钟后再进行登录,或者关闭内置加速功能！")
             else:
@@ -133,7 +142,9 @@ def login_to_steam():
                     return None
                 else:
                     logger.info("代理服务器可用")
-                    logger.warning("警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动")
+                    logger.warning(
+                        "警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动"
+                    )
 
                 client = SteamClient(api_key="", proxies=config["proxies"])
 
@@ -164,37 +175,46 @@ def login_to_steam():
             logger.info("已经自动缓存session.")
             steam_client = client
         except FileNotFoundError as e:
-            handle_caught_exception(e)
-            logger.error("未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加到" + STEAM_ACCOUNT_INFO_FILE_PATH + "后再进行操作! ")
+            handle_caught_exception(e, known=True)
+            logger.error(
+                "未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加到" + STEAM_ACCOUNT_INFO_FILE_PATH + "后再进行操作! "
+            )
             pause()
             return None
         except (SSLCertVerificationError, SSLError) as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, known=True)
             if config["steam_local_accelerate"]:
-                logger.error("登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true")
+                logger.error(
+                    "登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true"
+                )
             else:
-                logger.error("登录失败. SSL证书验证错误! " "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n")
+                logger.error(
+                    "登录失败. SSL证书验证错误! "
+                    "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n"
+                )
             pause()
             return None
         except (requests.exceptions.ConnectionError, TimeoutError) as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, known=True)
             logger.error(
                 "网络错误! \n强烈建议使用Steamauto内置加速，仅需在配置文件中将steam_login_ignore_ssl_error和steam_local_accelerate设置为true即可使用 \n注意: 使用游戏加速器并不能解决问题，请使用代理软件如Clash/Proxifier等"
             )
             pause()
             return None
         except (ValueError, ApiException) as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, known=True)
             logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
             pause()
             return None
         except (TypeError, AttributeError) as e:
-            handle_caught_exception(e)
-            logger.error("登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录")
+            handle_caught_exception(e, known=True)
+            logger.error(
+                "登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录"
+            )
             pause()
             return None
         except Exception as e:
-            handle_caught_exception(e)
+            handle_caught_exception(e, known=True)
             logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
             pause()
             return None
@@ -208,7 +228,9 @@ def init_files_and_params() -> int:
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! \n")
-    logger.info(f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n")
+    logger.info(
+        f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n"
+    )
     logger.info(f"当前版本: {CURRENT_VERSION}   编译信息: {BUILD_INFO}")
     logger.info("正在检查更新...")
     try:
@@ -247,7 +269,7 @@ def init_files_and_params() -> int:
             try:
                 config = json5.load(f)
             except Exception as e:
-                handle_caught_exception(e)
+                handle_caught_exception(e, known=True)
                 logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
                 return 0
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
@@ -279,7 +301,7 @@ def init_files_and_params() -> int:
 def get_base_path():
     if hasattr(sys, '_MEIPASS'):
         # PyInstaller
-        return os.path.join(sys._MEIPASS) # type: ignore
+        return os.path.join(sys._MEIPASS)  # type: ignore
     else:
         return os.path.dirname(os.path.abspath(__file__))
 
@@ -307,6 +329,7 @@ def camel_to_snake(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
+
 # 添加自定义插件的方法：在plugins文件夹下新建.py文件, 文件名需要以External开头, 然后在文件中定义一个类, 类名需要以External开头, 且有且只有一个类名以External开头
 def get_plugin_classes():
     plugin_classes = {}
@@ -314,12 +337,12 @@ def get_plugin_classes():
         if inspect.isclass(obj) and obj.__module__.startswith(PLUGIN_FOLDER):
             plugin_name = camel_to_snake(obj.__name__)  # 将驼峰命名转换为下划线命名
             plugin_classes[plugin_name] = obj
-        if (inspect.ismodule(obj) and obj.__name__.startswith(f'{PLUGIN_FOLDER}.External')):
+        if inspect.ismodule(obj) and obj.__name__.startswith(f'{PLUGIN_FOLDER}.External'):
             for name, obj2 in inspect.getmembers(obj):
                 if inspect.isclass(obj2) and name.startswith("External"):
                     plugin_name = camel_to_snake(obj.__name__)
                     plugin_classes[plugin_name] = obj2
-                    
+
     return plugin_classes
 
 
@@ -329,7 +352,9 @@ def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
     plugin_classes = get_plugin_classes()  # 获取所有插件类
 
     for plugin_key, plugin_class in plugin_classes.items():
-        if (plugin_key in config and "enable" in config[plugin_key] and config[plugin_key]["enable"]) or plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external'):
+        if (plugin_key in config and "enable" in config[plugin_key] and config[plugin_key]["enable"]) or plugin_key.startswith(
+            f'{PLUGIN_FOLDER.lower()}._external'
+        ):
             if plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external'):
                 logger.info('已加载自定义插件: ' + plugin_key)
             args = []
@@ -420,7 +445,10 @@ def main():
     pause()
     return 1
 
+
 tried_exit = False
+
+
 def exit_app(signal_, frame):
     global tried_exit
     if not tried_exit:
