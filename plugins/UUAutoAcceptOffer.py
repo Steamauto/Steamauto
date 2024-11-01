@@ -90,14 +90,12 @@ class UUAutoAcceptOffer:
                                 time.sleep(5)
                 except Exception as e:
                     handle_caught_exception(e, "UUAutoAcceptOffer")
-                    self.logger.info("出现未知错误, 稍后再试! ")
-                    try:
-                        uuyoupin.get_user_nickname()
-                    except KeyError as e:
-                        handle_caught_exception(e, "UUAutoAcceptOffer", known=True)
+                    if '登录状态失效，请重新登录' in str(e):
                         self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                         self.logger.error("由于登录失败，插件将自动退出")
                         exit_code.set(1)
                         return 1
+                    else:
+                        self.logger.error("出现未知错误, 稍后再试! ")
                 self.logger.info("将在{0}秒后再次检查待发货订单信息!".format(str(interval)))
                 time.sleep(interval)

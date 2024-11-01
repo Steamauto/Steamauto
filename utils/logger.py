@@ -155,7 +155,7 @@ def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False)
             plogger.error(
                 f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})\n编译信息：{BUILD_INFO}\n" # type: ignore
             )
-            plogger.error("发生未知异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 建议反馈至开发者！")
+            plogger.error("发生未知异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 建议反馈至开发者！截图此页面对开发者没有任何帮助！请同时向开发者提供日志文件！")
         
         if BUILD_INFO == '正在使用源码运行':
             plogger.error(e, exc_info=True)
