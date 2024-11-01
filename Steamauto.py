@@ -254,6 +254,7 @@ def init_files_and_params() -> int:
             set_is_latest_version(True)
             logger.info("当前版本已经是最新版本")
     except Exception as e:
+        handle_caught_exception(e, known=True)
         logger.warning("检查更新失败, 跳过检查更新")
     logger.info("正在初始化...")
     first_run = False

@@ -156,13 +156,16 @@ class UUAccount:
             response = self.session.delete(url)
         else:
             raise Exception("Method not supported")
-        try:
-            log_output = response.content.decode()
-            if is_json(log_output):
-                log_output = json.dumps(json.loads(log_output), ensure_ascii=False)
+        log_output = response.content.decode()
+        if is_json(log_output):
+            json_output = json.loads(log_output)
+            log_output = json.dumps(json_output, ensure_ascii=False)
             logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
-        except Exception as e:
-            raise Exception(f"网络错误！！！请求失败: {e}")
+            if json_output.get('code') == 84101:
+                raise Exception('登录状态失效，请重新登录')
+        else:
+            raise Exception(f"网络错误，或服务器被悠悠屏蔽！请求失败！")
+            
         return response
 
     def change_leased_price(self, items: list[LeaseAsset]):
