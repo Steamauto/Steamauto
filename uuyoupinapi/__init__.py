@@ -470,6 +470,7 @@ class UUAccount:
                         IsCanSold=bool(item['commodityCanSell']),
                         IsCanLease=bool(item['commodityCanLease']),
                         orderNo=item['id'],
+                        price=float(item['referencePrice'][1:])
                     )
                 )
         elif rsp["code"] == 9004001:
@@ -505,7 +506,7 @@ class UUAccount:
 
         return inventory_list
 
-    def get_market_lease_price(self, template_id: int, min_price=0, cnt=15,sortTypeKey='LEASE_DEFAULT') -> list[UUMarketLeaseItem]:
+    def get_market_lease_price(self, template_id: int, min_price=0, max_price=20000, cnt=15,sortTypeKey='LEASE_DEFAULT') -> list[UUMarketLeaseItem]:
         rsp = self.call_api(
             "POST",
             "/api/homepage/v3/detail/commodity/list/lease",
@@ -535,7 +536,7 @@ class UUAccount:
             cnt = min(cnt, rsp_cnt)
             for i in range(cnt):
                 item = rsp_list[i]
-                if item["LeaseDeposit"] and min_price < float(item["LeaseDeposit"]):
+                if item["LeaseDeposit"] and min_price < float(item["LeaseDeposit"]) < max_price:
                     lease_list.append(
                         UUMarketLeaseItem(
                             LeaseUnitPrice=item["LeaseUnitPrice"] if item["LeaseUnitPrice"] else None,
@@ -817,3 +818,46 @@ class UUAccount:
             return response['Data']['CommodityList'][0]['Price']
         except:
             return 0
+
+    def get_trend_inventory(self):
+        inventory_list_rsp = self.call_api(
+            "POST",
+            "/api/youpin/commodity/user/inventory/price/trend",
+            data={
+                "pageIndex": 1,
+                "pageSize": 1000,
+                "IsMerge": 0
+            },
+        ).json()
+        inventory_list = []
+        if inventory_list_rsp["code"] == 0:
+            inventory_list = inventory_list_rsp["data"]["itemsInfos"]
+            logger.info(f"库存数量 {len(inventory_list)}")
+        else:
+            logger.error(inventory_list_rsp)
+            logger.error("获取悠悠库存失败!")
+        return inventory_list
+
+    def save_buy_price(self, assets: list):
+        """
+        {"productUniqueKeyList":[{"steamAssetId":"39605491748","marketHashName":"USP-S | Printstream (Minimal Wear)",
+        "buyPrice":"341","abrade":"0.1401326358318328900"}]}
+        """
+        item_infos = [
+            {
+                "steamAssetId": asset["steamAssetId"],
+                "marketHashName": asset["marketHashName"],
+                "buyPrice": asset["buyPrice"],
+                "abrade": asset["abrade"]
+            }
+            for asset in assets
+        ]
+        rsp = self.call_api(
+            "POST",
+            "/api/youpin/commodity/product/user/batch/save/buy/price",
+            data={"productUniqueKeyList": item_infos},
+        ).json()
+        if "code" in rsp and rsp["code"] == 0:
+            logger.info(f"保存购入价格成功。")
+        else:
+            logger.error(f"保存购入价格失败，原因：{rsp}")
