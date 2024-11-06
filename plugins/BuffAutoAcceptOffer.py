@@ -1,25 +1,17 @@
 # plugins/BuffAutoAcceptOffer.py
 
-import datetime
-import json
 import os
-import pickle
 import time
-from typing import Any, Dict, List, Optional, Tuple, Set
+from typing import Any, Dict, List, Set
 
 import apprise
 from apprise import AppriseAsset
 
-from utils.logger import PluginLogger, handle_caught_exception
-from utils.static import (
-    APPRISE_ASSET_FOLDER,
-    BUFF_COOKIES_FILE_PATH,
-    SESSION_FOLDER,
-    SUPPORT_GAME_TYPES,
-)
-from utils.tools import exit_code, get_encoding
-
 from BuffApi import BuffAccount
+from utils.logger import PluginLogger, handle_caught_exception
+from utils.static import (APPRISE_ASSET_FOLDER, BUFF_COOKIES_FILE_PATH,
+                          SUPPORT_GAME_TYPES)
+from utils.tools import exit_code, get_encoding
 
 
 class BuffAutoAcceptOffer:
@@ -34,7 +26,7 @@ class BuffAutoAcceptOffer:
         self.config = config
 
         # 初始化BuffAccount
-        buff_cookie = self._read_buff_cookie()
+        # buff_cookie = self._read_buff_cookie()
         self.buff_account = BuffAccount(steam_client=self.steam_client)
 
         self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
@@ -59,16 +51,12 @@ class BuffAutoAcceptOffer:
             exit_code.set(1)
             raise
 
-    def init_plugin(self) -> bool:
+    def init(self) -> bool:
         """初始化插件，包括登录BUFF和验证账户"""
         self.logger.info("BUFF自动接受报价插件已启动. 请稍候...")
         self.logger.info("正在准备登录至BUFF...")
 
         try:
-            # 初始化BuffAccount
-            if not self.buff_account.init():
-                self.logger.error("BUFF会话无效，初始化失败!")
-                return False
 
             # 获取用户昵称以验证登录状态
             username = self.buff_account.get_user_nickname()
@@ -148,8 +136,7 @@ class BuffAutoAcceptOffer:
             trade_offer_to_confirm = set()
             for game in SUPPORT_GAME_TYPES:
                 game_name = game.get("game", "")
-                app_id = game.get("app_id", "")
-                sell_listing = self.buff_account.get_sell_order(goods_id=game_name, game_name=game_name, app_id=app_id)
+                sell_listing = self.buff_account.get_sell_order(goods_id=game_name, game_name=game_name)
                 trade_offers = sell_listing.get("items", [])
                 for trade_offer in trade_offers:
                     trade_offer_id = trade_offer.get("tradeofferid")
@@ -242,12 +229,14 @@ class BuffAutoAcceptOffer:
                     self.ignored_offers.append(offer_id)
                     self.logger.info("接受完成! 已将此交易报价加入忽略名单!")
 
-                    # 发送卖出通知
-                    sell_notification = self.config.get("buff_auto_accept_offer", {}).get("sell_notification", {})
-                    if sell_notification:
-                        title = self.buff_account.format_str(sell_notification.get("title", ""), trade)
-                        body = self.buff_account.format_str(sell_notification.get("body", ""), trade)
-                        self.send_notification(title, body)
+                    servers = self.config.get("buff_auto_accept_offer", {}).get("servers", [])
+                    if servers:
+                        # 发送卖出通知
+                        sell_notification = self.config.get("buff_auto_accept_offer", {}).get("sell_notification", {})
+                        if sell_notification:
+                            title = self.buff_account.format_str(sell_notification.get("title", ""), trade)
+                            body = self.buff_account.format_str(sell_notification.get("body", ""), trade)
+                            self.send_notification(title, body)
 
                     self.logger.info("为了避免频繁访问Steam接口, 等待5秒后继续...")
                     time.sleep(5)
@@ -283,12 +272,10 @@ class BuffAutoAcceptOffer:
             else:
                 self.logger.info("该报价已经被处理过, 跳过.")
 
-    def run(self) -> int:
+    def exec(self) -> int:
         """
         插件的主执行方法
         """
-        if not self.init_plugin():
-            return 1
 
         interval = self.config.get("buff_auto_accept_offer", {}).get("interval", 300)
 

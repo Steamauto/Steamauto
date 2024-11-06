@@ -366,7 +366,7 @@ class Steamauto:
             logger.error("未启用任何插件, 请检查" + CONFIG_FILE_PATH + "是否正确! ")
             return 2
         for plugin in self.plugins_enabled:
-            if plugin.init():
+            if not plugin.init():
                 return 0
         return 1
 
