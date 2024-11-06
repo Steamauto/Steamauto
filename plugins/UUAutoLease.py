@@ -1,13 +1,13 @@
+# plugins\UUAutoLease.py
+
 import datetime
 import time
 
-import json5
 import numpy as np
 import schedule
 
 import uuyoupinapi
 from utils.logger import PluginLogger, handle_caught_exception
-from utils.models import LeaseAsset
 from utils.tools import exit_code, is_subsequence
 from utils.uu_helper import get_valid_token_for_uu
 from uuyoupinapi import models
@@ -31,10 +31,18 @@ class UUAutoLeaseItem:
             self.logger.error("悠悠有品登录失败！即将关闭程序！")
             exit_code.set(1)
             return True
+        self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu())
         return False
 
-    def get_lease_price(self, template_id, min_price=0, cnt=15):
+    def get_lease_price(self, template_id: int, min_price: float = 0, cnt: int = 15) -> dict:
+        """
+        获取租赁价格
 
+        :param template_id: 模板ID
+        :param min_price: 最低价格
+        :param cnt: 数量
+        :return: 价格信息字典
+        """
         if template_id in self.lease_price_cache:
             if datetime.datetime.now() - self.lease_price_cache[template_id]["cache_time"] <= datetime.timedelta(minutes=20):
                 commodity_name = self.lease_price_cache[template_id]["commodity_name"]
@@ -107,6 +115,9 @@ class UUAutoLeaseItem:
         }
 
     def auto_lease(self):
+        """
+        自动上架租赁物品
+        """
         self.logger.info("悠悠有品出租自动上架插件已启动")
         self.operate_sleep()
         if self.uuyoupin is not None:
@@ -127,10 +138,10 @@ class UUAutoLeaseItem:
                     short_name = item["ShotName"]
                     price = item["TemplateInfo"]["MarkPrice"]
                     if (
-                        price < self.config["uu_auto_lease_item"]["filter_price"]
-                        or item["Tradable"] is False
-                        or item["AssetStatus"] != 0
-                        or any(s != "" and is_subsequence(s, short_name) for s in self.config["uu_auto_lease_item"]["filter_name"])
+                            price < self.config["uu_auto_lease_item"]["filter_price"]
+                            or item["Tradable"] is False
+                            or item["AssetStatus"] != 0
+                            or any(s != "" and is_subsequence(s, short_name) for s in self.config["uu_auto_lease_item"]["filter_name"])
                     ):
                         continue
                     self.operate_sleep()
@@ -138,7 +149,7 @@ class UUAutoLeaseItem:
                     price_rsp = self.get_lease_price(template_id, min_price=price)
                     if price_rsp["LeaseUnitPrice"] == 0:
                         continue
-                    
+
                     lease_item = models.UUOnLeaseShelfItem(
                         AssetId=asset_id,
                         IsCanLease=True,
@@ -256,30 +267,13 @@ class UUAutoLeaseItem:
             schedule.run_pending()
             time.sleep(1)
 
-    def operate_sleep(self, sleep=None):
-        if sleep is None:
-            time.sleep(self.timeSleep)
-        else:
-            time.sleep(sleep)
+    def operate_sleep(self, sleep: int = None):
+        time.sleep(sleep if sleep is not None else self.timeSleep)
 
     def pre_check_price(self):
+        """
+        预检查价格
+        """
         self.get_lease_price(44444, 1000)
         self.logger.info("请检查押金获取是否有问题，如有请终止程序，否则开始运行该插件。")
         self.operate_sleep()
-
-
-if __name__ == "__main__":
-    # 调试代码
-    with open("config/config.json5", "r", encoding="utf-8") as f:
-        my_config = json5.load(f)
-
-    uu_auto_lease = UUAutoLeaseItem(my_config)
-    token = get_valid_token_for_uu()
-    if not token:
-        uu_auto_lease.logger.error("由于登录失败，插件将自动退出")
-        exit_code.set(1)
-    else:
-        uu_auto_lease.uuyoupin = uuyoupinapi.UUAccount(token)
-    uu_auto_lease.pre_check_price()
-    # time.sleep(64)
-    # uu_auto_lease.auto_change_price()

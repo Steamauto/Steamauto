@@ -5,7 +5,7 @@ global is_latest_version
 is_latest_version = False
 no_pause = False
 
-CURRENT_VERSION = "4.2.0"
+CURRENT_VERSION = "5.0.0"
 
 VERSION_FILE = "version.json"
 APPRISE_ASSET_FOLDER = "Apprise"
@@ -17,13 +17,6 @@ BUFF_COOKIES_FILE_PATH = os.path.join(CONFIG_FOLDER, "buff_cookies.txt")
 UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token.txt")
 STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
 SESSION_FOLDER = "session"
-DEV_FILE_FOLDER = "dev"
-BUFF_ACCOUNT_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "buff_account.json")
-MESSAGE_NOTIFICATION_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "message_notification.json")
-STEAM_TRADE_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "steam_trade.json")
-SELL_ORDER_HISTORY_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "sell_order_history.json")
-SHOP_LISTING_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "shop_listing.json")
-TO_DELIVER_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "to_deliver_{game}.json")
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 UU_ARG_FILE_PATH = "uu.txt"
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
@@ -36,10 +29,10 @@ DEFAULT_STEAM_ACCOUNT_JSON = """
   // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
   // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
 
-  // Steam 令牌参数（用于身份验证）
+  // Steam 令牌参数（用于登录）
   "shared_secret": "",
 
-  // Steam 令牌参数（用于身份验证）
+  // Steam 令牌参数（用于确认报价）
   "identity_secret": "",
 
   // Steam 登录时填写的用户名
@@ -101,13 +94,6 @@ DEFAULT_CONFIG_JSON = r"""
       // 出售保护通知内容（如不需要可直接删除）
       "body": "请自行至BUFF确认报价!"
     },
-    // 报价与BUFF出售商品不匹配通知配置(如不需要可直接删除)
-    "item_mismatch_notification": {
-      // 报价与BUFF出售商品不匹配通知标题
-      "title": "BUFF出售饰品与Steam报价饰品不匹配",
-      // 报价与BUFF出售商品不匹配通知内容
-      "body": "请自行至BUFF确认报价!(Offer: {offer_id})"
-    },
     // BUFF Cookies失效通知配置
     "buff_cookie_expired_notification": {
       // BUFF Cookies失效通知标题（如不需要可直接删除）
@@ -129,7 +115,9 @@ DEFAULT_CONFIG_JSON = r"""
   // BUFF 自动备注购买价格插件配置
   "buff_auto_comment": {
     // 是否启用BUFF自动备注购买价格功能
-    "enable": false
+    "enable": false,
+    // 每次请求历史交易记录数量, 过大可能会导致失败
+    "page_size": 300
   },
   // BUFF 自动计算利润插件配置
   "buff_profit_report": {
@@ -160,8 +148,6 @@ DEFAULT_CONFIG_JSON = r"""
     "description": "",
     // 检查库存间隔时间
     "interval": 1800,
-    // 每个请求间隔时间 (秒) - 用于防止被BUFF封禁
-    "sleep_seconds_to_prevent_buff_ban": 10,
     // 供应求购相关配置
     "buy_order": {
       // 是否供应求购订单
@@ -179,17 +165,7 @@ DEFAULT_CONFIG_JSON = r"""
         "title": "游戏 {game} 成功上架 {sold_count} 件饰品",
         // 上架通知内容
         "body": "上架详情:\n{item_list}"
-    },
-    // 出现验证码通知配置(如不需要可直接删除)
-    "captcha_notification": {
-        // 出现验证码通知标题
-        "title": "上架饰品时出现验证码",
-        // 出现验证码通知内容
-        "body": "使用session={session}并使用浏览器打开以下链接并完成验证:\n{captcha_url}"
-    },
-    // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
-    "servers": [
-    ]
+    }
   },
   // 悠悠有品自动发货插件配置
   "uu_auto_accept_offer": {
@@ -267,9 +243,7 @@ DEFAULT_CONFIG_JSON = r"""
   // 存储在硬盘的日志等级，可选值为"debug"/"info"/"warning"/"error"
   "log_level": "debug",
   // 本地日志保留天数
-  "log_retention_days": 7,
-  // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！！！
-  "development_mode": false
+  "log_retention_days": 7
 }
 """
 

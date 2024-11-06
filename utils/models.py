@@ -16,6 +16,7 @@ class Asset(BaseModel):
     orderNo: Union[str, int, None] = None
     price: float = float(0)
 
+
 class LeaseAsset(Asset):
     price: Union[float, None] = None
     IsCanLease: bool = True
@@ -25,6 +26,7 @@ class LeaseAsset(Asset):
     LeaseUnitPrice: float
     LongLeaseUnitPrice: float = float(0)
     orderNo: Union[str, int, None] = None
+
 
 class ModelEncoder(json.JSONEncoder):
     def default(self, obj):

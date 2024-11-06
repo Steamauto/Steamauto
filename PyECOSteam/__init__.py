@@ -6,15 +6,15 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import timezone
 
-import PyECOsteam.models as models
-from PyECOsteam.sign import generate_rsa_signature
+import PyECOSteam.models as models
+from PyECOSteam.sign import generate_rsa_signature
 from utils.logger import PluginLogger
 from utils.models import Asset, LeaseAsset
 from utils.static import CURRENT_VERSION
 from utils.tools import jobHandler
 
 
-class ECOsteamClient:
+class ECOSteamClient:
     # https://openapi.ecosteam.cn/index.html/ 查看API文档
     def __rps_counter(self):
         try:
@@ -23,7 +23,7 @@ class ECOsteamClient:
             pass
 
     def __init__(self, partnerId, RSAKey, qps=10) -> None:
-        self.logger = PluginLogger("ECOsteam.cn")
+        self.logger = PluginLogger("ECOSteam.cn")
         self.partnerId = partnerId
         self.RSAKey = RSAKey
         self.qps = qps

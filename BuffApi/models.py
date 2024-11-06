@@ -1,3 +1,5 @@
+# BuffApi\models.py
+
 from typing import no_type_check
 
 from pydantic import BaseModel
@@ -14,10 +16,10 @@ class BuffOnSaleAsset(BaseModel):
     market_hash_name: str
     price: float
     desc: str = ''
-    
+
     @classmethod
     @no_type_check
-    def from_Asset(cls,obj:Asset) -> 'BuffOnSaleAsset':
+    def from_Asset(cls, obj: Asset) -> 'BuffOnSaleAsset':
         return cls(
             assetid=obj.assetid,
             classid=obj.classid,
