@@ -1,6 +1,5 @@
 import datetime
 import logging
-from math import log
 import os
 import platform
 import re
@@ -10,12 +9,18 @@ import json5
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from steampy.exceptions import ApiException, ConfirmationExpected, EmptyResponse, InvalidCredentials, InvalidResponse, SteamError
-from utils.static import BUILD_INFO, CURRENT_VERSION, LOGS_FOLDER, get_is_latest_version, STEAM_ERROR_CODES, CONFIG_FILE_PATH
+from steampy.exceptions import (ApiException, ConfirmationExpected,
+                                EmptyResponse, InvalidCredentials,
+                                InvalidResponse, SteamError)
+from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CURRENT_VERSION,
+                          LOGS_FOLDER, STEAM_ERROR_CODES,
+                          get_is_latest_version)
 
 sensitive_data = []
 sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token", "trade_url", "TransactionUrl", "RealName", "IdCard"]
 
+if not os.path.exists(LOGS_FOLDER):
+    os.mkdir(LOGS_FOLDER)
 
 class LogFilter(logging.Filter):
     @staticmethod
@@ -86,8 +91,6 @@ log_formatter_colored = colorlog.ColoredFormatter(
 s_handler.setFormatter(log_formatter_colored)
 log_formatter = logging.Formatter("[%(asctime)s] - %(levelname)s: %(message)s", "%Y-%m-%d %H:%M:%S")
 logger.addHandler(s_handler)
-if not os.path.exists(LOGS_FOLDER):
-    os.mkdir(LOGS_FOLDER)
 f_handler = logging.FileHandler(os.path.join(LOGS_FOLDER, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".log"), encoding="utf-8")
 if log_level and log_level.isdigit():
     f_handler.setLevel(int(log_level))
@@ -109,7 +112,7 @@ logger.debug(f"Python version: {os.sys.version}")  # type: ignore
 logger.debug(f"Build info: {BUILD_INFO}")
 logger.debug(f"日志已经经过脱敏处理，请放心转发至公共平台！")
 
-def handle_caught_exception(e: Exception, prefix: str = ""):
+def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False):
     plogger = logger
     if prefix and not prefix.endswith(" "):
         plogger = PluginLogger(prefix)
@@ -148,10 +151,12 @@ def handle_caught_exception(e: Exception, prefix: str = ""):
     elif isinstance(e, ApiException):
         plogger.error("Steam API 异常, 异常信息:" + str(e))
     else:
-        plogger.error(
-            f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})\n编译信息：{BUILD_INFO}\n" # type: ignore
-        )
-        plogger.error("发生未知异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 建议反馈至开发者！")
+        if not known:
+            plogger.error(
+                f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})\n编译信息：{BUILD_INFO}\n" # type: ignore
+            )
+            plogger.error("发生未知异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 建议反馈至开发者！截图此页面对开发者没有任何帮助！请同时向开发者提供日志文件！")
+        
         if BUILD_INFO == '正在使用源码运行':
             plogger.error(e, exc_info=True)
 

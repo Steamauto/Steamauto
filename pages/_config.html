@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Steamauto 配置文件生成器(测试版)</title>
+    <!-- 引入 Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入 JSON5 库 -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/json5/2.2.3/index.min.js"></script> -->
+    <style>
+        body {
+            font-family: "微软雅黑", "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .logo {
+            height: 50px;
+            margin-right: 10px;
+        }
+
+        .container {
+            flex: 1 0 auto;
+            padding-bottom: 0.1rem;
+        }
+
+        .footer {
+            flex-shrink: 0;
+            margin-top: auto;
+            background-color: #343a40;
+            color: white;
+        }
+
+        .footer a {
+            color: #ffffff;
+            transition: color 0.3s ease;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: #17a2b8;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="https://github.com/Steamauto/Steamauto" target="_blank">
+                <img src="https://camo.githubusercontent.com/62564b6ae17c50f60303e79d606094dda9e3cab1df9243f091c8756b98ebbb8a/68747470733a2f2f736f6369616c6966792e6769742e63692f6a69616a696178642f537465616d6175746f2f696d6167653f6465736372697074696f6e3d31266c616e67756167653d31266e616d653d31266f776e65723d31267468656d653d4c69676874"
+                    alt="Steamauto Logo" class="logo">
+                Steamauto 配置文件生成器(测试版)
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <div class="container mt-5">
+        <!-- 通用设置 -->
+        <h2>通用设置</h2>
+        <div class="mb-3">
+            <label class="form-label">Steam 登录时是否开启 SSL 验证</label>
+            <select class="form-select" id="steam_login_ignore_ssl_error">
+                <option value="false" selected>是</option>
+                <option value="true">否</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">是否开启本地加速功能</label>
+            <select class="form-select" id="steam_local_accelerate">
+                <option value="false" selected>否</option>
+                <option value="true">是</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">是否手动指定 Steam 代理</label>
+            <select class="form-select" id="use_proxies">
+                <option value="false" selected>否</option>
+                <option value="true">是</option>
+            </select>
+        </div>
+        <!-- 代理设置 -->
+        <div class="mb-3" id="proxies_settings" style="display: none;">
+            <label class="form-label">本地代理地址</label>
+            <input type="text" class="form-control" id="proxies_http" placeholder="HTTP 代理，例如：http://127.0.0.1:7890">
+            <input type="text" class="form-control mt-2" id="proxies_https"
+                placeholder="HTTPS 代理，例如：https://127.0.0.1:7890">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">程序错误后是否直接停止运行</label>
+            <select class="form-select" id="no_pause">
+                <option value="false" selected>否</option>
+                <option value="true">是</option>
+            </select>
+        </div>
+        <div class="accordion" id="configAccordion">
+            <!-- BUFF 自动发货插件配置 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingBuffAutoAcceptOffer">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseBuffAutoAcceptOffer" aria-expanded="false"
+                        aria-controls="collapseBuffAutoAcceptOffer">
+                        BUFF 自动发货插件配置
+                    </button>
+                </h2>
+                <div id="collapseBuffAutoAcceptOffer" class="accordion-collapse collapse"
+                    aria-labelledby="headingBuffAutoAcceptOffer" data-bs-parent="#configAccordion">
+                    <div class="accordion-body">
+                        <!-- 是否启用 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否启用 BUFF 自动发货报价功能</label>
+                            <select class="form-select" id="buff_auto_accept_offer_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 每次检查是否有新报价的间隔 -->
+                        <div class="mb-3">
+                            <label class="form-label">检查新报价的间隔（秒）</label>
+                            <input type="number" class="form-control" id="buff_auto_accept_offer_interval" value="300">
+                        </div>
+                        <!-- 是否开启出售保护 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否开启出售保护</label>
+                            <select class="form-select" id="buff_auto_accept_offer_sell_protection">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 出售保护价格 -->
+                        <div class="mb-3">
+                            <label class="form-label">出售保护价格（元）</label>
+                            <input type="number" class="form-control" id="buff_auto_accept_offer_protection_price"
+                                value="30">
+                        </div>
+                        <!-- 出售价格保护比例 -->
+                        <div class="mb-3">
+                            <label class="form-label">出售价格保护比例</label>
+                            <input type="number" class="form-control"
+                                id="buff_auto_accept_offer_protection_price_percentage" value="0.9" step="0.01">
+                        </div>
+                        <!-- 出售通知配置 -->
+                        <h5>出售通知配置（可选）</h5>
+                        <div class="mb-3">
+                            <label class="form-label">出售通知标题</label>
+                            <input type="text" class="form-control" id="sell_notification_title"
+                                value="成功出售{game}饰品: {item_name} * {sold_count}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">出售通知内容</label>
+                            <textarea class="form-control" id="sell_notification_body" rows="4">![good_icon]({good_icon})
+游戏: {game}
+饰品: {item_name}
+出售单价: {buff_price} RMB
+Steam单价(参考): {steam_price} USD
+Steam单价(参考): {steam_price_cny} RMB
+![buyer_avatar]({buyer_avatar})
+买家: {buyer_name}
+订单时间: {order_time}</textarea>
+                        </div>
+                        <!-- 通知服务器列表 -->
+                        <div class="mb-3">
+                            <label class="form-label">通知服务器列表（Apprise 格式，每行一个）</label>
+                            <textarea class="form-control" id="buff_auto_accept_offer_servers" rows="3"
+                                placeholder="例如：http://localhost:8080/notify"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUFF 自动备注购买价格插件配置 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingBuffAutoComment">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseBuffAutoComment" aria-expanded="false"
+                        aria-controls="collapseBuffAutoComment">
+                        BUFF 自动备注购买价格插件配置
+                    </button>
+                </h2>
+                <div id="collapseBuffAutoComment" class="accordion-collapse collapse"
+                    aria-labelledby="headingBuffAutoComment" data-bs-parent="#configAccordion">
+                    <div class="accordion-body">
+                        <!-- 是否启用 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否启用 BUFF 自动备注购买价格功能</label>
+                            <select class="form-select" id="buff_auto_comment_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 每次请求历史交易记录数量 -->
+                        <div class="mb-3">
+                            <label class="form-label">每次请求历史交易记录数量</label>
+                            <input type="number" class="form-control" id="buff_auto_comment_page_size" value="300">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUFF 自动计算利润插件配置 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingBuffProfitReport">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseBuffProfitReport" aria-expanded="false"
+                        aria-controls="collapseBuffProfitReport">
+                        BUFF 自动计算利润插件配置
+                    </button>
+                </h2>
+                <div id="collapseBuffProfitReport" class="accordion-collapse collapse"
+                    aria-labelledby="headingBuffProfitReport" data-bs-parent="#configAccordion">
+                    <div class="accordion-body">
+                        <!-- 是否启用 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否启用 BUFF 自动计算利润功能</label>
+                            <select class="form-select" id="buff_profit_report_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 通知服务器列表 -->
+                        <div class="mb-3">
+                            <label class="form-label">通知服务器列表（Apprise 格式，每行一个）</label>
+                            <textarea class="form-control" id="buff_profit_report_servers" rows="3"
+                                placeholder="例如：http://localhost:8080/notify"></textarea>
+                        </div>
+                        <!-- 每日发送报告时间 -->
+                        <div class="mb-3">
+                            <label class="form-label">每日发送报告时间（24小时制，例如：20:30）</label>
+                            <input type="time" class="form-control" id="buff_profit_report_send_report_time"
+                                value="20:30">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUFF 自动上架插件配置 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingBuffAutoOnSale">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseBuffAutoOnSale" aria-expanded="false"
+                        aria-controls="collapseBuffAutoOnSale">
+                        BUFF 自动上架插件配置
+                    </button>
+                </h2>
+                <div id="collapseBuffAutoOnSale" class="accordion-collapse collapse"
+                    aria-labelledby="headingBuffAutoOnSale" data-bs-parent="#configAccordion">
+                    <div class="accordion-body">
+                        <!-- 是否启用 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否启用 BUFF 自动以最低价上架所有库存</label>
+                            <select class="form-select" id="buff_auto_on_sale_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 强制刷新库存 -->
+                        <div class="mb-3">
+                            <label class="form-label">每次检查库存强制刷新 BUFF 库存</label>
+                            <select class="form-select" id="buff_auto_on_sale_force_refresh">
+                                <option value="true" selected>是</option>
+                                <option value="false">否</option>
+                            </select>
+                        </div>
+                        <!-- 使用磨损区间最低价上架 -->
+                        <div class="mb-3">
+                            <label class="form-label">使用磨损区间最低价上架</label>
+                            <select class="form-select" id="buff_auto_on_sale_use_range_price">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 黑名单时间 -->
+                        <div class="mb-3">
+                            <label class="form-label">黑名单时间（小时，多个用逗号分隔）</label>
+                            <input type="text" class="form-control" id="buff_auto_on_sale_blacklist_time"
+                                placeholder="例如：1,2,3">
+                        </div>
+                        <!-- 白名单时间 -->
+                        <div class="mb-3">
+                            <label class="form-label">白名单时间（小时，多个用逗号分隔）</label>
+                            <input type="text" class="form-control" id="buff_auto_on_sale_whitelist_time"
+                                placeholder="例如：8,12,16">
+                        </div>
+                        <!-- 随机上架几率 -->
+                        <div class="mb-3">
+                            <label class="form-label">随机上架几率（1-100）</label>
+                            <input type="number" class="form-control" id="buff_auto_on_sale_random_chance" value="100"
+                                min="1" max="100">
+                        </div>
+                        <!-- 商品上架描述 -->
+                        <div class="mb-3">
+                            <label class="form-label">商品上架描述</label>
+                            <input type="text" class="form-control" id="buff_auto_on_sale_description" placeholder="可选">
+                        </div>
+                        <!-- 检查库存间隔时间 -->
+                        <div class="mb-3">
+                            <label class="form-label">检查库存间隔时间（秒）</label>
+                            <input type="number" class="form-control" id="buff_auto_on_sale_interval" value="1800">
+                        </div>
+                        <!-- 供应求购相关配置 -->
+                        <h5>供应求购相关配置</h5>
+                        <div class="mb-3">
+                            <label class="form-label">是否供应求购订单</label>
+                            <select class="form-select" id="buff_auto_on_sale_buy_order_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">是否只供应给开启自动收货的求购订单</label>
+                            <select class="form-select" id="buff_auto_on_sale_buy_order_only_auto_accept">
+                                <option value="true" selected>是</option>
+                                <option value="false">否</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">支持收款方式（多个用逗号分隔，如：支付宝,微信）</label>
+                            <input type="text" class="form-control"
+                                id="buff_auto_on_sale_buy_order_supported_payment_method" value="支付宝">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">低于多少金额的商品直接塞求购</label>
+                            <input type="number" class="form-control" id="buff_auto_on_sale_buy_order_min_price"
+                                value="5">
+                        </div>
+                        <!-- 上架通知配置 -->
+                        <h5>上架通知配置（可选）</h5>
+                        <div class="mb-3">
+                            <label class="form-label">上架通知标题</label>
+                            <input type="text" class="form-control" id="on_sale_notification_title"
+                                value="游戏 {game} 成功上架 {sold_count} 件饰品">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">上架通知内容</label>
+                            <textarea class="form-control" id="on_sale_notification_body" rows="4">上架详情:
+{item_list}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 悠悠有品自动发货插件配置 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingUuAutoAcceptOffer">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseUuAutoAcceptOffer" aria-expanded="false"
+                        aria-controls="collapseUuAutoAcceptOffer">
+                        悠悠有品自动发货插件配置
+                    </button>
+                </h2>
+                <div id="collapseUuAutoAcceptOffer" class="accordion-collapse collapse"
+                    aria-labelledby="headingUuAutoAcceptOffer" data-bs-parent="#configAccordion">
+                    <div class="accordion-body">
+                        <!-- 是否启用 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否启用悠悠有品自动发货功能</label>
+                            <select class="form-select" id="uu_auto_accept_offer_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 检查新报价的间隔 -->
+                        <div class="mb-3">
+                            <label class="form-label">检查新报价的间隔（秒）</label>
+                            <input type="number" class="form-control" id="uu_auto_accept_offer_interval" value="300">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 悠悠有品租赁自动上架配置 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingUuAutoLeaseItem">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseUuAutoLeaseItem" aria-expanded="false"
+                        aria-controls="collapseUuAutoLeaseItem">
+                        悠悠有品租赁自动上架配置
+                    </button>
+                </h2>
+                <div id="collapseUuAutoLeaseItem" class="accordion-collapse collapse"
+                    aria-labelledby="headingUuAutoLeaseItem" data-bs-parent="#configAccordion">
+                    <div class="accordion-body">
+                        <!-- 是否启用 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否启用悠悠有品租赁自动上架功能</label>
+                            <select class="form-select" id="uu_auto_lease_item_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 最长租赁时间 -->
+                        <div class="mb-3">
+                            <label class="form-label">最长租赁时间（天）</label>
+                            <input type="number" class="form-control" id="uu_auto_lease_item_lease_max_days" value="60">
+                        </div>
+                        <!-- 价格过滤 -->
+                        <div class="mb-3">
+                            <label class="form-label">价格低于此金额的物品不会上架（元）</label>
+                            <input type="number" class="form-control" id="uu_auto_lease_item_filter_price" value="100">
+                        </div>
+                        <!-- 自动上架租赁每天定时运行时间 -->
+                        <div class="mb-3">
+                            <label class="form-label">自动上架租赁每天定时运行时间（24小时制，例如：17:30）</label>
+                            <input type="time" class="form-control" id="uu_auto_lease_item_run_time" value="17:30">
+                        </div>
+                        <!-- 修改价格的间隔 -->
+                        <div class="mb-3">
+                            <label class="form-label">定时修改价格的间隔（分钟）</label>
+                            <input type="number" class="form-control" id="uu_auto_lease_item_interval" value="31">
+                        </div>
+                        <!-- 不出租的物品名字列表 -->
+                        <div class="mb-3">
+                            <label class="form-label">不出租的物品名字列表（每行一个）</label>
+                            <textarea class="form-control" id="uu_auto_lease_item_filter_name" rows="3"
+                                placeholder="例如：物品A\n物品B"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 悠悠有品出售自动上架配置 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingUuAutoSellItem">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseUuAutoSellItem" aria-expanded="false"
+                        aria-controls="collapseUuAutoSellItem">
+                        悠悠有品出售自动上架配置
+                    </button>
+                </h2>
+                <div id="collapseUuAutoSellItem" class="accordion-collapse collapse"
+                    aria-labelledby="headingUuAutoSellItem" data-bs-parent="#configAccordion">
+                    <div class="accordion-body">
+                        <!-- 是否启用 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否启用悠悠有品出售自动上架功能</label>
+                            <select class="form-select" id="uu_auto_sell_item_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 按照止盈率设置定价 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否按照止盈率设置定价</label>
+                            <select class="form-select" id="uu_auto_sell_item_take_profile">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 止盈率 -->
+                        <div class="mb-3">
+                            <label class="form-label">止盈率</label>
+                            <input type="number" class="form-control" id="uu_auto_sell_item_take_profile_ratio"
+                                value="0.1" step="0.01">
+                        </div>
+                        <!-- 自动上架每天定时运行时间 -->
+                        <div class="mb-3">
+                            <label class="form-label">自动上架每天定时运行时间（24小时制，例如：15:30）</label>
+                            <input type="time" class="form-control" id="uu_auto_sell_item_run_time" value="15:30">
+                        </div>
+                        <!-- 定时修改价格的间隔 -->
+                        <div class="mb-3">
+                            <label class="form-label">定时修改价格的间隔（分钟）</label>
+                            <input type="number" class="form-control" id="uu_auto_sell_item_interval" value="51">
+                        </div>
+                        <!-- 出售的物品名字列表 -->
+                        <div class="mb-3">
+                            <label class="form-label">出售的物品名字列表（每行一个）</label>
+                            <textarea class="form-control" id="uu_auto_sell_item_name" rows="3"
+                                placeholder="例如：物品A\n物品B"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ECOSteam 插件配置 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingEcoSteam">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseEcoSteam" aria-expanded="false" aria-controls="collapseEcoSteam">
+                        ECOSteam.cn 插件配置
+                    </button>
+                </h2>
+                <div id="collapseEcoSteam" class="accordion-collapse collapse" aria-labelledby="headingEcoSteam"
+                    data-bs-parent="#configAccordion">
+                    <div class="accordion-body">
+                        <!-- 提示 -->
+                        <div class="alert alert-info">
+                            请提前接入开放平台，私钥请放置在 config 目录下的 rsakey.txt 文件中。<br>
+                            如何注册 ECOSteam 开放平台，请参考 <a
+                                href="https://github.com/Steamauto/Steamauto#%E5%A6%82%E4%BD%95%E6%B3%A8%E5%86%8C-ecosteam-%E5%BC%80%E6%94%BE%E5%B9%B3%E5%8F%B0---%E8%8A%82%E9%80%89%E8%87%AAecosteam%E5%AE%98%E6%96%B9%E6%96%87%E6%A1%A3"
+                                target="_blank">官方文档</a>。
+                        </div>
+                        <!-- 是否启用 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否启用 ECOSteam 插件</label>
+                            <select class="form-select" id="ecosteam_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- partnerId -->
+                        <div class="mb-3">
+                            <label class="form-label">partnerId（必填）</label>
+                            <input type="text" class="form-control" id="ecosteam_partnerId"
+                                placeholder="用于登录 ECOSteam 平台">
+                        </div>
+                        <!-- 自动接受报价配置 -->
+                        <h5>自动接受报价配置</h5>
+                        <div class="mb-3">
+                            <label class="form-label">检查新报价的间隔（秒）</label>
+                            <input type="number" class="form-control" id="ecosteam_auto_accept_offer_interval"
+                                value="30">
+                        </div>
+                        <!-- 自动同步上架商品配置 -->
+                        <h5>自动同步上架商品配置</h5>
+                        <div class="mb-3">
+                            <label class="form-label">是否启用自动同步各平台的上架商品</label>
+                            <select class="form-select" id="ecosteam_auto_sync_sell_shelf_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 主平台 -->
+                        <div class="mb-3">
+                            <label class="form-label">主平台（eco/buff/uu）</label>
+                            <input type="text" class="form-control" id="ecosteam_auto_sync_sell_shelf_main_platform"
+                                value="eco">
+                        </div>
+                        <!-- 启用的平台 -->
+                        <div class="mb-3">
+                            <label class="form-label">启用的平台（多个用逗号分隔，如：buff,uu）</label>
+                            <input type="text" class="form-control" id="ecosteam_auto_sync_sell_shelf_enabled_platforms"
+                                placeholder="可选值：buff, uu">
+                        </div>
+                        <!-- 各平台上架价格的比例 -->
+                        <div class="mb-3">
+                            <label class="form-label">各平台上架价格的比例（JSON 格式）</label>
+                            <textarea class="form-control" id="ecosteam_auto_sync_sell_shelf_ratio" rows="3"
+                                placeholder='例如：{"eco": 1, "buff": 1, "uu": 1}'>{ "eco": 1, "buff": 1, "uu": 1 }</textarea>
+                        </div>
+                        <!-- 同步间隔时间 -->
+                        <div class="mb-3">
+                            <label class="form-label">同步间隔时间（秒）</label>
+                            <input type="number" class="form-control" id="ecosteam_sync_interval" value="60">
+                        </div>
+                        <!-- 每秒最大请求数 -->
+                        <div class="mb-3">
+                            <label class="form-label">每秒最大请求数（QPS）</label>
+                            <input type="number" class="form-control" id="ecosteam_qps" value="10">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Steam 自动接受礼物报价插件配置 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSteamAutoAcceptOffer">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseSteamAutoAcceptOffer" aria-expanded="false"
+                        aria-controls="collapseSteamAutoAcceptOffer">
+                        Steam 自动接受礼物报价插件配置
+                    </button>
+                </h2>
+                <div id="collapseSteamAutoAcceptOffer" class="accordion-collapse collapse"
+                    aria-labelledby="headingSteamAutoAcceptOffer" data-bs-parent="#configAccordion">
+                    <div class="accordion-body">
+                        <!-- 是否启用 -->
+                        <div class="mb-3">
+                            <label class="form-label">是否开启自动接受 Steam 礼物报价</label>
+                            <select class="form-select" id="steam_auto_accept_offer_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <!-- 检查报价列表的间隔 -->
+                        <div class="mb-3">
+                            <label class="form-label">检查报价列表的间隔（秒）</label>
+                            <input type="number" class="form-control" id="steam_auto_accept_offer_interval" value="300">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 日志设置 -->
+        <h2 class="mt-5">日志设置</h2>
+        <div class="mb-3">
+            <label class="form-label">日志等级</label>
+            <select class="form-select" id="log_level">
+                <option value="debug">调试（debug）</option>
+                <option value="info">信息（info）</option>
+                <option value="warning">警告（warning）</option>
+                <option value="error">错误（error）</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">本地日志保留天数</label>
+            <input type="number" class="form-control" id="log_retention_days" value="7">
+        </div>
+
+        <!-- 生成配置按钮 -->
+        <div class="d-grid gap-2 mt-5">
+            <button class="btn btn-primary btn-lg" type="button" id="generateConfig">生成配置文件</button>
+        </div>
+
+        <!-- 配置结果展示区域 -->
+        <div class="mt-5">
+            <h3>生成的 config.json5 文件内容：</h3>
+            <pre id="configOutput" class="bg-light p-3"></pre>
+            <button class="btn btn-success mt-2" id="copyConfig">复制到剪贴板</button>
+            <button class="btn btn-secondary mt-2" id="downloadConfig">下载 config.json5 文件</button>
+        </div>
+        <div class="mb-5"></div>
+    </div>
+
+    <!-- 引入 Bootstrap JS 和 Popper.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <!-- 主脚本 -->
+    <script>
+        // 动态显示/隐藏代理设置
+        document.getElementById('use_proxies').addEventListener('change', (event) => {
+            if (event.target.value === 'true') {
+                document.getElementById('proxies_settings').style.display = 'block';
+            } else {
+                document.getElementById('proxies_settings').style.display = 'none';
+            }
+        });
+
+        // 生成配置文件
+        document.getElementById('generateConfig').addEventListener('click', () => {
+            const config = {};
+
+            // 通用设置
+            config.steam_login_ignore_ssl_error = JSON.parse(document.getElementById('steam_login_ignore_ssl_error').value);
+            config.steam_local_accelerate = JSON.parse(document.getElementById('steam_local_accelerate').value);
+            config.use_proxies = JSON.parse(document.getElementById('use_proxies').value);
+            if (config.use_proxies) {
+                config.proxies = {
+                    http: document.getElementById('proxies_http').value,
+                    https: document.getElementById('proxies_https').value
+                };
+            }
+            config.no_pause = JSON.parse(document.getElementById('no_pause').value);
+
+            // BUFF 自动发货插件配置
+            config.buff_auto_accept_offer = {
+                enable: JSON.parse(document.getElementById('buff_auto_accept_offer_enable').value),
+                interval: parseInt(document.getElementById('buff_auto_accept_offer_interval').value),
+                sell_protection: JSON.parse(document.getElementById('buff_auto_accept_offer_sell_protection').value),
+                protection_price: parseFloat(document.getElementById('buff_auto_accept_offer_protection_price').value),
+                protection_price_percentage: parseFloat(document.getElementById('buff_auto_accept_offer_protection_price_percentage').value),
+                sell_notification: {
+                    title: document.getElementById('sell_notification_title').value,
+                    body: document.getElementById('sell_notification_body').value
+                },
+                servers: document.getElementById('buff_auto_accept_offer_servers').value.split('\n').filter(line => line.trim() !== '')
+            };
+
+            // BUFF 自动备注购买价格插件配置
+            config.buff_auto_comment = {
+                enable: JSON.parse(document.getElementById('buff_auto_comment_enable').value),
+                page_size: parseInt(document.getElementById('buff_auto_comment_page_size').value)
+            };
+
+            // BUFF 自动计算利润插件配置
+            config.buff_profit_report = {
+                enable: JSON.parse(document.getElementById('buff_profit_report_enable').value),
+                servers: document.getElementById('buff_profit_report_servers').value.split('\n').filter(line => line.trim() !== ''),
+                send_report_time: document.getElementById('buff_profit_report_send_report_time').value
+            };
+
+            // BUFF 自动上架插件配置
+            config.buff_auto_on_sale = {
+                enable: JSON.parse(document.getElementById('buff_auto_on_sale_enable').value),
+                force_refresh: JSON.parse(document.getElementById('buff_auto_on_sale_force_refresh').value),
+                use_range_price: JSON.parse(document.getElementById('buff_auto_on_sale_use_range_price').value),
+                blacklist_time: document.getElementById('buff_auto_on_sale_blacklist_time').value.split(',').map(item => parseInt(item.trim())).filter(item => !isNaN(item)),
+                whitelist_time: document.getElementById('buff_auto_on_sale_whitelist_time').value.split(',').map(item => parseInt(item.trim())).filter(item => !isNaN(item)),
+                random_chance: parseInt(document.getElementById('buff_auto_on_sale_random_chance').value),
+                description: document.getElementById('buff_auto_on_sale_description').value,
+                interval: parseInt(document.getElementById('buff_auto_on_sale_interval').value),
+                buy_order: {
+                    enable: JSON.parse(document.getElementById('buff_auto_on_sale_buy_order_enable').value),
+                    only_auto_accept: JSON.parse(document.getElementById('buff_auto_on_sale_buy_order_only_auto_accept').value),
+                    supported_payment_method: document.getElementById('buff_auto_on_sale_buy_order_supported_payment_method').value.split(',').map(item => item.trim()).filter(item => item !== ''),
+                    min_price: parseFloat(document.getElementById('buff_auto_on_sale_buy_order_min_price').value)
+                },
+                on_sale_notification: {
+                    title: document.getElementById('on_sale_notification_title').value,
+                    body: document.getElementById('on_sale_notification_body').value
+                }
+            };
+
+            // Steam 自动接受礼物报价插件配置
+            config.steam_auto_accept_offer = {
+                enable: JSON.parse(document.getElementById('steam_auto_accept_offer_enable').value),
+                interval: parseInt(document.getElementById('steam_auto_accept_offer_interval').value)
+            };
+
+            // 悠悠有品自动发货插件配置
+            config.uu_auto_accept_offer = {
+                enable: JSON.parse(document.getElementById('uu_auto_accept_offer_enable').value),
+                interval: parseInt(document.getElementById('uu_auto_accept_offer_interval').value)
+            };
+
+            // 悠悠有品租赁自动上架配置
+            config.uu_auto_lease_item = {
+                enable: JSON.parse(document.getElementById('uu_auto_lease_item_enable').value),
+                lease_max_days: parseInt(document.getElementById('uu_auto_lease_item_lease_max_days').value),
+                filter_price: parseFloat(document.getElementById('uu_auto_lease_item_filter_price').value),
+                run_time: document.getElementById('uu_auto_lease_item_run_time').value,
+                interval: parseInt(document.getElementById('uu_auto_lease_item_interval').value),
+                filter_name: document.getElementById('uu_auto_lease_item_filter_name').value.split('\n').map(item => item.trim()).filter(item => item !== '')
+            };
+
+            // 悠悠有品出售自动上架配置
+            config.uu_auto_sell_item = {
+                enable: JSON.parse(document.getElementById('uu_auto_sell_item_enable').value),
+                take_profile: JSON.parse(document.getElementById('uu_auto_sell_item_take_profile').value),
+                take_profile_ratio: parseFloat(document.getElementById('uu_auto_sell_item_take_profile_ratio').value),
+                run_time: document.getElementById('uu_auto_sell_item_run_time').value,
+                interval: parseInt(document.getElementById('uu_auto_sell_item_interval').value),
+                name: document.getElementById('uu_auto_sell_item_name').value.split('\n').map(item => item.trim()).filter(item => item !== '')
+            };
+
+            // ecosteam 插件配置
+            config.ecosteam = {
+                enable: JSON.parse(document.getElementById('ecosteam_enable').value),
+                partnerId: document.getElementById('ecosteam_partnerId').value,
+                auto_accept_offer: {
+                    interval: parseInt(document.getElementById('ecosteam_auto_accept_offer_interval').value)
+                },
+                auto_sync_sell_shelf: {
+                    enable: JSON.parse(document.getElementById('ecosteam_auto_sync_sell_shelf_enable').value),
+                    main_platform: document.getElementById('ecosteam_auto_sync_sell_shelf_main_platform').value,
+                    enabled_platforms: document.getElementById('ecosteam_auto_sync_sell_shelf_enabled_platforms').value.split(',').map(item => item.trim()).filter(item => item !== ''),
+                    ratio: JSON.parse(document.getElementById('ecosteam_auto_sync_sell_shelf_ratio').value)
+                },
+                sync_interval: parseInt(document.getElementById('ecosteam_sync_interval').value),
+                qps: parseInt(document.getElementById('ecosteam_qps').value)
+            };
+
+            // 日志设置
+            config.log_level = document.getElementById('log_level').value;
+            config.log_retention_days = parseInt(document.getElementById('log_retention_days').value);
+
+            // 生成 JSON 字符串
+            const configString = JSON.stringify(config, null, 2);
+
+            // 显示在页面上
+            document.getElementById('configOutput').textContent = configString;
+        });
+
+
+        // 复制到剪贴板
+        document.getElementById('copyConfig').addEventListener('click', () => {
+            const configText = document.getElementById('configOutput').textContent;
+            navigator.clipboard.writeText(configText).then(() => {
+                alert('配置内容已复制到剪贴板！');
+            });
+        });
+
+        // 下载 config.json5 文件
+        document.getElementById('downloadConfig').addEventListener('click', () => {
+            const configText = document.getElementById('configOutput').textContent;
+            const blob = new Blob([configText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'config.json5';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+<footer class="footer mt-auto py-3 bg-dark text-white">
+    <div class="container text-center">
+        <a href="https://github.com/Steamauto/Steamauto" target="_blank">
+            Edit on GitHub
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-github"
+                viewBox="0 0 16 16">
+                <path
+                    d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+        </a>
+    </div>
+</footer>
+
+</html>

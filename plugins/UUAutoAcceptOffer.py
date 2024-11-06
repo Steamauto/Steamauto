@@ -74,7 +74,7 @@ class UUAutoAcceptOffer:
                                     self.logger.info(f'接受报价[{str(item["offer_id"])}]完成!')
                                     accepted = True
                                 except Exception as e:
-                                    handle_caught_exception(e, "UUAutoAcceptOffer")
+                                    handle_caught_exception(e, "UUAutoAcceptOffer", known=True)
                                     self.logger.error("Steam异常, 暂时无法接受报价, 请稍后再试! ")
                             else:
                                 self.logger.info(
@@ -85,15 +85,14 @@ class UUAutoAcceptOffer:
                                 self.logger.info("为了避免频繁访问Steam接口, 等待5秒后继续...")
                                 time.sleep(5)
                 except Exception as e:
-                    handle_caught_exception(e, "UUAutoAcceptOffer")
-                    self.logger.info("出现未知错误, 稍后再试! ")
-                    try:
-                        self.uuyoupin.get_user_nickname()
-                    except KeyError as e:
-                        handle_caught_exception(e, "UUAutoAcceptOffer")
+                    if '登录状态失效，请重新登录' in str(e):
+                        handle_caught_exception(e, "UUAutoAcceptOffer", known=True)
                         self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                         self.logger.error("由于登录失败，插件将自动退出")
                         exit_code.set(1)
                         return 1
-                self.logger.info(f"将在 {interval} 秒后再次检查待发货订单信息!")
+                    else:
+                        handle_caught_exception(e, "UUAutoAcceptOffer",known=False)
+                        self.logger.error("出现未知错误, 稍后再试! ")
+                self.logger.info("将在{0}秒后再次检查待发货订单信息!".format(str(interval)))
                 time.sleep(interval)

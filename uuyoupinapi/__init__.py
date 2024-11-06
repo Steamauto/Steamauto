@@ -156,13 +156,16 @@ class UUAccount:
             response = self.session.delete(url)
         else:
             raise Exception("Method not supported")
-        try:
-            log_output = response.content.decode()
-            if is_json(log_output):
-                log_output = json.dumps(json.loads(log_output), ensure_ascii=False)
+        log_output = response.content.decode()
+        if is_json(log_output):
+            json_output = json.loads(log_output)
+            log_output = json.dumps(json_output, ensure_ascii=False)
             logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
-        except Exception as e:
-            raise Exception(f"网络错误！！！请求失败: {e}")
+            if json_output.get('code') == 84101:
+                raise Exception('登录状态失效，请重新登录')
+        else:
+            raise Exception(f"网络错误，或服务器被悠悠屏蔽！请求失败！")
+            
         return response
 
     def change_leased_price(self, items: list[LeaseAsset]):
@@ -314,7 +317,8 @@ class UUAccount:
             for order in data["orderList"]:
                 if int(order["offerType"]) == 2:
                     if order["tradeOfferId"] is not None:
-                        del toDoList[order["orderNo"]]
+                        if order["orderNo"] in toDoList.keys():
+                            del toDoList[order["orderNo"]]
                         data_to_return.append(
                             {
                                 "offer_id": order["tradeOfferId"],
@@ -340,7 +344,8 @@ class UUAccount:
                                 "item_name": orderDetail["productDetail"]["commodityName"],
                             }
                         )
-                        del toDoList[order]
+                        if order in toDoList.keys():
+                            del toDoList[order]
         if len(toDoList.keys()) != 0:
             for order in list(toDoList.keys()):
                 orderDetail = self.call_api(
@@ -359,7 +364,8 @@ class UUAccount:
                             "item_name": orderDetail["commodity"]["name"],
                         }
                     )
-                    del toDoList[order]
+                    if order in toDoList.keys():
+                        del toDoList[order]
         if len(toDoList.keys()) != 0:
             logger.warning(
                 "[UUAutoAcceptOffer] 有订单未能获取到Steam交易报价号，订单号为：" + str(toDoList.keys()),
@@ -473,17 +479,21 @@ class UUAccount:
         # logger.info(f"上架数量 {len(leased_inventory_list)}")
         return leased_inventory_list
 
-    def get_inventory(self):
-        inventory_list_rsp = self.call_api(
-            "POST",
-            "/api/commodity/Inventory/GetUserInventoryDataListV3",
-            data={
+    def get_inventory(self,refresh = False):
+        data_to_send = {
                 "pageIndex": 1,
                 "pageSize": 1000,
                 "AppType": 4,
                 "IsMerge": 0,
                 "Sessionid": self.device_info["deviceId"],
-            },
+            }
+        if refresh:
+            data_to_send['IsRefresh'] = True
+            data_to_send['RefreshType'] = 2
+        inventory_list_rsp = self.call_api(
+            "POST",
+            "/api/commodity/Inventory/GetUserInventoryDataListV3",
+            data=data_to_send,
         ).json()
         inventory_list = []
         if inventory_list_rsp["Code"] == 0:  # 我他妈真是服了你了悠悠，Code的C一会儿大写一会儿小写

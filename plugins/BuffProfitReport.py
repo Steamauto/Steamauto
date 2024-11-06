@@ -237,8 +237,8 @@ class BuffProfitReport:
             self.logger.info("已检测到cookies, 尝试登录")
             self.logger.info("已经登录至BUFF 用户名: " + self.check_buff_account_state())
         except TypeError as e:
-            handle_caught_exception(e, "BuffProfitReport")
-            self.logger.error("BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
+            handle_caught_exception(e, "[BuffProfitReport]", known=True)
+            self.logger.error("[BuffProfitReport] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
             return
         while True:
             try:
@@ -491,6 +491,6 @@ class BuffProfitReport:
                     attach=AppriseAttachment(report_file_path)
                 )
             except Exception as e:
-                handle_caught_exception(e, "[BuffProfitReport]")
+                handle_caught_exception(e, "[BuffProfitReport]", known=True)
                 self.logger.error("[BuffProfitReport] 生成BUFF利润报告失败, 错误信息: " + str(e), exc_info=True)
             time.sleep(sleep_interval)

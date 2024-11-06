@@ -321,23 +321,35 @@ class BuffAccount:
             self.logger.error("搜索商品失败!")
             return []
 
-    def get_sell_order(self, goods_id: str, page_num: int = 1, game_name: str = "csgo", sort_by: str = "default", proxy: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-        """获取指定饰品的在售商品"""
-        url = "https://buff.163.com/api/market/goods/sell_order"
+    def get_sell_order(self, goods_id, page_num=1, game_name="csgo", sort_by="default", proxy=None) -> dict:
+        """
+        获取指定饰品的在售商品
+        :return: dict
+        """
         params = {
             "game": game_name,
             "goods_id": goods_id,
             "page_num": page_num,
             "sort_by": sort_by,
         }
-        headers = self.get_random_header() if sort_by != "default" else {}
-        try:
-            response = self.get(url, params=params, headers=headers, proxies=proxy)
-            return response.json().get("data", {})
-        except (ValueError, KeyError) as e:
-            handle_caught_exception(e, "BuffAccount")
-            self.logger.error("获取在售订单失败!")
-            return {}
+        if sort_by != "default":
+            return json.loads(
+                self.get(
+                    "https://buff.163.com/api/market/goods/sell_order",
+                    params=params,
+                    headers=get_random_header(),
+                    proxies=proxy,
+                ).text
+            ).get("data")
+        else:
+            return json.loads(
+                requests.get(
+                    "https://buff.163.com/api/market/goods/sell_order",
+                    params=params,
+                    headers=get_random_header(),
+                    proxies=proxy,
+                ).text
+            ).get("data")
 
     def get_available_payment_methods(self, sell_order_id: str, goods_id: str, price: float, game_name: str = "csgo") -> Dict[str, float]:
         """

@@ -58,7 +58,7 @@ class SteamAutoAcceptOffer:
                                         self.steam_client.accept_trade_offer(trade_offer["tradeofferid"])
                                     self.logger.info(f'报价[{trade_offer["tradeofferid"]}]接受成功！')
                                 except Exception as e:
-                                    handle_caught_exception(e, "SteamAutoAcceptOffer")
+                                    handle_caught_exception(e, "SteamAutoAcceptOffer", known=True)
                                     self.logger.error("Steam异常! 稍后再试...")
                             else:
                                 self.logger.info(

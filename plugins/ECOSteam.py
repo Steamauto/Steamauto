@@ -241,8 +241,8 @@ class ECOSteam:
             else:
                 raise Exception
         except Exception as e:
-            self.logger.error(f"登录失败！请检查{ECOSTEAM_RSAKEY_FILE}和parterId是否正确！由于无法登录ECOSteam，插件将退出。")
-            handle_caught_exception(e)
+            logger.error(f"登录失败！请检查{ECOSTEAM_RSAKEY_FILE}和parterId是否正确！由于无法登录ECOsteam，插件将退出。")
+            handle_caught_exception(e, known=True)
             exit_code.set(1)
             return 1
 
@@ -380,7 +380,7 @@ class ECOSteam:
                         self.ignored_offer.append(tradeOfferId)
                         accept_offer_logger.info(f"已接受报价号{tradeOfferId}！")
                     except Exception as e:
-                        handle_caught_exception(e, "ECOSteam.cn")
+                        handle_caught_exception(e, "ECOsteam.cn", known=True)
                         accept_offer_logger.error("Steam异常, 暂时无法接受报价, 请稍后再试! ")
                 else:
                     accept_offer_logger.info(f"已经自动忽略报价号{tradeOfferId}，商品名{goodsName}，因为它已经被程序处理过！")
@@ -552,7 +552,7 @@ class ECOSteam:
                             else:
                                 lease_logger.error(f"下架租赁商品过程中出现失败！错误信息：{rsp['ResultMsg']}")
                         except Exception as e:
-                            handle_caught_exception(e, "ECOSteam.cn")
+                            handle_caught_exception(e, "ECOsteam.cn", known=True)
                             lease_logger.error("发生未知错误，请稍候再试！")
                     lease_logger.info(f"下架{success_count}个商品成功！")
 
@@ -608,7 +608,7 @@ class ECOSteam:
                                 count, problems = self.buff_client.cancel_sale(offshelf_list)
                                 sell_logger.info(f"下架{count}个商品成功！下架{len(problems)}个商品失败！")
                             except Exception as e:
-                                handle_caught_exception(e, "ECOSteam.cn")
+                                handle_caught_exception(e, "ECOsteam.cn", known=True)
                                 sell_logger.error(f"下架商品失败！可能有部分下架成功")
                         elif platform == "uu":
                             response = self.uu_client.off_shelf(offshelf_list)

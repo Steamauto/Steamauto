@@ -8,6 +8,7 @@ import numpy as np
 import schedule
 
 import uuyoupinapi
+from BuffApi import BuffAccount
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.tools import exit_code, is_subsequence
 from utils.uu_helper import get_valid_token_for_uu
@@ -17,7 +18,6 @@ class UUAutoSellItem:
     def __init__(self, config: Dict):
         self.sale_inventory_list: List[Dict] = []
         self.logger = PluginLogger("UUAutoSellItem")
-        self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu())
         self.config = config
         self.time_sleep = 10.0
         self.inventory_list: List[Dict] = []
@@ -260,7 +260,7 @@ class UUAutoSellItem:
                 try:
                     self.uuyoupin.get_user_nickname()
                 except KeyError as e:
-                    handle_caught_exception(e, "UUAutoSellItem")
+                    handle_caught_exception(e, "UUAutoSellItem", known=True)
                     self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                     self.logger.error("由于登录失败，插件将自动退出")
                     exit_code.set(1)
@@ -331,7 +331,7 @@ class UUAutoSellItem:
             try:
                 self.uuyoupin.get_user_nickname()
             except KeyError as e:
-                handle_caught_exception(e, "UUAutoSellItem-AutoChangePrice")
+                handle_caught_exception(e, "UUAutoSellItem-AutoChangePrice", known=True)
                 self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                 self.logger.error("由于登录失败，插件将自动退出")
                 exit_code.set(1)
