@@ -13,7 +13,7 @@ from utils.uu_helper import get_valid_token_for_uu
 
 
 class UUAutoSellItem:
-    def __init__(self, config):
+    def __init__(self, config, uu_account=None):
         self.sale_inventory_list = None
         self.logger = PluginLogger("UUAutoSellItem")
         self.config = config
@@ -147,10 +147,8 @@ class UUAutoSellItem:
                 sale_item_list = []
                 self.uuyoupin.send_device_info()
                 self.logger.info("正在获取悠悠有品库存...")
-                self.inventory_list = self.uuyoupin.get_inventory()
-                self.operate_sleep(10)
 
-                self.inventory_list = self.uuyoupin.get_inventory()
+                self.inventory_list = self.uuyoupin.get_inventory(refresh=True)
 
                 for i, item in enumerate(self.inventory_list):
                     if item["AssetInfo"] is None:

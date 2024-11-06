@@ -14,9 +14,9 @@ from uuyoupinapi import models
 
 
 class UUAutoLeaseItem:
-    def __init__(self, config):
+    def __init__(self, config, uu_account=None):
         self.logger = PluginLogger("UUAutoLeaseItem")
-        self.uuyoupin = None
+        self.uuyoupin = uu_account
         self.config = config
         self.timeSleep = 10
         self.inventory_list = []
@@ -33,7 +33,7 @@ class UUAutoLeaseItem:
             return True
         return False
 
-    def get_lease_price(self, template_id, min_price=0, cnt=15):
+    def get_lease_price(self, template_id, min_price=0, max_price=20000, cnt=15):
 
         if template_id in self.lease_price_cache:
             if datetime.datetime.now() - self.lease_price_cache[template_id]["cache_time"] <= datetime.timedelta(minutes=20):
@@ -50,8 +50,8 @@ class UUAutoLeaseItem:
                     "LongLeaseUnitPrice": long_lease_unit_price,
                     "LeaseDeposit": lease_deposit,
                 }
-
-        rsp_list = self.uuyoupin.get_market_lease_price(template_id, min_price=min_price, cnt=cnt)
+        max_price = 20000 if max_price == 0 else max_price
+        rsp_list = self.uuyoupin.get_market_lease_price(template_id, min_price=min_price, max_price=max_price, cnt=cnt)
         if len(rsp_list) > 0:
             rsp_cnt = len(rsp_list)
             commodity_name = rsp_list[0].CommodityName
@@ -114,10 +114,8 @@ class UUAutoLeaseItem:
                 lease_item_list = []
                 self.uuyoupin.send_device_info()
                 self.logger.info("正在获取悠悠有品库存...")
-                self.inventory_list = self.uuyoupin.get_inventory()
-                self.operate_sleep()
 
-                self.inventory_list = self.uuyoupin.get_inventory()
+                self.inventory_list = self.uuyoupin.get_inventory(refresh=True)
 
                 for i, item in enumerate(self.inventory_list):
                     if item["AssetInfo"] is None:
@@ -135,7 +133,7 @@ class UUAutoLeaseItem:
                         continue
                     self.operate_sleep()
 
-                    price_rsp = self.get_lease_price(template_id, min_price=price)
+                    price_rsp = self.get_lease_price(template_id, min_price=price, max_price=price*2)
                     if price_rsp["LeaseUnitPrice"] == 0:
                         continue
                     
@@ -193,11 +191,12 @@ class UUAutoLeaseItem:
 
                 template_id = item.templateid
                 short_name = item.short_name
+                price = item.price
 
                 if any(s != "" and is_subsequence(s, short_name) for s in self.config["uu_auto_lease_item"]["filter_name"]):
                     continue
 
-                price_rsp = self.get_lease_price(template_id)
+                price_rsp = self.get_lease_price(template_id, max_price=price*2)
                 if price_rsp["LeaseUnitPrice"] == 0:
                     continue
 
@@ -280,6 +279,6 @@ if __name__ == "__main__":
         exit_code.set(1)
     else:
         uu_auto_lease.uuyoupin = uuyoupinapi.UUAccount(token)
-    uu_auto_lease.pre_check_price()
+    # uu_auto_lease.pre_check_price()
     # time.sleep(64)
-    # uu_auto_lease.auto_change_price()
+    uu_auto_lease.auto_change_price()
