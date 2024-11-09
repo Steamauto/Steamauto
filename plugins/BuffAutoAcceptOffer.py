@@ -68,12 +68,12 @@ class BuffAutoAcceptOffer:
             if steamid != buff_steamid:
                 self.logger.error("当前登录账号与BUFF绑定的Steam账号不一致!")
                 exit_code.set(1)
-                return False
+                return True
 
             # 启用买家发起交易报价功能
             self.buff_account.require_buyer_send_offer()
 
-            return True
+            return False
         except Exception as e:
             handle_caught_exception(e, "BuffAutoAcceptOffer")
             self.logger.error("初始化插件时发生错误!")
