@@ -16,9 +16,11 @@ CONFIG_FILE_PATH = os.path.join(CONFIG_FOLDER, "config.json5")
 BUFF_COOKIES_FILE_PATH = os.path.join(CONFIG_FOLDER, "buff_cookies.txt")
 UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token.txt")
 STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
+STEAM_INVENTORY_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_inventory.json5")
 SESSION_FOLDER = "session"
 DEV_FILE_FOLDER = "dev"
 BUFF_ACCOUNT_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "buff_account.json")
+BUFF_ORDER_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "buff_order.json")
 MESSAGE_NOTIFICATION_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "message_notification.json")
 STEAM_TRADE_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "steam_trade.json")
 SELL_ORDER_HISTORY_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "sell_order_history.json")
@@ -211,7 +213,11 @@ DEFAULT_CONFIG_JSON = r"""
     // 已上架租赁的物品可以定时修改价格（防止很长时间没出租出去，转租的也可以修改）。设置的轮询间隔，单位为分钟
     "interval": 31,
     // 不出租的物品名字列表，示例：["物品A", "物品B"]（名字可以不写全，但是要写对，比如M4A1印花集）
-    "filter_name": ["物品A", "物品B"]
+    "filter_name": ["物品A", "物品B"],
+    // 按现价固定比例设置价格
+    "enable_fix_lease_ratio": false,
+    // 出租价格比例, 如现价1000元, 0.001比例，出租价格为1000 * 0.001 = 1元 (不会低于正常计算的出租价格)
+    "fix_lease_ratio": 0.001
   },
   // 悠悠有品出售自动上架配置
   "uu_auto_sell_item": {
