@@ -78,19 +78,28 @@ class UUAutoLeaseItem:
 
             lease_deposit = max(float(np.mean(lease_deposit_list)) * 0.98, float(min(lease_deposit_list)))
 
-            self.logger.info(
-                f"物品 {commodity_name}，"
-                f"短租价格：{lease_unit_price:.2f}，长租价格：{long_lease_unit_price:.2f}，押金：{lease_deposit:.2f}"
-            )
             self.logger.info(f"短租参考价格：{lease_unit_price_list}，长租参考价格：{long_lease_unit_price_list}")
         else:
             lease_unit_price = long_lease_unit_price = lease_deposit = 0
             commodity_name = ""
 
         lease_unit_price = round(lease_unit_price, 2)
-        long_lease_unit_price = round(long_lease_unit_price, 2)
+        long_lease_unit_price = min(round(long_lease_unit_price, 2), lease_unit_price)
         lease_deposit = round(lease_deposit, 2)
 
+        if self.config['uu_auto_lease_item']['enable_fix_lease_ratio'] and min_price > 0:
+            ratio = self.config['uu_auto_lease_item']['fix_lease_ratio']
+            lease_unit_price = max(lease_unit_price, min_price * ratio)
+            long_lease_unit_price = max(long_lease_unit_price, lease_unit_price * 0.98)
+
+            self.logger.info(
+                f"物品 {commodity_name}，启用比例定价，市场价 {min_price}，租金比例 {ratio}"
+            )
+
+        self.logger.info(
+            f"物品 {commodity_name}，"
+            f"短租价格：{lease_unit_price:.2f}，长租价格：{long_lease_unit_price:.2f}，押金：{lease_deposit:.2f}"
+        )
         if lease_unit_price != 0:
             self.lease_price_cache[template_id] = {
                 "commodity_name": commodity_name,
@@ -196,7 +205,7 @@ class UUAutoLeaseItem:
                 if any(s != "" and is_subsequence(s, short_name) for s in self.config["uu_auto_lease_item"]["filter_name"]):
                     continue
 
-                price_rsp = self.get_lease_price(template_id, max_price=price*2)
+                price_rsp = self.get_lease_price(template_id, min_price=price, max_price=price*2)
                 if price_rsp["LeaseUnitPrice"] == 0:
                     continue
 
@@ -279,6 +288,6 @@ if __name__ == "__main__":
         exit_code.set(1)
     else:
         uu_auto_lease.uuyoupin = uuyoupinapi.UUAccount(token)
-    # uu_auto_lease.pre_check_price()
+    uu_auto_lease.pre_check_price()
     # time.sleep(64)
-    uu_auto_lease.auto_change_price()
+    # uu_auto_lease.auto_change_price()
