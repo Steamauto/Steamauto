@@ -362,6 +362,7 @@ class BuffAccount:
         headers = copy.deepcopy(self.session.headers)
         headers.update(
 
+
             {
                 "X-CSRFToken": csrf_token,
 
