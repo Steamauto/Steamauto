@@ -36,7 +36,6 @@ def get_ua():
         "(Macintosh; Intel Mac OS X 10_12_6)",
     ]
     chrome_version = "Chrome/{}.0.{}.{}".format(first_num, third_num, fourth_num)
-
     ua = " ".join(
         [
             "Mozilla/5.0",
