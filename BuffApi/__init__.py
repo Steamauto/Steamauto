@@ -364,6 +364,7 @@ class BuffAccount:
         headers.update(
             {
                 "X-CSRFToken": csrf_token,
+
                 "X-Requested-With": "XMLHttpRequest",
                 "Content-Type": "application/json",
                 "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
