@@ -361,6 +361,7 @@ class BuffAccount:
         csrf_token = self.session.cookies.get("csrf_token", domain="buff.163.com")
         headers = copy.deepcopy(self.session.headers)
         headers.update(
+
             {
                 "X-CSRFToken": csrf_token,
 
