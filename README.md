@@ -6,11 +6,11 @@
       <a href="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=TMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj&authKey=VAgXngXUeaHBfGwY2uNzE%2F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz&noverify=0&group_code=425721057" alt="QQ Group">
         <img src="https://img.shields.io/badge/%E5%AE%98%E6%96%B9QQ%E7%BE%A4-425721057-brightgreen?logo=TencentQQ&link=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3F_wv%3D1027%26k%3DTMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj%26authKey%3DVAgXngXUeaHBfGwY2uNzE%252F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz%26noverify%3D0%26group_code%3D425721057" /></a>
       <a href="https://www.bilibili.com/video/BV1ph4y1y7mz/" alt="Video tutorial">
-        https://img.shields.io/badge/%E8%A7%86%E9%A2%91%E6%95%99%E7%A8%8B-%E7%82%B9%E5%87%BB%E8%A7%82%E7%9C%8B-brightgreen?logo=bilibili" />
-      https://github.com/jiajiaxd/Steamauto/stargazers" alt="GitHub Repo stars">
-        https://img.shields.io/github/stars/jiajiaxd/Steamauto?logo=github" />
-      https://github.com/jiajiaxd/Steamauto/forks" alt="GitHub forks">
-        https://img.shields.io/github/forks/jiajiaxd/Steamauto?logo=github" />
+        <img src="https://img.shields.io/badge/%E8%A7%86%E9%A2%91%E6%95%99%E7%A8%8B-%E7%82%B9%E5%87%BB%E8%A7%82%E7%9C%8B-brightgreen?logo=bilibili" /></a>
+      <a href="https://github.com/jiajiaxd/Steamauto/stargazers" alt="GitHub Repo stars">
+        <img src="https://img.shields.io/github/stars/jiajiaxd/Steamauto?logo=github" /></a>
+      <a href="https://github.com/jiajiaxd/Steamauto/forks" alt="GitHub forks">
+        <img src="https://img.shields.io/github/forks/jiajiaxd/Steamauto?logo=github" /></a>
 </div>
 
 > 开源的 Steam 自动收发货解决方案
