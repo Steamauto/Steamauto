@@ -319,7 +319,7 @@ class BuffAccount:
                     problem_sell_orders[key] = response.json()["data"][key]
         return success, problem_sell_orders
 
-    def get_on_sale(self, page_num=1, page_size=1000, mode="2,5", fold="0"):
+    def get_on_sale(self, page_num=1, page_size=500, mode="2,5", fold="0"):
         return self.get(
             "https://buff.163.com/api/market/sell_order/on_sale",
             params={

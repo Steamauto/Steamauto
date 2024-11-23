@@ -303,6 +303,8 @@ class ECOsteamPlugin:
         elif platform == "buff":
             data = self.buff_client.get_on_sale().json()["data"]
             items = data["items"]
+            if data['total_count']> 500:
+                items += self.buff_client.get_on_sale(page_num=2).json()["data"]["items"]
             for item in items:
                 asset = Asset(assetid=item["asset_info"]["assetid"], orderNo=item["id"], price=float(item["price"]))
                 try:
