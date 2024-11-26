@@ -329,6 +329,7 @@ class BuffAccount:
                 "game": "csgo",
 
 
+
                 "appid": 730,
             },
 
