@@ -327,6 +327,7 @@ class BuffAccount:
                 "mode": mode,
                 "fold": fold,
                 "game": "csgo",
+
                 "appid": 730,
             },
         )
