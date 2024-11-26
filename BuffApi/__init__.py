@@ -334,6 +334,7 @@ class BuffAccount:
 
 
 
+
                 "appid": 730,
             },
 
