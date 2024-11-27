@@ -270,6 +270,11 @@ DEFAULT_CONFIG_JSON = r"""
     "sync_interval": 60, // 同步间隔时间，单位为秒。不建议设置太长，否则可能会导致同步不及时，导致平台账号被封禁
     "qps": 10 //每秒最大请求数。如果你是白名单大会员，建议设置为30。如果你不知道这是什么，请保持默认值。
   },
+  "c5_auto_accept_offer": { // C5自动发货插件配置
+    "enable": false, // 是否启用C5自动发货功能
+    "interval": 30, // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
+    "app_key": "" // C5Game的AppKey 在 https://www.c5game.com/user/user/open-api 申请
+  },
   // 存储在硬盘的日志等级，可选值为"debug"/"info"/"warning"/"error"
   "log_level": "debug",
   // 本地日志保留天数

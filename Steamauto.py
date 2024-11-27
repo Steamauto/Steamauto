@@ -20,6 +20,7 @@ from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
 from plugins.BuffAutoComment import BuffAutoComment
 from plugins.BuffAutoOnSale import BuffAutoOnSale
 from plugins.BuffProfitReport import BuffProfitReport
+from plugins.C5AutoAcceptOffer import C5AutoAcceptOffer
 from plugins.ECOsteam import ECOsteamPlugin
 from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
 from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
@@ -38,22 +39,14 @@ except:
 
 
 from utils.logger import handle_caught_exception
-from utils.static import (
-    BUILD_INFO,
-    CONFIG_FILE_PATH,
-    CONFIG_FOLDER,
-    CURRENT_VERSION,
-    DEFAULT_CONFIG_JSON,
-    DEFAULT_STEAM_ACCOUNT_JSON,
-    DEV_FILE_FOLDER,
-    LOGS_FOLDER,
-    PLUGIN_FOLDER,
-    SESSION_FOLDER,
-    STEAM_ACCOUNT_INFO_FILE_PATH,
-    set_is_latest_version,
-    set_no_pause,
-)
-from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
+from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
+                          CURRENT_VERSION, DEFAULT_CONFIG_JSON,
+                          DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
+                          LOGS_FOLDER, PLUGIN_FOLDER, SESSION_FOLDER,
+                          STEAM_ACCOUNT_INFO_FILE_PATH, set_is_latest_version,
+                          set_no_pause)
+from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
+                         logger, pause)
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -456,7 +449,7 @@ def exit_app(signal_, frame):
         tried_exit = True
         jobHandler.terminate_all()
         logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
-        sys.exit(exit_code.get())
+        os._exit(exit_code.get())
     else:
         logger.warning("程序已经强制退出")
         pid = os.getpid()
