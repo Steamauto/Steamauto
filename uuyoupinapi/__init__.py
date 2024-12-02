@@ -39,7 +39,7 @@ def generate_headers(devicetoken, deviceid, token=""):
         "authorization": "Bearer " + token,
         "content-type": "application/json; charset=utf-8",
         "user-agent": "okhttp/3.14.9",
-        "app-version": "5.20.1",
+        "app-version": "5.26.1",
         "apptype": "4",
         "package-type": "uuyp",
         "devicetoken": devicetoken,
