@@ -161,7 +161,7 @@ class SteamClient:
     def get_partner_inventory(self, partner_steam_id: str, game: GameOptions, merge: bool = True, count: int = 5000) -> dict:
         url = '/'.join([SteamUrl.COMMUNITY_URL, 'inventory', str(partner_steam_id), game.app_id, game.context_id])
         params = {'l': 'english', 'count': count}
-        response_dict = self._session.get(url, params=params, timeout=10).json()
+        response_dict = self._session.get(url, cookies={"steamDidLoginRefresh": str(int(time()))}, params=params, timeout=10).json()
         if 'success' not in response_dict:
             raise InvalidResponse()
         if response_dict['success'] != 1:
