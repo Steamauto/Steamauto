@@ -3,7 +3,6 @@ import random
 import string
 import time
 
-from annotated_types import Le
 import requests
 
 from utils.logger import PluginLogger
@@ -327,6 +326,7 @@ class UUAccount:
                         )
         if len(toDoList.keys()) != 0:
             for order in list(toDoList.keys()):
+                time.sleep(3)
                 orderDetail = self.call_api(
                     "POST",
                     "/api/youpin/bff/order/v2/detail",
