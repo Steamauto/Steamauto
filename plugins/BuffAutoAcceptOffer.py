@@ -465,13 +465,14 @@ class BuffAutoAcceptOffer:
                                         try:
                                             with self.steam_client_mutex:
                                                 self.steam_client.accept_trade_offer(offer_id)
+                                            ignored_offer.append(offer_id)
                                         except KeyError as e:
                                             handle_caught_exception(e, "BuffAutoAcceptOffer", known=True)
                                             self.logger.error("Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
                                         except Exception as e:
                                             handle_caught_exception(e, "BuffAutoAcceptOffer", known=True)
                                             self.logger.error("无法接受报价, 请检查网络连接或稍后再试! ")
-                                    ignored_offer.append(offer_id)
+                                    
                                     self.logger.info("接受完成! 已经将此交易报价加入忽略名单! ")
                                     if "sell_notification" in self.config["buff_auto_accept_offer"]:
                                         apprise_obj = apprise.Apprise()
