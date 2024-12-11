@@ -372,6 +372,9 @@ class ECOsteamPlugin:
         accept_offer_logger.info(f"检测到{len(wait_deliver_orders)}个待发货订单！")
         if len(wait_deliver_orders) > 0:
             for order in wait_deliver_orders:
+                if '等待发送报价' in order.get('CancelReason', ''):
+                    accept_offer_logger.warning(f"订单号{order['OrderNum']}等待发送报价，暂时跳过处理")
+                    continue
                 accept_offer_logger.debug(f'正在获取订单号{order["OrderNum"]}的详情！')
                 detail = self.client.GetSellerOrderDetail(OrderNum=order["OrderNum"]).json()["ResultData"]
                 tradeOfferId = detail["TradeOfferId"]
