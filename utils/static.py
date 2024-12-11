@@ -5,7 +5,7 @@ global is_latest_version
 is_latest_version = False
 no_pause = False
 
-CURRENT_VERSION = "4.2.0"
+CURRENT_VERSION = "4.2.1"
 
 VERSION_FILE = "version.json"
 APPRISE_ASSET_FOLDER = "Apprise"
