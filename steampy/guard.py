@@ -37,12 +37,16 @@ def try_to_get_time_delta_from_steam(session: Session) -> int:
     return time_delta
 
 
-def load_steam_guard(steam_guard: str) -> dict:
-    if os.path.isfile(steam_guard):
-        with open(steam_guard, 'r') as f:
-            return json.loads(f.read())
-    else:
-        return json.loads(steam_guard)
+def load_steam_guard(steam_guard) -> dict:
+    if isinstance(steam_guard, dict):
+        return steam_guard
+    if isinstance(steam_guard, str):
+        if os.path.isfile(steam_guard):
+            with open(steam_guard, 'r') as f:
+                return json.loads(f.read())
+        else:
+            return json.loads(steam_guard)
+    raise ValueError('steam_guard must be a dict or a file path or a json string')
 
 
 def generate_one_time_code(shared_secret: str, timestamp: int = None) -> str:
