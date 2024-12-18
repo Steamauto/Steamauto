@@ -378,6 +378,9 @@ class ECOsteamPlugin:
                 time.sleep(0.3)
                 tradeOfferId = detail["TradeOfferId"]
                 goodsName = detail["GoodsName"]
+                if not tradeOfferId:
+                    accept_offer_logger.warning(f"商品{goodsName}无法获取到交易报价号(可能由于ECO服务器正在发送报价)，暂时跳过处理")
+                    continue
                 if tradeOfferId not in self.ignored_offer:
                     accept_offer_logger.info(f"正在发货商品{goodsName}，报价号{tradeOfferId}...")
                     try:
