@@ -367,9 +367,6 @@ class ECOsteamPlugin:
         tomorrow = tomorrow.strftime("%Y-%m-%d")
         last_month = last_month.strftime("%Y-%m-%d")
         wait_deliver_orders = self.client.getFullSellerOrderList(last_month, tomorrow, DetailsState=8, SteamId=self.steam_id)
-        # for order in wait_deliver_orders:
-        #     if order['OrderStateCode'] == 2:
-        #         wait_deliver_orders.remove(order)
         accept_offer_logger.info(f"检测到{len(wait_deliver_orders)}个待发货订单！")
         if len(wait_deliver_orders) > 0:
             for order in wait_deliver_orders:
@@ -378,6 +375,7 @@ class ECOsteamPlugin:
                     continue
                 accept_offer_logger.debug(f'正在获取订单号{order["OrderNum"]}的详情！')
                 detail = self.client.GetSellerOrderDetail(OrderNum=order["OrderNum"]).json()["ResultData"]
+                time.sleep(0.3)
                 tradeOfferId = detail["TradeOfferId"]
                 goodsName = detail["GoodsName"]
                 if tradeOfferId not in self.ignored_offer:
