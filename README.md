@@ -16,22 +16,11 @@
 > 开源的 Steam 自动收发货解决方案
 > 杜绝收费、安全稳定
 
-> 广告:
-> 【ECOSteam】[https://share.ecosteam.cn/share/01J154Z3NMTXQ5B2ZT3TQ5NSZA](https://share.ecosteam.cn/share/01J154Z3NMTXQ5B2ZT3TQ5NSZA)
-> ECOSteam 新CSGO皮肤交易平台
-> 交易0手续费 提现1% 满1万余额需要提现可私聊我免费领取提现券
-> 货多的还可以联系群管申请交易补贴!(2%)
-> 可租可售 求购还有1%补贴
-> 本软件完美支持ECOSteam, 请放心使用
-
 **使用前请仔细阅读本文档！**
 **欢迎有能力者提交PR来完善本程序。**
 **请勿违反开源协议，包括但不限于闭源倒卖此程序或修改后不进行开源等。**
 **[欢迎加入Steamauto 官方QQ群:425721057](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=TMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj&authKey=VAgXngXUeaHBfGwY2uNzE%2F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz&noverify=0&group_code=425721057)**
 **网络不好的可以加QQ群在群文件内下载最新构建**
-
-**强烈谴责平头哥CSGO违反开源协议闭源修改本软件并收费出售, 我们将对其采取行动**
-**[快照证据](https://web.archive.org/web/20240202005724/https://www.ptgcsgo.com/products/872)**
 
 ## 它能做什么？
 
@@ -61,6 +50,9 @@
 - 自动发货
 - 与BUFF、悠悠有品所上架商品同步 (支持比例)
 
+#### 在 [C5Game](https://www.c5game.com/) 上:
+- 自动发货
+
 #### 在 Steam 上:
 
 - 内置Steam加速器
@@ -68,50 +60,20 @@
 
 ## 如何使用?
 
-[推荐观看视频教程](https://www.bilibili.com/video/BV1ph4y1y7mz)
-0. ~~给予本仓库一个star(手动狗头)~~
-
+0. ~~给予本仓库一个star(手动狗头)~~  
 1. 前往 [Github Releases](https://github.com/jiajiaxd/Steamauto/releases/latest) 下载适合自己系统的Steamauto
 2. 运行一次程序，程序会释放配置文件
-3. 编辑 `config`文件夹下的 `config.json5`(相关教程见FAQ)
-4. 修改 `config`文件夹下的 `steam_account_info.json5`中所有的参数(相关教程见配置说明)
-5. **(若有需求Buff相关功能)** 在 `config.json5`中启用BUFF相关功能并直接运行程序(程序会自动填写buff_cookies.txt)
-6. **(若有需求悠悠有品相关功能)** 打开 `uu_token.txt`,填入[悠悠有品](https://www.youpin898.com/)的token(如何获取token,见FAQ)
+3. 编辑 `config`文件夹下的 `config.json5`(文件中有相关配置辅助配置)，启用你需要的功能
+4. 修改 `config`文件夹下的 `steam_account_info.json5`中所有的参数(相关教程见附录)
+5. 根据你需要程序为你自动化的平台，根据下面的表格配置相关信息
 
-## 配置说明
+| 平台|配置详情|
+| --------------------------------|--------------------------------------------------------------------|
+| 网易BUFF/悠悠有品| 无需手动配置登录信息，在`config.json5`启用后根据程序提示登录即可|
+| ECOSteam|需要在`config.json5`中配置partnerId 且需要在config文件夹下创建rsakey.txt填入私钥(教程下文有相关说明) |
+| C5Game|需要申请API Key并在`config.json5`中配置|
 
-**部分配置项数据(如获取Steam账户信息、Buff的cookie等)在附录中，请自行查阅！**
-
-##### `config.json5`
-
-请前往 [配置页面](https://pages.steamauto.jiajiaxd.com/config) 生成配置，并粘贴至`config/config.json5`
-
-注意：配置页面目前处于测试阶段，若有BUG请及时反馈！
-
-##### `steam_account_info.json5`
-
-```json5
-{
-
-  // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
-  // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
-  // 新版Steamauto已经无需手动填写API_KEY、steamid、buff_cookies.txt(均可自动获取)，视频教程暂未更新，请悉知！！！
-
-  // Steam 令牌参数（用于身份验证）
-  "shared_secret": "",
-
-  // Steam 令牌参数（用于身份验证）
-  "identity_secret": "",
-
-  // Steam 登录时填写的用户名
-  "steam_username": "",
-
-  // Steam 登录时填写的密码
-  "steam_password": ""
-}
-```
-
-##### `notification`相关配置项说明
+## `notification`相关配置项说明(仅支持BUFF相关插件)
 
 | 配置项                           | 描述                                                                                                                                                      |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -148,7 +110,6 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 
 ##### 如何获取悠悠有品token?
 
-~~使用 `-uu`参数或者在程序所在目录下创建 `uu.txt`(无需填入任何内容),运行Steamauto程序,根据程序向导操作即可~~
 在最新版本中直接运行程序，若token无效程序会自动引导你获取有效的token
 
 ##### 是否支持多开？
