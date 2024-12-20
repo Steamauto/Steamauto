@@ -45,6 +45,10 @@ class C5AutoAcceptOffer:
                 while True:
                     page += 1
                     resp = self.client.orderList(status=1, page=page,steamId=self.steam_id)
+                    if resp.get('errorCode','') == 400001:
+                        logger.error('app_key错误，请检查配置文件内的app_key是否正确')
+                        logger.error('由于app_key错误，插件已停止运行')
+                        return 1
                     notDeliveredOrders = resp.get('data').get('list', [])
                     if len(resp.get('data').get('list', [])) < resp['data']['limit']:
                         break
