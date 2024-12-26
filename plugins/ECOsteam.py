@@ -10,7 +10,9 @@ from typing import Dict, List, Union
 from BuffApi import BuffAccount
 from BuffApi.models import BuffOnSaleAsset
 from PyECOsteam import ECOsteamClient, models
+import steampy
 from steampy.client import SteamClient
+import steampy.exceptions
 from steampy.models import GameOptions
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import LogFilter, PluginLogger, handle_caught_exception
@@ -304,7 +306,7 @@ class ECOsteamPlugin:
         elif platform == "buff":
             data = self.buff_client.get_on_sale().json()["data"]
             items = data["items"]
-            if data['total_count']> 500:
+            if data['total_count'] > 500:
                 items += self.buff_client.get_on_sale(page_num=2).json()["data"]["items"]
             for item in items:
                 asset = Asset(assetid=item["asset_info"]["assetid"], orderNo=item["id"], price=float(item["price"]))
@@ -343,7 +345,7 @@ class ECOsteamPlugin:
         try:
             with self.steam_client_mutex:
                 inventory = self.steam_client.get_my_inventory(game=GameOptions.CS)  # type: ignore
-                logger.log(5,'获取到的Steam库存:' + json.dumps(inventory, ensure_ascii=False))
+                logger.log(5, '获取到的Steam库存:' + json.dumps(inventory, ensure_ascii=False))
         except Exception as e:
             handle_caught_exception(e, "ECOsteam.cn")
         return inventory
@@ -379,7 +381,9 @@ class ECOsteamPlugin:
                 tradeOfferId = detail["TradeOfferId"]
                 goodsName = detail["GoodsName"]
                 if not tradeOfferId:
-                    accept_offer_logger.warning(f"商品{goodsName}无法获取到交易报价号(可能由于ECO服务器正在发送报价)，暂时跳过处理")
+                    accept_offer_logger.warning(
+                        f"商品{goodsName}无法获取到交易报价号(可能由于ECO服务器正在发送报价)，暂时跳过处理"
+                    )
                     continue
                 if tradeOfferId not in self.ignored_offer:
                     accept_offer_logger.info(f"正在发货商品{goodsName}，报价号{tradeOfferId}...")
@@ -390,8 +394,13 @@ class ECOsteamPlugin:
                         accept_offer_logger.info(f"已接受报价号{tradeOfferId}！")
                     except Exception as e:
                         handle_caught_exception(e, "ECOsteam.cn", known=True)
+                        relogin = False
+                        if isinstance(e, steampy.exceptions.ConfirmationExpected) or isinstance(
+                            e, steampy.exceptions.InvalidCredentials
+                        ):
+                            relogin = True
                         with self.steam_client_mutex:
-                            if not self.steam_client.is_session_alive():
+                            if (not self.steam_client.is_session_alive()) or relogin:
                                 accept_offer_logger.warning("Steam会话已过期, 正在重新登录...")
                                 self.steam_client.relogin()
                                 accept_offer_logger.info("Steam会话已更新")
@@ -615,7 +624,7 @@ class ECOsteamPlugin:
                             f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！"
                         )
                         if platform == "eco":
-                            success_count,failure_count = self.client.OffshelfGoods(
+                            success_count, failure_count = self.client.OffshelfGoods(
                                 [models.GoodsNum(GoodsNum=good, SteamGameId='730') for good in offshelf_list]
                             )
                             sell_logger.info(f'下架{success_count}个商品成功！')
@@ -673,7 +682,7 @@ class ECOsteamPlugin:
             assets = [asset.orderNo for asset in difference["delete"]]
             if len(assets) > 0:
                 sell_logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
-                success_count,failure_count = self.client.OffshelfGoods(
+                success_count, failure_count = self.client.OffshelfGoods(
                     [models.GoodsNum(GoodsNum=goodsNum, SteamGameId='730') for goodsNum in assets]
                 )
                 sell_logger.info(f"下架{success_count}个商品成功！")
