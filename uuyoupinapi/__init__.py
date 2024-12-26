@@ -845,10 +845,10 @@ class UUAccount:
         """
         item_infos = [
             {
-                "steamAssetId": asset["steamAssetId"],
+                "steamAssetId": str(asset["steamAssetId"]),
                 "marketHashName": asset["marketHashName"],
-                "buyPrice": asset["buyPrice"],
-                "abrade": asset["abrade"]
+                "buyPrice": str(asset["buyPrice"]),
+                "abrade": str(asset["abrade"])
             }
             for asset in assets
         ]
@@ -861,3 +861,112 @@ class UUAccount:
             logger.info(f"保存购入价格成功。")
         else:
             logger.error(f"保存购入价格失败，原因：{rsp}")
+
+    def get_buy_order(self, pageIndex=1):
+        buy_order_rsp = self.call_api(
+            "POST",
+            "/api/youpin/bff/trade/sale/v1/buy/list",
+            data={
+                "keys": "",
+                "orderStatus": 340,
+                "pageIndex": pageIndex,
+                "pageSize": 20,
+                "presenterId": 0,
+                "sceneType": 0,
+                "Sessionid": self.device_info["deviceId"],
+            },
+        ).json()
+        buy_price = []
+        if buy_order_rsp["code"] == 0:
+            order_list = buy_order_rsp["data"]["orderList"]
+            for order in order_list:
+                if not order["orderStatusName"] == "已完成":
+                    continue
+                product_detail_list = order["productDetailList"]
+                if order["commodityNum"] <= 3:
+                    for product in product_detail_list:
+                        buy_price.append(
+                            {
+                                "order_id": order["orderId"],
+                                "abrade": product["abrade"][:11],
+                                "buy_asset_id": product["assertId"] if product["assertId"] is not None else product["commodityId"],
+                                "buy_price": product["price"] / 100,
+                                "name": product["commodityName"],
+                                "order_time": int(order["finishOrderTime"]),
+                                "type_name": product["typeName"],
+                                "buy_from": 'uu'
+                            }
+                        )
+                else:
+                    buy_price.extend(self.get_buy_batch_order(order["id"], order["buyerUserId"]))
+                    time.sleep(10)
+            logger.info(f"获取购入订单成功。数量: {len(buy_price)}")
+        else:
+            logger.error(f"获取购入订单失败，原因：{buy_order_rsp}")
+
+        return buy_price
+
+    def get_buy_batch_order(self, orderNo, userId):
+        buy_batch_order_rsp = self.call_api(
+            "POST",
+            "/api/youpin/bff/trade/v1/order/query/detail",
+            data={
+                "orderNo": str(orderNo),
+                "userId": userId,
+                "Sessionid": self.device_info["deviceId"],
+            },
+        ).json()
+        buy_price = []
+        if buy_batch_order_rsp["code"] == 0:
+            data = buy_batch_order_rsp["data"]
+            for commodity in data["userCommodityVOList"][0]["commodityVOList"]:
+                buy_price.append(
+                    {
+                        "order_id": orderNo,
+                        "abrade": commodity["abrade"][:11],
+                        "buy_asset_id": commodity["id"],
+                        "buy_price": float(commodity["price"]),
+                        "name": commodity["name"],
+                        "order_time": int(data["orderCanceledTime"]),
+                        "buy_from": 'uu'
+                    }
+                )
+
+            logger.info(f"获取 batch 购入订单成功。数量: {len(buy_price)}")
+        else:
+            logger.error(f"获取 batch 购入订单失败，原因：{buy_batch_order_rsp}， 订单号：{orderNo}")
+
+        return buy_price
+
+    def get_zero_cd_list(self, pageIndex=1, pageSize=20):
+        zero_cd_rsp = self.call_api(
+            "POST",
+            "/api/youpin/bff/trade/v1/order/lease/sublet/canEnable/list",
+            data={
+                "pageIndex": pageIndex,
+                "pageSize": pageSize,
+            },
+        ).json()
+        zero_cd_valid_list = []
+        if zero_cd_rsp["code"] == 0:
+            zero_cd_valid_list = zero_cd_rsp["data"]["orderDataList"]
+        return zero_cd_valid_list
+
+    def enable_zero_cd(self, orders_list):
+        enable_zero_cd_rsp = self.call_api(
+            "POST",
+            "/api/youpin/bff/order/sublet/open",
+            data={
+                "orderIdList": orders_list,
+                "subletConfig": {
+                    "subletSwitchFlag": 1,
+                    "subletPricingFlag": 1,
+                    "pricingMinPercent": "95"
+                }
+            }
+        ).json()
+
+        if enable_zero_cd_rsp["code"] == 0:
+            logger.info(f"0cd出租设置成功。")
+        else:
+            logger.error(f"0cd出租设置失败，原因：{enable_zero_cd_rsp}")

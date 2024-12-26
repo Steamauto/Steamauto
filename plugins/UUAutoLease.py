@@ -243,6 +243,25 @@ class UUAutoLeaseItem:
                 exit_code.set(1)
                 return 1
 
+    def auto_set_zero_cd(self):
+        self.logger.info("悠悠有品出租自动设置0cd已启动")
+        self.operate_sleep()
+        if self.uuyoupin is not None:
+            try:
+                zero_cd_valid_list = self.uuyoupin.get_zero_cd_list()
+                enable_zero_cd_list = []
+                for order in zero_cd_valid_list:
+                    name = order["commodityInfo"]["name"]
+                    if any(s != "" and is_subsequence(s, name) for s in self.config["uu_auto_lease_item"]["filter_name"]):
+                        continue
+                    enable_zero_cd_list.append(int(order["orderId"]))
+                self.logger.info(f"共 {len(enable_zero_cd_list)} 件物品可以设置为0cd。")
+                if len(enable_zero_cd_list) > 0:
+                    self.uuyoupin.enable_zero_cd(enable_zero_cd_list)
+            except Exception as e:
+                self.logger.error(e, exc_info=True)
+                self.logger.info("出现未知错误, 稍后再试! ")
+
     def exec(self):
         self.logger.info(f"以下物品不会出租：{self.config['uu_auto_lease_item']['filter_name']}")
 
@@ -250,15 +269,21 @@ class UUAutoLeaseItem:
 
         self.pre_check_price()
         self.auto_lease()
+        self.auto_set_zero_cd()
 
         run_time = self.config['uu_auto_lease_item']['run_time']
         interval = self.config['uu_auto_lease_item']['interval']
-
+        if "zero_cd_run_time" in self.config['uu_auto_lease_item']:
+            zero_cd_run_time = self.config['uu_auto_lease_item']['zero_cd_run_time']
+        else:
+            zero_cd_run_time = "23:30"
         self.logger.info(f"[自动出售] 等待到 {run_time} 开始执行。")
         self.logger.info(f"[自动修改价格] 每隔 {interval} 分钟执行一次。")
+        self.logger.info(f"[设置0cd] 等待到 {zero_cd_run_time} 开始执行。")
 
         schedule.every().day.at(f"{run_time}").do(self.auto_lease)
         schedule.every(interval).minutes.do(self.auto_change_price)
+        schedule.every().day.at(f"{zero_cd_run_time}").do(self.auto_set_zero_cd)
 
         while True:
             schedule.run_pending()
@@ -290,4 +315,4 @@ if __name__ == "__main__":
         uu_auto_lease.uuyoupin = uuyoupinapi.UUAccount(token)
     uu_auto_lease.pre_check_price()
     # time.sleep(64)
-    # uu_auto_lease.auto_change_price()
+    uu_auto_lease.auto_set_zero_cd()
