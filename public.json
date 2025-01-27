@@ -1,0 +1,22 @@
+{
+    "broadcast": {
+        "message": "<bold><red>Hello world!<reset>"
+    },
+    "versions": {
+        "5.0.0": {
+            "changelog": "initial",
+            "download_url": {
+                "windows": [""],
+                "linux": [""],
+                "mac": [""]
+            },
+            "hash": {
+                "windows": "",
+                "linux": "",
+                "mac": ""
+            },
+            "level": "stable",
+            "significance": "normal"
+        }
+    }
+}

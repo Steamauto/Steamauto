@@ -1,0 +1,182 @@
+name: Publsih New Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 5.0.1)'
+        required: true
+      changelog:
+        description: 'Changelog text'
+        required: true
+      level:
+        description: 'Release level'
+        default: 'stable'
+        required: true
+        type: choice
+        options:
+          - stable
+          - beta
+          - alpha
+      significance:
+        description: 'Significance level'
+        default: 'normal'
+        required: true
+        type: choice
+        options:
+          - minor
+          - normal
+          - important
+          - critical
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ github.event.inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate version format
+        run: |
+          if [[ ! "${{ github.event.inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version format"
+            exit 1
+          fi
+
+      - name: Update files
+        run: |
+          CHANGELOG_ESCAPED=$(echo "${{ github.event.inputs.changelog }}" | python -c 'import sys,json; print(json.dumps(sys.stdin.read()).strip("\""))')
+          python .github/scripts/update_files.py \
+            --version "${{ github.event.inputs.version }}" \
+            --changelog "$CHANGELOG_ESCAPED" \
+            --level "${{ github.event.inputs.level }}" \
+            --significance "${{ github.event.inputs.significance }}"
+
+      - name: Upload modified files
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-files
+          path: |
+            utils/static.py
+            public.json
+
+  build:
+    needs: prepare
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download config files
+        uses: actions/download-artifact@v3
+        with:
+          name: config-files
+          path: .
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Build binary
+        run: |
+          pip install pyinstaller -r requirements.txt
+          python .github/scripts/add_build_info.py
+          pyinstaller -F Steamauto.py --collect-all apprise --name Steamauto-${{ matrix.os }} --add-data "plugins:plugins"
+      
+      - name: Check build result
+        if: ${{ failure() }}
+        run: |
+          echo "Build failed on ${{ matrix.os }}"
+          exit 1
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.os }}
+          path: dist/
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows binary
+        uses: actions/download-artifact@v3
+        with:
+          name: binaries-windows-latest
+          path: artifacts/windows
+
+      - name: Download Linux binary
+        uses: actions/download-artifact@v3
+        with:
+          name: binaries-ubuntu-latest
+          path: artifacts/linux
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release_files
+          
+          if [ -n "$(ls -A artifacts/windows/* 2>/dev/null)" ]; then
+            cp -r artifacts/windows/* release_files/
+          fi
+          
+          if [ -n "$(ls -A artifacts/linux/* 2>/dev/null)" ]; then
+            cp -r artifacts/linux/* release_files/
+          fi
+          
+          tree release_files
+
+      - name: Prepare release body
+        run: |
+          echo -e "${{ github.event.inputs.changelog }}" > release_body.md
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          bodyFile: release_body.md
+          artifacts: release_files/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  finalize:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download config files
+        uses: actions/download-artifact@v3
+        with:
+          name: config-files
+          path: .
+
+      - name: Update metadata
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python .github/scripts/update_metadata.py \
+            --version "${{ github.event.inputs.version }}" \
+            --repo "${{ github.repository }}"
+
+      - name: Process message
+        id: process-message
+        run: |
+          # 将 \n 替换为实际的换行符
+          processed_message=$(echo "${{ github.event.inputs.changelog }}" | sed 's/\\n/\n/g')
+          # 将处理后的消息存储到环境变量中
+          echo "MESSAGE<<EOF" >> $GITHUB_ENV
+          echo "$processed_message" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        env:
+          COMMIT_MESSAGE: ${{ env.MESSAGE }}
+        with:
+          add: utils/static.py public.json
+          message: "${{ env.COMMIT_MESSAGE }}"
+          default_author: github_actions
