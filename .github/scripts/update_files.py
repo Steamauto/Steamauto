@@ -28,7 +28,7 @@ def update_public_json(args):
     # 确保 data["versions"] 是一个列表
     if not isinstance(data.get("versions"), list):
         data["versions"] = []
-    changelog = args.changelog.encode().decode('unicode_escape')
+    changelog = args.changelog
     # 创建新版本信息
     new_version = {
         "version": args.version,

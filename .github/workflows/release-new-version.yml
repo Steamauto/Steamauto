@@ -46,10 +46,9 @@ jobs:
 
       - name: Update files
         run: |
-          CHANGELOG_ESCAPED=$(echo "${{ github.event.inputs.changelog }}" | python -c 'import sys,json; print(json.dumps(sys.stdin.read()).strip("\""))')
           python .github/scripts/update_files.py \
             --version "${{ github.event.inputs.version }}" \
-            --changelog "$CHANGELOG_ESCAPED" \
+            --changelog "${{ github.event.inputs.changelog }}" \
             --level "${{ github.event.inputs.level }}" \
             --significance "${{ github.event.inputs.significance }}"
 
