@@ -64,20 +64,28 @@ def get_platform_info():
 def autoUpdate(downloadUrl):
     """
     自动更新当前程序。
-    
+
     参数:
     - downloadUrl (str): 新版本可执行文件的下载URL。
-    
+
     返回:
     - bool: 更新是否成功发起。
     """
     import os
     import subprocess
     import sys
+    import textwrap
+    import requests
+    import tqdm
+    import logging
+    import shlex
+
+    logger = logging.getLogger(__name__)
+
     try:
         with requests.get(downloadUrl, stream=True, timeout=30) as response:
             response.raise_for_status()
-            
+
             # 获取文件名
             content_disposition = response.headers.get('Content-Disposition')
             if content_disposition and 'filename=' in content_disposition:
@@ -109,8 +117,7 @@ def autoUpdate(downloadUrl):
                     bar.update(len(data))
             logger.info('下载完成: %s', filename)
     except Exception as e:
-        handle_caught_exception(e)
-        logger.error('下载失败')
+        logger.exception('下载失败')
         return False
 
     # 获取当前执行文件的路径
@@ -127,19 +134,28 @@ def autoUpdate(downloadUrl):
         logger.error('新版本文件不存在: %s', new_version_path)
         return False
 
+    # 获取当前进程的PID
+    current_pid = os.getpid()
+
+    # 确保路径中包含的特殊字符被正确处理
+    current_executable_quoted = current_executable.replace('"', '""')
+    new_version_path_quoted = new_version_path.replace('"', '""')
+
     # 创建批处理文件内容
-    update_script_content = f"""
-@echo off
-:loop
-tasklist | find /i "{os.path.basename(current_executable)}" > nul
-if not errorlevel 1 (
-    timeout /t 1 > nul
-    goto loop
-)
-move /y "{new_version_path}" "{current_executable}" > nul
-start "" "{current_executable}"
-del "%~f0"
-"""
+    update_script_content = textwrap.dedent(f'''\
+        @echo off
+        set PID={current_pid}
+        echo Waiting for process %PID% to exit...
+        :loop
+        tasklist /FI "PID eq %PID%" | find /I "%PID%" >nul
+        if not errorlevel 1 (
+            timeout /t 1 > nul
+            goto loop
+        )
+        move /Y "{new_version_path_quoted}" "{current_executable_quoted}" >nul
+        start "" "{current_executable_quoted}"
+        del "%~f0"
+        ''')
 
     # 批处理文件路径
     update_script_path = os.path.join(os.path.dirname(current_executable), 'update.bat')
@@ -149,16 +165,15 @@ del "%~f0"
         with open(update_script_path, 'w', encoding='utf-8') as f:
             f.write(update_script_content)
         logger.info('更新脚本已创建: %s', update_script_path)
-        
+
         # 启动批处理文件
-        subprocess.Popen(['cmd', '/c', 'start', '', update_script_path], shell=True)
+        subprocess.Popen(['cmd', '/c', update_script_path])
         logger.info('启动更新脚本，并准备退出当前程序。')
-        
+
         # 退出当前程序
         sys.exit()
     except Exception as e:
-        handle_caught_exception(e)
-        logger.error('更新失败：无法创建或启动更新脚本。')
+        logger.exception('更新失败：无法创建或启动更新脚本。')
         return False
 
     return True
