@@ -30,6 +30,7 @@ from steampy.client import SteamClient
 from steampy.exceptions import ApiException
 from utils.tools import jobHandler
 
+
 try:
     from steampy.utils import ping_proxy  # type: ignore
 except:
@@ -225,30 +226,11 @@ def init_files_and_params() -> int:
         f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n"
     )
     logger.info(f"当前版本: {CURRENT_VERSION}   编译信息: {BUILD_INFO}")
-    logger.info("正在检查更新...")
     try:
-        response_json = requests.get("https://steamauto.jiajiaxd.com/versions", params={"version": CURRENT_VERSION}, timeout=5)
-        data = response_json.json()
-        latest_version = data["latest_version"]["version"]
-        broadcast = data.get("broadcast", None)
-        if broadcast:
-            logger.info(f"Steamauto官方公告:\n {broadcast}\n")
-        if compare_version(CURRENT_VERSION, latest_version) == -1:
-            logger.info(f"检测到最新版本: {latest_version}")
-            changelog_to_output = str()
-            for version in data["history_versions"]:
-                if compare_version(CURRENT_VERSION, version["version"]) == -1:
-                    changelog_to_output += f"版本: {version['version']}\n更新日志: {version['changelog']}\n\n"
-
-            logger.info(f"\n{changelog_to_output}")
-            set_is_latest_version(False)
-            logger.warning("当前版本不是最新版本,为了您的使用体验,请及时更新!")
-        else:
-            set_is_latest_version(True)
-            logger.info("当前版本已经是最新版本")
+        from utils import cloud_service
+        cloud_service.checkVersion()
     except Exception as e:
-        handle_caught_exception(e, known=True)
-        logger.warning("检查更新失败, 跳过检查更新")
+        logger.warning('无法使用云服务')
     logger.info("正在初始化...")
     first_run = False
     if not os.path.exists(CONFIG_FOLDER):

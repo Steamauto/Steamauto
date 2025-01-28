@@ -3,11 +3,10 @@ import random
 import re
 
 import chardet
+from apscheduler.job import Job
 
 from utils.logger import logger
 from utils.static import get_no_pause
-
-from apscheduler.job import Job
 
 current_exit_code = 0
 jobs = []
