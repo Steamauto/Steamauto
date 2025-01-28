@@ -177,6 +177,10 @@ def checkVersion():
             logger.error('由于服务端内部错误，无法检测版本')
             return False
         response = response.json()
+        
+        if response['broadcast']:
+            logger.info('Steamauto 官方公告：\n'+parseBroadcastMessage(response['broadcast']))
+            
         if not response['latest']:
             logger.warning(f'当前版本不是最新版本 最新版本为{response["latestVersion"]}')
         else:
@@ -184,8 +188,7 @@ def checkVersion():
             return True
         logger.info('更新日志：\n'+response['changelog'])
         
-        if response['broadcast']:
-            logger.info('Steamauto 官方公告：\n'+parseBroadcastMessage(response['broadcast']))
+        
         
         if response['significance'] == 'minor':
             logger.info('最新版本为小版本更新')
