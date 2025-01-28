@@ -30,7 +30,6 @@ from steampy.client import SteamClient
 from steampy.exceptions import ApiException
 from utils.tools import jobHandler
 
-
 try:
     from steampy.utils import ping_proxy  # type: ignore
 except:
@@ -219,7 +218,19 @@ def login_to_steam():
 def init_files_and_params() -> int:
     global config
     development_mode = False
-    logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
+    
+    if os.path.exists('update.txt'):
+        with open('update.txt', 'r') as f:
+            old_version_path = f.read()
+        try:
+            os.remove(old_version_path)
+            os.remove('update.txt')
+            logger.info('自动更新完毕！已删除旧版本文件')
+        except Exception as e:
+            handle_caught_exception(e, known=True)
+            logger.error('无法删除旧版本文件 请手动删除！')
+    
+    logger.info("欢迎使用Steamauto Github仓库:https://github.com/Steamauto/Steamauto")
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! \n")
     logger.info(

@@ -1,9 +1,9 @@
 import os
 import platform
 import signal
+import sys
 
 import requests
-import tqdm
 from colorama import Fore, Style
 
 from utils.logger import handle_caught_exception, logger
@@ -71,16 +71,7 @@ def autoUpdate(downloadUrl):
     返回:
     - bool: 更新是否成功发起。
     """
-    import os
-    import subprocess
-    import sys
-    import textwrap
-    import requests
     import tqdm
-    import logging
-    import shlex
-
-    logger = logging.getLogger(__name__)
 
     try:
         with requests.get(downloadUrl, stream=True, timeout=30) as response:
@@ -119,62 +110,15 @@ def autoUpdate(downloadUrl):
     except Exception as e:
         logger.exception('下载失败')
         return False
-
-    # 获取当前执行文件的路径
-    if getattr(sys, 'frozen', False):
-        current_executable = sys.executable
-    else:
-        current_executable = os.path.abspath(__file__)
-
-    # 获取新版本文件的完整路径
-    new_version_path = os.path.abspath(filename)
-
-    # 确保新文件存在
-    if not os.path.exists(new_version_path):
-        logger.error('新版本文件不存在: %s', new_version_path)
-        return False
-
-    # 获取当前进程的PID
-    current_pid = os.getpid()
-
-    # 确保路径中包含的特殊字符被正确处理
-    current_executable_quoted = current_executable.replace('"', '""')
-    new_version_path_quoted = new_version_path.replace('"', '""')
-
-    # 创建批处理文件内容
-    update_script_content = textwrap.dedent(f'''\
-        @echo off
-        set PID={current_pid}
-        echo Waiting for process %PID% to exit...
-        :loop
-        tasklist /FI "PID eq %PID%" | find /I "%PID%" >nul
-        if not errorlevel 1 (
-            timeout /t 1 > nul
-            goto loop
-        )
-        move /Y "{new_version_path_quoted}" "{current_executable_quoted}" >nul
-        start "" "{current_executable_quoted}"
-        del "%~f0"
-        ''')
-
-    # 批处理文件路径
-    update_script_path = os.path.join(os.path.dirname(current_executable), 'update.bat')
-
-    try:
-        # 写入批处理文件
-        with open(update_script_path, 'w', encoding='utf-8') as f:
-            f.write(update_script_content)
-        logger.info('更新脚本已创建: %s', update_script_path)
-
-        # 启动批处理文件
-        subprocess.Popen(['cmd', '/c', update_script_path])
-        logger.info('启动更新脚本，并准备退出当前程序。')
-
-        # 退出当前程序
-        sys.exit()
-    except Exception as e:
-        logger.exception('更新失败：无法创建或启动更新脚本。')
-        return False
+    
+    # 创建update.txt，写入旧版本的路径，以便更新后删除旧版本
+    with open('update.txt', 'w') as f:
+        f.write(sys.executable)
+    os.startfile(filename) # type: ignore
+    sys.exit(0)
+    pid = os.getpid()
+    os.kill(pid, signal.SIGTERM)
+    
 
     return True
     
@@ -214,9 +158,10 @@ def checkVersion():
         elif response['significance'] == 'critical':
             logger.error('最新版本为关键版本更新，可能包含重要修复，在更新前程序不会继续运行')
         if 'windows' in get_platform_info() and BUILD_INFO != '正在使用源码运行':
-            logger.info('由于使用Windows平台，将自动下载更新')
-            logger.info('下载地址：'+response['downloadUrl'])
-            autoUpdate(response['downloadUrl'])
+            if hasattr(sys, 'frozen'):
+                logger.info('当前为独立打包程序且运行在Windows平台，将自动下载更新')
+                logger.info('下载地址：'+response['downloadUrl'])
+                autoUpdate(response['downloadUrl'])
         elif response['significance'] == 'critical':
             logger.critical('由于版本过低，程序将退出')
             pause()
