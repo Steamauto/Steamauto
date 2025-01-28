@@ -179,7 +179,7 @@ def checkVersion():
         response = response.json()
         
         if response['broadcast']:
-            logger.info('Steamauto 官方公告：\n'+parseBroadcastMessage(response['broadcast']))
+            logger.info('Steamauto 官方公告：\n'+parseBroadcastMessage(response['broadcast']['message']))
             
         if not response['latest']:
             logger.warning(f'当前版本不是最新版本 最新版本为{response["latestVersion"]}')
