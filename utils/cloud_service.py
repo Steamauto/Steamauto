@@ -186,7 +186,7 @@ def checkVersion():
         else:
             logger.info('当前版本为最新版本')
             return True
-        logger.info('更新日志：\n'+response['changelog'])
+        logger.info('更新日志：\n'+response['changelog'].replace('\\n', '\n'))
         
         
         
