@@ -1,3 +1,4 @@
+from hashlib import sha256
 import importlib
 import inspect
 import json
@@ -10,6 +11,7 @@ import sys
 import threading
 import time
 from ssl import SSLCertVerificationError
+from typing import no_type_check
 
 import json5
 import requests
@@ -28,7 +30,7 @@ from plugins.UUAutoLease import UUAutoLeaseItem
 from plugins.UUAutoSell import UUAutoSellItem
 from steampy.client import SteamClient
 from steampy.exceptions import ApiException
-from utils.tools import jobHandler
+from utils.tools import calculate_sha256, jobHandler
 
 try:
     from steampy.utils import ping_proxy  # type: ignore
@@ -39,22 +41,14 @@ except:
 
 
 from utils.logger import handle_caught_exception
-from utils.static import (
-    BUILD_INFO,
-    CONFIG_FILE_PATH,
-    CONFIG_FOLDER,
-    CURRENT_VERSION,
-    DEFAULT_CONFIG_JSON,
-    DEFAULT_STEAM_ACCOUNT_JSON,
-    DEV_FILE_FOLDER,
-    LOGS_FOLDER,
-    PLUGIN_FOLDER,
-    SESSION_FOLDER,
-    STEAM_ACCOUNT_INFO_FILE_PATH,
-    set_is_latest_version,
-    set_no_pause,
-)
-from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
+from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
+                          CURRENT_VERSION, DEFAULT_CONFIG_JSON,
+                          DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
+                          LOGS_FOLDER, PLUGIN_FOLDER, SESSION_FOLDER,
+                          STEAM_ACCOUNT_INFO_FILE_PATH, set_is_latest_version,
+                          set_no_pause)
+from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
+                         logger, pause)
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -247,6 +241,7 @@ def init_files_and_params() -> int:
     logger.info(f"当前版本: {CURRENT_VERSION}   编译信息: {BUILD_INFO}")
     try:
         from utils import cloud_service
+
         cloud_service.checkVersion()
         cloud_service.getAds()
     except Exception as e:
@@ -294,16 +289,29 @@ def init_files_and_params() -> int:
         return 2
 
 
-def get_base_path():
-    if hasattr(sys, '_MEIPASS'):
-        # PyInstaller
-        return os.path.join(sys._MEIPASS)  # type: ignore
-    else:
-        return os.path.dirname(os.path.abspath(__file__))
-
-
+@no_type_check
 def get_plugins_folder():
-    base_path = get_base_path()
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    if hasattr(sys, '_MEIPASS'):
+        base_path = os.path.dirname(sys.executable)
+        if not os.path.exists(os.path.join(base_path, PLUGIN_FOLDER)):
+            shutil.copytree(os.path.join(sys._MEIPASS, PLUGIN_FOLDER), os.path.join(base_path, PLUGIN_FOLDER))
+        else:
+            plugins = os.listdir(os.path.join(sys._MEIPASS, PLUGIN_FOLDER))
+            for plugin in plugins:
+                plugin_absolute = os.path.join(sys._MEIPASS, PLUGIN_FOLDER, plugin)
+                local_plugin_absolute = os.path.join(base_path, PLUGIN_FOLDER, plugin)
+                if not os.path.exists(local_plugin_absolute):
+                    shutil.copy(plugin_absolute, local_plugin_absolute)
+                else:
+                    local_plugin_sha256 = calculate_sha256(local_plugin_absolute)
+                    plugin_sha256 = calculate_sha256(plugin_absolute)
+                    if local_plugin_sha256 != plugin_sha256:
+                        if plugin not in config['plugins_whitelist']:
+                            logger.info('检测到插件' + plugin + '有更新，已自动更新 如果不需要更新请在配置文件中将该插件加入白名单')
+                            shutil.copy(plugin_absolute, local_plugin_absolute)
+                        else:
+                            logger.info('插件' + plugin + '与本地版本不同 由于已被加入白名单，不会自动更新')     
     return os.path.join(base_path, PLUGIN_FOLDER)
 
 
@@ -338,7 +346,11 @@ def get_plugin_classes():
                 if inspect.isclass(obj2) and name.startswith("External"):
                     plugin_name = camel_to_snake(obj.__name__)
                     plugin_classes[plugin_name] = obj2
-
+    # 返回的文件结构：
+    # {
+    #     "[插件名]": [插件类],
+    #     ...
+    # }
     return plugin_classes
 
 

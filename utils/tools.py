@@ -10,20 +10,23 @@ from utils.static import get_no_pause
 
 current_exit_code = 0
 jobs = []
+
+
 class exit_code:
     @staticmethod
     def set(code: int):
         global current_exit_code
-        current_exit_code = code 
+        current_exit_code = code
 
     @staticmethod
     def get() -> int:
         global current_exit_code
         return current_exit_code
 
+
 class jobHandler:
     @staticmethod
-    def add(job:Job):
+    def add(job: Job):
         global jobs
         jobs.append(job)
 
@@ -34,6 +37,7 @@ class jobHandler:
             job.pause()
             job.remove()
             del jobs[jobs.index(job)]
+
 
 # 用于解决读取文件时的编码问题
 def get_encoding(file_path):
@@ -49,6 +53,16 @@ def pause():
     if not get_no_pause():
         logger.info("点击回车键继续...")
         input()
+
+
+def calculate_sha256(file_path: str) -> str:
+    import hashlib
+
+    hash_sha256 = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            hash_sha256.update(chunk)
+    return hash_sha256.hexdigest()
 
 
 def compare_version(ver1, ver2):
@@ -78,6 +92,7 @@ class accelerator:
             r.headers["Host"] = domain
             r.url = re.sub(r"(https?://)([^/\s]+)(.*)", r"\1" + random.choice(domain_list) + r"\3", r.url)
         return r
+
 
 def is_subsequence(s, t):
     t_index = 0

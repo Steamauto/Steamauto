@@ -29,7 +29,7 @@ TO_DELIVER_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "to_deliver_{game}.json
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 UU_ARG_FILE_PATH = "uu.txt"
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
-BUILD_INFO = "正在使用源码运行"
+BUILD_INFO = "正在使用源码运行" if not hasattr(os, "frozen") else "非官方二进制构建运行"
 
 DEFAULT_STEAM_ACCOUNT_JSON = """
 {
@@ -280,7 +280,9 @@ DEFAULT_CONFIG_JSON = r"""
   // 本地日志保留天数
   "log_retention_days": 7,
   // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！！！
-  "development_mode": false
+  "development_mode": false,
+  // 本地插件白名单 当以下本地插件与程序附带不一样时，将不会被覆盖
+  "plugins_whitelist": []
 }
 """
 

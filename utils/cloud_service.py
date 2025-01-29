@@ -11,7 +11,7 @@ from colorama import Fore, Style
 
 from utils.logger import handle_caught_exception, logger
 from utils.static import BUILD_INFO, CURRENT_VERSION
-from utils.tools import pause
+from utils.tools import pause, calculate_sha256
 
 
 def get_platform_info():
@@ -84,16 +84,6 @@ def parseBroadcastMessage(message):
     message = message.replace('<bold>', Style.BRIGHT)
     message = message.replace('<br>', '\n')
     return message
-
-
-def calculate_sha256(file_path: str) -> str:
-    import hashlib
-
-    hash_sha256 = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            hash_sha256.update(chunk)
-    return hash_sha256.hexdigest()
 
 
 def autoUpdate(downloadUrl, sha256=''):
@@ -239,6 +229,8 @@ def versionThread():
     while True:
         time.sleep(86400)
         checkVersion()
+
+
 ad = threading.Thread(target=adsThread)
 update = threading.Thread(target=versionThread)
 ad.start()
