@@ -2,6 +2,9 @@ import os
 import platform
 import signal
 import sys
+import threading
+import time
+import uuid
 
 import requests
 from colorama import Fore, Style
@@ -9,6 +12,48 @@ from colorama import Fore, Style
 from utils.logger import handle_caught_exception, logger
 from utils.static import BUILD_INFO, CURRENT_VERSION
 from utils.tools import pause
+
+
+def get_platform_info():
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+
+    if system == "windows":
+        if machine == "amd64":
+            return "windows x64"
+        else:
+            return f"windows {machine}"
+    elif system == "linux":
+        if machine == "x86_64":
+            return "linux x64"
+        else:
+            return f"linux {machine}"
+    elif system == "darwin":
+        if machine == "x86_64" or machine == "arm64":
+            return "mac x64" if machine == "x86_64" else "mac arm64"
+        else:
+            return f"mac {machine}"
+    else:
+        return f"{system} {machine}"
+
+
+def get_user_uuid():
+    app_dir = os.path.expanduser("~/.steamauto")
+    uuid_file = os.path.join(app_dir, "uuid.txt")
+    if not os.path.exists(app_dir):
+        os.makedirs(app_dir)
+    if not os.path.exists(uuid_file):
+        with open(uuid_file, "w") as f:
+            user_uuid = str(uuid.uuid4())
+            f.write(user_uuid)
+    else:
+        with open(uuid_file, "r") as f:
+            user_uuid = f.read().strip()
+    return user_uuid
+
+
+session = requests.Session()
+session.headers.update({'User-Agent': f'Steamauto {CURRENT_VERSION} ({get_platform_info()}) {get_user_uuid()}'})
 
 
 def compare_version(ver1, ver2):
@@ -37,6 +82,7 @@ def parseBroadcastMessage(message):
     message = message.replace('<white>', Fore.WHITE)
     message = message.replace('<reset>', Style.RESET_ALL)
     message = message.replace('<bold>', Style.BRIGHT)
+    message = message.replace('<br>', '\n')
     return message
 
 
@@ -50,43 +96,11 @@ def calculate_sha256(file_path: str) -> str:
     return hash_sha256.hexdigest()
 
 
-def get_platform_info():
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-
-    if system == "windows":
-        if machine == "amd64":
-            return "windows x64"
-        else:
-            return f"windows {machine}"
-    elif system == "linux":
-        if machine == "x86_64":
-            return "linux x64"
-        else:
-            return f"linux {machine}"
-    elif system == "darwin":
-        if machine == "x86_64" or machine == "arm64":
-            return "mac x64" if machine == "x86_64" else "mac arm64"
-        else:
-            return f"mac {machine}"
-    else:
-        return f"{system} {machine}"
-
-
 def autoUpdate(downloadUrl, sha256=''):
-    """
-    自动更新当前程序。
-
-    参数:
-    - downloadUrl (str): 新版本可执行文件的下载URL。
-
-    返回:
-    - bool: 更新是否成功发起。
-    """
     import tqdm
 
     try:
-        with requests.get(downloadUrl, stream=True, timeout=30) as response:
+        with session.get(downloadUrl, stream=True, timeout=30) as response:
             response.raise_for_status()
 
             # 获取文件名
@@ -122,7 +136,7 @@ def autoUpdate(downloadUrl, sha256=''):
     except Exception as e:
         logger.exception('下载失败')
         return False
-    
+
     if sha256:
         logger.info('正在校验文件...')
         if calculate_sha256(filename) != sha256:
@@ -140,10 +154,32 @@ def autoUpdate(downloadUrl, sha256=''):
     return True
 
 
+def getAds():
+    try:
+        response = session.get(
+            'https://steamauto.jiajiaxd.com/ads/get/',
+        )
+        response.raise_for_status()
+        ads = response.json()
+        if len(ads) > 0:
+            print('')
+        for ad in ads:
+
+            if ad.get('stop', 0):
+                print(f'{parseBroadcastMessage(ad["message"])}\n(滞留 {ad["stop"]} 秒)\n')
+                time.sleep(ad['stop'])
+            else:
+                print(f'{parseBroadcastMessage(ad["message"])}\n')
+
+    except Exception as e:
+        handle_caught_exception(e)
+        return False
+
+
 def checkVersion():
     logger.info('正在检测当前版本是否为最新...')
     try:
-        response = requests.get(
+        response = session.get(
             'https://steamauto.jiajiaxd.com/versions/',
             params={'clientVersion': CURRENT_VERSION, 'platform': get_platform_info()},
             timeout=5,
@@ -153,20 +189,24 @@ def checkVersion():
             return False
         response = response.json()
 
-        if response['broadcast']:
-            logger.info('\n\nSteamauto 官方公告：\n' + parseBroadcastMessage(response['broadcast']['message']))
-
         if not response['latest']:
             logger.warning(f'当前版本不是最新版本 最新版本为{response["latestVersion"]}')
+            logger.warning('更新日志：' + response['changelog'].replace('\\n', '\n'))
         else:
             logger.info('当前版本为最新版本')
-            return True
-        logger.info('\n\n更新日志：\n' + response['changelog'].replace('\\n', '\n'))
 
+        if response['broadcast']:
+            print('=' * 50 + '\n')
+            print('Steamauto 官方公告：')
+            print(parseBroadcastMessage(response['broadcast']['message']))
+            print('\n' + '=' * 50)
+
+        if response['latest']:
+            return True
         if response['significance'] == 'minor':
-            logger.info('最新版本为小版本更新')
+            logger.info('最新版本为小版本更新，可自由选择是否更新')
         elif response['significance'] == 'normal':
-            logger.info('最新版本为普通版本更新，建议更新')
+            logger.warning('最新版本为普通版本更新，建议更新')
         elif response['significance'] == 'important':
             logger.warning('最新版本为重要版本更新，强烈建议更新')
         elif response['significance'] == 'critical':
@@ -186,3 +226,20 @@ def checkVersion():
         handle_caught_exception(e)
         logger.error('检测版本失败 将继续运行')
         return False
+
+
+# 创建线程，每隔5分钟输出一次广告，每隔一天检测一次版本
+def adsThread():
+    while True:
+        time.sleep(300)
+        getAds()
+
+
+def versionThread():
+    while True:
+        time.sleep(86400)
+        checkVersion()
+ad = threading.Thread(target=adsThread)
+update = threading.Thread(target=versionThread)
+ad.start()
+update.start()

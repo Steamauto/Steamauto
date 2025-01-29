@@ -39,14 +39,22 @@ except:
 
 
 from utils.logger import handle_caught_exception
-from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
-                          CURRENT_VERSION, DEFAULT_CONFIG_JSON,
-                          DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
-                          LOGS_FOLDER, PLUGIN_FOLDER, SESSION_FOLDER,
-                          STEAM_ACCOUNT_INFO_FILE_PATH, set_is_latest_version,
-                          set_no_pause)
-from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
-                         logger, pause)
+from utils.static import (
+    BUILD_INFO,
+    CONFIG_FILE_PATH,
+    CONFIG_FOLDER,
+    CURRENT_VERSION,
+    DEFAULT_CONFIG_JSON,
+    DEFAULT_STEAM_ACCOUNT_JSON,
+    DEV_FILE_FOLDER,
+    LOGS_FOLDER,
+    PLUGIN_FOLDER,
+    SESSION_FOLDER,
+    STEAM_ACCOUNT_INFO_FILE_PATH,
+    set_is_latest_version,
+    set_no_pause,
+)
+from utils.tools import accelerator, compare_version, exit_code, get_encoding, logger, pause
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -218,7 +226,7 @@ def login_to_steam():
 def init_files_and_params() -> int:
     global config
     development_mode = False
-    
+
     if os.path.exists('update.txt'):
         with open('update.txt', 'r') as f:
             old_version_path = f.read()
@@ -229,7 +237,7 @@ def init_files_and_params() -> int:
         except Exception as e:
             handle_caught_exception(e, known=True)
             logger.error('无法删除旧版本文件 请手动删除！')
-    
+
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/Steamauto/Steamauto")
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! \n")
@@ -240,6 +248,7 @@ def init_files_and_params() -> int:
     try:
         from utils import cloud_service
         cloud_service.checkVersion()
+        cloud_service.getAds()
     except Exception as e:
         logger.warning('无法使用云服务')
     logger.info("正在初始化...")
@@ -399,6 +408,23 @@ def init_plugins_and_start(steam_client, steam_client_mutex):
         logger.warning("所有插件都已经退出！这不是一个正常情况，请检查配置文件！")
 
 
+tried_exit = False
+
+
+def exit_app(signal_, frame):
+    global tried_exit
+    if not tried_exit:
+        tried_exit = True
+        jobHandler.terminate_all()
+        logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
+        os._exit(exit_code.get())
+    else:
+        logger.warning("程序已经强制退出")
+        pid = os.getpid()
+        os.kill(pid, signal.SIGTERM)
+
+
+# 主函数
 def main():
     global config
     # 初始化
@@ -433,22 +459,7 @@ def main():
     return 1
 
 
-tried_exit = False
-
-
-def exit_app(signal_, frame):
-    global tried_exit
-    if not tried_exit:
-        tried_exit = True
-        jobHandler.terminate_all()
-        logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
-        os._exit(exit_code.get())
-    else:
-        logger.warning("程序已经强制退出")
-        pid = os.getpid()
-        os.kill(pid, signal.SIGTERM)
-
-
+# 程序运行开始处
 if __name__ == "__main__":
     sys.excepthook = handle_global_exception
     signal.signal(signal.SIGINT, exit_app)
