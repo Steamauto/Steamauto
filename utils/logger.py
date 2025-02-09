@@ -116,7 +116,7 @@ def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False)
     plogger = logger
     if prefix and not prefix.endswith(" "):
         plogger = PluginLogger(prefix)
-    if not static.is_latest_version:
+    if (not static.is_latest_version) and not known:
         plogger.warning("当前Steamauto版本可能不是最新版本！请在更新到新版本后再次尝试！")
     logger.debug(e, exc_info=True)
 

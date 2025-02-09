@@ -190,12 +190,17 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False):
             logger.error(f"接受报价号{tradeOfferId}失败！")
             return False
         relogin = False
-        if isinstance(e, steampy.exceptions.ConfirmationExpected) or isinstance(e, steampy.exceptions.InvalidCredentials) or isinstance(e, ValueError):
+        if isinstance(e, ValueError):
+            if 'substring not found' in str(e):
+                logger.warning(f'报价号 {tradeOfferId} 可能已经处理过，无需再次处理')
+                handle_caught_exception(e, "SteamClient", known=True)
+                return True
+        if isinstance(e, steampy.exceptions.ConfirmationExpected) or isinstance(e, steampy.exceptions.InvalidCredentials):
             relogin = True
             handle_caught_exception(e, "SteamClient", known=True)
         with mutex:
             try:
-                if (not client.is_session_alive()):
+                if not client.is_session_alive():
                     relogin = True
                 if relogin:
                     logger.warning("Steam会话已过期，正在尝试重新登录...")
@@ -213,6 +218,7 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False):
                 handle_caught_exception(e, "SteamClient")
                 logger.error(f"接受报价号{tradeOfferId}失败！")
         return False
+
 
 def get_cs2_inventory(client: SteamClient, mutex):
     try:
