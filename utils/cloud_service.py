@@ -9,8 +9,8 @@ import uuid
 import requests
 from colorama import Fore, Style
 
+import utils.static as static
 from utils.logger import handle_caught_exception, logger
-from utils.static import BUILD_INFO, CURRENT_VERSION
 from utils.tools import calculate_sha256, pause
 
 
@@ -53,7 +53,7 @@ def get_user_uuid():
 
 
 session = requests.Session()
-session.headers.update({'User-Agent': f'Steamauto {CURRENT_VERSION} ({get_platform_info()}) {get_user_uuid()}'})
+session.headers.update({'User-Agent': f'Steamauto {static.CURRENT_VERSION} ({get_platform_info()}) {get_user_uuid()}'})
 
 
 def compare_version(ver1, ver2):
@@ -172,7 +172,7 @@ def checkVersion():
     try:
         response = session.get(
             'https://steamauto.jiajiaxd.com/versions/',
-            params={'clientVersion': CURRENT_VERSION, 'platform': get_platform_info()},
+            params={'clientVersion': static.CURRENT_VERSION, 'platform': get_platform_info()},
             timeout=5,
         )
         if response.status_code != 200:
@@ -184,6 +184,7 @@ def checkVersion():
             logger.warning(f'当前版本不是最新版本 最新版本为{response["latestVersion"]}')
             logger.warning('更新日志：' + response['changelog'].replace('\\n', '\n'))
         else:
+            static.is_latest_version = True
             logger.info('当前版本为最新版本')
 
         if response['broadcast']:
@@ -202,7 +203,7 @@ def checkVersion():
             logger.warning('最新版本为重要版本更新，强烈建议更新')
         elif response['significance'] == 'critical':
             logger.error('最新版本为关键版本更新，可能包含重要修复，在更新前程序不会继续运行')
-        if 'windows' in get_platform_info() and BUILD_INFO != '正在使用源码运行':
+        if 'windows' in get_platform_info() and static.BUILD_INFO != '正在使用源码运行':
             if hasattr(sys, 'frozen'):
                 logger.info('当前为独立打包程序且运行在Windows平台，将自动下载更新')
                 logger.info('下载地址：' + response['downloadUrl'])

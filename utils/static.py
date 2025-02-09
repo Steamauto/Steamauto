@@ -1,7 +1,5 @@
 import os
 
-global no_pause
-global is_latest_version
 is_latest_version = False
 no_pause = False
 
@@ -285,24 +283,6 @@ DEFAULT_CONFIG_JSON = r"""
   "plugins_whitelist": []
 }
 """
-
-
-def set_no_pause(no_pause_):
-    global no_pause
-    no_pause = no_pause_
-
-
-def get_no_pause():
-    global no_pause
-    return no_pause
-
-def set_is_latest_version(is_latest_version_):
-    global is_latest_version
-    is_latest_version = is_latest_version_
-
-def get_is_latest_version():
-    global is_latest_version
-    return is_latest_version
 
 STEAM_ERROR_CODES = {
     1: "成功",

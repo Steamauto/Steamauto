@@ -28,7 +28,8 @@ from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           CURRENT_VERSION, DEFAULT_CONFIG_JSON,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
                           LOGS_FOLDER, PLUGIN_FOLDER, SESSION_FOLDER,
-                          STEAM_ACCOUNT_INFO_FILE_PATH, set_no_pause)
+                          STEAM_ACCOUNT_INFO_FILE_PATH)
+import utils.static as static
 from utils.steam_client import login_to_steam, steam_client_mutex
 from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler,
                          logger, pause)
@@ -106,7 +107,7 @@ def init_files_and_params() -> int:
 
     if not first_run:
         if "no_pause" in config:
-            set_no_pause(config["no_pause"])
+            static.no_pause = config["no_pause"]
         if "development_mode" not in config:
             config["development_mode"] = False
         if "steam_login_ignore_ssl_error" not in config:
@@ -142,7 +143,7 @@ def get_plugins_folder():
                     local_plugin_sha256 = calculate_sha256(local_plugin_absolute)
                     plugin_sha256 = calculate_sha256(plugin_absolute)
                     if local_plugin_sha256 != plugin_sha256:
-                        if plugin not in config['plugins_whitelist']:
+                        if plugin not in config.get('plugin_whitelist', []):
                             logger.info('检测到插件' + plugin + '有更新，已自动更新 如果不需要更新请在配置文件中将该插件加入白名单')
                             shutil.copy(plugin_absolute, local_plugin_absolute)
                         else:

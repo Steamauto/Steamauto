@@ -6,7 +6,7 @@ import chardet
 from apscheduler.job import Job
 
 from utils.logger import logger
-from utils.static import get_no_pause
+import utils.static as static
 
 current_exit_code = 0
 jobs = []
@@ -50,7 +50,7 @@ def get_encoding(file_path):
 
 
 def pause():
-    if not get_no_pause():
+    if not static.no_pause:
         logger.info("点击回车键继续...")
         input()
 

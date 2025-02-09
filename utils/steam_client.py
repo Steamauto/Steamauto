@@ -189,13 +189,15 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False):
         if retry:
             logger.error(f"接受报价号{tradeOfferId}失败！")
             return False
-        handle_caught_exception(e, "SteamClient", known=True)
         relogin = False
-        if isinstance(e, steampy.exceptions.ConfirmationExpected) or isinstance(e, steampy.exceptions.InvalidCredentials):
+        if isinstance(e, steampy.exceptions.ConfirmationExpected) or isinstance(e, steampy.exceptions.InvalidCredentials) or isinstance(e, ValueError):
             relogin = True
+            handle_caught_exception(e, "SteamClient", known=True)
         with mutex:
             try:
-                if (not client.is_session_alive()) or relogin:
+                if (not client.is_session_alive()):
+                    relogin = True
+                if relogin:
                     logger.warning("Steam会话已过期，正在尝试重新登录...")
                     client.relogin()
                     logger.info("重新登录成功")
@@ -204,7 +206,11 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False):
                         pickle.dump(client, f)
                     logger.info("已经更新登录会话，正在重试接受报价号" + tradeOfferId)
                     return accept_trade_offer(client, mutex, tradeOfferId, retry=True)
+                else:
+                    handle_caught_exception(e, "SteamClient")
+                    logger.error(f"接受报价号{tradeOfferId}失败！")
             except Exception as e:
+                handle_caught_exception(e, "SteamClient")
                 logger.error(f"接受报价号{tradeOfferId}失败！")
         return False
 

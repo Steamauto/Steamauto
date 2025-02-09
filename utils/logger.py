@@ -9,12 +9,12 @@ import json5
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
+import utils.static as static
 from steampy.exceptions import (ApiException, ConfirmationExpected,
                                 EmptyResponse, InvalidCredentials,
                                 InvalidResponse, SteamError)
 from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CURRENT_VERSION,
-                          LOGS_FOLDER, STEAM_ERROR_CODES,
-                          get_is_latest_version)
+                          LOGS_FOLDER, STEAM_ERROR_CODES)
 
 sensitive_data = []
 sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token", "trade_url", "TransactionUrl", "RealName", "IdCard"]
@@ -116,7 +116,7 @@ def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False)
     plogger = logger
     if prefix and not prefix.endswith(" "):
         plogger = PluginLogger(prefix)
-    if not get_is_latest_version():
+    if not static.is_latest_version:
         plogger.warning("当前Steamauto版本可能不是最新版本！请在更新到新版本后再次尝试！")
     logger.debug(e, exc_info=True)
 
