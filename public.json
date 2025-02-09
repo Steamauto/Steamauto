@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.0.3",
+      "changelog": "1.修复Steam有时无法自动重新登录\\n2.有时已经为最新版本但是提示不是最新版 ",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.0.3/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.0.3/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "58146a885d5b2875bd43c4fbe462d10a821dddb89728b6ec4048606b6d436a32",
+        "windows": "cc14d35ab80ab395064aaf8f1e32560e0c5b98961ccbe5ef690f1b2bf945c247"
+      }
+    },
+    {
       "version": "5.0.2",
       "changelog": "1. 增强稳定性，Steam出现登录失效后全自动重登  \\n2.统一管理Steam Client实例，新建utils/steam_client.py  \\n3.实现自动更新，程序运行时定期检查更新，若有致命BUG强提醒告知用户  \\n4.实现广告投放，程序运行时每隔一段时间输出广告",
       "level": "stable",
