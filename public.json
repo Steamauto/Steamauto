@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.0.2",
+      "changelog": "1. 增强稳定性，Steam出现登录失效后全自动重登  \\n2.统一管理Steam Client实例，新建utils/steam_client.py  \\n3.实现自动更新，程序运行时定期检查更新，若有致命BUG强提醒告知用户  \\n4.实现广告投放，程序运行时每隔一段时间输出广告",
+      "level": "stable",
+      "significance": "important",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.0.2/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.0.2/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "44c833a3e63058d344a76973068f2346848a786c61a212473f79c528d679a1e4",
+        "windows": "5de39d76bc79a24a9292fc964bc7c869e8d4469a6594040987deaac42a677f5a"
+      }
+    },
+    {
       "version": "5.0.1",
       "changelog": "过渡版本",
       "level": "stable",
