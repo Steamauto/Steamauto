@@ -18,6 +18,7 @@ from utils.tools import get_encoding, logger
 
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
+
 def parse_openid_params(response: str) -> Dict[str, str]:
     bs = BeautifulSoup(response, "html.parser")
     params_to_find = ["action", "openid.mode", "openidparams", "nonce"]
@@ -40,14 +41,18 @@ def get_openid_params(steam_client: SteamClient) -> Dict[str, str]:
 def login_to_buff_by_steam(steam_client: SteamClient) -> str:
     params, location_url, session = get_openid_params(steam_client)
     multipart_data = MultipartEncoder(fields=params)
-    headers = {
-        'Content-Type': multipart_data.content_type,
-        'Host': 'steamcommunity.com',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.70 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Referer': location_url
-              },
-    response = steam_client._session.post("https://steamcommunity.com/openid/login", data=multipart_data, headers=headers, allow_redirects=False)
+    headers = (
+        {
+            'Content-Type': multipart_data.content_type,
+            'Host': 'steamcommunity.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.70 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Referer': location_url,
+        },
+    )
+    response = steam_client._session.post(
+        "https://steamcommunity.com/openid/login", data=multipart_data, headers=headers, allow_redirects=False
+    )
     while response.status_code == 302:
         response = session.get(response.headers["Location"], allow_redirects=False)
     # 测试是否可用
@@ -58,7 +63,9 @@ def login_to_buff_by_steam(steam_client: SteamClient) -> str:
 
 def login_to_buff_by_qrcode() -> str:
     session = requests.session()
-    response_json = session.get("https://buff.163.com/account/api/qr_code_login_open", params={"_": str(int(time.time() * 1000))}).json()
+    response_json = session.get(
+        "https://buff.163.com/account/api/qr_code_login_open", params={"_": str(int(time.time() * 1000))}
+    ).json()
     if response_json["code"] != "OK":
         return ""
     qr_code_create_url = "https://buff.163.com/account/api/qr_code_create"
@@ -124,6 +131,11 @@ def login_to_buff_by_qrcode() -> str:
     )
     logger.debug(json5.dumps(response.json()))
     cookies = response.cookies.get_dict(domain="buff.163.com")
+    if os.path.exists("qrcode.png"):
+        try:
+            os.remove("qrcode.png")
+        except:
+            pass
     return cookies["session"]
 
 

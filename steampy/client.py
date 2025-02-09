@@ -65,12 +65,12 @@ class SteamClient:
         self,
         username: str,
         password: str,
-        steam_guard: str,
+        steam_guard,
         get_email_on_time_code_func: callable = None,
         func_2fa_input: callable = None,
     ) -> None:
         guard.try_to_get_time_delta_from_steam(self._session)
-        self.steam_guard = guard.load_steam_guard(steam_guard)
+        self.steam_guard = guard.load_steam_guard(steam_guard) # self.steam_guard是Dict类型
         self.username = username
         self._password = password
         LoginExecutor(
@@ -79,6 +79,11 @@ class SteamClient:
         self.was_login_executed = True
         self.update_access_token()
         self.market._set_login_executed(self.steam_guard, self._get_session_id())
+
+    @login_required
+    def relogin(self):
+        self._session.cookies.clear()
+        self.login(self.username, self._password, self.steam_guard)
 
     def update_access_token(self):
         try:

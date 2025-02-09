@@ -1,20 +1,16 @@
 import importlib
 import inspect
-import json
 import os
-import pickle
 import re
 import shutil
 import signal
 import sys
 import threading
 import time
-from ssl import SSLCertVerificationError
+from typing import no_type_check
 
 import json5
-import requests
 from colorama import Fore, Style
-from requests.exceptions import SSLError
 
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
 from plugins.BuffAutoComment import BuffAutoComment
@@ -27,25 +23,14 @@ from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
 from plugins.UUAutoLease import UUAutoLeaseItem
 from plugins.UUAutoSell import UUAutoSellItem
 from steampy.client import SteamClient
-from steampy.exceptions import ApiException
-from utils.tools import jobHandler
-
-try:
-    from steampy.utils import ping_proxy  # type: ignore
-except:
-
-    def ping_proxy(nothing):
-        return False
-
-
 from utils.logger import handle_caught_exception
 from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           CURRENT_VERSION, DEFAULT_CONFIG_JSON,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
                           LOGS_FOLDER, PLUGIN_FOLDER, SESSION_FOLDER,
-                          STEAM_ACCOUNT_INFO_FILE_PATH, set_is_latest_version,
-                          set_no_pause)
-from utils.tools import (accelerator, compare_version, exit_code, get_encoding,
+                          STEAM_ACCOUNT_INFO_FILE_PATH, set_no_pause)
+from utils.steam_client import login_to_steam, steam_client_mutex
+from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler,
                          logger, pause)
 
 
@@ -63,192 +48,39 @@ def set_exit_code(code):
     exit_code = code
 
 
-def login_to_steam():
-    global config
-    steam_client = None
-    steam_account_info = dict()
-    with open(STEAM_ACCOUNT_INFO_FILE_PATH, "r", encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
-        try:
-            steam_account_info = json5.loads(f.read())
-        except Exception as e:
-            handle_caught_exception(e, known=True)
-            logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
-            pause()
-            return None
 
-    steam_session_path = os.path.join(SESSION_FOLDER, steam_account_info.get("steam_username", "").lower() + ".pkl")  # type: ignore
-    if not os.path.exists(steam_session_path):
-        logger.info("检测到首次登录Steam，正在尝试登录...登录完成后会自动缓存登录信息")
-    else:
-        logger.info("检测到缓存的Steam登录信息, 正在尝试登录...")
-        try:
-            with open(steam_session_path, "rb") as f:
-                client = pickle.load(f)
-                if config["steam_login_ignore_ssl_error"]:
-                    logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
-                    client._session.verify = False
-                    requests.packages.urllib3.disable_warnings()  # type: ignore
-                else:
-                    client._session.verify = True
-                if config["steam_local_accelerate"]:
-                    logger.info("已经启用Steamauto内置加速")
-                    client._session.auth = accelerator()
-
-                if client.is_session_alive():
-                    logger.info("登录成功")
-                    steam_client = client
-        except requests.exceptions.ConnectionError as e:
-            handle_caught_exception(e, known=True)
-            logger.error("使用缓存的登录信息登录失败!可能是网络异常")
-            steam_client = None
-        except (EOFError, pickle.UnpicklingError) as e:
-            handle_caught_exception(e, known=True)
-            shutil.rmtree(SESSION_FOLDER)
-            os.mkdir(SESSION_FOLDER)
-            steam_client = None
-            logger.error("检测到缓存的登录信息异常，已自动清空session文件夹")
-        except AssertionError as e:
-            handle_caught_exception(e, known=True)
-            if config["steam_local_accelerate"]:
-                logger.error("由于内置加速问题,暂时无法登录.请稍等10分钟后再进行登录,或者关闭内置加速功能！")
-            else:
-                logger.error("未知登录错误,可能是由于网络问题?")
-    if steam_client is None:
-        try:
-            logger.info("正在登录Steam...")
-            if "use_proxies" not in config:
-                config["use_proxies"] = False
-            if not (config.get("proxies", None)):
-                config["use_proxies"] = False
-            if config["use_proxies"]:
-                logger.info("已经启用Steam代理")
-
-                if not isinstance(config["proxies"], dict):
-                    logger.error("proxies格式错误，请检查配置文件")
-                    pause()
-                    return None
-                logger.info("正在检查代理服务器可用性...")
-                proxy_status = ping_proxy(config["proxies"])
-                if proxy_status is False:
-                    logger.error("代理服务器不可用，请检查配置文件，或者将use_proxies配置项设置为false")
-                    pause()
-                    return None
-                else:
-                    logger.info("代理服务器可用")
-                    logger.warning(
-                        "警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动"
-                    )
-
-                client = SteamClient(api_key="", proxies=config["proxies"])
-
-            else:
-                client = SteamClient(api_key="")
-            if config["steam_login_ignore_ssl_error"]:
-                logger.warning("警告: 已经关闭SSL验证, 请确保你的网络安全")
-                client._session.verify = False
-                requests.packages.urllib3.disable_warnings()  # type: ignore
-            if config["steam_local_accelerate"]:
-                if config["use_proxies"]:
-                    logger.warning('检测到你已经同时开启内置加速和代理功能！正常情况下不推荐通过这种方式使用软件。')
-                logger.info("已经启用Steamauto内置加速")
-                client._session.auth = accelerator()
-            logger.info("正在登录...")
-            client.login(
-                steam_account_info.get("steam_username"),  # type: ignore
-                steam_account_info.get("steam_password"),  # type: ignore
-                json.dumps(steam_account_info),
-            )
-            if client.is_session_alive():
-                logger.info("登录成功")
-            else:
-                logger.error("登录失败")
-                return None
-            with open(steam_session_path, "wb") as f:
-                pickle.dump(client, f)
-            logger.info("已经自动缓存session.")
-            steam_client = client
-        except FileNotFoundError as e:
-            handle_caught_exception(e, known=True)
-            logger.error(
-                "未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加到" + STEAM_ACCOUNT_INFO_FILE_PATH + "后再进行操作! "
-            )
-            pause()
-            return None
-        except (SSLCertVerificationError, SSLError) as e:
-            handle_caught_exception(e, known=True)
-            if config["steam_local_accelerate"]:
-                logger.error(
-                    "登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true"
-                )
-            else:
-                logger.error(
-                    "登录失败. SSL证书验证错误! "
-                    "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n"
-                )
-            pause()
-            return None
-        except (requests.exceptions.ConnectionError, TimeoutError) as e:
-            handle_caught_exception(e, known=True)
-            logger.error(
-                "网络错误! \n强烈建议使用Steamauto内置加速，仅需在配置文件中将steam_login_ignore_ssl_error和steam_local_accelerate设置为true即可使用 \n注意: 使用游戏加速器并不能解决问题，请使用代理软件如Clash/Proxifier等"
-            )
-            pause()
-            return None
-        except (ValueError, ApiException) as e:
-            handle_caught_exception(e, known=True)
-            logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
-            pause()
-            return None
-        except (TypeError, AttributeError) as e:
-            handle_caught_exception(e, known=True)
-            logger.error(
-                "登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录"
-            )
-            pause()
-            return None
-        except Exception as e:
-            handle_caught_exception(e, known=True)
-            logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
-            pause()
-            return None
-    return steam_client
 
 
 # 文件缺失或格式错误返回0，首次运行返回1，非首次运行返回2
 def init_files_and_params() -> int:
     global config
     development_mode = False
-    logger.info("欢迎使用Steamauto Github仓库:https://github.com/jiajiaxd/Steamauto")
+
+    if os.path.exists('update.txt'):
+        with open('update.txt', 'r') as f:
+            old_version_path = f.read()
+        try:
+            os.remove(old_version_path)
+            os.remove('update.txt')
+            logger.info('自动更新完毕！已删除旧版本文件')
+        except Exception as e:
+            handle_caught_exception(e, known=True)
+            logger.error('无法删除旧版本文件 请手动删除！')
+
+    logger.info("欢迎使用Steamauto Github仓库:https://github.com/Steamauto/Steamauto")
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! \n")
     logger.info(
         f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n"
     )
     logger.info(f"当前版本: {CURRENT_VERSION}   编译信息: {BUILD_INFO}")
-    logger.info("正在检查更新...")
     try:
-        response_json = requests.get("https://steamauto.jiajiaxd.com/versions", params={"version": CURRENT_VERSION}, timeout=5)
-        data = response_json.json()
-        latest_version = data["latest_version"]["version"]
-        broadcast = data.get("broadcast", None)
-        if broadcast:
-            logger.info(f"Steamauto官方公告:\n {broadcast}\n")
-        if compare_version(CURRENT_VERSION, latest_version) == -1:
-            logger.info(f"检测到最新版本: {latest_version}")
-            changelog_to_output = str()
-            for version in data["history_versions"]:
-                if compare_version(CURRENT_VERSION, version["version"]) == -1:
-                    changelog_to_output += f"版本: {version['version']}\n更新日志: {version['changelog']}\n\n"
+        from utils import cloud_service
 
-            logger.info(f"\n{changelog_to_output}")
-            set_is_latest_version(False)
-            logger.warning("当前版本不是最新版本,为了您的使用体验,请及时更新!")
-        else:
-            set_is_latest_version(True)
-            logger.info("当前版本已经是最新版本")
+        cloud_service.checkVersion()
+        cloud_service.getAds()
     except Exception as e:
-        handle_caught_exception(e, known=True)
-        logger.warning("检查更新失败, 跳过检查更新")
+        logger.warning('无法使用云服务')
     logger.info("正在初始化...")
     first_run = False
     if not os.path.exists(CONFIG_FOLDER):
@@ -292,16 +124,29 @@ def init_files_and_params() -> int:
         return 2
 
 
-def get_base_path():
-    if hasattr(sys, '_MEIPASS'):
-        # PyInstaller
-        return os.path.join(sys._MEIPASS)  # type: ignore
-    else:
-        return os.path.dirname(os.path.abspath(__file__))
-
-
+@no_type_check
 def get_plugins_folder():
-    base_path = get_base_path()
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    if hasattr(sys, '_MEIPASS'):
+        base_path = os.path.dirname(sys.executable)
+        if not os.path.exists(os.path.join(base_path, PLUGIN_FOLDER)):
+            shutil.copytree(os.path.join(sys._MEIPASS, PLUGIN_FOLDER), os.path.join(base_path, PLUGIN_FOLDER))
+        else:
+            plugins = os.listdir(os.path.join(sys._MEIPASS, PLUGIN_FOLDER))
+            for plugin in plugins:
+                plugin_absolute = os.path.join(sys._MEIPASS, PLUGIN_FOLDER, plugin)
+                local_plugin_absolute = os.path.join(base_path, PLUGIN_FOLDER, plugin)
+                if not os.path.exists(local_plugin_absolute):
+                    shutil.copy(plugin_absolute, local_plugin_absolute)
+                else:
+                    local_plugin_sha256 = calculate_sha256(local_plugin_absolute)
+                    plugin_sha256 = calculate_sha256(plugin_absolute)
+                    if local_plugin_sha256 != plugin_sha256:
+                        if plugin not in config['plugins_whitelist']:
+                            logger.info('检测到插件' + plugin + '有更新，已自动更新 如果不需要更新请在配置文件中将该插件加入白名单')
+                            shutil.copy(plugin_absolute, local_plugin_absolute)
+                        else:
+                            logger.info('插件' + plugin + '与本地版本不同 由于已被加入白名单，不会自动更新')     
     return os.path.join(base_path, PLUGIN_FOLDER)
 
 
@@ -336,7 +181,11 @@ def get_plugin_classes():
                 if inspect.isclass(obj2) and name.startswith("External"):
                     plugin_name = camel_to_snake(obj.__name__)
                     plugin_classes[plugin_name] = obj2
-
+    # 返回的文件结构：
+    # {
+    #     "[插件名]": [插件类],
+    #     ...
+    # }
     return plugin_classes
 
 
@@ -406,6 +255,23 @@ def init_plugins_and_start(steam_client, steam_client_mutex):
         logger.warning("所有插件都已经退出！这不是一个正常情况，请检查配置文件！")
 
 
+tried_exit = False
+
+
+def exit_app(signal_, frame):
+    global tried_exit
+    if not tried_exit:
+        tried_exit = True
+        jobHandler.terminate_all()
+        logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
+        os._exit(exit_code.get())
+    else:
+        logger.warning("程序已经强制退出")
+        pid = os.getpid()
+        os.kill(pid, signal.SIGTERM)
+
+
+# 主函数
 def main():
     global config
     # 初始化
@@ -418,10 +284,9 @@ def main():
         return 0
 
     steam_client = None
-    steam_client = login_to_steam()
+    steam_client = login_to_steam(config)
     if steam_client is None:
         return 1
-    steam_client_mutex = threading.Lock()
     # 仅用于获取启用的插件
     import_all_plugins()
     plugins_enabled = get_plugins_enabled(steam_client, steam_client_mutex)
@@ -440,22 +305,7 @@ def main():
     return 1
 
 
-tried_exit = False
-
-
-def exit_app(signal_, frame):
-    global tried_exit
-    if not tried_exit:
-        tried_exit = True
-        jobHandler.terminate_all()
-        logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
-        os._exit(exit_code.get())
-    else:
-        logger.warning("程序已经强制退出")
-        pid = os.getpid()
-        os.kill(pid, signal.SIGTERM)
-
-
+# 程序运行开始处
 if __name__ == "__main__":
     sys.excepthook = handle_global_exception
     signal.signal(signal.SIGINT, exit_app)

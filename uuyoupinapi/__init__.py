@@ -1,4 +1,5 @@
 import json
+from operator import ge
 import random
 import string
 import time
@@ -35,6 +36,7 @@ def generate_device_info():
 
 def generate_headers(devicetoken, deviceid, token=""):
     return {
+        "uk": generate_random_string(65),
         "authorization": "Bearer " + token,
         "content-type": "application/json; charset=utf-8",
         "user-agent": "okhttp/3.14.9",
@@ -156,10 +158,11 @@ class UUAccount:
         else:
             raise Exception("Method not supported")
         log_output = response.content.decode()
+        logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
         if is_json(log_output):
             json_output = json.loads(log_output)
             log_output = json.dumps(json_output, ensure_ascii=False)
-            logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
+            
             if json_output.get('code') == 84101:
                 raise Exception('登录状态失效，请重新登录')
         else:

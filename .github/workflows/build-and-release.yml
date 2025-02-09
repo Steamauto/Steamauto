@@ -22,7 +22,7 @@ jobs:
         run: |
           pip install pyinstaller
           pip install -r requirements.txt
-          python utils/add_build_info.py
+          python .github/scripts/add_build_info.py
           pyinstaller -F Steamauto.py --collect-all apprise --name Steamauto-${{ matrix.os }} --add-data "plugins:plugins"
 
       - name: Upload artifacts
@@ -62,3 +62,4 @@ jobs:
           tag: ${{ env.DATE }}
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: releases/*
+          prerelease: true
