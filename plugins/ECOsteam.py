@@ -2,7 +2,6 @@ import copy
 import datetime
 import json
 import os
-import pickle
 import time
 from threading import Thread
 from typing import Dict, List, Union
@@ -10,14 +9,12 @@ from typing import Dict, List, Union
 from BuffApi import BuffAccount
 from BuffApi.models import BuffOnSaleAsset
 from PyECOsteam import ECOsteamClient, models
-import steampy
 from steampy.client import SteamClient
-import steampy.exceptions
-from steampy.models import GameOptions
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import LogFilter, PluginLogger, handle_caught_exception
 from utils.models import Asset, LeaseAsset, ModelEncoder
-from utils.static import ECOSTEAM_RSAKEY_FILE, SESSION_FOLDER
+from utils.static import ECOSTEAM_RSAKEY_FILE
+from utils.steam_client import accept_trade_offer, get_cs2_inventory
 from utils.tools import exit_code, get_encoding
 from utils.uu_helper import get_valid_token_for_uu
 from uuyoupinapi import UUAccount
@@ -339,17 +336,6 @@ class ECOsteamPlugin:
                     assets.append(asset.orderNo)
             return assets
 
-    # 获取Steam库存
-    def get_steam_inventory(self):
-        inventory = None
-        try:
-            with self.steam_client_mutex:
-                inventory = self.steam_client.get_my_inventory(game=GameOptions.CS)  # type: ignore
-                logger.log(5, '获取到的Steam库存:' + json.dumps(inventory, ensure_ascii=False))
-        except Exception as e:
-            handle_caught_exception(e, "ECOsteam.cn")
-        return inventory
-
     # 自动发货线程
     def auto_accept_offer(self):
         while True:
@@ -387,28 +373,9 @@ class ECOsteamPlugin:
                     continue
                 if tradeOfferId not in self.ignored_offer:
                     accept_offer_logger.info(f"正在发货商品{goodsName}，报价号{tradeOfferId}...")
-                    try:
-                        with self.steam_client_mutex:
-                            self.steam_client.accept_trade_offer(str(tradeOfferId))
+                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, tradeOfferId):
+                        accept_offer_logger.info(f"已经成功发货商品{goodsName}，报价号{tradeOfferId}")
                         self.ignored_offer.append(tradeOfferId)
-                        accept_offer_logger.info(f"已接受报价号{tradeOfferId}！")
-                    except Exception as e:
-                        handle_caught_exception(e, "ECOsteam.cn", known=True)
-                        relogin = False
-                        if isinstance(e, steampy.exceptions.ConfirmationExpected) or isinstance(
-                            e, steampy.exceptions.InvalidCredentials
-                        ):
-                            relogin = True
-                        with self.steam_client_mutex:
-                            if (not self.steam_client.is_session_alive()) or relogin:
-                                accept_offer_logger.warning("Steam会话已过期, 正在重新登录...")
-                                self.steam_client.relogin()
-                                accept_offer_logger.info("Steam会话已更新")
-                                steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
-                                with open(steam_session_path, "wb") as f:
-                                    pickle.dump(self.steam_client, f)
-                                accept_offer_logger.info("Steam会话已保存，请等待下次自动发货")
-                        accept_offer_logger.error("Steam异常, 暂时无法接受报价, 请稍后再试! ")
                 else:
                     accept_offer_logger.info(f"已经自动忽略报价号{tradeOfferId}，商品名{goodsName}，因为它已经被程序处理过！")
         interval = self.config["ecosteam"]["auto_accept_offer"]["interval"]
@@ -601,7 +568,7 @@ class ECOsteamPlugin:
             shelves[platform] = list()
             ratios[platform] = tc["ratio"][platform]
         sell_logger.info("正在从Steam获取库存信息...")
-        inventory = self.get_steam_inventory()
+        inventory = get_cs2_inventory(self.steam_client, self.steam_client_mutex)
         if not inventory:
             sell_logger.error("Steam异常, 暂时无法获取库存, 请稍后再试! ")
             return

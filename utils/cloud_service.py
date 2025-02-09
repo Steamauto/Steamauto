@@ -11,7 +11,7 @@ from colorama import Fore, Style
 
 from utils.logger import handle_caught_exception, logger
 from utils.static import BUILD_INFO, CURRENT_VERSION
-from utils.tools import pause, calculate_sha256
+from utils.tools import calculate_sha256, pause
 
 
 def get_platform_info():
@@ -218,10 +218,9 @@ def checkVersion():
         return False
 
 
-# 创建线程，每隔5分钟输出一次广告，每隔一天检测一次版本
 def adsThread():
     while True:
-        time.sleep(300)
+        time.sleep(600)
         getAds()
 
 

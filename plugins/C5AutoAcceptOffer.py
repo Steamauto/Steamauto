@@ -1,12 +1,8 @@
-import os
-import pickle
 import time
-
-import json5
 
 from PyC5Game import C5Account
 from utils.logger import PluginLogger, handle_caught_exception
-from utils.tools import exit_code
+from utils.steam_client import accept_trade_offer
 
 logger = PluginLogger("C5AutoAcceptOffer")
 
@@ -74,17 +70,14 @@ class C5AutoAcceptOffer:
                     if deliveringOrder['orderId'] in ignored_list:
                         logger.info(f'订单 {deliveringOrder["name"]} 已发货，跳过')
                         continue
-                    try:
-                        with self.steam_client_mutex:
-                            self.steam_client.accept_trade_offer(offerId)
-                            logger.info(f'订单 {deliveringOrder["name"]} 发货完成')
-                            ignored_list.append(deliveringOrder['orderId'])
-                            if deliveringOrders.index(deliveringOrder) != len(deliveringOrders) - 1:
-                                logger.info(f"为避免频繁访问Steam接口，等待3秒后处理下一个订单")
-                                time.sleep(3)
-                    except Exception as e:
-                        handle_caught_exception(e, prefix="C5AutoAcceptOffer", known=True)
-                        logger.error(f'由于Steam异常，订单 {deliveringOrder["name"]} 发货失败，请检查网络或者Steam账号！')
+                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, offerId):
+                        logger.info(f'订单 {deliveringOrder["name"]} 发货完成')
+                        ignored_list.append(deliveringOrder['orderId'])
+                        if deliveringOrders.index(deliveringOrder) != len(deliveringOrders) - 1:
+                            logger.info(f"为避免频繁访问Steam接口，等待3秒后处理下一个订单")
+                            time.sleep(3)
+                    else:
+                        logger.error(f'订单 {deliveringOrder["name"]} 发货失败，请检查网络或者Steam账号！')
             except Exception as e:
                 handle_caught_exception(e, prefix="C5AutoAcceptOffer")
             logger.info(f"等待{self.interval}秒后重新检索是否有待发货订单")
