@@ -137,6 +137,7 @@ def autoUpdate(downloadUrl, sha256=''):
     with open('update.txt', 'w') as f:
         f.write(sys.executable)
     os.startfile(filename)  # type: ignore
+    os._exit(0)  
     sys.exit(0)
     pid = os.getpid()
     os.kill(pid, signal.SIGTERM)
