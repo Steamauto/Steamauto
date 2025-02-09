@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.0.4",
+      "changelog": "捕获已经接受过的报价所导致的异常",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.0.4/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.0.4/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "8874d0ad43ce305ce786641079f31c88d99d46cf476c0e3e768d3383ce4f19f1",
+        "windows": "d23abc1af19954d061fb4e4568708a5e72732f6a1ae8cee008bd0dbb65c373b5"
+      }
+    },
+    {
       "version": "5.0.3",
       "changelog": "1.修复Steam有时无法自动重新登录\\n2.有时已经为最新版本但是提示不是最新版 ",
       "level": "stable",
