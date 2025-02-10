@@ -209,14 +209,15 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False):
                     steam_session_path = os.path.join(SESSION_FOLDER, client.username.lower() + ".pkl")
                     with open(steam_session_path, "wb") as f:
                         pickle.dump(client, f)
-                    logger.info("已经更新登录会话，正在重试接受报价号" + tradeOfferId)
-                    return accept_trade_offer(client, mutex, tradeOfferId, retry=True)
                 else:
                     handle_caught_exception(e, "SteamClient")
                     logger.error(f"接受报价号{tradeOfferId}失败！")
             except Exception as e:
                 handle_caught_exception(e, "SteamClient")
                 logger.error(f"接受报价号{tradeOfferId}失败！")
+        if relogin:
+            logger.info("已经更新登录会话，正在重试接受报价号" + tradeOfferId)
+            return accept_trade_offer(client, mutex, tradeOfferId, retry=True)
         return False
 
 
