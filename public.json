@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.0.5",
+      "changelog": "修复重新登录后卡死",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.0.5/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.0.5/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "3bbf1d06f4a70311c235f90435b1ed674c98f6ebf77f3c5bd5e79bd8f3270a4f",
+        "windows": "38d35140de41f764aa09f940f251beedd6e8b7f557be6519d6e0bf49d991384c"
+      }
+    },
+    {
       "version": "5.0.4",
       "changelog": "捕获已经接受过的报价所导致的异常",
       "level": "stable",
