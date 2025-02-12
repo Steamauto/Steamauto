@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.0.6",
+      "changelog": "修复无法正常登录Steam",
+      "level": "stable",
+      "significance": "important",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.0.6/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.0.6/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "7cc6d2258ae2e1e4dc9c787dd1c53a1eabbc892046c79600e518a1b1ecfdb9ea",
+        "windows": "99febb0f3563ba33f7cfe91ea72254d99569422e65148879f6a2522c042f6285"
+      }
+    },
+    {
       "version": "5.0.5",
       "changelog": "修复重新登录后卡死",
       "level": "stable",
