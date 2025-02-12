@@ -147,7 +147,12 @@ class LoginExecutor:
             resp = self.session.post(resp.headers['Location'], allow_redirects=False)
 
     def _finalize_login_protobuf(self, refresh_token: str, sessionid: str) -> FinalizeLoginStatus:
+        headers = {
+            "Referer": SteamUrl.COMMUNITY_URL + '/',
+            "Origin": SteamUrl.COMMUNITY_URL
+        }
         response = self.session.post(
+            headers=headers,
             url='https://login.steampowered.com/jwt/finalizelogin',
             data={
                 'nonce': refresh_token,
