@@ -10,7 +10,7 @@ on:
         description: 'Changelog text'
         required: true
       level:
-        description: 'Release level'
+        description: 'Release level(Only stable is supported now)'
         default: 'stable'
         required: true
         type: choice

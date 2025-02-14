@@ -10,9 +10,11 @@ import requests
 from colorama import Fore, Style
 
 import utils.static as static
-from utils.logger import handle_caught_exception, logger
+from utils.logger import handle_caught_exception, PluginLogger
 from utils.tools import calculate_sha256, pause
 
+
+logger = PluginLogger('CloudService')
 
 def get_platform_info():
     system = platform.system().lower()
@@ -132,6 +134,7 @@ def autoUpdate(downloadUrl, sha256=''):
         if calculate_sha256(filename) != sha256:
             logger.error('文件校验失败，将不会更新')
             return False
+        logger.info('文件校验通过')
 
     # 创建update.txt，写入旧版本的路径，以便更新后删除旧版本
     with open('update.txt', 'w') as f:
@@ -163,7 +166,8 @@ def getAds():
                 print(f'{parseBroadcastMessage(ad["message"])}\n')
 
     except Exception as e:
-        handle_caught_exception(e)
+        logger.warning('云服务无法连接，建议检查网络连接')
+        handle_caught_exception(e, known=True)
         return False
 
 
@@ -195,6 +199,7 @@ def checkVersion():
 
         if response['latest']:
             return True
+        static.is_latest_version = False
         if response['significance'] == 'minor':
             logger.info('最新版本为小版本更新，可自由选择是否更新')
         elif response['significance'] == 'normal':
@@ -206,8 +211,13 @@ def checkVersion():
         if 'windows' in get_platform_info() and static.BUILD_INFO != '正在使用源码运行':
             if hasattr(sys, 'frozen'):
                 logger.info('当前为独立打包程序且运行在Windows平台，将自动下载更新')
-                logger.info('下载地址：' + response['downloadUrl'])
-                autoUpdate(response['downloadUrl'], sha256=response['sha256'])
+                if response.get('downloadUrl') and response.get('sha256'):
+                    logger.info('下载地址：' + response['downloadUrl'])
+                    autoUpdate(response['downloadUrl'], sha256=response['sha256'])
+                elif response.get('message'):
+                    logger.warning(response['message'])
+                else:
+                    logger.error('服务器未返回下载地址或sha256值，无法更新')
         elif response['significance'] == 'critical':
             logger.critical('由于版本过低，程序将退出')
             pause()
@@ -215,8 +225,8 @@ def checkVersion():
             os.kill(pid, signal.SIGTERM)
 
     except Exception as e:
-        handle_caught_exception(e)
-        logger.error('检测版本失败 将继续运行')
+        handle_caught_exception(e, known=True)
+        logger.warning('云服务无法连接，无法检测更新，建议检查网络连接')
         return False
 
 
