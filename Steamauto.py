@@ -1,4 +1,5 @@
 import importlib
+import importlib.util
 import inspect
 import os
 import re
@@ -12,6 +13,7 @@ from typing import no_type_check
 import json5
 from colorama import Fore, Style
 
+import utils.static as static
 from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
 from plugins.BuffAutoComment import BuffAutoComment
 from plugins.BuffAutoOnSale import BuffAutoOnSale
@@ -29,7 +31,6 @@ from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
                           LOGS_FOLDER, PLUGIN_FOLDER, SESSION_FOLDER,
                           STEAM_ACCOUNT_INFO_FILE_PATH)
-import utils.static as static
 from utils.steam_client import login_to_steam, steam_client_mutex
 from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler,
                          logger, pause)
@@ -150,6 +151,23 @@ def get_plugins_folder():
                             logger.info('插件' + plugin + '与本地版本不同 由于已被加入白名单，不会自动更新')     
     return os.path.join(base_path, PLUGIN_FOLDER)
 
+def load_plugin_from_file(plugin_file_path, module_name=None):
+    if module_name is None:
+        # 使用文件名（去除扩展名）作为模块名
+        module_name = os.path.splitext(os.path.basename(plugin_file_path))[0]
+    
+    # 创建模块的 spec 对象
+    spec = importlib.util.spec_from_file_location(module_name, plugin_file_path)
+    if spec is None:
+        raise ImportError(f"无法为 {plugin_file_path} 创建模块 spec")
+    
+    # 根据 spec 创建模块对象
+    module = importlib.util.module_from_spec(spec)
+    
+    # 执行模块代码，将模块内容加载到 module 对象中
+    spec.loader.exec_module(module) # type: ignore
+    return module
+
 
 def import_all_plugins():
     # 自动导入所有插件
@@ -158,7 +176,7 @@ def import_all_plugins():
     for plugin_file in plugin_files:
         module_name = f"{PLUGIN_FOLDER}.{plugin_file[:-3]}"
         if module_name.startswith(f'{PLUGIN_FOLDER}.External'):
-            globals()[module_name] = importlib.import_module(module_name)
+            globals()[module_name] = load_plugin_from_file(os.path.join(get_plugins_folder(), plugin_file), module_name)
         else:
             importlib.import_module(module_name)
 
