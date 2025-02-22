@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.0.7",
+      "changelog": "修复自定义插件无法使用; 提高ECOsteam插件的稳定性; ",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.0.7/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.0.7/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "1099ccd7c2571f63a1fc11402e855025a8a13b871939a6c3e6116e2f7d1b28d2",
+        "windows": "fdfc303dd889721970158d10785811fd4168549961568ff5b7159391bcdc785d"
+      }
+    },
+    {
       "version": "5.0.6",
       "changelog": "修复无法正常登录Steam",
       "level": "stable",
