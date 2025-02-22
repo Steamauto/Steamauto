@@ -222,6 +222,7 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False):
 
 
 def get_cs2_inventory(client: SteamClient, mutex):
+    inventory = None
     try:
         with mutex:
             inventory = client.get_my_inventory(game=GameOptions.CS)  # type: ignore

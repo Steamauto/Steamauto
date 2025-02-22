@@ -10,9 +10,8 @@ import requests
 from colorama import Fore, Style
 
 import utils.static as static
-from utils.logger import handle_caught_exception, PluginLogger
+from utils.logger import PluginLogger, handle_caught_exception
 from utils.tools import calculate_sha256, pause
-
 
 logger = PluginLogger('CloudService')
 
@@ -126,7 +125,7 @@ def autoUpdate(downloadUrl, sha256=''):
                     bar.update(len(data))
             logger.info('下载完成: %s', filename)
     except Exception as e:
-        logger.exception('下载失败')
+        logger.error('下载失败')
         return False
 
     if sha256:
@@ -158,7 +157,6 @@ def getAds():
         if len(ads) > 0:
             print('')
         for ad in ads:
-
             if ad.get('stop', 0):
                 print(f'{parseBroadcastMessage(ad["message"])}\n(滞留 {ad["stop"]} 秒)\n')
                 time.sleep(ad['stop'])
