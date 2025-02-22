@@ -34,6 +34,16 @@ accept_offer_logger = PluginLogger("[ECOsteam.cn] [自动发货]")
 def compare_shelves(A: List[Asset], B: List[Asset], ratio: float) -> Union[bool, dict[str, list[Asset]]]:
     result = {"add": [], "delete": [], "change": []}
     ratio = round(ratio, 2)
+    
+    # 检查是否有不是Asset的元素，如果有则警告并删除
+    for asset in A:
+        if not isinstance(asset, Asset):
+            sell_logger.debug(f"A列表可能存在未下架的物品")
+            A.remove(asset)
+    for asset in B:
+        if not isinstance(asset, Asset):
+            sell_logger.debug(f"B列表可能存在未下架的物品")
+            B.remove(asset)
 
     # 创建字典用于快速查找
     A_dict = {item.assetid: item for item in A}
@@ -69,6 +79,16 @@ def compare_lease_shelf(A: List[LeaseAsset], B: List[LeaseAsset], ratio: float) 
     result = {"add": [], "delete": [], "change": []}
     ratio = round(ratio, 2)
 
+    # 检查是否有不是Asset的元素，如果有则警告并删除
+    for asset in A:
+        if not isinstance(asset, Asset):
+            sell_logger.debug(f"A列表可能存在未下架的物品")
+            A.remove(asset)
+    for asset in B:
+        if not isinstance(asset, Asset):
+            sell_logger.debug(f"B列表可能存在未下架的物品")
+            B.remove(asset)
+    
     # 创建字典用于快速查找
     A_dict = {item.assetid: item for item in A}
     B_dict = {item.assetid: item for item in B}
@@ -332,7 +352,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    sell_logger.warning(f"检测到悠悠上架物品不在Steam库存中！")  # TODO: 提示物品名
+                    sell_logger.warning(f"检测到悠悠上架物品 {item['name']} 不在Steam库存中！")
                     assets.append(asset.orderNo)
             return assets
 
@@ -487,7 +507,8 @@ class ECOsteamPlugin:
         else:
             lease_logger.info('当前同步主平台为悠悠有品')
             self.lease_other_platform = "eco"
-
+        
+        lease_logger.debug(f'即将比较{self.lease_main_platform.upper()}平台和{self.lease_other_platform.upper()}平台的租赁上架物品')
         difference = compare_lease_shelf(
             lease_shelves[self.lease_main_platform],
             lease_shelves[self.lease_other_platform],
@@ -617,6 +638,7 @@ class ECOsteamPlugin:
 
         for platform in tc["enabled_platforms"]:
             if platform != main_platform:
+                sell_logger.debug(f'即将比较{main_platform.upper()}平台和{platform.upper()}平台的上架物品')
                 difference = compare_shelves(
                     shelves[main_platform],
                     shelves[platform],
