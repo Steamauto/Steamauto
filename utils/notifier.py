@@ -5,11 +5,12 @@ from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import CONFIG_FILE_PATH
 
 logger = PluginLogger('Notifier')
+config = {}
 try:
     with open(CONFIG_FILE_PATH, 'r') as file:
         config = json5.load(file)
-    config = config.get('notify_service', '')
-    if config == '':
+    config = config.get('notify_service', {})
+    if config:
         logger.warning('未配置通知服务，通知功能将不可用，请在配置文件中配置通知服务')
     elif config.get('notifiers'):
         logger.info(f'已配置{len(config.get("notifiers"))}个通知服务')
