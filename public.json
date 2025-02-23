@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.1.0",
+      "changelog": "1.新推出统一管理推送功能，将config.json5删除并重新生成后可以体验。在最新版可以自动推送账号失效、发货失败等问题; 2.修复ECOsteam插件在某些情况下崩溃的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.1.0/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.1.0/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "5303626c2e8dbda728a238fe697990724ffdaf8cd0bba2d14e6461159dc93e52",
+        "windows": "8134fd622855443234869f8668f71921a73ab4d0063347005fcd555acae6546c"
+      }
+    },
+    {
       "version": "5.0.7",
       "changelog": "修复自定义插件无法使用; 提高ECOsteam插件的稳定性; ",
       "level": "stable",
