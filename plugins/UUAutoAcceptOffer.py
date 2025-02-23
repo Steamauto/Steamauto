@@ -2,6 +2,7 @@ import time
 
 import uuyoupinapi
 from utils.logger import PluginLogger, handle_caught_exception
+from utils.notifier import send_notification
 from utils.steam_client import accept_trade_offer
 from utils.tools import exit_code
 from utils.uu_helper import get_valid_token_for_uu
@@ -44,18 +45,13 @@ class UUAutoAcceptOffer:
                     if len(uu_wait_deliver_list) != 0:
                         for item in uu_wait_deliver_list:
                             accepted = False
-                            self.logger.info(
-                                f"正在接受悠悠有品待发货报价, 商品名: {item['item_name']}, " f"报价ID: {item['offer_id']}"
-                            )
+                            self.logger.info(f"正在接受悠悠有品待发货报价, 商品名: {item['item_name']}, " f"报价ID: {item['offer_id']}")
                             if item["offer_id"] is None:
                                 self.logger.warning("此订单为需要手动发货(或异常)的订单, 不能自动处理, 跳过此订单! ")
                             elif item["offer_id"] in ignored_offer:
-                                self.logger.info(
-                                    "此交易报价已经被Steamauto处理过, 出现此提示的原因"
-                                    "是悠悠系统延迟或者该订单为批量购买订单.这不是一个报错!"
-                                )
+                                self.logger.info("此交易报价已经被Steamauto处理过, 出现此提示的原因" "是悠悠系统延迟或者该订单为批量购买订单.这不是一个报错!")
                             else:
-                                if accept_trade_offer(self.steam_client, self.steam_client_mutex, str(item["offer_id"])):
+                                if accept_trade_offer(self.steam_client, self.steam_client_mutex, str(item["offer_id"]), desc="发货平台：悠悠有品"):
                                     ignored_offer.append(item["offer_id"])
                                     self.logger.info(f'接受报价[{str(item["offer_id"])}]完成!')
                                     accepted = True
@@ -65,6 +61,7 @@ class UUAutoAcceptOffer:
                 except Exception as e:
                     if '登录状态失效，请重新登录' in str(e):
                         handle_caught_exception(e, "UUAutoAcceptOffer", known=True)
+                        send_notification('检测到悠悠有品登录已经失效,请重新登录', title='悠悠有品登录失效')
                         self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                         self.logger.error("由于登录失败，插件将自动退出")
                         exit_code.set(1)

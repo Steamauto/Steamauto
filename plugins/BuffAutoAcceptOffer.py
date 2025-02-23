@@ -18,6 +18,7 @@ from utils.static import (APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH,
                           SHOP_LISTING_DEV_FILE_PATH,
                           STEAM_TRADE_DEV_FILE_PATH, SUPPORT_GAME_TYPES,
                           TO_DELIVER_DEV_FILE_PATH)
+from utils.steam_client import accept_trade_offer
 from utils.tools import exit_code, get_encoding
 
 
@@ -457,16 +458,8 @@ class BuffAutoAcceptOffer:
                                     if self.development_mode:
                                         self.logger.info("开发者模式已开启, 跳过接受报价")
                                     else:
-                                        try:
-                                            with self.steam_client_mutex:
-                                                self.steam_client.accept_trade_offer(offer_id)
+                                        if accept_trade_offer(self.steam_client, self.steam_client_mutex, offer_id, desc="发货平台：网易BUFF"):
                                             ignored_offer.append(offer_id)
-                                        except KeyError as e:
-                                            handle_caught_exception(e, "BuffAutoAcceptOffer", known=True)
-                                            self.logger.error("Steam网络异常, 暂时无法接受报价, 请稍后再试! ")
-                                        except Exception as e:
-                                            handle_caught_exception(e, "BuffAutoAcceptOffer", known=True)
-                                            self.logger.error("无法接受报价, 请检查网络连接或稍后再试! ")
                                     
                                     self.logger.info("接受完成! 已经将此交易报价加入忽略名单! ")
                                     if "sell_notification" in self.config["buff_auto_accept_offer"]:

@@ -8,6 +8,7 @@ import schedule
 import uuyoupinapi
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.models import LeaseAsset
+from utils.notifier import send_notification
 from utils.tools import exit_code, is_subsequence
 from utils.uu_helper import get_valid_token_for_uu
 from uuyoupinapi import models
@@ -184,6 +185,7 @@ class UUAutoLeaseItem:
                     self.uuyoupin.get_user_nickname()
                 except KeyError as e:
                     handle_caught_exception(e, "UUAutoLeaseItem", known=True)
+                    send_notification('检测到悠悠有品登录已经失效,请重新登录', title='悠悠有品登录失效')
                     self.logger.error("检测到悠悠有品登录已经失效,请重新登录。")
                     self.logger.error("由于登录失败，插件将自动退出。")
                     exit_code.set(1)

@@ -11,9 +11,11 @@ from colorama import Fore, Style
 
 import utils.static as static
 from utils.logger import PluginLogger, handle_caught_exception
+from utils.notifier import send_notification
 from utils.tools import calculate_sha256, pause
 
 logger = PluginLogger('CloudService')
+
 
 def get_platform_info():
     system = platform.system().lower()
@@ -206,21 +208,25 @@ def checkVersion():
             logger.warning('最新版本为重要版本更新，强烈建议更新')
         elif response['significance'] == 'critical':
             logger.error('最新版本为关键版本更新，可能包含重要修复，在更新前程序不会继续运行')
-        if 'windows' in get_platform_info() and static.BUILD_INFO != '正在使用源码运行':
-            if hasattr(sys, 'frozen'):
-                logger.info('当前为独立打包程序且运行在Windows平台，将自动下载更新')
-                if response.get('downloadUrl') and response.get('sha256'):
-                    logger.info('下载地址：' + response['downloadUrl'])
-                    autoUpdate(response['downloadUrl'], sha256=response['sha256'])
-                elif response.get('message'):
-                    logger.warning(response['message'])
-                else:
-                    logger.error('服务器未返回下载地址或sha256值，无法更新')
+        if 'windows' in get_platform_info() and static.BUILD_INFO != '正在使用源码运行' and hasattr(sys, 'frozen'):
+            logger.info('当前为独立打包程序且运行在Windows平台，将自动下载更新')
+            if response.get('downloadUrl') and response.get('sha256'):
+                logger.info('下载地址：' + response['downloadUrl'])
+                autoUpdate(response['downloadUrl'], sha256=response['sha256'])
+            elif response.get('message'):
+                logger.warning(response['message'])
+            else:
+                logger.error('服务器未返回下载地址或sha256值，无法更新')
         elif response['significance'] == 'critical':
             logger.critical('由于版本过低，程序将退出')
             pause()
             pid = os.getpid()
             os.kill(pid, signal.SIGTERM)
+        else:
+            send_notification(
+                title='Steamauto有新版本可用',
+                message=f'当前版本：{static.CURRENT_VERSION}\n最新版本：{response["latestVersion"]}\n' f'更新日志：{response["changelog"]}',
+            )
 
     except Exception as e:
         handle_caught_exception(e, known=True)
@@ -236,7 +242,7 @@ def adsThread():
 
 def versionThread():
     while True:
-        time.sleep(86400)
+        time.sleep(43200)
         checkVersion()
 
 

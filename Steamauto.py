@@ -26,6 +26,7 @@ from plugins.UUAutoLease import UUAutoLeaseItem
 from plugins.UUAutoSell import UUAutoSellItem
 from steampy.client import SteamClient
 from utils.logger import handle_caught_exception
+from utils.notifier import send_notification
 from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           CURRENT_VERSION, DEFAULT_CONFIG_JSON,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
@@ -305,6 +306,7 @@ def main():
     steam_client = None
     steam_client = login_to_steam(config)
     if steam_client is None:
+        send_notification('登录Steam失败，程序停止运行')
         return 1
     # 仅用于获取启用的插件
     import_all_plugins()

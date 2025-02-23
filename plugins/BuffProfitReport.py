@@ -6,8 +6,7 @@ import apprise
 import json5
 import requests
 from _decimal import Decimal
-from apprise import AppriseAsset
-from apprise import AppriseAttachment
+from apprise import AppriseAsset, AppriseAttachment
 
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception

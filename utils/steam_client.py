@@ -13,6 +13,7 @@ from steampy.client import SteamClient
 from steampy.exceptions import ApiException
 from steampy.models import GameOptions
 from utils.logger import PluginLogger, handle_caught_exception
+from utils.notifier import send_notification
 from utils.static import SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH
 from utils.tools import accelerator, get_encoding, logger, pause
 
@@ -101,9 +102,7 @@ def login_to_steam(config: dict):
                     return None
                 else:
                     logger.info("代理服务器可用")
-                    logger.warning(
-                        "警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动"
-                    )
+                    logger.warning("警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动")
 
                 client = SteamClient(api_key="", proxies=config["proxies"])
 
@@ -135,22 +134,15 @@ def login_to_steam(config: dict):
             steam_client = client
         except FileNotFoundError as e:
             handle_caught_exception(e, known=True)
-            logger.error(
-                "未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加到" + STEAM_ACCOUNT_INFO_FILE_PATH + "后再进行操作! "
-            )
+            logger.error("未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加到" + STEAM_ACCOUNT_INFO_FILE_PATH + "后再进行操作! ")
             pause()
             return None
         except (SSLCertVerificationError, SSLError) as e:
             handle_caught_exception(e, known=True)
             if config["steam_local_accelerate"]:
-                logger.error(
-                    "登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true"
-                )
+                logger.error("登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true")
             else:
-                logger.error(
-                    "登录失败. SSL证书验证错误! "
-                    "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n"
-                )
+                logger.error("登录失败. SSL证书验证错误! " "若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n")
             pause()
             return None
         except (requests.exceptions.ConnectionError, TimeoutError) as e:
@@ -167,9 +159,7 @@ def login_to_steam(config: dict):
             return None
         except (TypeError, AttributeError) as e:
             handle_caught_exception(e, known=True)
-            logger.error(
-                "登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录"
-            )
+            logger.error("登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录")
             pause()
             return None
         except Exception as e:
@@ -180,10 +170,11 @@ def login_to_steam(config: dict):
     return steam_client
 
 
-def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False):
+def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, desc=""):
     try:
         with mutex:
             client.accept_trade_offer(str(tradeOfferId))
+        send_notification(f'报价号：{tradeOfferId}\n{desc}', title='接受报价成功')
         return True
     except Exception as e:
         if retry:
@@ -218,6 +209,7 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False):
         if relogin:
             logger.info("已经更新登录会话，正在重试接受报价号" + tradeOfferId)
             return accept_trade_offer(client, mutex, tradeOfferId, retry=True)
+        send_notification(f'报价号：{tradeOfferId}\n{desc}', title='接受报价失败')
         return False
 
 
@@ -229,4 +221,5 @@ def get_cs2_inventory(client: SteamClient, mutex):
             logger.log(5, '获取到的Steam库存:' + json.dumps(inventory, ensure_ascii=False))
     except Exception as e:
         handle_caught_exception(e, "SteamClient", known=True)
+        send_notification('获取库存失败，请检查服务器网络', title='获取库存失败')
     return inventory

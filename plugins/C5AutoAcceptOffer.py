@@ -70,7 +70,7 @@ class C5AutoAcceptOffer:
                     if deliveringOrder['orderId'] in ignored_list:
                         logger.info(f'订单 {deliveringOrder["name"]} 已发货，跳过')
                         continue
-                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, offerId):
+                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, offerId, desc=f"发货平台：C5Game\n发货商品：{deliveringOrder['name']}"):
                         logger.info(f'订单 {deliveringOrder["name"]} 发货完成')
                         ignored_list.append(deliveringOrder['orderId'])
                         if deliveringOrders.index(deliveringOrder) != len(deliveringOrders) - 1:

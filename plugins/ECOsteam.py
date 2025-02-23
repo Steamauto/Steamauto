@@ -13,6 +13,7 @@ from steampy.client import SteamClient
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import LogFilter, PluginLogger, handle_caught_exception
 from utils.models import Asset, LeaseAsset, ModelEncoder
+from utils.notifier import send_notification
 from utils.static import ECOSTEAM_RSAKEY_FILE
 from utils.steam_client import accept_trade_offer, get_cs2_inventory
 from utils.tools import exit_code, get_encoding
@@ -393,7 +394,7 @@ class ECOsteamPlugin:
                     continue
                 if tradeOfferId not in self.ignored_offer:
                     accept_offer_logger.info(f"正在发货商品{goodsName}，报价号{tradeOfferId}...")
-                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, tradeOfferId):
+                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, tradeOfferId, desc=f"发货平台：ECOsteam\n发货商品：{goodsName}"):
                         accept_offer_logger.info(f"已经成功发货商品{goodsName}，报价号{tradeOfferId}")
                         self.ignored_offer.append(tradeOfferId)
                 else:
