@@ -49,12 +49,15 @@ def generate_headers(devicetoken, deviceid, token=""):
         "accept-encoding": "gzip",
     }
 
-def is_json( data):
+
+def is_json(data):
     try:
         json.loads(data)
     except Exception:
         return False
     return True
+
+
 class UUAccount:
     def __init__(self, token: str):
         """
@@ -135,8 +138,6 @@ class UUAccount:
             },
         )
 
-
-    
     def call_api(self, method, path, data=None):
         """
         调用API
@@ -162,12 +163,12 @@ class UUAccount:
         if is_json(log_output):
             json_output = json.loads(log_output)
             log_output = json.dumps(json_output, ensure_ascii=False)
-            
+
             if json_output.get('code') == 84101:
                 raise Exception('登录状态失效，请重新登录')
         else:
             raise Exception(f"网络错误，或服务器被悠悠屏蔽！请求失败！")
-            
+
         return response
 
     def change_leased_price(self, items: list[LeaseAsset]):
@@ -276,31 +277,21 @@ class UUAccount:
             if order["orderNo"] in self.ignore_list:
                 logger.debug("[UUAutoAcceptOffer] 订单号为" + order["orderNo"] + "的订单已经被忽略")
             elif order["message"] == "有买家下单，待您发送报价":
-                logger.info(
-                    f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})为待发送报价订单，正在尝试发送报价...'
-                )
+                logger.info(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})为待发送报价订单，正在尝试发送报价...')
                 result = self.send_offer(order["orderNo"])
                 if result == True:
-                    logger.info(
-                        f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})的报价已经在发送，正在等待发送完成...'
-                    )
+                    logger.info(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})的报价已经在发送，正在等待发送完成...')
                     for i in range(5):
                         result = self.get_offer_status(order["orderNo"])
                         if result['data']['status'] == 3:
-                            logger.info(
-                                f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})的报价发送成功，将会在下一次轮询进行令牌确认'
-                            )
+                            logger.info(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})的报价发送成功，将会在下一次轮询进行令牌确认')
                             break
                         if i == 4:
-                            logger.warning(
-                                f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})的报价发送等待超时'
-                            )
+                            logger.warning(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})的报价发送等待超时')
                             break
                         time.sleep(1.5)
                 else:
-                    logger.error(
-                        f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})发送报价失败，原因：{result}'
-                    )
+                    logger.error(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})发送报价失败，原因：{result}')
             else:
                 toDoList[order["orderNo"]] = order
         data_to_return = []
@@ -439,12 +430,8 @@ class UUAccount:
         return success_count
 
     def get_uu_leased_inventory(self, pageIndex=1, pageSize=100) -> list[LeaseAsset]:
-        new_leased_inventory_list = self.get_one_channel_leased_inventory(
-            "/api/youpin/bff/new/commodity/v1/commodity/list/lease", pageIndex, pageSize
-        )
-        zero_leased_inventory_list = self.get_one_channel_leased_inventory(
-            "/api/youpin/bff/new/commodity/v1/commodity/list/zeroCDLease", pageIndex, pageSize
-        )
+        new_leased_inventory_list = self.get_one_channel_leased_inventory("/api/youpin/bff/new/commodity/v1/commodity/list/lease", pageIndex, pageSize)
+        zero_leased_inventory_list = self.get_one_channel_leased_inventory("/api/youpin/bff/new/commodity/v1/commodity/list/zeroCDLease", pageIndex, pageSize)
         return new_leased_inventory_list + zero_leased_inventory_list
 
     def get_one_channel_leased_inventory(self, path, pageIndex=1, pageSize=100) -> list[LeaseAsset]:
@@ -473,7 +460,7 @@ class UUAccount:
                         IsCanSold=bool(item['commodityCanSell']),
                         IsCanLease=bool(item['commodityCanLease']),
                         orderNo=item['id'],
-                        price=float(item['referencePrice'][1:])
+                        price=float(item['referencePrice'][1:]),
                     )
                 )
         elif rsp["code"] == 9004001:
@@ -483,14 +470,14 @@ class UUAccount:
         # logger.info(f"上架数量 {len(leased_inventory_list)}")
         return leased_inventory_list
 
-    def get_inventory(self,refresh = False):
+    def get_inventory(self, refresh=False):
         data_to_send = {
-                "pageIndex": 1,
-                "pageSize": 1000,
-                "AppType": 4,
-                "IsMerge": 0,
-                "Sessionid": self.device_info["deviceId"],
-            }
+            "pageIndex": 1,
+            "pageSize": 1000,
+            "AppType": 4,
+            "IsMerge": 0,
+            "Sessionid": self.device_info["deviceId"],
+        }
         if refresh:
             data_to_send['IsRefresh'] = True
             data_to_send['RefreshType'] = 2
@@ -509,7 +496,7 @@ class UUAccount:
 
         return inventory_list
 
-    def get_market_lease_price(self, template_id: int, min_price=0, max_price=20000, cnt=15,sortTypeKey='LEASE_DEFAULT') -> list[UUMarketLeaseItem]:
+    def get_market_lease_price(self, template_id: int, min_price=0, max_price=20000, cnt=15, sortTypeKey='LEASE_DEFAULT') -> list[UUMarketLeaseItem]:
         rsp = self.call_api(
             "POST",
             "/api/homepage/v3/detail/commodity/list/lease",
@@ -585,9 +572,7 @@ class UUAccount:
         return success_count
 
     def change_price(self, assets: dict):
-        item_infos = [
-            {"CommodityId": int(asset), "Price": str(assets[asset]), "Remark": None, "IsCanSold": True} for asset in assets.keys()
-        ]
+        item_infos = [{"CommodityId": int(asset), "Price": str(assets[asset]), "Remark": None, "IsCanSold": True} for asset in assets.keys()]
         return self.call_api(
             "PUT",
             "/api/commodity/Commodity/PriceChangeWithLeaseV2",
@@ -650,8 +635,8 @@ class UUAccount:
 
         item_infos += [models.UUOnSellShelfItem.fromAsset(asset).model_dump(exclude_none=True) for asset in sell_assets_dict.values()]
         item_infos += [models.UUOnLeaseShelfItem.fromLeaseAsset(asset).model_dump(exclude_none=True) for asset in lease_assets_dict.values()]
-        
-        batches = [item_infos[i:i+50] for i in range(0, len(item_infos), 50)]
+
+        batches = [item_infos[i : i + 50] for i in range(0, len(item_infos), 50)]
         change_price_onshelf_list = []
         success_count = 0
         for batch in batches:
@@ -677,7 +662,7 @@ class UUAccount:
                     else:
                         logger.error(f"上架物品 {asset['AssetId']} 失败，原因：{asset['Remark']}")
         if change_price_onshelf_list:
-            
+
             logger.info(f'即将通过改价方式上架{len(change_price_onshelf_list)}个物品')
             sell_shelf = self.get_sell_list()
             lease_shelf = self.get_uu_leased_inventory()
@@ -702,7 +687,7 @@ class UUAccount:
                             asset['IsCanSold'] = True
                             del asset['AssetId']
                             break
-            batches = [change_price_onshelf_list[i:i+50] for i in range(0, len(change_price_onshelf_list), 50)]
+            batches = [change_price_onshelf_list[i : i + 50] for i in range(0, len(change_price_onshelf_list), 50)]
             for batch in batches:
                 rsp = self.call_api(
                     "PUT",
@@ -722,7 +707,7 @@ class UUAccount:
                     logger.error(f"上架物品失败，原因可能由于该物品处于待发货列表")
         failure_count = len(item_infos) - success_count
         return success_count, failure_count
-    
+
     def change_price_sell_and_lease(self, sell_assets: list[Asset] = [], lease_assets: list[LeaseAsset] = []):
         '''
         请求示例：
@@ -778,8 +763,8 @@ class UUAccount:
 
         item_infos += [models.UUChangePriceItem.fromAsset(asset).model_dump(exclude_none=True) for asset in sell_assets_dict.values()]
         item_infos += [models.UUChangePriceItem.fromLeaseAsset(asset).model_dump(exclude_none=True) for asset in lease_assets_dict.values()]
-        
-        batches = [item_infos[i:i+50] for i in range(0, len(item_infos), 50)]
+
+        batches = [item_infos[i : i + 50] for i in range(0, len(item_infos), 50)]
         success_count = 0
         for batch in batches:
             rsp = self.call_api(
@@ -794,25 +779,30 @@ class UUAccount:
                 if asset["IsSuccess"] == 1:
                     success_count += 1
                 else:
-                    logger.error(f"上架物品 {asset['CommodityId']}(悠悠商品编号) 失败，原因：{asset['Remark']}")
+                    reason = '未知'
+                    if asset.get('Remark'):
+                        reason = asset['Remark']
+                    elif asset.get('Message'):
+                        reason = asset['Message']
+                    logger.error(f"上架物品 {asset['CommodityId']}(悠悠商品编号) 失败，原因：{reason}")
         failure_count = len(item_infos) - success_count
         return success_count, failure_count
-    
+
     def get_leased_out_list(self):
-        data = {"gameId": 730, "pageIndex": 0, "pageSize": 50,"sortType": 0,"keywords":""}
+        data = {"gameId": 730, "pageIndex": 0, "pageSize": 50, "sortType": 0, "keywords": ""}
         result = []
         while True:
             data['pageIndex'] += 1
             response = self.call_api("POST", "/api/youpin/bff/trade/v1/order/lease/out/list", data=data).json()
             result += response["data"]["orderDataList"]
             if len(response["data"]["orderDataList"]) < 50:
-                break 
+                break
         return result
-    
+
     def get_template_id_by_order_id(self, order_id):
         response = self.call_api("POST", "/api/youpin/bff/order/v2/detail", data={"orderId": order_id}).json()
         return response['data']['orderDetail']['productDetail']['commodityTemplateId']
-    
+
     def get_least_market_price(self, template_id):
         response = self.call_api("POST", "/api/homepage/v2/detail/commodity/list/sell", data={"templateId": template_id}).json()
         if response['Code'] == 84104:
@@ -826,11 +816,7 @@ class UUAccount:
         inventory_list_rsp = self.call_api(
             "POST",
             "/api/youpin/commodity/user/inventory/price/trend",
-            data={
-                "pageIndex": 1,
-                "pageSize": 1000,
-                "IsMerge": 0
-            },
+            data={"pageIndex": 1, "pageSize": 1000, "IsMerge": 0},
         ).json()
         inventory_list = []
         if inventory_list_rsp["code"] == 0:
@@ -847,12 +833,7 @@ class UUAccount:
         "buyPrice":"341","abrade":"0.1401326358318328900"}]}
         """
         item_infos = [
-            {
-                "steamAssetId": str(asset["steamAssetId"]),
-                "marketHashName": asset["marketHashName"],
-                "buyPrice": str(asset["buyPrice"]),
-                "abrade": str(asset["abrade"])
-            }
+            {"steamAssetId": str(asset["steamAssetId"]), "marketHashName": asset["marketHashName"], "buyPrice": str(asset["buyPrice"]), "abrade": str(asset["abrade"])}
             for asset in assets
         ]
         rsp = self.call_api(
@@ -897,7 +878,7 @@ class UUAccount:
                                 "name": product["commodityName"],
                                 "order_time": int(order["finishOrderTime"]),
                                 "type_name": product["typeName"],
-                                "buy_from": 'uu'
+                                "buy_from": 'uu',
                             }
                         )
                 else:
@@ -931,7 +912,7 @@ class UUAccount:
                         "buy_price": float(commodity["price"]),
                         "name": commodity["name"],
                         "order_time": int(data["orderCanceledTime"]),
-                        "buy_from": 'uu'
+                        "buy_from": 'uu',
                     }
                 )
 
@@ -959,14 +940,7 @@ class UUAccount:
         enable_zero_cd_rsp = self.call_api(
             "POST",
             "/api/youpin/bff/order/sublet/open",
-            data={
-                "orderIdList": orders_list,
-                "subletConfig": {
-                    "subletSwitchFlag": 1,
-                    "subletPricingFlag": 1,
-                    "pricingMinPercent": "95"
-                }
-            }
+            data={"orderIdList": orders_list, "subletConfig": {"subletSwitchFlag": 1, "subletPricingFlag": 1, "pricingMinPercent": "95"}},
         ).json()
 
         if enable_zero_cd_rsp["code"] == 0:
