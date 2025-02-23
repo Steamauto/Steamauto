@@ -72,8 +72,18 @@ DEFAULT_CONFIG_JSON = r"""
     "https": "http://127.0.0.1:7890"
   },
   
-  // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
-  "no_pause": false,
+  "notify_service": {
+    // 通知器 使用Apprise格式 支持Telegram、钉钉、飞书、WxPusher、Server酱等
+    // 配置详见https://github.com/caronc/apprise/wiki
+    "notifiers": [],
+    // 自定义标题，为空则使用默认标题
+    "custom_title": "",
+    // 通知器屏蔽词 如果通知内容包含以下词语则不会发送通知
+    "blacklist_words": [
+      "黑名单词语1",
+      "黑名单词语2"
+    ]
+  },
 
   // BUFF 自动发货插件配置
   "buff_auto_accept_offer": {
@@ -279,6 +289,8 @@ DEFAULT_CONFIG_JSON = r"""
   "log_retention_days": 7,
   // 是否开启开发者模式，具体功能请查看代码，非开发者请勿开启！开启后无法正常使用！！！
   "development_mode": false,
+  // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
+  "no_pause": false,
   // 本地插件白名单 当以下本地插件与程序附带不一样时，将不会被覆盖
   "plugins_whitelist": []
 }

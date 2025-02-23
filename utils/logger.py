@@ -106,6 +106,7 @@ f_handler.setFormatter(log_formatter)
 logger.addHandler(f_handler)
 logger.addFilter(LogFilter())
 logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+logging.getLogger("apprise").setLevel(logging.WARNING)
 logger.debug(f"Steamauto {CURRENT_VERSION} started")
 logger.debug(f"Running on {platform.system()} {platform.release()}({platform.version()})")
 logger.debug(f"Python version: {os.sys.version}")  # type: ignore
