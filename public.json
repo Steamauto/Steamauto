@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.1.1",
+      "changelog": "修复未配置通知器导致程序线程崩溃的问题",
+      "level": "stable",
+      "significance": "important",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.1.1/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.1.1/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "264a26074ebf672337e2001a46aeb9b450656e5596b88467025e56e68de56c8c",
+        "windows": "bc3bf5778307d12446f87093066216c3556733b38d7ec297397d39c4e3db8ff0"
+      }
+    },
+    {
       "version": "5.1.0",
       "changelog": "1.新推出统一管理推送功能，将config.json5删除并重新生成后可以体验。在最新版可以自动推送账号失效、发货失败等问题; 2.修复ECOsteam插件在某些情况下崩溃的问题",
       "level": "stable",
