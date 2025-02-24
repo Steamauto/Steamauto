@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.1.2",
+      "changelog": "修复即使配置了通知器仍提示未配置的bug",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.1.2/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.1.2/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "f7dc17befd810dc2437bf035733447dc8be802ed6b298feb0c3f2550e1a8ec81",
+        "windows": "e6347f0d63d0f581d381a1c7e54c053f10270206d2aea4ac81d98deec17f53c4"
+      }
+    },
+    {
       "version": "5.1.1",
       "changelog": "修复未配置通知器导致程序线程崩溃的问题",
       "level": "stable",
