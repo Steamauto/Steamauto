@@ -10,7 +10,7 @@ try:
     with open(CONFIG_FILE_PATH, 'r') as file:
         config = json5.load(file)
     config = config.get('notify_service', {})
-    if config:
+    if config == {}:
         logger.warning('未配置通知服务，通知功能将不可用，请在配置文件中配置通知服务')
     elif config.get('notifiers'):
         logger.info(f'已配置{len(config.get("notifiers"))}个通知服务')
@@ -19,7 +19,7 @@ except Exception:
 
 
 def send_notification(message, title=''):
-    if config.get('notifiers'):
+    if config.get('notifiers', False):
         for black in config.get('blacklist_words'):
             if black in message or black in title:
                 logger.debug(f'消息中包含黑名单词: {black}，已被过滤')

@@ -172,7 +172,7 @@ def load_plugin_from_file(plugin_file_path, module_name=None):
 
 def import_all_plugins():
     # 自动导入所有插件
-    plugin_files = [f for f in os.listdir(get_plugins_folder()) if f.endswith(".py") and f != "__init__.py"]
+    plugin_files = [f for f in os.listdir(get_plugins_folder()) if f.endswith(".py") and not f.startswith("_")]
 
     for plugin_file in plugin_files:
         module_name = f"{PLUGIN_FOLDER}.{plugin_file[:-3]}"

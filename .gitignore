@@ -17,4 +17,6 @@ steamauto.spec
 *bak
 .vscode
 launch.json
+.conda
+plugins/_*
 plugins/*External*
