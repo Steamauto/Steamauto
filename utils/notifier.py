@@ -20,11 +20,11 @@ except Exception:
 
 def send_notification(message, title=''):
     if config.get('notifiers', False):
-        for black in config.get('blacklist_words'):
+        for black in config.get('blacklist_words', []):
             if black in message or black in title:
                 logger.debug(f'消息中包含黑名单词: {black}，已被过滤')
                 return
-        for notifier in config.get('notifiers'):
+        for notifier in config.get('notifiers', []):
             try:
                 if config.get('custom_title'):
                     title = config.get('custom_title')
@@ -33,7 +33,7 @@ def send_notification(message, title=''):
                     title = title if title else 'Steamauto 通知'
                 apobj = apprise.Apprise()
                 apobj.add(notifier)
-                apobj.notify(title=title, body=message)
+                apobj.notify(title=title, body=message) # type: ignore
             except Exception as e:
                 handle_caught_exception(e)
                 logger.error(f'发送通知失败: {str(e)}')
