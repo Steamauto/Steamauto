@@ -35,7 +35,7 @@ accept_offer_logger = PluginLogger("[ECOsteam.cn] [自动发货]")
 def compare_shelves(A: List[Asset], B: List[Asset], ratio: float) -> Union[bool, dict[str, list[Asset]]]:
     result = {"add": [], "delete": [], "change": []}
     ratio = round(ratio, 2)
-    
+
     # 检查是否有不是Asset的元素，如果有则警告并删除
     for asset in A:
         if not isinstance(asset, Asset):
@@ -89,7 +89,7 @@ def compare_lease_shelf(A: List[LeaseAsset], B: List[LeaseAsset], ratio: float) 
         if not isinstance(asset, Asset):
             sell_logger.debug(f"B列表可能存在未下架的物品")
             B.remove(asset)
-    
+
     # 创建字典用于快速查找
     A_dict = {item.assetid: item for item in A}
     B_dict = {item.assetid: item for item in B}
@@ -180,12 +180,7 @@ class tasks:
         logger.debug(self.platform + "租赁队列：" + json.dumps(self.lease_queue, cls=ModelEncoder, ensure_ascii=False))
         logger.debug(self.platform + "出售改价队列：" + json.dumps(self.sell_change_queue, cls=ModelEncoder, ensure_ascii=False))
         logger.debug(self.platform + "租赁改价队列：" + json.dumps(self.lease_change_queue, cls=ModelEncoder, ensure_ascii=False))
-        if (
-            len(self.sell_queue) > 0
-            or len(self.lease_queue) > 0
-            or len(self.sell_change_queue) > 0
-            or len(self.lease_change_queue) > 0
-        ):
+        if len(self.sell_queue) > 0 or len(self.lease_queue) > 0 or len(self.sell_change_queue) > 0 or len(self.lease_change_queue) > 0:
             logger.info(self.platform + '平台任务队列开始执行')
         else:
             logger.info(self.platform + '平台任务队列为空，不需要处理')
@@ -195,9 +190,7 @@ class tasks:
             logger.info(f'即将向租赁货架上架 {len(self.lease_queue)} 个商品')
             success_count, failure_count = 0, 0
             if isinstance(self.client, ECOsteamClient):
-                success_count, failure_count = self.client.PublishRentAndSaleGoods(
-                    self.steamid, 1, self.sell_queue, self.lease_queue
-                )
+                success_count, failure_count = self.client.PublishRentAndSaleGoods(self.steamid, 1, self.sell_queue, self.lease_queue)
             elif isinstance(self.client, UUAccount):
                 success_count, failure_count = self.client.onshelf_sell_and_lease(self.sell_queue, self.lease_queue)
             self.sell_queue = []
@@ -211,13 +204,9 @@ class tasks:
             logger.info(f'即将在租赁货架改价 {len(self.lease_change_queue)} 个商品')
             success_count, failure_count = 0, 0
             if isinstance(self.client, ECOsteamClient):
-                success_count, failure_count = self.client.PublishRentAndSaleGoods(
-                    self.steamid, 2, self.sell_change_queue, self.lease_change_queue
-                )
+                success_count, failure_count = self.client.PublishRentAndSaleGoods(self.steamid, 2, self.sell_change_queue, self.lease_change_queue)
             elif isinstance(self.client, UUAccount):
-                success_count, failure_count = self.client.change_price_sell_and_lease(
-                    self.sell_change_queue, self.lease_change_queue
-                )
+                success_count, failure_count = self.client.change_price_sell_and_lease(self.sell_change_queue, self.lease_change_queue)
             self.lease_queue = []
             self.lease_change_queue = []
             if failure_count != 0:
@@ -258,9 +247,7 @@ class ECOsteamPlugin:
             )
             user_info = self.client.GetTotalMoney().json()
             if user_info["ResultData"].get("UserName", None):
-                logger.info(
-                    f'登录成功，用户ID为{user_info["ResultData"]["UserName"]}，当前余额为{user_info["ResultData"]["Money"]}元'
-                )
+                logger.info(f'登录成功，用户ID为{user_info["ResultData"]["UserName"]}，当前余额为{user_info["ResultData"]["Money"]}元')
             else:
                 raise Exception
         except Exception as e:
@@ -281,16 +268,11 @@ class ECOsteamPlugin:
             exit_code.set(1)
             return 1
         if exist and len(accounts_list) > 1:
-            logger.warning(
-                f"检测到你的ECOsteam绑定了多个Steam账号。插件的所有操作仅对SteamID为{self.steam_id}的账号生效！如需同时操作多个账号，请多开Steamauto实例！"
-            )
+            logger.warning(f"检测到你的ECOsteam绑定了多个Steam账号。插件的所有操作仅对SteamID为{self.steam_id}的账号生效！如需同时操作多个账号，请多开Steamauto实例！")
 
         threads = []
         threads.append(Thread(target=self.auto_accept_offer))
-        if (
-            self.config["ecosteam"]["auto_sync_sell_shelf"]["enable"]
-            or self.config["ecosteam"]["auto_sync_lease_shelf"]["enable"]
-        ):
+        if self.config["ecosteam"]["auto_sync_sell_shelf"]["enable"] or self.config["ecosteam"]["auto_sync_lease_shelf"]["enable"]:
             threads.append(Thread(target=self.auto_sync_shelves))
         if not len(threads) == 1:
             for thread in threads:
@@ -336,9 +318,7 @@ class ECOsteamPlugin:
                     asset.market_hash_name = inventory[asset.assetid]["market_hash_name"]
                     assets.append(asset)
                 except KeyError:
-                    sell_logger.warning(
-                        f"检测到BUFF上架物品 {data['goods_infos'][str(item['goods_id'])]['market_hash_name']} 不在Steam库存中！"
-                    )
+                    sell_logger.warning(f"检测到BUFF上架物品 {data['goods_infos'][str(item['goods_id'])]['market_hash_name']} 不在Steam库存中！")
                     assets.append(asset.orderNo)
             return assets
         elif platform == "uu":
@@ -388,9 +368,7 @@ class ECOsteamPlugin:
                 tradeOfferId = detail["TradeOfferId"]
                 goodsName = detail["GoodsName"]
                 if not tradeOfferId:
-                    accept_offer_logger.warning(
-                        f"商品{goodsName}无法获取到交易报价号(可能由于ECO服务器正在发送报价)，暂时跳过处理"
-                    )
+                    accept_offer_logger.warning(f"商品{goodsName}无法获取到交易报价号(可能由于ECO服务器正在发送报价)，暂时跳过处理")
                     continue
                 if tradeOfferId not in self.ignored_offer:
                     accept_offer_logger.info(f"正在发货商品{goodsName}，报价号{tradeOfferId}...")
@@ -508,7 +486,7 @@ class ECOsteamPlugin:
         else:
             lease_logger.info('当前同步主平台为悠悠有品')
             self.lease_other_platform = "eco"
-        
+
         lease_logger.debug(f'即将比较{self.lease_main_platform.upper()}平台和{self.lease_other_platform.upper()}平台的租赁上架物品')
         difference = compare_lease_shelf(
             lease_shelves[self.lease_main_platform],
@@ -516,9 +494,7 @@ class ECOsteamPlugin:
             self.config['ecosteam']['auto_sync_lease_shelf']['ratio'][self.lease_main_platform]
             / self.config['ecosteam']['auto_sync_lease_shelf']['ratio'][self.lease_other_platform],
         )
-        lease_logger.debug(
-            f"租赁-当前被同步平台：{self.lease_other_platform.upper()}\nDifference: {json.dumps(difference, cls=ModelEncoder)}"
-        )
+        lease_logger.debug(f"租赁-当前被同步平台：{self.lease_other_platform.upper()}\nDifference: {json.dumps(difference, cls=ModelEncoder)}")
         if difference != {"add": [], "delete": [], "change": []}:
             lease_logger.warning(f"{self.lease_other_platform.upper()}平台需要更新租赁上架商品/价格")
             if self.lease_other_platform == "uu":
@@ -560,9 +536,7 @@ class ECOsteamPlugin:
                     success_count = 0
                     for batch in batches:
                         try:
-                            rsp = self.client.OffshelfRentGoods(
-                                [models.GoodsNum(AssetId=item.assetid, SteamGameId=str(item.appid)) for item in batch]
-                            ).json()
+                            rsp = self.client.OffshelfRentGoods([models.GoodsNum(AssetId=item.assetid, SteamGameId=str(item.appid)) for item in batch]).json()
                             if rsp['ResultCode'] == '0':
                                 success_count += len(batch)
                             else:
@@ -609,13 +583,9 @@ class ECOsteamPlugin:
                         if not isinstance(good, Asset):
                             offshelf_list.append(good)
                     if len(offshelf_list) > 0:
-                        sell_logger.warning(
-                            f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！"
-                        )
+                        sell_logger.warning(f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！")
                         if platform == "eco":
-                            success_count, failure_count = self.client.OffshelfGoods(
-                                [models.GoodsNum(GoodsNum=good, SteamGameId='730') for good in offshelf_list]
-                            )
+                            success_count, failure_count = self.client.OffshelfGoods([models.GoodsNum(GoodsNum=good, SteamGameId='730') for good in offshelf_list])
                             sell_logger.info(f'下架{success_count}个商品成功！')
                             if failure_count != 0:
                                 sell_logger.error(f'下架{failure_count}个商品失败！')
@@ -645,9 +615,7 @@ class ECOsteamPlugin:
                     shelves[platform],
                     ratios[main_platform] / ratios[platform],
                 )
-                sell_logger.debug(
-                    f"当前平台：{platform.upper()}\nDifference: {json.dumps(difference,cls=ModelEncoder,ensure_ascii=False)}"
-                )
+                sell_logger.debug(f"当前平台：{platform.upper()}\nDifference: {json.dumps(difference,cls=ModelEncoder,ensure_ascii=False)}")
                 if difference != {"add": [], "delete": [], "change": []}:
                     sell_logger.warning(f"{platform.upper()}平台需要更新上架商品/价格")
                     try:
@@ -672,9 +640,7 @@ class ECOsteamPlugin:
             assets = [asset.orderNo for asset in difference["delete"]]
             if len(assets) > 0:
                 sell_logger.info(f"即将在{platform.upper()}平台下架{len(assets)}个商品")
-                success_count, failure_count = self.client.OffshelfGoods(
-                    [models.GoodsNum(GoodsNum=goodsNum, SteamGameId='730') for goodsNum in assets]
-                )
+                success_count, failure_count = self.client.OffshelfGoods([models.GoodsNum(GoodsNum=goodsNum, SteamGameId='730') for goodsNum in assets])
                 sell_logger.info(f"下架{success_count}个商品成功！")
                 if failure_count != 0:
                     sell_logger.error(f"下架{failure_count}个商品失败！")
@@ -694,12 +660,17 @@ class ECOsteamPlugin:
                 buff_assets = [BuffOnSaleAsset.from_Asset(asset) for asset in assets]
                 sell_logger.info(f"即将上架{len(assets)}个商品到BUFF")
                 try:
-                    success, failure = self.buff_client.on_sale(buff_assets)
+                    # BUFF一次最多上架200个
+                    total_success, total_failure = [], []
+                    for batch in [buff_assets[i : i + 200] for i in range(0, len(buff_assets), 200)]:
+                        success, failure = self.buff_client.on_sale(batch)
+                        total_success += success
+                        total_failure += failure
+                        if batch == 200:
+                            time.sleep(3)
                     for asset in assets:
                         if asset.assetid in failure:
-                            sell_logger.error(
-                                f"上架 {asset.market_hash_name}(ID:{asset.assetid}) 失败！错误信息: {failure[asset.assetid]}"
-                            )
+                            sell_logger.error(f"上架 {asset.market_hash_name}(ID:{asset.assetid}) 失败！错误信息: {failure[asset.assetid]}")
                     sell_logger.info(f"上架{len(success)}个商品到BUFF成功！上架{len(failure)}个商品失败！")
                 except Exception as e:
                     handle_caught_exception(e, "ECOsteam.cn")
@@ -714,9 +685,7 @@ class ECOsteamPlugin:
                     success, failure = self.buff_client.cancel_sale(sell_orders)
                     for asset in assets:
                         if asset.orderNo in failure:
-                            sell_logger.error(
-                                f"下架 {asset.market_hash_name}(ID:{asset.assetid}) 失败！错误信息: {failure[asset.orderNo]}"
-                            )
+                            sell_logger.error(f"下架 {asset.market_hash_name}(ID:{asset.assetid}) 失败！错误信息: {failure[asset.orderNo]}")
                     sell_logger.info(f"下架{success}个商品成功！下架{len(failure)}个商品失败！")
                 except Exception as e:
                     handle_caught_exception(e, "ECOsteam.cn")
@@ -738,9 +707,7 @@ class ECOsteamPlugin:
                 success, problem_sell_orders = self.buff_client.change_price(sell_orders)
                 for asset in assets:
                     if asset.orderNo in problem_sell_orders.keys():
-                        sell_logger.error(
-                            f"修改 {asset.market_hash_name}(ID:{asset.assetid}) 的价格失败！错误信息: {problem_sell_orders[asset.orderNo]}"
-                        )
+                        sell_logger.error(f"修改 {asset.market_hash_name}(ID:{asset.assetid}) 的价格失败！错误信息: {problem_sell_orders[asset.orderNo]}")
                 sell_logger.info(f"修改{success}个商品的价格成功！修改{len(problem_sell_orders)}个商品失败！")
         elif platform == "uu":
             # 上架商品
