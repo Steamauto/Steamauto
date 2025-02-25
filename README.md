@@ -1,16 +1,16 @@
 # Steamauto
 
-![Steamauto](https://socialify.git.ci/jiajiaxd/Steamauto/image?description=1&language=1&name=1&owner=1&theme=Light)
+![Steamauto](https://socialify.git.ci/Steamauto/Steamauto/image?description=1&language=1&name=1&owner=1&theme=Light)
 
 <div align="center">
       <a href="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=TMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj&authKey=VAgXngXUeaHBfGwY2uNzE%2F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz&noverify=0&group_code=425721057" alt="QQ Group">
         <img src="https://img.shields.io/badge/%E5%AE%98%E6%96%B9QQ%E7%BE%A4-425721057-brightgreen?logo=TencentQQ&link=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3F_wv%3D1027%26k%3DTMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj%26authKey%3DVAgXngXUeaHBfGwY2uNzE%252F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz%26noverify%3D0%26group_code%3D425721057" /></a>
       <a href="https://www.bilibili.com/video/BV1ph4y1y7mz/" alt="Video tutorial">
         <img src="https://img.shields.io/badge/%E8%A7%86%E9%A2%91%E6%95%99%E7%A8%8B-%E7%82%B9%E5%87%BB%E8%A7%82%E7%9C%8B-brightgreen?logo=bilibili" /></a>
-      <a href="https://github.com/jiajiaxd/Steamauto/stargazers" alt="GitHub Repo stars">
-        <img src="https://img.shields.io/github/stars/jiajiaxd/Steamauto?logo=github" /></a>
-      <a href="https://github.com/jiajiaxd/Steamauto/forks" alt="GitHub forks">
-        <img src="https://img.shields.io/github/forks/jiajiaxd/Steamauto?logo=github" /></a>
+      <a href="https://github.com/Steamauto/Steamauto/stargazers" alt="GitHub Repo stars">
+        <img src="https://img.shields.io/github/stars/Steamauto/Steamauto?logo=github" /></a>
+      <a href="https://github.com/Steamauto/Steamauto/forks" alt="GitHub forks">
+        <img src="https://img.shields.io/github/forks/Steamauto/Steamauto?logo=github" /></a>
 </div>
 
 > 开源的 Steam 自动收发货解决方案
@@ -61,7 +61,7 @@
 ## 如何使用?
 
 0. ~~给予本仓库一个star(手动狗头)~~  
-1. 前往 [Github Releases](https://github.com/jiajiaxd/Steamauto/releases/latest) 下载适合自己系统的Steamauto
+1. 前往 [Github Releases](https://github.com/Steamauto/Steamauto/releases/latest) 下载适合自己系统的Steamauto
 2. 运行一次程序，程序会释放配置文件
 3. 编辑 `config`文件夹下的 `config.json5`(文件中有相关配置辅助配置)，启用你需要的功能
 4. 修改 `config`文件夹下的 `steam_account_info.json5`中所有的参数(相关教程见附录)
@@ -95,7 +95,7 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 
 ##### SDA报错 `未将对象引用设置到对象的实例`?
 
-![报错如图](https://github.com/jiajiaxd/Steamauto/assets/51043917/b1282372-11f6-4649-be5f-7bc52faf4c16)
+![报错如图](https://github.com/Steamauto/Steamauto/assets/51043917/b1282372-11f6-4649-be5f-7bc52faf4c16)
 请先移除手机令牌再使用SDA
 
 ##### 为什么我打开配置文件后，编辑器提示该文件有语法错误？
