@@ -176,11 +176,7 @@ def import_all_plugins():
 
     for plugin_file in plugin_files:
         module_name = f"{PLUGIN_FOLDER}.{plugin_file[:-3]}"
-        if module_name.startswith(f'{PLUGIN_FOLDER}.External'):
-            globals()[module_name] = load_plugin_from_file(os.path.join(get_plugins_folder(), plugin_file), module_name)
-        else:
-            importlib.import_module(module_name)
-
+        globals()[module_name] = load_plugin_from_file(os.path.join(get_plugins_folder(), plugin_file), module_name)
 
 def camel_to_snake(name):
     if name == "ECOsteamPlugin":  # 特殊处理
