@@ -3,18 +3,21 @@ import json5
 
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import CONFIG_FILE_PATH
+from utils.tools import get_encoding
 
-logger = PluginLogger('Notifier')
+logger = PluginLogger('通知服务')
 config = {}
 try:
-    with open(CONFIG_FILE_PATH, 'r') as file:
+    with open(CONFIG_FILE_PATH, 'r', encoding=get_encoding(CONFIG_FILE_PATH)) as file:
         config = json5.load(file)
     config = config.get('notify_service', {})
     if config == {}:
         logger.warning('未配置通知服务，通知功能将不可用，请在配置文件中配置通知服务')
     elif config.get('notifiers'):
         logger.info(f'已配置{len(config.get("notifiers"))}个通知服务')
-except Exception:
+except Exception as e:
+    logger.warning('通知服务异常，请检查配置文件是否正确配置')
+    handle_caught_exception(e)
     pass
 
 
