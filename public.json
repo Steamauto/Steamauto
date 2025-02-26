@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.1.4",
+      "changelog": "通过Steam登录BUFF功能已经可以正常使用，欢迎测试",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.1.4/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.1.4/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "6842594c065bfb78c847826bf8f4028aa1ad5588d4863c17f28fe65aa0fdd7be",
+        "windows": "aa2ac09dfa20717cce584661f57fb66ae6ce46ae071c937c3af444fac948b42c"
+      }
+    },
+    {
       "version": "5.1.3",
       "changelog": "修复上架超过200个物品时ECOsteam插件崩溃的问题; 修复悠悠日志有时过于冗长的问题",
       "level": "stable",
