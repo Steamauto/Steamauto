@@ -159,14 +159,15 @@ class UUAccount:
         else:
             raise Exception("Method not supported")
         log_output = response.content.decode()
-        logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
         if is_json(log_output):
             json_output = json.loads(log_output)
             log_output = json.dumps(json_output, ensure_ascii=False)
+            logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
 
             if json_output.get('code') == 84101:
                 raise Exception('登录状态失效，请重新登录')
         else:
+            logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
             raise Exception(f"网络错误，或服务器被悠悠屏蔽！请求失败！")
 
         return response
