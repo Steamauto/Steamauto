@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.1.3",
+      "changelog": "修复上架超过200个物品时ECOsteam插件崩溃的问题; 修复悠悠日志有时过于冗长的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.1.3/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.1.3/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "15b9e192c90df5bed03bbbc70c23227240554771abae90bab6948c2bc4a05afa",
+        "windows": "cfde9bd4f3347cda1ca8cb864204f0636f093b2194ca7af94bc83c80888e23e4"
+      }
+    },
+    {
       "version": "5.1.2",
       "changelog": "修复即使配置了通知器仍提示未配置的bug",
       "level": "stable",
