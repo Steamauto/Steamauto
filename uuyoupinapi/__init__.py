@@ -650,6 +650,14 @@ class UUAccount:
                     "Sessionid": self.device_info["deviceId"],
                 },
             ).json()
+            if not rsp.get('Data'):
+                logger.error(f'上架{len(batch)}个物品失败，原因：{rsp}')
+                if 'Steam服务异常' in rsp.get('Msg',''):
+                    logger.warning('检测到Steam服务异常，正在刷新库存...')
+                    self.get_inventory(refresh=True)
+                    logger.info('刷新库存完成，等待5秒后继续上架')
+                    time.sleep(5)
+                continue
             for asset in rsp["Data"]:
                 if asset["Status"] == 1:
                     success_count += 1
