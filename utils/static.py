@@ -28,6 +28,8 @@ SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id
 UU_ARG_FILE_PATH = "uu.txt"
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
 BUILD_INFO = "正在使用源码运行" if not hasattr(os, "frozen") else "非官方二进制构建运行"
+STEAM_ACCOUNT_NAME = "暂未登录"
+STEAM_64_ID = "暂未登录"
 
 DEFAULT_STEAM_ACCOUNT_JSON = """
 {
@@ -78,6 +80,8 @@ DEFAULT_CONFIG_JSON = r"""
     "notifiers": [],
     // 自定义标题，为空则使用默认标题
     "custom_title": "",
+    // 是否包含Steam账号信息
+    "include_steam_info": true,
     // 通知器屏蔽词 如果通知内容包含以下词语则不会发送通知
     "blacklist_words": [
       "黑名单词语1",

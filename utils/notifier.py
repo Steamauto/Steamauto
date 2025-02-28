@@ -3,6 +3,7 @@ import json5
 
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import CONFIG_FILE_PATH
+from utils import static
 from utils.tools import get_encoding
 
 logger = PluginLogger('通知服务')
@@ -34,9 +35,11 @@ def send_notification(message, title=''):
                     message = f'{title}\n{message}'
                 else:
                     title = title if title else 'Steamauto 通知'
+                if config.get('include_steam_info', False):
+                    message += f'\nSteam 用户名：{static.STEAM_ACCOUNT_NAME}\nSteam ID：{static.STEAM_64_ID}'
                 apobj = apprise.Apprise()
                 apobj.add(notifier)
-                apobj.notify(title=title, body=message) # type: ignore
+                apobj.notify(title=title, body=message)  # type: ignore
             except Exception as e:
                 handle_caught_exception(e)
                 logger.error(f'发送通知失败: {str(e)}')
