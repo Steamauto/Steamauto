@@ -12,6 +12,7 @@ import steampy.exceptions
 from steampy.client import SteamClient
 from steampy.exceptions import ApiException
 from steampy.models import GameOptions
+from utils import static
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.notifier import send_notification
 from utils.static import SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH
@@ -167,6 +168,9 @@ def login_to_steam(config: dict):
             logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
             pause()
             return None
+    logger.info(f'已登录账号: {steam_client.username} SteamID64: {steam_client.get_steam64id_from_cookies()}')
+    static.STEAM_ACCOUNT_NAME = steam_client.username
+    static.STEAM_64_ID = steam_client.get_steam64id_from_cookies()
     return steam_client
 
 

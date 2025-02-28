@@ -10,6 +10,7 @@ from BuffApi import BuffAccount
 from BuffApi.models import BuffOnSaleAsset
 from PyECOsteam import ECOsteamClient, models
 from steampy.client import SteamClient
+from utils import static
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import LogFilter, PluginLogger, handle_caught_exception
 from utils.models import Asset, LeaseAsset, ModelEncoder
@@ -220,8 +221,7 @@ class ECOsteamPlugin:
         self.steam_client_mutex = steam_client_mutex
         self.config = config
         self.ignored_offer = []
-        with steam_client_mutex:
-            self.steam_id = steam_client.get_steam64id_from_cookies()
+        self.steam_id = static.STEAM_64_ID
 
     def init(self):
         if not os.path.exists(ECOSTEAM_RSAKEY_FILE):
