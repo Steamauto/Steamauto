@@ -1,5 +1,4 @@
 import json
-from operator import ge
 import random
 import string
 import time
@@ -25,9 +24,10 @@ def generate_random_string(length):
 
 
 def generate_device_info():
+    id = generate_random_string(24)
     return {
-        "deviceId": generate_random_string(24),
-        "deviceType": generate_random_string(6),
+        "deviceId": id,
+        "deviceType": id,
         "hasSteamApp": 0,
         "systemName ": "Android",
         "systemVersion": "14",
@@ -40,13 +40,14 @@ def generate_headers(devicetoken, deviceid, token=""):
         "authorization": "Bearer " + token,
         "content-type": "application/json; charset=utf-8",
         "user-agent": "okhttp/3.14.9",
-        "app-version": "5.26.1",
-        "apptype": "4",
+        "App-Version": "5.28.3",
+        "AppType": "4",
         "package-type": "uuyp",
-        "devicetoken": devicetoken,
-        "deviceid": deviceid,
+        "DeviceToken": devicetoken,
+        "DeviceId": deviceid,
         "platform": "android",
         "accept-encoding": "gzip",
+        "Gameid": "730",
     }
 
 
