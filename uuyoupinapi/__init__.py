@@ -343,6 +343,7 @@ class UUAccount:
                             del toDoList[order]
         if len(toDoList.keys()) != 0:
             for order in list(toDoList.keys()):
+                time.sleep(3)
                 orderDetail = self.call_api(
                     "POST",
                     "/api/youpin/bff/trade/v1/order/query/detail",
