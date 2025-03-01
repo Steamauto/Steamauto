@@ -140,9 +140,10 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
             got_cookies = login_to_buff_by_steam(steam_client)
             if is_session_has_enough_permission(got_cookies):
                 logger.info('[BuffLoginSolver] 使用Steam登录至BUFF成功')
+                session = got_cookies
             else:
                 logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
-            session = got_cookies
+            
         except Exception as e:
             handle_caught_exception(e)
             logger.error(f"[BuffLoginSolver] 使用Steam登录至BUFF失败")
