@@ -88,13 +88,15 @@ class UUAccount:
         )
 
     @staticmethod
-    def send_login_sms_code(phone, session: str, headers={}, region_code=86):
+    def send_login_sms_code(phone, session: str, headers={}, region_code=86, uk = ''):
         """
         发送登录短信验证码
         :param phone: 手机号
         :param session: 可以通过UUAccount.get_random_session_id()获得
         :return:
         """
+        if uk:
+            headers['uk'] = uk
         return requests.post(
             "https://api.youpin898.com/api/user/Auth/SendSignInSmsCode",
             json={"Area": region_code, "Mobile": phone, "Sessionid": session, "Code": ""},
