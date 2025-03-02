@@ -4,6 +4,7 @@ import time
 from colorama import Fore, Style
 
 import uuyoupinapi
+from utils.cloud_service import get_uu_uk_from_cloud
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import UU_TOKEN_FILE_PATH
 from utils.tools import get_encoding
@@ -52,7 +53,7 @@ def get_token_automatically():
     phone_number = input(f"{Style.BRIGHT+Fore.RED}请输入手机号(+86)(如果此时有其它插件输出请忽略！输入完按回车即可！)：{Style.RESET_ALL}")
     token_id = device_info["deviceId"]
     logger.debug("随机生成的token_id：" + token_id)
-    result = uuyoupinapi.UUAccount.send_login_sms_code(phone_number, token_id, headers=headers)
+    result = uuyoupinapi.UUAccount.send_login_sms_code(phone_number, token_id, headers=headers, uk=get_uu_uk_from_cloud())
     response = {}
     if result["Code"] != 5050:
         logger.info("发送验证码结果：" + result["Msg"])
@@ -73,6 +74,6 @@ def get_token_automatically():
     logger.info("登录结果：" + response["Msg"])
     try:
         got_token = response["Data"]["Token"]
-    except (KeyError,TypeError,AttributeError):
+    except (KeyError, TypeError, AttributeError):
         return False
     return got_token
