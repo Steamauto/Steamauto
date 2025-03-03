@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.2.0",
+      "changelog": "重新支持悠悠有品发送短信验证码; 允许发送通知时附带Steam账号信息; 修复一些已知问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.2.0/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.2.0/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "cec33cf49dc3c39f320972b595ef1e853df3c32c9761c40d7f41c4db8b01c1be",
+        "windows": "b798350dd7a90f5a2068fe1dc358217d5eada379def72497b0f87d6f1b4264c2"
+      }
+    },
+    {
       "version": "5.1.4",
       "changelog": "通过Steam登录BUFF功能已经可以正常使用，欢迎测试",
       "level": "stable",
