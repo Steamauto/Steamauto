@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.2.1",
+      "changelog": "Windows平台使用UPX压缩后发布; 修复首次打开Steamauto会报错的问题; 在尝试登录Steam之前检查配置文件是否有效",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.2.1/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.2.1/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "b897709e644fcbe6b7ce2ab485bcf1d9d0b67c2b271bd5700d36c6ae38348df0",
+        "windows": "72100afdd949b27c1499433d77e551eb3929af56e0bfec29b19a6e3c76561ba5"
+      }
+    },
+    {
       "version": "5.2.0",
       "changelog": "重新支持悠悠有品发送短信验证码; 允许发送通知时附带Steam账号信息; 修复一些已知问题",
       "level": "stable",
