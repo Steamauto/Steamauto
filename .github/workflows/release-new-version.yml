@@ -1,4 +1,4 @@
-name: Publsih New Version
+name: Publish New Version
 
 on:
   workflow_dispatch:
@@ -80,12 +80,37 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Build binary
+      - name: Install UPX (Windows)
+        if: matrix.os == 'windows-latest'
         run: |
-          pip install pyinstaller -r requirements.txt
+          $url = "https://github.com/upx/upx/releases/download/v5.0.0/upx-5.0.0-win64.zip"
+          $output = "upx.zip"
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Expand-Archive -Path $output -DestinationPath C:\upx_temp
+          New-Item -ItemType Directory -Path C:\upx -Force
+          Move-Item C:\upx_temp\upx-5.0.0-win64\* C:\upx -Force
+          Remove-Item C:\upx_temp, $output -Recurse -Force
+
+      - name: Install requirements and build
+        shell: bash
+        run: |
+          pip install pyinstaller
+          pip install -r requirements.txt
           python .github/scripts/add_build_info.py
-          pyinstaller -F Steamauto.py --collect-all apprise --name Steamauto-${{ matrix.os }} --add-data "plugins:plugins"
-      
+          
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            pyinstaller -F Steamauto.py \
+              --collect-all apprise \
+              --name Steamauto-${{ matrix.os }} \
+              --add-data "plugins:plugins" \
+              --upx-dir C:\\upx
+          else
+            pyinstaller -F Steamauto.py \
+              --collect-all apprise \
+              --name Steamauto-${{ matrix.os }} \
+              --add-data "plugins:plugins"
+          fi
+
       - name: Check build result
         if: ${{ failure() }}
         run: |
