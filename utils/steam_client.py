@@ -119,6 +119,14 @@ def login_to_steam(config: dict):
                 logger.info("已经启用Steamauto内置加速")
                 client._session.auth = accelerator()
             logger.info("正在登录...")
+            if isinstance(steam_account_info, dict):
+                for key, value in steam_account_info.items():
+                    if not value:
+                        logger.error(f"Steam账号配置文件中 {key} 为空，请检查配置文件")
+                        return None
+            else:
+                logger.error("配置文件格式错误，请检查配置文件")
+                return None
             client.login(
                 steam_account_info.get("steam_username"),  # type: ignore
                 steam_account_info.get("steam_password"),  # type: ignore
