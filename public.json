@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.2.2",
+      "changelog": "修复如果Steam无法登录导致“闪退”",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.2.2/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.2.2/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "6b65c7c42b4b05c78948e9685b40543a80256cb763e2beb9afc96b4e27531680",
+        "windows": "1b303d292d9afe91040f51cd0ccbc0234a8288d82417e34a7714c87ec6fec994"
+      }
+    },
+    {
       "version": "5.2.1",
       "changelog": "Windows平台使用UPX压缩后发布; 修复首次打开Steamauto会报错的问题; 在尝试登录Steam之前检查配置文件是否有效",
       "level": "stable",
