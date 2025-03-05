@@ -203,13 +203,13 @@ def init_files_and_params() -> int:
         f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n"
     )
     logger.info(f"当前版本: {CURRENT_VERSION}   编译信息: {BUILD_INFO}")
+    if not hasattr(os, "frozen"):
+        if config.get("auto_update", False):
+            attempt_auto_update_github()
     try:
         from utils import cloud_service
 
-        if not hasattr(os, "frozen"):
-            if config.get("auto_update", False):
-                attempt_auto_update_github()
-        else:
+        if hasattr(os, "frozen"):
             cloud_service.checkVersion()
         cloud_service.getAds()
     except Exception as e:
