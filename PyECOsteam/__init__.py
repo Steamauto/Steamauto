@@ -6,8 +6,8 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import timezone
 
-import PyECOSteam.models as models
-from PyECOSteam.sign import generate_rsa_signature
+import PyECOsteam.models as models
+from PyECOsteam.sign import generate_rsa_signature
 from utils.logger import PluginLogger
 from utils.models import Asset, LeaseAsset
 from utils.static import CURRENT_VERSION
