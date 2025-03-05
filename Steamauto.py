@@ -34,7 +34,133 @@ from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           STEAM_ACCOUNT_INFO_FILE_PATH)
 from utils.steam_client import login_to_steam, steam_client_mutex
 from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler,
-                         logger, pause)
+                         logger, pause, compare_version)
+import requests
+import zipfile
+import io
+import shutil
+import subprocess
+import sys
+import os
+
+GITHUB_REPO_OWNER = "Steamauto"
+GITHUB_REPO_NAME = "Steamauto"
+
+def attempt_auto_update_github():
+    """
+    Checks GitHub releases for a newer version. If found, downloads the zip,
+    extracts, copies over the current directory, and restarts the script.
+    """
+
+    # 1) Hit the GitHub releases/latest endpoint
+    url = f"https://api.github.com/repos/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}/releases/latest"
+    try:
+        response = requests.get(url, timeout=10)
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            logger.warning(f"GitHub API request failed: {e}, skip auto-update.")
+            return
+
+        release_data = response.json()
+        latest_version = release_data.get("tag_name", None)
+        zip_url = None
+
+        # If you release via "tag_name" (e.g. "v1.2.3") in GitHub:
+        # Compare latest_version to your current_version
+        # Just a naive check here, adapt compare_version if needed.
+        if latest_version and compare_version(CURRENT_VERSION, latest_version.lstrip("v")) == -1:
+            # 2) Look for a .zip asset or fallback to "source_code.zip"
+            zip_url = release_data.get("zipball_url", None)
+
+            if not zip_url:
+                logger.warning("Could not find any zip URL for the latest release.")
+                return
+
+            logger.info(f"Attempting to download new version from: {zip_url}")
+
+            # 3) Download and unzip into temp folder
+            r = requests.get(zip_url, timeout=30)
+            try:
+                r.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                logger.warning(f"Download failed: {e}, skip auto-update.")
+                return
+
+            with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+                temp_update_folder = os.path.join(os.getcwd(), "__steamauto_update_temp__")
+                if os.path.exists(temp_update_folder):
+                    shutil.rmtree(temp_update_folder)
+                os.makedirs(temp_update_folder, exist_ok=True)
+                zf.extractall(temp_update_folder)
+
+            # 4) Find the unzipped root folder (GitHub usually names it <repo>-<commit>)
+            # We locate that folder in temp_update_folder
+            extracted_subfolders = [f for f in os.listdir(temp_update_folder)
+                                    if os.path.isdir(os.path.join(temp_update_folder, f))]
+            if not extracted_subfolders:
+                logger.warning("No subfolder found in downloaded zip. Skipping auto-update.")
+                return
+            root_extracted = os.path.join(temp_update_folder, extracted_subfolders[0])
+
+            # 5) Overwrite your existing code with the updated code
+            #    Or place it in a separate folder to run from there.
+            #    For safety, we do a backup or skip certain folders if needed.
+            logger.info("Copying updated files to current directory...")
+            copy_over(root_extracted, os.getcwd(), skip_folders=["__steamauto_update_temp__", "venv", ".git", ".idea"])
+
+            requirements_file = os.path.join(os.getcwd(), "requirements.txt")
+            if os.path.exists(requirements_file):
+                try:
+                    logger.info("Installing updated dependencies from requirements.txt...")
+                    # NOTE: We recommend calling pip via 'python -m pip ...'
+                    subprocess.check_call([
+                        sys.executable, "-m", "pip",
+                        "install", "-r", "requirements.txt"
+                    ])
+                    logger.info("Dependencies updated successfully.")
+                except Exception as e:
+                    handle_caught_exception(e)
+                    logger.warning("Failed to update dependencies. You may need to install them manually.")
+
+            # 6) Clean up
+            shutil.rmtree(temp_update_folder)
+            logger.info("Update successful. Restarting...")
+
+            # 7) Relaunch your script from the updated code
+            #    On Windows: python main.py ...
+            #    On *nix: python3 main.py ...
+            #    or simply re-exec the current Python with the same arguments:
+            python_executable = sys.executable
+            os.execl(python_executable, python_executable, *sys.argv)
+
+        else:
+            logger.info("No newer version found on GitHub. Skipping auto-update.")
+
+    except Exception as e:
+        handle_caught_exception(e)
+        logger.warning("Auto-update failed due to an exception.")
+
+def copy_over(src: str, dst: str, skip_folders=None):
+    """
+    Recursively copies all files/folders from src to dst,
+    skipping anything in skip_folders.
+    """
+    if skip_folders is None:
+        skip_folders = []
+    for item in os.listdir(src):
+        s = os.path.join(src, item)
+        d = os.path.join(dst, item)
+        # skip any items in skip_folders
+        if item in skip_folders:
+            continue
+        if os.path.isdir(s):
+            if not os.path.exists(d):
+                os.makedirs(d, exist_ok=True)
+            copy_over(s, d, skip_folders=skip_folders)
+        else:
+            shutil.copy2(s, d)
+
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -80,7 +206,10 @@ def init_files_and_params() -> int:
     try:
         from utils import cloud_service
 
-        cloud_service.checkVersion()
+        if not hasattr(os, "frozen"):
+            attempt_auto_update_github()
+        else:
+            cloud_service.checkVersion()
         cloud_service.getAds()
     except Exception as e:
         logger.warning('无法使用云服务')
