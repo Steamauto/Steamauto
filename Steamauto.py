@@ -207,7 +207,8 @@ def init_files_and_params() -> int:
         from utils import cloud_service
 
         if not hasattr(os, "frozen"):
-            attempt_auto_update_github()
+            if config.get("auto_update", False):
+                attempt_auto_update_github()
         else:
             cloud_service.checkVersion()
         cloud_service.getAds()
