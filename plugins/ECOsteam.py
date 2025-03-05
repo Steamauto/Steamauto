@@ -8,7 +8,7 @@ from typing import Dict, List, Union
 
 from BuffApi import BuffAccount
 from BuffApi.models import BuffOnSaleAsset
-from PyECOsteam import ECOsteamClient, models
+from PyECOSteam import ECOsteamClient, models
 from steampy.client import SteamClient
 from utils import static
 from utils.buff_helper import get_valid_session_for_buff
