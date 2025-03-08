@@ -67,12 +67,12 @@ class C5AutoAcceptOffer:
                 for deliveringOrder in deliveringOrders:
                     logger.info(f'正在处理订单 {deliveringOrder["name"]} ...')
                     offerId = deliveringOrder['orderConfirmInfoDTO']['offerId']
-                    if deliveringOrder['orderId'] in ignored_list:
+                    if offerId in ignored_list:
                         logger.info(f'订单 {deliveringOrder["name"]} 已发货，跳过')
                         continue
                     if accept_trade_offer(self.steam_client, self.steam_client_mutex, offerId, desc=f"发货平台：C5Game\n发货商品：{deliveringOrder['name']}"):
                         logger.info(f'订单 {deliveringOrder["name"]} 发货完成')
-                        ignored_list.append(deliveringOrder['orderId'])
+                        ignored_list.append(offerId)
                         if deliveringOrders.index(deliveringOrder) != len(deliveringOrders) - 1:
                             logger.info(f"为避免频繁访问Steam接口，等待3秒后处理下一个订单")
                             time.sleep(3)
