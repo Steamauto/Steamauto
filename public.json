@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.2.3",
+      "changelog": "修复在某些情况下自动同步失败导致插件崩溃的问题; 修复C5自动发货忽略报价功能无法使用问题; 修复悠悠赠送订单无法正确识别的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.2.3/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.2.3/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "43d8bfe981dbdde865a2c55eb63b79234fc4b0b0e8b0e4da788eb96f568d5597",
+        "windows": "991454ee1ea0ffd41aa7d47572d18e4fe405a96d63885373e6c7ba9e87d6877e"
+      }
+    },
+    {
       "version": "5.2.2",
       "changelog": "修复如果Steam无法登录导致“闪退”",
       "level": "stable",
