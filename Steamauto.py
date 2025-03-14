@@ -333,5 +333,5 @@ if __name__ == "__main__":
         os.mkdir(DEV_FILE_FOLDER)
     if not os.path.exists(SESSION_FOLDER):
         os.mkdir(SESSION_FOLDER)
-    exit_code.set(main())  # type: ignore
+    set_exit_code(main())
     exit_app(None, None)
