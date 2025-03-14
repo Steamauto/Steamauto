@@ -1,47 +1,34 @@
 import importlib
 import importlib.util
 import inspect
+import io
 import os
 import re
 import shutil
 import signal
+import subprocess
 import sys
 import threading
 import time
+import zipfile
 from typing import no_type_check
 
 import json5
+import requests
 from colorama import Fore, Style
 
 import utils.static as static
-from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
-from plugins.BuffAutoComment import BuffAutoComment
-from plugins.BuffAutoOnSale import BuffAutoOnSale
-from plugins.BuffProfitReport import BuffProfitReport
-from plugins.C5AutoAcceptOffer import C5AutoAcceptOffer
-from plugins.ECOsteam import ECOsteamPlugin
-from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
-from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
-from plugins.UUAutoLease import UUAutoLeaseItem
-from plugins.UUAutoSell import UUAutoSellItem
 from steampy.client import SteamClient
 from utils.logger import handle_caught_exception
 from utils.notifier import send_notification
 from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           CURRENT_VERSION, DEFAULT_CONFIG_JSON,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
-                          LOGS_FOLDER, PLUGIN_FOLDER, SESSION_FOLDER,
+                          PLUGIN_FOLDER, SESSION_FOLDER,
                           STEAM_ACCOUNT_INFO_FILE_PATH)
 from utils.steam_client import login_to_steam, steam_client_mutex
-from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler,
+from utils.tools import (calculate_sha256, get_encoding, jobHandler,
                          logger, pause, compare_version)
-import requests
-import zipfile
-import io
-import shutil
-import subprocess
-import sys
-import os
 
 GITHUB_REPO_OWNER = "Steamauto"
 GITHUB_REPO_NAME = "Steamauto"
