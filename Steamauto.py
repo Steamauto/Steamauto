@@ -14,26 +14,17 @@ import json5
 from colorama import Fore, Style
 
 import utils.static as static
-from plugins.BuffAutoAcceptOffer import BuffAutoAcceptOffer
-from plugins.BuffAutoComment import BuffAutoComment
-from plugins.BuffAutoOnSale import BuffAutoOnSale
-from plugins.BuffProfitReport import BuffProfitReport
-from plugins.C5AutoAcceptOffer import C5AutoAcceptOffer
-from plugins.ECOsteam import ECOsteamPlugin
-from plugins.SteamAutoAcceptOffer import SteamAutoAcceptOffer
-from plugins.UUAutoAcceptOffer import UUAutoAcceptOffer
-from plugins.UUAutoLease import UUAutoLeaseItem
-from plugins.UUAutoSell import UUAutoSellItem
 from steampy.client import SteamClient
+from utils.code_updater import attempt_auto_update_github
 from utils.logger import handle_caught_exception
 from utils.notifier import send_notification
 from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           CURRENT_VERSION, DEFAULT_CONFIG_JSON,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
-                          LOGS_FOLDER, PLUGIN_FOLDER, SESSION_FOLDER,
+                          PLUGIN_FOLDER, SESSION_FOLDER,
                           STEAM_ACCOUNT_INFO_FILE_PATH)
 from utils.steam_client import login_to_steam, steam_client_mutex
-from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler,
+from utils.tools import (calculate_sha256, get_encoding, jobHandler,
                          logger, pause)
 
 
@@ -49,9 +40,6 @@ def handle_global_exception(exc_type, exc_value, exc_traceback):
 def set_exit_code(code):
     global exit_code
     exit_code = code
-
-
-
 
 
 # 文件缺失或格式错误返回0，首次运行返回1，非首次运行返回2
@@ -77,10 +65,20 @@ def init_files_and_params() -> int:
         f"{Fore.RED+Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n"
     )
     logger.info(f"当前版本: {CURRENT_VERSION}   编译信息: {BUILD_INFO}")
+
+    try:
+        with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
+            config = json5.load(f)
+    except:
+        config = {}
+    if not hasattr(os, "frozen"):
+        if config.get("source_code_auto_update", False):
+            attempt_auto_update_github(CURRENT_VERSION)
     try:
         from utils import cloud_service
 
-        cloud_service.checkVersion()
+        if hasattr(os, "frozen"):
+            cloud_service.checkVersion()
         cloud_service.getAds()
     except Exception as e:
         logger.warning('无法使用云服务')
