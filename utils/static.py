@@ -54,6 +54,9 @@ DEFAULT_STEAM_ACCOUNT_JSON = """
 
 DEFAULT_CONFIG_JSON = r"""
 {
+  // 代码运行的时候启动自动更新最新版本
+  "auto_update": false,
+
   // 登录Steam时是否开启SSL验证，正常情况下不建议关闭SSL验证
   "steam_login_ignore_ssl_error": false,
   
