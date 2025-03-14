@@ -25,8 +25,7 @@ from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           STEAM_ACCOUNT_INFO_FILE_PATH)
 from utils.steam_client import login_to_steam, steam_client_mutex
 from utils.tools import (calculate_sha256, get_encoding, jobHandler,
-                         logger, pause)
-exit_code = 0
+                         logger, pause, exit_code)
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
