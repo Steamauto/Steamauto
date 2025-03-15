@@ -31,13 +31,19 @@ jobs:
           Remove-Item C:\upx_temp, $output -Recurse -Force
 
       - name: Install requirements and build
+        shell: bash
         env:
           MATRIX_OS: ${{ matrix.os }}
         run: |
           pip install pyinstaller
           pip install -r requirements.txt
           python .github/scripts/add_build_info.py
-          pyinstaller build.spec
+          
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            pyinstaller build.spec --upx-dir C:\\upx
+          else
+            pyinstaller build.spec
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@main
