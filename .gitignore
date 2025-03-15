@@ -12,8 +12,6 @@ env
 test*
 build/*
 dist/*
-steamauto.spec
-*.spec
 *bak
 .vscode
 launch.json
