@@ -24,8 +24,8 @@ from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           PLUGIN_FOLDER, SESSION_FOLDER,
                           STEAM_ACCOUNT_INFO_FILE_PATH)
 from utils.steam_client import login_to_steam, steam_client_mutex
-from utils.tools import (calculate_sha256, get_encoding, jobHandler,
-                         logger, pause, exit_code)
+from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler,
+                         logger, pause)
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -150,55 +150,31 @@ def get_plugins_folder():
                             logger.info('插件' + plugin + '与本地版本不同 由于已被加入白名单，不会自动更新')     
     return os.path.join(base_path, PLUGIN_FOLDER)
 
-def load_plugin_from_file(plugin_file_path, module_name=None):
-    if module_name is None:
-        # 使用文件名（去除扩展名）作为模块名
-        module_name = os.path.splitext(os.path.basename(plugin_file_path))[0]
-    
-    # 创建模块的 spec 对象
-    spec = importlib.util.spec_from_file_location(module_name, plugin_file_path)
-    if spec is None:
-        raise ImportError(f"无法为 {plugin_file_path} 创建模块 spec")
-    
-    # 根据 spec 创建模块对象
-    module = importlib.util.module_from_spec(spec)
-    
-    # 执行模块代码，将模块内容加载到 module 对象中
-    spec.loader.exec_module(module) # type: ignore
-    return module
-
-
 def import_all_plugins():
     # 自动导入所有插件
-    plugin_files = [f for f in os.listdir(get_plugins_folder()) if f.endswith(".py") and not f.startswith("_")]
+    plugin_files = [f for f in os.listdir(get_plugins_folder()) if f.endswith(".py") and f != "__init__.py"]
 
     for plugin_file in plugin_files:
         module_name = f"{PLUGIN_FOLDER}.{plugin_file[:-3]}"
-        if module_name.startswith(f'{PLUGIN_FOLDER}.External'):
-            globals()[module_name] = load_plugin_from_file(os.path.join(get_plugins_folder(), plugin_file), module_name)
-        else:
-            importlib.import_module(module_name)
+        importlib.import_module(module_name)
 
 
 def camel_to_snake(name):
     if name == "ECOsteamPlugin":  # 特殊处理
         return "ecosteam"
+    if name == "ECOsteam":  # 特殊处理
+        return "ecosteam"
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
-# 添加自定义插件的方法：在plugins文件夹下新建.py文件, 文件名需要以External开头, 然后在文件中定义一个类, 类名需要以External开头, 且有且只有一个类名以External开头
 def get_plugin_classes():
     plugin_classes = {}
-    for name, obj in globals().items():
-        if inspect.isclass(obj) and obj.__module__.startswith(PLUGIN_FOLDER):
-            plugin_name = camel_to_snake(obj.__name__)  # 将驼峰命名转换为下划线命名
+    for name, obj in sys.modules.items():
+        if name.startswith(f"{PLUGIN_FOLDER}.") and name != f"{PLUGIN_FOLDER}.__init__":
+            plugin_name = name.replace(f"{PLUGIN_FOLDER}.", '')
+            plugin_name = camel_to_snake(plugin_name)
             plugin_classes[plugin_name] = obj
-        if inspect.ismodule(obj) and obj.__name__.startswith(f'{PLUGIN_FOLDER}.External'):
-            for name, obj2 in inspect.getmembers(obj):
-                if inspect.isclass(obj2) and name.startswith("External"):
-                    plugin_name = camel_to_snake(obj.__name__)
-                    plugin_classes[plugin_name] = obj2
     # 返回的文件结构：
     # {
     #     "[插件名]": [插件类],
@@ -210,28 +186,40 @@ def get_plugin_classes():
 def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
     global config
     plugins_enabled = []
-    plugin_classes = get_plugin_classes()  # 获取所有插件类
+    plugin_modules = get_plugin_classes()  # 获取所有插件类
 
-    for plugin_key, plugin_class in plugin_classes.items():
-        if (plugin_key in config and "enable" in config[plugin_key] and config[plugin_key]["enable"]) or plugin_key.startswith(
-            f'{PLUGIN_FOLDER.lower()}._external'
-        ):
-            if plugin_key.startswith(f'{PLUGIN_FOLDER.lower()}._external'):
-                logger.info('已加载自定义插件: ' + plugin_key)
-            args = []
-            if hasattr(plugin_class, '__init__'):
-                init_signature = inspect.signature(plugin_class.__init__)
-                for param in init_signature.parameters.values():
-                    if param.name == "logger":
-                        args.append(logger)
-                    elif param.name == "steam_client":
-                        args.append(steam_client)
-                    elif param.name == "steam_client_mutex":
-                        args.append(steam_client_mutex)
-                    elif param.name == "config":
-                        args.append(config)
-            plugin_instance = plugin_class(*args)
-            plugins_enabled.append(plugin_instance)
+    for plugin_key, plugin_module in plugin_modules.items():
+        # 判断配置文件里是否存在 plugin_key 且已启用
+        if (plugin_key in config and config[plugin_key].get("enable")) or plugin_key not in config:
+            if plugin_key not in config:
+                logger.info(f'已加载自定义插件 {plugin_key}')
+            # 遍历插件模块里的所有类
+            for cls_name, cls_obj in inspect.getmembers(plugin_module, inspect.isclass):
+                # 根据构造函数的形参，对号入座。用kwargs可以避免顺序不一致的问题
+                init_signature = inspect.signature(cls_obj.__init__)
+                init_kwargs = {}
+                unknown_class = False
+
+                for param_name, param in init_signature.parameters.items():
+                    if param_name == "logger":
+                        init_kwargs[param_name] = logger
+                    elif param_name == "steam_client":
+                        init_kwargs[param_name] = steam_client
+                    elif param_name == "steam_client_mutex":
+                        init_kwargs[param_name] = steam_client_mutex
+                    elif param_name == "config":
+                        init_kwargs[param_name] = config
+                    elif param_name == "self":
+                        continue
+                    else:
+                        # 根本不认识这个类
+                        unknown_class = True
+                        break
+                if unknown_class:
+                    continue
+
+                plugin_instance = cls_obj(**init_kwargs)
+                plugins_enabled.append(plugin_instance)
 
     return plugins_enabled
 
