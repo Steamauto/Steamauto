@@ -42,11 +42,15 @@ jobs:
               --collect-all apprise \
               --name Steamauto-${{ matrix.os }} \
               --add-data "plugins:plugins" \
+              --hidden-import "utils.buff_helper" \
+              --hidden-import "utils.uu_helper" \
               --upx-dir C:\\upx
           else
             pyinstaller -F Steamauto.py \
               --collect-all apprise \
               --name Steamauto-${{ matrix.os }} \
+              --hidden-import "utils.buff_helper" \
+              --hidden-import "utils.uu_helper" \
               --add-data "plugins:plugins"
           fi
 
