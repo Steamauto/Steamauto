@@ -19,13 +19,15 @@ jobs:
           python-version: "3.12"
 
       - name: Install requirements and build
+        env:
+          MATRIX_OS: ${{ matrix.os }}
         run: |
           pip install pyinstaller
           pip install -r requirements.txt
           python .github/scripts/add_build_info.py
-          pyinstaller -F Steamauto.py --collect-all apprise --name Steamauto-${{ matrix.os }} --add-data "plugins:plugins"
+          pyinstaller build.spec
 
-      - name: Upload artifacts
+      - name: Upload artifacts~
         uses: actions/upload-artifact@main
         with:
           name: ${{ matrix.os }}-dist
