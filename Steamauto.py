@@ -16,16 +16,16 @@ from colorama import Fore, Style
 import utils.static as static
 from steampy.client import SteamClient
 from utils.code_updater import attempt_auto_update_github
-from utils.logger import handle_caught_exception
+from utils.logger import handle_caught_exception, logger
 from utils.notifier import send_notification
 from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           CURRENT_VERSION, DEFAULT_CONFIG_JSON,
                           DEFAULT_STEAM_ACCOUNT_JSON, DEV_FILE_FOLDER,
                           PLUGIN_FOLDER, SESSION_FOLDER,
                           STEAM_ACCOUNT_INFO_FILE_PATH)
+from utils.old_version_patches import patch
 from utils.steam_client import login_to_steam, steam_client_mutex
-from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler,
-                         logger, pause)
+from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler, pause)
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -46,18 +46,7 @@ def set_exit_code(code):
 def init_files_and_params() -> int:
     global config
     development_mode = False
-
-    if os.path.exists('update.txt'):
-        with open('update.txt', 'r') as f:
-            old_version_path = f.read()
-        try:
-            os.remove(old_version_path)
-            os.remove('update.txt')
-            logger.info('自动更新完毕！已删除旧版本文件')
-        except Exception as e:
-            handle_caught_exception(e, known=True)
-            logger.error('无法删除旧版本文件 请手动删除！')
-
+    patch()
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/Steamauto/Steamauto")
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
     logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! \n")
