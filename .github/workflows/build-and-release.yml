@@ -31,24 +31,13 @@ jobs:
           Remove-Item C:\upx_temp, $output -Recurse -Force
 
       - name: Install requirements and build
-        shell: bash
+        env:
+          MATRIX_OS: ${{ matrix.os }}
         run: |
           pip install pyinstaller
           pip install -r requirements.txt
           python .github/scripts/add_build_info.py
-          
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            pyinstaller -F Steamauto.py \
-              --collect-all apprise \
-              --name Steamauto-${{ matrix.os }} \
-              --add-data "plugins:plugins" \
-              --upx-dir C:\\upx
-          else
-            pyinstaller -F Steamauto.py \
-              --collect-all apprise \
-              --name Steamauto-${{ matrix.os }} \
-              --add-data "plugins:plugins"
-          fi
+          pyinstaller build.spec
 
       - name: Upload artifacts
         uses: actions/upload-artifact@main

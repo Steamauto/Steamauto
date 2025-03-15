@@ -170,7 +170,10 @@ def getAds():
         for ad in ads:
             if ad.get('stop', 0):
                 print(f'{parseBroadcastMessage(ad["message"])}\n(滞留 {ad["stop"]} 秒)\n')
-                time.sleep(ad['stop'])
+                if not hasattr(os, "frozen"):
+                    print('源码模式运行, 不进行暂停')
+                else:
+                    time.sleep(ad['stop'])
             else:
                 print(f'{parseBroadcastMessage(ad["message"])}\n')
 
