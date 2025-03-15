@@ -24,8 +24,8 @@ from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
                           PLUGIN_FOLDER, SESSION_FOLDER,
                           STEAM_ACCOUNT_INFO_FILE_PATH)
 from utils.steam_client import login_to_steam, steam_client_mutex
-from utils.tools import (calculate_sha256, get_encoding, jobHandler,
-                         logger, pause, exit_code)
+from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler,
+                         logger, pause)
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -190,7 +190,9 @@ def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
 
     for plugin_key, plugin_module in plugin_modules.items():
         # 判断配置文件里是否存在 plugin_key 且已启用
-        if plugin_key in config and config[plugin_key].get("enable"):
+        if (plugin_key in config and config[plugin_key].get("enable")) or plugin_key not in config:
+            if plugin_key not in config:
+                logger.info(f'已加载自定义插件 {plugin_key}')
             # 遍历插件模块里的所有类
             for cls_name, cls_obj in inspect.getmembers(plugin_module, inspect.isclass):
                 # 根据构造函数的形参，对号入座。用kwargs可以避免顺序不一致的问题
