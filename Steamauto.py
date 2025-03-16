@@ -26,7 +26,6 @@ from utils.static import (
     DEFAULT_CONFIG_JSON,
     DEFAULT_STEAM_ACCOUNT_JSON,
     DEV_FILE_FOLDER,
-    INTERNAL_PLUGINS,
     PLUGIN_FOLDER,
     SESSION_FOLDER,
     STEAM_ACCOUNT_INFO_FILE_PATH,
@@ -211,7 +210,7 @@ def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
 
     for plugin_key, plugin_module in plugin_modules.items():
         # 判断配置文件里是否存在 plugin_key 且已启用
-        if (plugin_key in config and config[plugin_key].get("enable")) or ((plugin_key not in config) and (plugin_key not in INTERNAL_PLUGINS)):
+        if plugin_key in config and config[plugin_key].get("enable"):
             if plugin_key not in config:
                 logger.info(f'已加载自定义插件 {plugin_key}')
             # 遍历插件模块里的所有类

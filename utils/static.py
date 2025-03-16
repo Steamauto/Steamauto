@@ -30,7 +30,6 @@ ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
 BUILD_INFO = "正在使用源码运行" if not hasattr(os, "_MEIPASS") else "非官方二进制构建运行"
 STEAM_ACCOUNT_NAME = "暂未登录"
 STEAM_64_ID = "暂未登录"
-INTERNAL_PLUGINS = ["buff_auto_accept_offer", "buff_auto_comment", "buff_profit_report", "buff_auto_on_sale", "uu_auto_accept_offer", "uu_auto_lease_item", "uu_auto_sell_item", "steam_auto_accept_offer", "ecosteam", "c5_auto_accept_offer"]
 
 DEFAULT_STEAM_ACCOUNT_JSON = """
 {
