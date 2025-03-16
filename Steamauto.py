@@ -230,6 +230,12 @@ def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
                 if unknown_class:
                     continue
 
+                # 确定这个类有init()函数 并且这个函数为无参数的
+                if not hasattr(cls_obj, "init"):
+                    continue
+                init_signature = inspect.signature(cls_obj.init)
+                if len(init_signature.parameters) != 1:
+                    continue
                 plugin_instance = cls_obj(**init_kwargs)
                 plugins_enabled.append(plugin_instance)
 
