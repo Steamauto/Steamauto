@@ -65,6 +65,7 @@ class UUAccount:
         :param token: 通过抓包获得的token
         """
         self.session = requests.Session()
+        self.ignore_list = []
         random.seed(token)
         self.device_info = generate_device_info()
         self.session.headers.update(generate_headers(self.device_info["deviceId"], self.device_info["deviceId"], token=token))
@@ -277,8 +278,8 @@ class UUAccount:
         ).json()
         toDoList = dict()
         for order in toDoList_response["data"]:
-            if '赠送' in order["message"]:
-                logger.warning(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})为赠送订单，暂不支持赠送订单')
+            if order["orderNo"] in self.ignore_list:
+                logger.debug("[UUAutoAcceptOffer] 订单号为" + order["orderNo"] + "的订单已经被忽略")
             elif order["message"] == "有买家下单，待您发送报价":
                 logger.info(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})为待发送报价订单，正在尝试发送报价...')
                 result = self.send_offer(order["orderNo"])

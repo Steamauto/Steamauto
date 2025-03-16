@@ -38,11 +38,11 @@ def compare_shelves(A: List[Asset], B: List[Asset], ratio: float) -> Union[bool,
     ratio = round(ratio, 2)
 
     # 检查是否有不是Asset的元素，如果有则警告并删除
-    for asset in A.copy():
+    for asset in A:
         if not isinstance(asset, Asset):
             sell_logger.debug(f"A列表可能存在未下架的物品")
             A.remove(asset)
-    for asset in B.copy():
+    for asset in B:
         if not isinstance(asset, Asset):
             sell_logger.debug(f"B列表可能存在未下架的物品")
             B.remove(asset)

@@ -15,8 +15,9 @@ from uuyoupinapi import models
 
 
 class UUAutoLeaseItem:
-    def __init__(self, steam_client, steam_client_mutex, config):
+    def __init__(self, config, uu_account=None):
         self.logger = PluginLogger("UUAutoLeaseItem")
+        self.uuyoupin = uu_account
         self.config = config
         self.timeSleep = 10
         self.inventory_list = []

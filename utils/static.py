@@ -3,7 +3,7 @@ import os
 is_latest_version = False
 no_pause = False
 
-CURRENT_VERSION = "5.3.1"
+CURRENT_VERSION = "5.2.2"
 
 VERSION_FILE = "version.json"
 APPRISE_ASSET_FOLDER = "Apprise"
@@ -27,7 +27,7 @@ TO_DELIVER_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "to_deliver_{game}.json
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 UU_ARG_FILE_PATH = "uu.txt"
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
-BUILD_INFO = "正在使用源码运行" if not hasattr(os, "_MEIPASS") else "非官方二进制构建运行"
+BUILD_INFO = "正在使用源码运行" if not hasattr(os, "frozen") else "非官方二进制构建运行"
 STEAM_ACCOUNT_NAME = "暂未登录"
 STEAM_64_ID = "暂未登录"
 
@@ -296,9 +296,7 @@ DEFAULT_CONFIG_JSON = r"""
   // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
   // 本地插件白名单 当以下本地插件与程序附带不一样时，将不会被覆盖
-  "plugins_whitelist": [],
-  // 源码运行时自动更新程序
-  "source_code_auto_update": false
+  "plugins_whitelist": []
 }
 """
 

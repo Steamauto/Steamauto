@@ -170,10 +170,7 @@ def getAds():
         for ad in ads:
             if ad.get('stop', 0):
                 print(f'{parseBroadcastMessage(ad["message"])}\n(滞留 {ad["stop"]} 秒)\n')
-                if not hasattr(os, "_MEIPASS"):
-                    print('源码模式运行, 不进行暂停')
-                else:
-                    time.sleep(ad['stop'])
+                time.sleep(ad['stop'])
             else:
                 print(f'{parseBroadcastMessage(ad["message"])}\n')
 
@@ -220,7 +217,7 @@ def checkVersion():
             logger.warning('最新版本为重要版本更新，强烈建议更新')
         elif response['significance'] == 'critical':
             logger.error('最新版本为关键版本更新，可能包含重要修复，在更新前程序不会继续运行')
-        if 'windows' in get_platform_info() and static.BUILD_INFO != '正在使用源码运行' and hasattr(sys, '_MEIPASS'):
+        if 'windows' in get_platform_info() and static.BUILD_INFO != '正在使用源码运行' and hasattr(sys, 'frozen'):
             logger.info('当前为独立打包程序且运行在Windows平台，将自动下载更新')
             if response.get('downloadUrl') and response.get('sha256'):
                 logger.info('下载地址：' + response['downloadUrl'])

@@ -6,6 +6,7 @@ import numpy as np
 import schedule
 
 import uuyoupinapi
+from BuffApi import BuffAccount
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.notifier import send_notification
 from utils.tools import exit_code, is_subsequence
@@ -13,7 +14,7 @@ from utils.uu_helper import get_valid_token_for_uu
 
 
 class UUAutoSellItem:
-    def __init__(self, steam_client, steam_client_mutex, config):
+    def __init__(self, config, uu_account=None):
         self.sale_inventory_list = None
         self.logger = PluginLogger("UUAutoSellItem")
         self.config = config
