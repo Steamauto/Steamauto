@@ -296,9 +296,10 @@ DEFAULT_CONFIG_JSON = r"""
   // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
   // 本地插件白名单 当以下本地插件与程序附带不一样时，将不会被覆盖
-  "plugins_whitelist": []
+  "plugins_whitelist": [],
   // 源码运行时自动更新程序
-  "source_code_auto_update": false,
+  "source_code_auto_update": false
+}
 """
 
 STEAM_ERROR_CODES = {
