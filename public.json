@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.3.3",
+      "changelog": "修复内部插件配置被删除后识别为外部插件强制加载",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.3.3/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.3.3/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "cd4434b1f15852f1ca0038d494031ef7c0e063704e90af287276da7595f0a3b6",
+        "windows": "ba041f5e9653a540031adc94c5f2821b70cfefc5a01e3c137b9efd8ec241309d"
+      }
+    },
+    {
       "version": "5.3.1",
       "changelog": "完善插件动态加载机制",
       "level": "stable",
