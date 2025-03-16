@@ -27,7 +27,7 @@ TO_DELIVER_DEV_FILE_PATH = os.path.join(DEV_FILE_FOLDER, "to_deliver_{game}.json
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 UU_ARG_FILE_PATH = "uu.txt"
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
-BUILD_INFO = "正在使用源码运行" if not hasattr(os, "frozen") else "非官方二进制构建运行"
+BUILD_INFO = "正在使用源码运行" if not hasattr(os, "_MEIPASS") else "非官方二进制构建运行"
 STEAM_ACCOUNT_NAME = "暂未登录"
 STEAM_64_ID = "暂未登录"
 

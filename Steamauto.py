@@ -60,17 +60,17 @@ def init_files_and_params() -> int:
             config = json5.load(f)
     except:
         config = {}
-    if not hasattr(os, "frozen"):
-        if config.get("source_code_auto_update", False):
+    if config.get("source_code_auto_update", False):
+        if not hasattr(sys, '_MEIPASS'):
             attempt_auto_update_github(CURRENT_VERSION)
-    try:
-        from utils import cloud_service
+    else:
+        try:
+            from utils import cloud_service
 
-        if hasattr(os, "frozen"):
             cloud_service.checkVersion()
-        cloud_service.getAds()
-    except Exception as e:
-        logger.warning('无法使用云服务')
+            cloud_service.getAds()
+        except Exception as e:
+            logger.warning('无法使用云服务')
     logger.info("正在初始化...")
     first_run = False
     if not os.path.exists(CONFIG_FOLDER):
