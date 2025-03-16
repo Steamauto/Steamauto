@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.3.1",
+      "changelog": "完善插件动态加载机制",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.3.1/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.3.1/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "aea1477826818bb43169c3947a27066f241c5e46f48cc528f0fe8a0fe786f7a5",
+        "windows": "1ffc9d9815786e8966ea35bd23858729d700d945f6449d8296310b91d5d87462"
+      }
+    },
+    {
       "version": "5.2.3",
       "changelog": "修复在某些情况下自动同步失败导致插件崩溃的问题; 修复C5自动发货忽略报价功能无法使用问题; 修复悠悠赠送订单无法正确识别的问题",
       "level": "stable",
