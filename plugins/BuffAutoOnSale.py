@@ -14,9 +14,8 @@ from bs4 import BeautifulSoup
 from utils.ApiCrypt import ApiCrypt
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception
-from utils.static import (APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH,
-                          BUFF_COOKIES_FILE_PATH, SESSION_FOLDER,
-                          SUPPORT_GAME_TYPES)
+from utils.static import (BUFF_ACCOUNT_DEV_FILE_PATH, BUFF_COOKIES_FILE_PATH,
+                          SESSION_FOLDER, SUPPORT_GAME_TYPES)
 from utils.tools import get_encoding
 
 
@@ -67,7 +66,7 @@ class BuffAutoOnSale:
         self.config = config
         self.steam_client_mutex = steam_client_mutex
         self.development_mode = self.config["development_mode"]
-        self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
+        self.asset = AppriseAsset()
         self.session = requests.session()
         self.lowest_price_cache = {}
         self.unfinish_supply_order_list = [] # 等待buff发起报价, 之后进行确认报价的订单, [{order_id, create_time}]

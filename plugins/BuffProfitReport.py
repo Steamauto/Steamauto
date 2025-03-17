@@ -10,8 +10,8 @@ from apprise import AppriseAsset, AppriseAttachment
 
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception
-from utils.static import (APPRISE_ASSET_FOLDER, BUFF_COOKIES_FILE_PATH,
-                          SESSION_FOLDER, SUPPORT_GAME_TYPES)
+from utils.static import (BUFF_COOKIES_FILE_PATH, SESSION_FOLDER,
+                          SUPPORT_GAME_TYPES)
 from utils.tools import get_encoding
 
 
@@ -27,7 +27,7 @@ class BuffProfitReport:
         self.steam_client_mutex = steam_client_mutex
         self.config = config
         self.session = requests.session()
-        self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
+        self.asset = AppriseAsset()
 
     def init(self) -> bool:
         if get_valid_session_for_buff(self.steam_client, self.logger) == "":
