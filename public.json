@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.3.4",
+      "changelog": "修复BUFF自动发货无法发送通知导致无法发货",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.3.4/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.3.4/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "a0c6b98bd400d715e6b7c1516ac5cf9a22fd42dafb0a4dff33bd197777d697d3",
+        "windows": "a25fce0a9fd68aea24be756c9440cf316748ad10a19e3d007121d6a55e82523c"
+      }
+    },
+    {
       "version": "5.3.3",
       "changelog": "修复内部插件配置被删除后识别为外部插件强制加载",
       "level": "stable",
