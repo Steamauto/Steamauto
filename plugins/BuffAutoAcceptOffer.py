@@ -11,7 +11,7 @@ from apprise import AppriseAsset
 
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import PluginLogger, handle_caught_exception
-from utils.static import (APPRISE_ASSET_FOLDER, BUFF_ACCOUNT_DEV_FILE_PATH,
+from utils.static import (BUFF_ACCOUNT_DEV_FILE_PATH,
                           BUFF_COOKIES_FILE_PATH,
                           MESSAGE_NOTIFICATION_DEV_FILE_PATH,
                           SELL_ORDER_HISTORY_DEV_FILE_PATH, SESSION_FOLDER,
@@ -34,7 +34,7 @@ class BuffAutoAcceptOffer:
         self.steam_client_mutex = steam_client_mutex
         self.config = config
         self.development_mode = self.config["development_mode"]
-        self.asset = AppriseAsset(plugin_paths=[os.path.join(os.path.dirname(__file__), "..", APPRISE_ASSET_FOLDER)])
+        self.asset = AppriseAsset()
         self.lowest_on_sale_price_cache = {}
         self.order_info = {}
 
