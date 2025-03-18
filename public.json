@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.3.5",
+      "changelog": "修复无法发送通知; 修复启动时提示导入失败",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.3.5/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.3.5/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "1df977b4f505679b26f47f5361dafb2f5a37b1c7b29ef5080a8ae54878576daa",
+        "windows": "133c54811bc642aedbe4d77ca4500a23afc8d14893a4a60741260afc6c9b9b8a"
+      }
+    },
+    {
       "version": "5.3.4",
       "changelog": "修复BUFF自动发货无法发送通知导致无法发货",
       "level": "stable",
