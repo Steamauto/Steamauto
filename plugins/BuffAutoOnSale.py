@@ -464,7 +464,7 @@ class BuffAutoOnSale:
         else:
             if response_json["code"] == "Captcha Validate Required":
                 captcha_url = response_json["confirm_entry"]["entry"]["url"]
-                session = self.session.cookies.get("session")
+                session = self.session.cookies.get("session", domain='buff.163.com')
                 self.logger.error("[BuffAutoOnSale] 需要验证码, 请使用session " + session + " 打开以下链接, 并完成验证")
                 self.logger.error("[BuffAutoOnSale] " + captcha_url)
                 if "captcha_notification" in self.config["buff_auto_on_sale"]:
