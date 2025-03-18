@@ -21,11 +21,18 @@ if os.path.exists('requirements.txt'):
         for line in f:
             hidden_imports.append(line.strip())
 
+datas = [('plugins', 'plugins')]
+binaries= []
+
+apprise = collect_all('apprise')
+datas += apprise[0]
+binaries += apprise[1]
+
 a = Analysis(
-    ['Steamauto.py'],  # 主脚本
+    ['Steamauto.py'],
     pathex=[],
     binaries=[],
-    datas=[('plugins', 'plugins')],  # 数据文件
+    datas=datas,
     hiddenimports=hidden_imports,
     hookspath=[],
     hooksconfig={},
