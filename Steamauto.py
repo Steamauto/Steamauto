@@ -332,6 +332,7 @@ def main():
         return 1
 
     if steam_client is not None:
+        send_notification('Steamauto 已经成功登录Steam并开始运行')
         init_plugins_and_start(steam_client, steam_client_mutex)
 
     logger.info("由于所有插件已经关闭,程序即将退出...")
