@@ -341,6 +341,13 @@ class BuffAutoAcceptOffer:
                         "https://buff.163.com/api/market/steam_trade",
                         headers=self.buff_headers,
                     ).json()
+
+                    # 访问频率过高，报错处理
+                    if response_json["code"] == "System Error":
+                        self.logger.error(response_json['error'])
+                        time.sleep(5)
+                        continue
+
                     if self.development_mode:
                         self.logger.info("开发者模式, 保存待发货信息到本地")
                         with open(
