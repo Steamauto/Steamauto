@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+from PyInstaller.utils.hooks import collect_all
 
 os_name = os.environ.get('MATRIX_OS', 'unknown')
 upx_enabled = 'windows' in os_name
