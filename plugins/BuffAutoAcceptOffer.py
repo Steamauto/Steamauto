@@ -412,53 +412,6 @@ class BuffAutoAcceptOffer:
                                 try:
                                     if not self.should_accept_offer(trade):
                                         continue
-                                    self.logger.info("正在检查报价物品...")
-                                    if not self.development_mode:
-                                        with self.steam_client_mutex:
-                                            offer = self.steam_client.get_trade_offer(offer_id)
-                                        for item in offer["response"]["offer"]["items_to_give"].values():
-                                            match = False
-                                            for item_in_trade in trade["items_to_trade"]:
-                                                for property_to_compare in [
-                                                    "appid",
-                                                    "classid",
-                                                    "contextid",
-                                                    "instanceid",
-                                                ]:
-                                                    if str(item[property_to_compare]) != str(
-                                                        item_in_trade[property_to_compare]
-                                                    ):
-                                                        break
-                                                else:
-                                                    match = True
-                                                    break
-                                            if not match:
-                                                self.logger.error("报价中的物品不在待发货列表中, 跳过接受报价")
-                                                if (
-                                                    "item_mismatch_notification"
-                                                    in self.config["buff_auto_accept_offer"]
-                                                ):
-                                                    apprise_obj = apprise.Apprise()
-                                                    for server in self.config["buff_auto_accept_offer"]["servers"]:
-                                                        apprise_obj.add(server)
-                                                    apprise_obj.notify(
-                                                        title=self.format_str(
-                                                            self.config["buff_auto_accept_offer"][
-                                                                "item_mismatch_notification"
-                                                            ]["title"],
-                                                            trade,
-                                                        ),
-                                                        body=self.format_str(
-                                                            self.config["buff_auto_accept_offer"][
-                                                                "item_mismatch_notification"
-                                                            ]["body"],
-                                                            trade,
-                                                        ),
-                                                    )
-                                                if trades.index(trade) != len(trades) - 1:
-                                                    self.logger.info("为了避免频繁访问Steam接口, 等待5秒后继续...")
-                                                    time.sleep(5)
-                                                continue
                                     else:
                                         self.logger.info("开发者模式已开启, 跳过报价物品检查")
                                     self.logger.info("报价物品检查完成! 正在接受报价...")
