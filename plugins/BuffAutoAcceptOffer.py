@@ -33,7 +33,6 @@ class BuffAutoAcceptOffer:
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.config = config
-        self.development_mode = self.config["development_mode"]
         self.asset = AppriseAsset()
         self.lowest_on_sale_price_cache = {}
         self.order_info = {}
@@ -65,31 +64,14 @@ class BuffAutoAcceptOffer:
     def get_order_info(self, trades):
         for trade in trades:
             if trade["tradeofferid"] not in self.order_info:
-                if self.development_mode and os.path.exists(SELL_ORDER_HISTORY_DEV_FILE_PATH):
-                    self.logger.info("开发者模式已开启, 使用本地数据")
-                    with open(
-                        SELL_ORDER_HISTORY_DEV_FILE_PATH,
-                        "r",
-                        encoding=get_encoding(SELL_ORDER_HISTORY_DEV_FILE_PATH),
-                    ) as f:
-                        resp_json = json.load(f)
-                else:
-                    time.sleep(5)
-                    sell_order_history_url = (
-                        "https://buff.163.com/api/market/sell_order"
-                        "/history"
-                        "?appid=" + str(trade["appid"]) + "&mode=1 "
-                    )
-                    resp = requests.get(sell_order_history_url, headers=self.buff_headers)
-                    resp_json = resp.json()
-                    if self.development_mode:
-                        self.logger.info("开发者模式, 保存交易历史信息到本地")
-                        with open(
-                            SELL_ORDER_HISTORY_DEV_FILE_PATH,
-                            "w",
-                            encoding=get_encoding(SELL_ORDER_HISTORY_DEV_FILE_PATH),
-                        ) as f:
-                            f.write(json.dumps(resp_json, indent=4))
+                time.sleep(5)
+                sell_order_history_url = (
+                    "https://buff.163.com/api/market/sell_order"
+                    "/history"
+                    "?appid=" + str(trade["appid"]) + "&mode=1 "
+                )
+                resp = requests.get(sell_order_history_url, headers=self.buff_headers)
+                resp_json = resp.json()
                 if resp_json["code"] == "OK":
                     for sell_item in resp_json["data"]["items"]:
                         if "tradeofferid" in sell_item and sell_item["tradeofferid"]:
@@ -104,39 +86,21 @@ class BuffAutoAcceptOffer:
             self.logger.error("[BuffAutoOnSale] 获取BUFF绑定的SteamID失败, 请检查buff_cookies.txt或稍后再试! ")
             return ""
 
-    def check_buff_account_state(self, dev=False):
-        if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
-            self.logger.info("开发模式, 使用本地账号")
-            with open(
-                BUFF_ACCOUNT_DEV_FILE_PATH,
-                "r",
-                encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH),
-            ) as f:
-                buff_account_data = json5.load(f)
-            return buff_account_data["data"]["nickname"]
-        else:
-            response_json = requests.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
-            if dev:
-                self.logger.info("开发者模式, 保存账户信息到本地")
-                with open(
-                    BUFF_ACCOUNT_DEV_FILE_PATH,
-                    "w",
-                    encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH),
-                ) as f:
-                    f.write(json5.dumps(response_json, indent=4))
-            if response_json["code"] == "OK":
-                if "data" in response_json:
-                    if "nickname" in response_json["data"]:
-                        steam_trade_response_json = requests.get(
-                            "https://buff.163.com/api/market/steam_trade",
-                            headers=self.buff_headers,
-                        ).json()
-                        if "data" not in steam_trade_response_json or steam_trade_response_json["data"] is None:
-                            self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
-                            return ""
-                        return response_json["data"]["nickname"]
-            self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
-            return ""
+    def check_buff_account_state(self):
+        response_json = requests.get("https://buff.163.com/account/api/user/info", headers=self.buff_headers).json()
+        if response_json["code"] == "OK":
+            if "data" in response_json:
+                if "nickname" in response_json["data"]:
+                    steam_trade_response_json = requests.get(
+                        "https://buff.163.com/api/market/steam_trade",
+                        headers=self.buff_headers,
+                    ).json()
+                    if "data" not in steam_trade_response_json or steam_trade_response_json["data"] is None:
+                        self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
+                        return ""
+                    return response_json["data"]["nickname"]
+        self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
+        return ""
 
     def format_str(self, text: str, trade):
         for good in trade["goods_infos"]:
@@ -180,33 +144,16 @@ class BuffAutoAcceptOffer:
                 if trade["tradeofferid"] not in self.order_info:
                     self.logger.error("无法获取交易金额, 跳过此交易报价")
                     return False
-                if self.development_mode and os.path.exists(SHOP_LISTING_DEV_FILE_PATH):
-                    self.logger.info("开发者模式已开启, 使用本地价格数据")
-                    with open(
-                        SHOP_LISTING_DEV_FILE_PATH,
-                        "r",
-                        encoding=get_encoding(SHOP_LISTING_DEV_FILE_PATH),
-                    ) as f:
-                        resp_json = json5.load(f)
-                else:
-                    time.sleep(5)
-                    shop_listing_url = (
-                        "https://buff.163.com/api/market/goods/sell_order?game="
-                        + trade["game"]
-                        + "&goods_id="
-                        + goods_id
-                        + "&page_num=1&sort_by=default&mode=&allow_tradable_cooldown=1"
-                    )
-                    resp = requests.get(shop_listing_url, headers=self.buff_headers)
-                    resp_json = resp.json()
-                    if self.development_mode:
-                        self.logger.info("开发者模式, 保存价格信息到本地")
-                        with open(
-                            SHOP_LISTING_DEV_FILE_PATH,
-                            "w",
-                            encoding=get_encoding(SHOP_LISTING_DEV_FILE_PATH),
-                        ) as f:
-                            f.write(json5.dumps(resp_json, indent=4))
+                time.sleep(5)
+                shop_listing_url = (
+                    "https://buff.163.com/api/market/goods/sell_order?game="
+                    + trade["game"]
+                    + "&goods_id="
+                    + goods_id
+                    + "&page_num=1&sort_by=default&mode=&allow_tradable_cooldown=1"
+                )
+                resp = requests.get(shop_listing_url, headers=self.buff_headers)
+                resp_json = resp.json()
                 other_lowest_price = float(resp_json["data"]["items"][0]["price"])
                 self.lowest_on_sale_price_cache[goods_id] = {
                     "price": other_lowest_price,
@@ -239,7 +186,7 @@ class BuffAutoAcceptOffer:
         with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
             self.buff_headers["Cookie"] = f.read().replace("\n", "").split(";")[0]
         self.logger.info("已检测到cookies, 尝试登录")
-        user_name = self.check_buff_account_state(dev=self.development_mode)
+        user_name = self.check_buff_account_state()
         if not user_name:
             self.logger.error("由于登录失败,插件自动退出")
             exit_code.set(1)
@@ -279,29 +226,11 @@ class BuffAutoAcceptOffer:
                                 body=self.config["buff_auto_accept_offer"]["buff_cookie_expired_notification"]["body"],
                             )
                         return
-                if self.development_mode and os.path.exists(MESSAGE_NOTIFICATION_DEV_FILE_PATH):
-                    self.logger.info("开发者模式已开启, 使用本地消息通知文件")
-                    with open(
-                        MESSAGE_NOTIFICATION_DEV_FILE_PATH,
-                        "r",
-                        encoding=get_encoding(MESSAGE_NOTIFICATION_DEV_FILE_PATH),
-                    ) as f:
-                        message_notification = json5.load(f)
-                        to_deliver_order = message_notification["data"]["to_deliver_order"]
-                else:
-                    response_json = requests.get(
-                        "https://buff.163.com/api/message/notification",
-                        headers=self.buff_headers,
-                    ).json()
-                    if self.development_mode:
-                        self.logger.info("开发者模式, 保存发货信息到本地")
-                        with open(
-                            MESSAGE_NOTIFICATION_DEV_FILE_PATH,
-                            "w",
-                            encoding=get_encoding(MESSAGE_NOTIFICATION_DEV_FILE_PATH),
-                        ) as f:
-                            f.write(json5.dumps(response_json, indent=4))
-                    to_deliver_order = response_json["data"]["to_deliver_order"]
+                response_json = requests.get(
+                    "https://buff.163.com/api/message/notification",
+                    headers=self.buff_headers,
+                ).json()
+                to_deliver_order = response_json["data"]["to_deliver_order"]
                 try:
                     if ("csgo" in to_deliver_order and int(to_deliver_order["csgo"]) != 0) or (
                         "dota2" in to_deliver_order and int(to_deliver_order["dota2"]) != 0
@@ -328,69 +257,33 @@ class BuffAutoAcceptOffer:
                     handle_caught_exception(e, "BuffAutoAcceptOffer", known=True)
                     self.logger.error("Buff接口返回数据异常! 请检查网络连接或稍后再试! ")
                 trade_supply = {}
-                if self.development_mode and os.path.exists(STEAM_TRADE_DEV_FILE_PATH):
-                    self.logger.info("开发者模式已开启, 使用本地待发货文件")
-                    with open(
-                        STEAM_TRADE_DEV_FILE_PATH,
-                        "r",
-                        encoding=get_encoding(STEAM_TRADE_DEV_FILE_PATH),
-                    ) as f:
-                        trades = json5.load(f)["data"]
-                else:
-                    response_json = requests.get(
-                        "https://buff.163.com/api/market/steam_trade",
-                        headers=self.buff_headers,
-                    ).json()
+                response_json = requests.get(
+                    "https://buff.163.com/api/market/steam_trade",
+                    headers=self.buff_headers,
+                ).json()
 
-                    # 访问频率过高，报错处理
-                    if response_json["code"] == "System Error":
-                        self.logger.error(response_json['error'])
-                        time.sleep(5)
-                        continue
+                # 访问频率过高，报错处理
+                if response_json["code"] == "System Error":
+                    self.logger.error(response_json['error'])
+                    time.sleep(5)
+                    continue
 
-                    if self.development_mode:
-                        self.logger.info("开发者模式, 保存待发货信息到本地")
-                        with open(
-                            STEAM_TRADE_DEV_FILE_PATH,
-                            "w",
-                            encoding=get_encoding(STEAM_TRADE_DEV_FILE_PATH),
-                        ) as f:
-                            f.write(json5.dumps(response_json, indent=4))
-                    trades = response_json["data"]
+                trades = response_json["data"]
                 trade_offer_to_confirm = set()
                 for game in SUPPORT_GAME_TYPES:
-                    if self.development_mode and os.path.exists(TO_DELIVER_DEV_FILE_PATH.format(game=game["game"])):
-                        self.logger.info("开发者模式已开启, 使用本地待确认供应文件")
-                        with open(
-                            TO_DELIVER_DEV_FILE_PATH.format(game=game["game"]),
-                            "r",
-                            encoding=get_encoding(TO_DELIVER_DEV_FILE_PATH).format(game=game["game"]),
-                        ) as f:
-                            trade_supply[game["game"]] = json5.load(f)["data"]["items"]
-                            for trade_offer in trade_supply[game["game"]]:
-                                trade_offer_to_confirm.add(trade_offer["tradeofferid"])
-                    else:
-                        response_json = requests.get(
-                            "https://buff.163.com/api/market/sell_order/to_deliver?game="
-                            + game["game"]
-                            + "&appid="
-                            + str(game["app_id"]),
-                            headers=self.buff_headers,
-                        ).json()
-                        if self.development_mode:
-                            self.logger.info("开发者模式, 保存待确认供应信息到本地")
-                            with open(
-                                TO_DELIVER_DEV_FILE_PATH.format(game=game["game"]),
-                                "w",
-                                encoding=get_encoding(TO_DELIVER_DEV_FILE_PATH).format(game=game["game"]),
-                            ) as f:
-                                f.write(json5.dumps(response_json, indent=4))
-                        trade_supply[game["game"]] = response_json["data"]["items"]
-                        for trade_offer in trade_supply[game["game"]]:
-                            if trade_offer["tradeofferid"] is not None and trade_offer["tradeofferid"] != "":
-                                trade_offer_to_confirm.add(trade_offer["tradeofferid"])
-                        self.logger.info("为了避免访问接口过于频繁，休眠5秒...")
-                        time.sleep(5)
+                    response_json = requests.get(
+                        "https://buff.163.com/api/market/sell_order/to_deliver?game="
+                        + game["game"]
+                        + "&appid="
+                        + str(game["app_id"]),
+                        headers=self.buff_headers,
+                    ).json()
+                    trade_supply[game["game"]] = response_json["data"]["items"]
+                    for trade_offer in trade_supply[game["game"]]:
+                        if trade_offer["tradeofferid"] is not None and trade_offer["tradeofferid"] != "":
+                            trade_offer_to_confirm.add(trade_offer["tradeofferid"])
+                    self.logger.info("为了避免访问接口过于频繁，休眠5秒...")
+                    time.sleep(5)
                 self.logger.info("查找到 " + str(len(trades)) + " 个待处理的BUFF未发货订单! ")
                 self.logger.info(
                     "查找到 " + str(len(trade_offer_to_confirm) - len(trades)) + " 个待处理的BUFF待确认供应订单! "
@@ -412,14 +305,9 @@ class BuffAutoAcceptOffer:
                                 try:
                                     if not self.should_accept_offer(trade):
                                         continue
-                                    else:
-                                        self.logger.info("开发者模式已开启, 跳过报价物品检查")
                                     self.logger.info("报价物品检查完成! 正在接受报价...")
-                                    if self.development_mode:
-                                        self.logger.info("开发者模式已开启, 跳过接受报价")
-                                    else:
-                                        if accept_trade_offer(self.steam_client, self.steam_client_mutex, offer_id, desc="发货平台：网易BUFF"):
-                                            ignored_offer.append(offer_id)
+                                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, offer_id, desc="发货平台：网易BUFF"):
+                                        ignored_offer.append(offer_id)
                                     
                                     self.logger.info("接受完成! 已经将此交易报价加入忽略名单! ")
                                     if "sell_notification" in self.config["buff_auto_accept_offer"]:
@@ -446,35 +334,32 @@ class BuffAutoAcceptOffer:
                                 self.logger.info("该报价已经被处理过, 跳过.")
                     for trade_offer_id in trade_offer_to_confirm:
                         if trade_offer_id not in ignored_offer:
-                            if self.development_mode:
-                                self.logger.info("开发者模式已开启, 跳过令牌确认")
-                            else:
-                                with self.steam_client_mutex:
-                                    offer = self.steam_client.get_trade_offer(trade_offer_id)
-                                if "offer" in offer["response"] and "trade_offer_state" in offer["response"]["offer"]:
-                                    if offer["response"]["offer"]["trade_offer_state"] == 9:
-                                        with self.steam_client_mutex:
-                                            self.steam_client._confirm_transaction(trade_offer_id)
-                                        ignored_offer.append(trade_offer_id)
-                                        self.logger.info(
-                                            "令牌完成! ( " + trade_offer_id + " ) 已经将此交易报价加入忽略名单!"
-                                        )
-                                    else:
-                                        self.logger.info(
-                                            "令牌未完成! ( "
-                                            + trade_offer_id
-                                            + " ), 报价状态异常 ("
-                                            + str(offer["response"]["offer"]["trade_offer_state"])
-                                            + " )"
-                                        )
+                            with self.steam_client_mutex:
+                                offer = self.steam_client.get_trade_offer(trade_offer_id)
+                            if "offer" in offer["response"] and "trade_offer_state" in offer["response"]["offer"]:
+                                if offer["response"]["offer"]["trade_offer_state"] == 9:
+                                    with self.steam_client_mutex:
+                                        self.steam_client._confirm_transaction(trade_offer_id)
+                                    ignored_offer.append(trade_offer_id)
+                                    self.logger.info(
+                                        "令牌完成! ( " + trade_offer_id + " ) 已经将此交易报价加入忽略名单!"
+                                    )
                                 else:
                                     self.logger.info(
                                         "令牌未完成! ( "
-                                        + (trade_offer_id if trade_offer_id else "None")
-                                        + " ), 报价返回异常 ("
-                                        + str(offer["response"])
+                                        + trade_offer_id
+                                        + " ), 报价状态异常 ("
+                                        + str(offer["response"]["offer"]["trade_offer_state"])
                                         + " )"
                                     )
+                            else:
+                                self.logger.info(
+                                    "令牌未完成! ( "
+                                    + (trade_offer_id if trade_offer_id else "None")
+                                    + " ), 报价返回异常 ("
+                                    + str(offer["response"])
+                                    + " )"
+                                )
                             if list(trade_offer_to_confirm).index(trade_offer_id) != len(trade_offer_to_confirm) - 1:
                                 self.logger.info("为了避免频繁访问Steam接口, 等待5秒后继续...")
                                 time.sleep(5)
