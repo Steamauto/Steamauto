@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.3.6",
+      "changelog": "修复代理功能无法正常使用的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.3.6/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.3.6/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "e2eda1a708f8bb5eefedda99a5483c3d275adfc1cb1d8b8c6977ffdbe3d43b1a",
+        "windows": "86f564ac33a81e1c3369f7869797cad1ab76e0f68f182a609fb87c7542079600"
+      }
+    },
+    {
       "version": "5.3.5",
       "changelog": "修复无法发送通知; 修复启动时提示导入失败",
       "level": "stable",
