@@ -62,13 +62,14 @@ DEFAULT_CONFIG_JSON = r"""
   // 请注意：开启此功能必须关闭Steam登录SSL验证，即steam_login_ignore_ssl_error必须设置为true
   "steam_local_accelerate": false,
 
-  // 关于代理功能的说明：默认情况下，程序会使用系统代理。
-  // 如果你使用了Clash或v2RayN或ShadowSocksR等代理软件并启用系统代理，不需要在此配置文件内额外配置。
+  // 关于代理功能的说明：
+  // 如果你使用了Clash或v2RayN或ShadowSocksR等代理软件，需要在此配置文件内额外配置。
   // 是否手动指定Steam代理(该功能只会代理Steam)
   "use_proxies": false,
 
   // 本地代理地址。代理设置只会应用于Steam。使用前需要确保use_proxies已经设置为true
-  // 这里以clash为例，clash默认监听7890端口，如果你使用的是其他代理软件，请自行修改端口
+  // http和https代理地址一般情况下是相同的，如果你不懂这是什么，请保持相同
+  // 以Clash Verge为例，进入设置，点击端口设置，把下面的7890改成混合代理(或HTTP(S))的端口号
   "proxies": {
     "http": "http://127.0.0.1:7890",
     "https": "http://127.0.0.1:7890"
