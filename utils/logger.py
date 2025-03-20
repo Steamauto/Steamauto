@@ -112,7 +112,7 @@ logger.debug(f"Steamauto {CURRENT_VERSION} started")
 logger.debug(f"Running on {platform.system()} {platform.release()}({platform.version()})")
 logger.debug(f"Python version: {os.sys.version}")  # type: ignore
 logger.debug(f"Build info: {BUILD_INFO}")
-logger.debug(f"Attributes check: _MEIPASS: {hasattr(sys, '_MEIPASS')}, frozen: {hasattr(sys, 'frozen')})")
+logger.debug(f"Attributes check: _MEIPASS: {hasattr(sys, '_MEIPASS')}, frozen: {hasattr(sys, 'frozen')}")
 logger.debug(f"日志已经经过脱敏处理，请放心转发至公共平台！")
 
 def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False):
