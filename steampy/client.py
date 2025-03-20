@@ -48,7 +48,7 @@ class SteamClient:
         self.market = SteamMarket(self._session)
         self.chat = SteamChat(self._session)
         if proxies:
-            self._session.proxies.update(proxies)
+            self._session.proxies = proxies
             # try:
             #     self._session.get(SteamUrl.COMMUNITY_URL)
             # except (requests.exceptions.ConnectionError, TimeoutError) as e:

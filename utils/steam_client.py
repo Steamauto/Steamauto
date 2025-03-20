@@ -18,13 +18,6 @@ from utils.notifier import send_notification
 from utils.static import SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH
 from utils.tools import accelerator, get_encoding, logger, pause
 
-try:
-    from steampy.utils import ping_proxy  # type: ignore
-except:
-
-    def ping_proxy(nothing):
-        return False
-
 
 logger = PluginLogger('SteamClient')
 
@@ -43,6 +36,8 @@ def login_to_steam(config: dict):
             logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
             pause()
             return None
+    
+    config["use_proxies"] = config.get("use_proxies", False)
 
     steam_session_path = os.path.join(SESSION_FOLDER, steam_account_info.get("steam_username", "").lower() + ".pkl")  # type: ignore
     if not os.path.exists(steam_session_path):
@@ -65,6 +60,37 @@ def login_to_steam(config: dict):
                 if client.is_session_alive():
                     logger.info("登录成功")
                     steam_client = client
+                
+                if client._session.proxies:
+                    if not config["use_proxies"]:
+                        client._session.proxies = {}
+                        logger.info("检测到缓存的代理设置，已自动清空")
+                    elif client._session.proxies != config["proxies"]:
+                        logger.info("检测到缓存的代理设置与当前设置不同，已自动更新")
+                        client._session.proxies = config["proxies"]
+                
+                if config['use_proxies']:
+                    if not client._session.proxies:
+                        logger.info("检测到代理设置为空，已自动更新")
+                        client._session.proxies = config["proxies"]
+                    logger.info("已经启用Steam代理")
+                    proxy_status = False
+                    try:
+                        requests.get("https://steamcommunity.com", proxies=config["proxies"], timeout=10)
+                        proxy_status = True
+                    except Exception as e:
+                        pass
+                    if proxy_status is False:
+                        logger.error("代理服务器不可用，请检查配置文件，或者将use_proxies配置项设置为false")
+                        pause()
+                        return None
+                    else:
+                        logger.info("代理服务器可用")
+                
+                if config['use_proxies'] and config['steam_local_accelerate']:
+                    logger.warning('检测到你已经同时开启内置加速和代理功能！正常情况下不推荐通过这种方式使用软件')
+                    
+                    
         except requests.exceptions.ConnectionError as e:
             handle_caught_exception(e, known=True)
             logger.error("使用缓存的登录信息登录失败!可能是网络异常")
@@ -84,10 +110,7 @@ def login_to_steam(config: dict):
     if steam_client is None:
         try:
             logger.info("正在登录Steam...")
-            if "use_proxies" not in config:
-                config["use_proxies"] = False
-            if not (config.get("proxies", None)):
-                config["use_proxies"] = False
+            
             if config["use_proxies"]:
                 logger.info("已经启用Steam代理")
 
@@ -96,17 +119,20 @@ def login_to_steam(config: dict):
                     pause()
                     return None
                 logger.info("正在检查代理服务器可用性...")
-                proxy_status = ping_proxy(config["proxies"])
+                proxy_status = False
+                try:
+                    requests.get("https://steamcommunity.com", proxies=config["proxies"], timeout=10)
+                    proxy_status = True
+                except Exception as e:
+                    pass
                 if proxy_status is False:
                     logger.error("代理服务器不可用，请检查配置文件，或者将use_proxies配置项设置为false")
                     pause()
                     return None
                 else:
                     logger.info("代理服务器可用")
-                    logger.warning("警告: 你已启用proxy, 该配置将被缓存，下次启动Steamauto时请确保proxy可用，或删除session文件夹下的缓存文件再启动")
 
                 client = SteamClient(api_key="", proxies=config["proxies"])
-
             else:
                 client = SteamClient(api_key="")
             if config["steam_login_ignore_ssl_error"]:
