@@ -230,6 +230,10 @@ class BuffAutoAcceptOffer:
                     "https://buff.163.com/api/message/notification",
                     headers=self.buff_headers,
                 ).json()
+                if response_json["code"] == "System Error":
+                    self.logger.error(response_json['error'])
+                    time.sleep(5)
+                    continue
                 to_deliver_order = response_json["data"]["to_deliver_order"]
                 try:
                     if ("csgo" in to_deliver_order and int(to_deliver_order["csgo"]) != 0) or (
