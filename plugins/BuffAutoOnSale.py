@@ -481,6 +481,7 @@ class BuffAutoOnSale:
             elif response_json["code"] == "System Error":
                 self.logger.error(response_json['error'])
                 time.sleep(5)
+                return -1
             else:
                 self.logger.error(response_json)
                 self.logger.error("[BuffAutoOnSale] 获取BUFF商品最低价失败, 请检查buff_cookies.txt或稍后再试! ")
