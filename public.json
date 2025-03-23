@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.4.0",
+      "changelog": "BUFF自动发货现已经完全重写，减少了大量不必要的请求与功能，大大提升发货的稳定性。由于新的版本进行了大量的重构，因此旧版本的配置文件已经不再适用，建议删除配置文件重新生成！",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.4.0/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.4.0/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "15c740451db659724cc7b93129526859e07bce3b1c3fe6c87c9d20584a6e2584",
+        "windows": "538073e57e432ffcafcdb952594c5cb54c5e21b8390c7cc209664cb06299b65b"
+      }
+    },
+    {
       "version": "5.3.6",
       "changelog": "修复代理功能无法正常使用的问题",
       "level": "stable",
