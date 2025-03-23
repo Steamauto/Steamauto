@@ -103,7 +103,7 @@ def login_to_buff_by_qrcode() -> str:
 
 
 def is_session_has_enough_permission(session: str) -> bool:
-    if "session=" not in session:
+    if not session.startswith("session="):
         session = "session=" + session
     try:
         response_json = requests.get("https://buff.163.com/api/market/steam_trade", headers={"Cookie": session}).json()
@@ -135,7 +135,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
         else:
             session = ""
     if not session:  # 尝试通过Steam
-        logger.info("[BuffLoginSolver] 尝试通过Steam登录至BUFF")
+        logger.info("[BuffLoginSolver] 正在尝试通过Steam登录至BUFF...")
         try:
             got_cookies = login_to_buff_by_steam(steam_client)
             if is_session_has_enough_permission(got_cookies):
@@ -149,7 +149,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
             logger.error(f"[BuffLoginSolver] 使用Steam登录至BUFF失败")
 
     if not session:  # 尝试通过二维码
-        logger.info("[BuffLoginSolver] 尝试通过二维码登录至BUFF")
+        logger.info("[BuffLoginSolver] 正在尝试通过二维码登录至BUFF...")
         try:
             session = login_to_buff_by_qrcode()
             if (not session) or (not is_session_has_enough_permission(session)):
@@ -161,6 +161,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
             session = ""
     if not session:  # 无法登录至BUFF
         logger.error("[BuffLoginSolver] 无法登录至BUFF, 请手动更新BUFF cookies! ")
+        send_notification('无法登录至BUFF，请手动更新BUFF cookies!', 'BUFF登录失败')
     else:
         with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
             f.write("session=" + session.replace("session=", ""))

@@ -93,53 +93,11 @@ DEFAULT_CONFIG_JSON = r"""
   // BUFF 自动发货插件配置
   "buff_auto_accept_offer": {
     // 是否启用BUFF自动发货报价功能
-    "enable": false,
+    "enable": true,
     // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
     "interval": 300,
-    // 是否开启出售保护(自动发货前检查其他卖家最低价，若低于保护价格则不会自动接受报价s)
-    "sell_protection": false,
-    // 出售保护价格，若其他卖家最低价低于此价格，则不会进行出售保护
-    "protection_price": 30,
-    // 出售价格保护比例，若出售价格低于此比例乘以其他卖家最低价格，则不会自动接受报价
-    "protection_price_percentage": 0.9,
-    // 出售通知配置(如不需要可直接删除)
-    "sell_notification": {
-      // 出售通知标题
-      "title": "成功出售{game}饰品: {item_name} * {sold_count}",
-      // 出售通知内容
-      "body": "![good_icon]({good_icon})\n游戏: {game}\n饰品: {item_name}\n出售单价: {buff_price} RMB\nSteam单价(参考): {steam_price} USD\nSteam单价(参考): {steam_price_cny} RMB\n![buyer_avatar]({buyer_avatar})\n买家: {buyer_name}\n订单时间: {order_time}"
-    },
-    // 出售保护通知配置(如不需要可直接删除)
-    "protection_notification": {
-      // 出售保护通知标题（如不需要可直接删除）
-      "title": "{game}饰品: {item_name} 未自动接受报价, 价格与市场最低价相差过大",
-      // 出售保护通知内容（如不需要可直接删除）
-      "body": "请自行至BUFF确认报价!"
-    },
-    // 报价与BUFF出售商品不匹配通知配置(如不需要可直接删除)
-    "item_mismatch_notification": {
-      // 报价与BUFF出售商品不匹配通知标题
-      "title": "BUFF出售饰品与Steam报价饰品不匹配",
-      // 报价与BUFF出售商品不匹配通知内容
-      "body": "请自行至BUFF确认报价!(Offer: {offer_id})"
-    },
-    // BUFF Cookies失效通知配置
-    "buff_cookie_expired_notification": {
-      // BUFF Cookies失效通知标题（如不需要可直接删除）
-      "title": "BUFF Cookie已过期, 请重新登录",
-      // BUFF Cookies失效通知内容（如不需要可直接删除）
-      "body": "BUFF Cookie已过期, 请重新登录"
-    },
-    // 二维码登录BUFF通知配置
-    "buff_login_notification": {
-      // 二维码登录BUFF通知标题（如不需要可直接删除）
-      "title": "请扫描二维码登录BUFF",
-      // 是否开启传递 二维码图片
-      "include_qrcode_html_enable": false
-    },
-    // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
-    "servers": [
-    ]
+    // 是否开启dota2支持
+    "dota2_support": false
   },
   // BUFF 自动备注购买价格插件配置
   "buff_auto_comment": {

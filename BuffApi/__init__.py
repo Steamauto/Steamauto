@@ -15,7 +15,7 @@ import copy
 import json
 import random
 import time
-from typing import no_type_check
+from typing import no_type_check, Dict, List, Union, Optional, Any
 
 import requests
 
@@ -23,7 +23,6 @@ from utils.logger import PluginLogger
 from BuffApi import models
 
 logger = PluginLogger("BuffApi")
-
 
 def get_ua():
     first_num = random.randint(55, 62)
@@ -35,7 +34,7 @@ def get_ua():
         "(X11; Linux x86_64)",
         "(Macintosh; Intel Mac OS X 10_12_6)",
     ]
-    chrome_version = "Chrome/{}.0.{}.{}".format(first_num, third_num, fourth_num)
+    chrome_version = f"Chrome/{first_num}.0.{third_num}.{fourth_num}"
 
     ua = " ".join(
         [
@@ -49,10 +48,8 @@ def get_ua():
     )
     return ua
 
-
 def get_random_header() -> dict:
     return {"User-Agent": get_ua()}
-
 
 class BuffAccount:
     """
@@ -65,6 +62,8 @@ class BuffAccount:
     附：
     Buff的每个商品的每种磨损（品质）均有一个独立的goods_id,每一件商品都有一个独立的id
     """
+    
+    BASE_URL = "https://buff.163.com"
 
     def __init__(self, buffcookie, user_agent=get_ua()):
         self.session = requests.session()
@@ -88,25 +87,77 @@ class BuffAccount:
         :return: str
         """
         try:
-            self.username = (
-                json.loads(self.get("https://buff.163.com/account/api/user/info").text).get("data").get("nickname")
-            )
+            user_info = self.get_user_info()
+            if user_info and "nickname" in user_info:
+                self.username = user_info["nickname"]
+                return self.username
         except AttributeError:
             raise ValueError("Buff登录失败！请稍后再试或检查cookie填写是否正确.")
-        return self.username
+        return ""
+
+    def get_user_info(self) -> Dict:
+        """获取用户信息，包含SteamID等数据"""
+        response = self.get(f"{self.BASE_URL}/account/api/user/info")
+        if response.status_code == 200:
+            data = response.json()
+            if data["code"] == "OK" and "data" in data:
+                return data["data"]
+        return {}
+
+    def set_force_buyer_send_offer(self) -> bool:
+        """设置只允许买家发起交易报价"""
+        headers = self.CSRF_Fucker()
+        headers["Referer"] = f"{self.BASE_URL}/user-center/profile"
+        data = {"force_buyer_send_offer": "true"}
+        
+        resp = self.post(
+            f"{self.BASE_URL}/account/api/prefer/force_buyer_send_offer",
+            json=data,
+            headers=headers
+        )
+        
+        if resp.status_code == 200 and resp.json()["code"] == "OK":
+            return True
+        return False
+
+    def get_sell_order_to_deliver(self, game: str, appid: Union[str, int]) -> Dict:
+        """获取等待发货的订单"""
+        params = {
+            "game": game,
+            "appid": str(appid)
+        }
+        response = self.get(f"{self.BASE_URL}/api/market/sell_order/to_deliver", params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if data["code"] == "OK" and "data" in data:
+                return data["data"]
+        return {}
+
+    def get_sell_order_history(self, appid: Union[str, int]) -> List:
+        """获取销售历史记录"""
+        params = {
+            "appid": str(appid),
+            "mode": "1"
+        }
+        response = self.get(f"{self.BASE_URL}/api/market/sell_order/history", params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if data["code"] == "OK" and "data" in data and "items" in data["data"]:
+                return data["data"]["items"]
+        return []
 
     def get_user_brief_assest(self) -> dict:
         """
         包含用户余额等信息
         :return: dict
         """
-        return json.loads(self.get("https://buff.163.com/api/asset/get_brief_asset").text).get("data")
+        return json.loads(self.get(f"{self.BASE_URL}/api/asset/get_brief_asset").text).get("data")
 
     def search_goods(self, key: str, game_name="csgo") -> list:
         return (
             json.loads(
                 self.get(
-                    "https://buff.163.com/api/market/search/suggest",
+                    f"{self.BASE_URL}/api/market/search/suggest",
                     params={"text": key, "game": game_name},
                 ).text
             )
@@ -137,7 +188,7 @@ class BuffAccount:
         if need_login:
             return json.loads(
                 self.get(
-                    "https://buff.163.com/api/market/goods/sell_order",
+                    f"{self.BASE_URL}/api/market/goods/sell_order",
                     params=params,
                     headers=get_random_header(),
                     proxies=proxy,
@@ -146,7 +197,7 @@ class BuffAccount:
         else:
             return json.loads(
                 requests.get(
-                    "https://buff.163.com/api/market/goods/sell_order",
+                    f"{self.BASE_URL}/api/market/goods/sell_order",
                     params=params,
                     headers=get_random_header(),
                     proxies=proxy,
@@ -165,7 +216,7 @@ class BuffAccount:
         methods = (
             json.loads(
                 self.get(
-                    "https://buff.163.com/api/market/goods/buy/preview",
+                    f"{self.BASE_URL}/api/market/goods/buy/preview",
                     params={
                         "game": game_name,
                         "sell_order_id": sell_order_id,
@@ -225,17 +276,17 @@ class BuffAccount:
         headers["accept"] = "application/json, text/javascript, */*; q=0.01"
         headers["content-type"] = "application/json"
         headers["dnt"] = "1"
-        headers["origin"] = "https://buff.163.com"
-        headers["referer"] = "https://buff.163.com/goods/" + str(goods_id) + "?from=market"
+        headers["origin"] = self.BASE_URL
+        headers["referer"] = f"{self.BASE_URL}/goods/{str(goods_id)}?from=market"
         headers["x-requested-with"] = "XMLHttpRequest"
         # 获取最新csrf_token
-        self.get("https://buff.163.com/api/message/notification")
+        self.get(f"{self.BASE_URL}/api/message/notification")
         self.session.cookies.get("csrf_token")
         headers["x-csrftoken"] = str(self.session.cookies.get("csrf_token"))
-        response = json.loads(self.post("https://buff.163.com/api/market/goods/buy", json=load, headers=headers).text)
+        response = json.loads(self.post(f"{self.BASE_URL}/api/market/goods/buy", json=load, headers=headers).text)
         bill_id = response.get("data").get("id")
         self.get(
-            "https://buff.163.com/api/market/bill_order/batch/info",
+            f"{self.BASE_URL}/api/market/bill_order/batch/info",
             params={"bill_orders": bill_id},
         )
         headers["x-csrftoken"] = str(self.session.cookies.get("csrf_token"))
@@ -243,14 +294,14 @@ class BuffAccount:
         if ask_seller_send_offer:
             load = {"bill_orders": [bill_id], "game": game_name}
             response = self.post(
-                "https://buff.163.com/api/market/bill_order/ask_seller_to_send_offer",
+                f"{self.BASE_URL}/api/market/bill_order/ask_seller_to_send_offer",
                 json=load,
                 headers=headers,
             )
         else:
             load = {"bill_order_id": bill_id, "game": game_name}
             response = self.post(
-                "https://buff.163.com/api/market/bill_order/notify_buyer_to_send_offer",
+                f"{self.BASE_URL}/api/market/bill_order/notify_buyer_to_send_offer",
                 json=load,
                 headers=headers,
             )
@@ -267,17 +318,22 @@ class BuffAccount:
         """
         if headers:
             self.session.headers = headers
-        return json.loads(self.get("https://buff.163.com/api/message/notification").text).get("data")
+        return json.loads(self.get(f"{self.BASE_URL}/api/message/notification").text).get("data")
 
-    def get_steam_trade(self) -> dict:
-        return json.loads(self.get("https://buff.163.com/api/market/steam_trade").text).get("data")
+    def get_steam_trade(self) -> list:
+        response = self.get(f"{self.BASE_URL}/api/market/steam_trade")
+        if response.status_code == 200:
+            data = response.json()
+            if data["code"] == "OK":
+                return data["data"]
+        return []
 
     def on_sale(self, assets: list[models.BuffOnSaleAsset]):
         """
         仅支持CSGO 返回上架成功商品的id
         """
         response = self.post(
-            "https://buff.163.com/api/market/sell_order/create/manual_plus",
+            f"{self.BASE_URL}/api/market/sell_order/create/manual_plus",
             json={
                 "appid": "730",
                 "game": "csgo",
@@ -302,7 +358,7 @@ class BuffAccount:
         problem_sell_orders = {}
         for index in range(0, len(sell_orders), 50):
             response = self.post(
-                "https://buff.163.com/api/market/sell_order/cancel",
+                f"{self.BASE_URL}/api/market/sell_order/cancel",
                 json={
                     "game": "csgo",
                     "sell_orders": sell_orders[index : index + 50],
@@ -321,7 +377,7 @@ class BuffAccount:
 
     def get_on_sale(self, page_num=1, page_size=500, mode="2,5", fold="0"):
         return self.get(
-            "https://buff.163.com/api/market/sell_order/on_sale",
+            f"{self.BASE_URL}/api/market/sell_order/on_sale",
             params={
                 "page_num": page_num,
                 "page_size": page_size,
@@ -340,7 +396,7 @@ class BuffAccount:
         problems = {}
         for index in range(0, len(sell_orders), 50):
             response = self.post(
-                "https://buff.163.com/api/market/sell_order/change",
+                f"{self.BASE_URL}/api/market/sell_order/change",
                 json={
                     "appid": "730",
                     "sell_orders": sell_orders[index : index + 50],
@@ -358,7 +414,7 @@ class BuffAccount:
 
     @no_type_check
     def CSRF_Fucker(self):
-        self.get("https://buff.163.com/api/market/steam_trade")
+        self.get(f"{self.BASE_URL}/api/market/steam_trade")
         csrf_token = self.session.cookies.get("csrf_token", domain="buff.163.com")
         headers = copy.deepcopy(self.session.headers)
         headers.update(
@@ -366,7 +422,7 @@ class BuffAccount:
                 "X-CSRFToken": csrf_token,
                 "X-Requested-With": "XMLHttpRequest",
                 "Content-Type": "application/json",
-                "Referer": "https://buff.163.com/market/sell_order/create?game=csgo",
+                "Referer": f"{self.BASE_URL}/market/sell_order/create?game=csgo",
             }
         )  
         return headers
