@@ -1,18 +1,15 @@
-import os
-import pickle
 import time
 
 from BuffApi import BuffAccount
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import PluginLogger, handle_caught_exception
-from utils.static import SESSION_FOLDER
 from utils.steam_client import accept_trade_offer
 from utils.tools import exit_code
 
+logger = PluginLogger("BuffAutoAcceptOffer")
 
 class BuffAutoAcceptOffer:
-    def __init__(self, logger, steam_client, steam_client_mutex, config):
-        self.logger = PluginLogger("BuffAutoAcceptOffer")
+    def __init__(self, steam_client, steam_client_mutex, config):
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}]
@@ -24,14 +21,14 @@ class BuffAutoAcceptOffer:
 
     def require_buyer_send_offer(self):
         try:
-            self.logger.info('正在开启只允许买家发起报价功能...')
+            logger.info('正在开启只允许买家发起报价功能...')
             result = self.buff_account.set_force_buyer_send_offer()
             if result:
-                self.logger.info("已开启买家发起交易报价功能")
+                logger.info("已开启买家发起交易报价功能")
             else:
-                self.logger.error("开启买家发起交易报价功能失败")
+                logger.error("开启买家发起交易报价功能失败")
         except Exception as e:
-            self.logger.error(f"开启买家发起交易报价功能失败: {str(e)}")
+            logger.error(f"开启买家发起交易报价功能失败: {str(e)}")
 
     def check_buff_account_state(self):
         try:
@@ -40,13 +37,13 @@ class BuffAutoAcceptOffer:
                 # 检查是否能正常访问steam_trade接口
                 trades = self.buff_account.get_steam_trade()
                 if trades is None:
-                    self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试!")
+                    logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试!")
                     return ""
                 return username
         except Exception as e:
-            self.logger.error(f"检查BUFF账户状态失败: {str(e)}")
+            logger.error(f"检查BUFF账户状态失败: {str(e)}")
 
-        self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试!")
+        logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试!")
         return ""
 
     def format_item_info(self, trade):
@@ -67,64 +64,55 @@ class BuffAutoAcceptOffer:
         return result
 
     def exec(self):
-        self.logger.info("BUFF自动接受报价插件已启动.请稍候...")
+        logger.info("BUFF自动接受报价插件已启动.请稍候...")
 
-        session = get_valid_session_for_buff(self.steam_client, self.logger)
+        session = get_valid_session_for_buff(self.steam_client, logger)
         self.buff_account = BuffAccount(session)
 
         try:
             user_info = self.buff_account.get_user_info()
             if not user_info or "steamid" not in user_info:
-                self.logger.error("获取BUFF绑定的SteamID失败")
+                logger.error("获取BUFF绑定的SteamID失败")
                 exit_code.set(1)
                 return 1
 
             steamid_buff = user_info["steamid"]
         except Exception as e:
-            self.logger.error(f"获取BUFF绑定的SteamID失败: {str(e)}")
+            logger.error(f"获取BUFF绑定的SteamID失败: {str(e)}")
             exit_code.set(1)
             return 1
 
         if self.steam_client.get_steam64id_from_cookies() != steamid_buff:
-            self.logger.error("当前登录账号与BUFF绑定的Steam账号不一致!")
+            logger.error("当前登录账号与BUFF绑定的Steam账号不一致!")
             exit_code.set(1)
             return 1
 
-        self.logger.info(f"已经登录至BUFF 用户名: {user_info["nickname"]}")
+        logger.info(f"已经登录至BUFF 用户名: {user_info["nickname"]}")
         if not user_info['force_buyer_send_offer']:
-            self.logger.warning("当前账号未开启只允许买家发起报价功能，正在自动开启...")
+            logger.warning("当前账号未开启只允许买家发起报价功能，正在自动开启...")
             self.require_buyer_send_offer()
         else:
-            self.logger.info("当前账号已开启只允许买家发起报价功能")
+            logger.info("当前账号已开启只允许买家发起报价功能")
 
         ignored_offer = []
         interval = self.config["buff_auto_accept_offer"]["interval"]
         dota2_support = self.config["buff_auto_accept_offer"].get("dota2_support", False)
 
         if 'sell_protection' in self.config['buff_auto_accept_offer']:
-            self.logger.warning('你正在使用旧版本配置文件，BUFF自动发货插件已经重写并精简功能，建议删除配置文件重新生成！')
+            logger.warning('你正在使用旧版本配置文件，BUFF自动发货插件已经重写并精简功能，建议删除配置文件重新生成！')
 
         if dota2_support:
             self.SUPPORT_GAME_TYPES.append({"game": "dota2", "app_id": 570})
 
         while True:
             try:
-                with self.steam_client_mutex:
-                    if not self.steam_client.is_session_alive():
-                        self.logger.info("Steam会话已过期, 正在重新登录...")
-                        self.steam_client.relogin()
-                        self.logger.info("Steam会话已更新")
-                        steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
-                        with open(steam_session_path, "wb") as f:
-                            pickle.dump(self.steam_client, f)
-
-                self.logger.info("正在进行BUFF待发货/待收货饰品检查...")
+                logger.info("正在进行BUFF待发货/待收货饰品检查...")
                 username = self.check_buff_account_state()
                 if username == "":
-                    self.logger.info("BUFF账户登录状态失效, 尝试重新登录...")
-                    session = get_valid_session_for_buff(self.steam_client, self.logger)
+                    logger.info("BUFF账户登录状态失效, 尝试重新登录...")
+                    session = get_valid_session_for_buff(self.steam_client, logger)
                     if session == "":
-                        self.logger.error("BUFF账户登录状态失效, 无法自动重新登录!")
+                        logger.error("BUFF账户登录状态失效, 无法自动重新登录!")
                         return
                     self.buff_account = BuffAccount(session)
 
@@ -139,23 +127,23 @@ class BuffAutoAcceptOffer:
                         total_count = csgo_count + dota2_count
 
                         if csgo_count != 0 or dota2_count != 0:
-                            self.logger.info(f"检测到{total_count}个待发货请求!")
-                            self.logger.info(f"CSGO待发货: {csgo_count}个")
+                            logger.info(f"检测到{total_count}个待发货请求!")
+                            logger.info(f"CSGO待发货: {csgo_count}个")
                             if dota2_support:
-                                self.logger.info(f"DOTA2待发货: {dota2_count}个")
+                                logger.info(f"DOTA2待发货: {dota2_count}个")
                     except TypeError as e:
                         handle_caught_exception(e, "BuffAutoAcceptOffer", known=True)
-                        self.logger.error("Buff接口返回数据异常! 请检查网络连接或稍后再试!")
+                        logger.error("Buff接口返回数据异常! 请检查网络连接或稍后再试!")
 
                 if any(list(notification["to_deliver_order"].values()) + list(notification["to_confirm_sell"].values())):
                     # 获取待处理交易
                     trades = self.buff_account.get_steam_trade()
-                    self.logger.info("为了避免访问接口过于频繁，休眠5秒...")
+                    logger.info("为了避免访问接口过于频繁，休眠5秒...")
                     time.sleep(5)
 
                     # 处理响应检查是否有错误
                     if trades is None:
-                        self.logger.error("获取Steam交易失败，稍后重试")
+                        logger.error("获取Steam交易失败，稍后重试")
                         time.sleep(5)
                         continue
 
@@ -168,42 +156,42 @@ class BuffAutoAcceptOffer:
                                     self.order_info[trade_offer["tradeofferid"]] = trade_offer
 
                         if index != len(self.SUPPORT_GAME_TYPES) - 1:
-                            self.logger.info("为了避免访问接口过于频繁，休眠5秒...")
+                            logger.info("为了避免访问接口过于频繁，休眠5秒...")
                             time.sleep(5)
 
                     unprocessed_count = len(trades)
 
-                    self.logger.info(f"查找到 {unprocessed_count} 个待处理的BUFF报价")
+                    logger.info(f"查找到 {unprocessed_count} 个待处理的BUFF报价")
 
                     try:
                         if len(trades) != 0:
                             for i, trade in enumerate(trades):
                                 offer_id = trade["tradeofferid"]
 
-                                self.logger.info(f"正在处理第 {i+1} 个交易报价 报价ID：{offer_id}")
+                                logger.info(f"正在处理第 {i+1} 个交易报价 报价ID：{offer_id}")
                                 if offer_id not in ignored_offer:
                                     try:
-                                        self.logger.info("正在接受报价...")
+                                        logger.info("正在接受报价...")
                                         desc = self.format_item_info(trade)
                                         if accept_trade_offer(self.steam_client, self.steam_client_mutex, offer_id, desc=desc):
                                             ignored_offer.append(offer_id)
-                                            self.logger.info("接受完成! 已经将此交易报价加入忽略名单!")
+                                            logger.info("接受完成! 已经将此交易报价加入忽略名单!")
 
                                         if trades.index(trade) != len(trades) - 1:
-                                            self.logger.info("为了避免频繁访问Steam接口, 等待5秒后继续...")
+                                            logger.info("为了避免频繁访问Steam接口, 等待5秒后继续...")
                                             time.sleep(5)
                                     except Exception as e:
-                                        self.logger.error(f"处理交易报价时出错: {str(e)}", exc_info=True)
-                                        self.logger.info("出现错误, 稍后再试!")
+                                        logger.error(f"处理交易报价时出错: {str(e)}", exc_info=True)
+                                        logger.info("出现错误, 稍后再试!")
                                 else:
-                                    self.logger.info("该报价已经被处理过, 跳过.")
+                                    logger.info("该报价已经被处理过, 跳过.")
 
                     except Exception as e:
                         handle_caught_exception(e, "BuffAutoAcceptOffer")
-                        self.logger.info("出现错误, 稍后再试!")
+                        logger.info("出现错误, 稍后再试!")
             except Exception as e:
                 handle_caught_exception(e, "BuffAutoAcceptOffer")
-                self.logger.info("出现未知错误, 稍后再试!")
+                logger.info("出现未知错误, 稍后再试!")
 
-            self.logger.info(f"将在{interval}秒后再次检查待发货订单信息!")
+            logger.info(f"将在{interval}秒后再次检查待发货订单信息!")
             time.sleep(interval)
