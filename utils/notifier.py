@@ -34,8 +34,8 @@ def send_notification(message, title=''):
         for notifier in config.get('notifiers', []):
             try:
                 if config.get('custom_title'):
-                    title = config.get('custom_title')
                     message = f'{title}\n{message}'
+                    title = config.get('custom_title')
                 else:
                     title = title if title else 'Steamauto 通知'
                 if config.get('include_steam_info', False):
