@@ -52,8 +52,11 @@ class BuffAutoAcceptOffer:
 
         for good_id, good_item in trade["goods_infos"].items():
             result += f"发货商品：{good_item['name']}"
-            if len(trade["items_to_trade"]) > 1:
-                result += f" 等{len(trade['items_to_trade'])}个物品"
+            if trade.get('items_to_trade'):
+                if len(trade["items_to_trade"]) > 1:
+                    result += f" 等{len(trade['items_to_trade'])}个物品"
+            else:
+                result += " (求购报价，数量未知)"
 
             if trade["tradeofferid"] in self.order_info:
                 price = float(self.order_info[trade["tradeofferid"]]["price"])
@@ -106,7 +109,7 @@ class BuffAutoAcceptOffer:
 
         while True:
             try:
-                logger.info("正在进行BUFF待发货/待收货饰品检查...")
+                logger.info("正在检查BUFF账户登录状态...")
                 username = self.check_buff_account_state()
                 if username == "":
                     logger.info("BUFF账户登录状态失效, 尝试重新登录...")
@@ -115,7 +118,10 @@ class BuffAutoAcceptOffer:
                         logger.error("BUFF账户登录状态失效, 无法自动重新登录!")
                         return
                     self.buff_account = BuffAccount(session)
-
+                logger.info("为了避免访问接口过于频繁，休眠5秒...")
+                time.sleep(5)
+                
+                logger.info("正在进行BUFF待发货/待收货饰品检查...")
                 notification = self.buff_account.get_notification()
 
                 # 处理响应检查是否有错误
@@ -154,6 +160,16 @@ class BuffAutoAcceptOffer:
                             for trade_offer in trade_supply:
                                 if trade_offer["tradeofferid"] is not None and trade_offer["tradeofferid"] != "":
                                     self.order_info[trade_offer["tradeofferid"]] = trade_offer
+                                    if not any(trade_offer["tradeofferid"] == trade["tradeofferid"] for trade in trades):
+                                        
+                                        for goods_id,goods_info in response_data["goods_infos"].items():
+                                            goods_id = str(goods_id)
+                                            trade_offer["goods_id"] = str(trade_offer["goods_id"])
+                                            if goods_id == trade_offer["goods_id"]:
+                                                trade_offer["goods_infos"] = {}
+                                                trade_offer["goods_infos"][goods_id] = goods_info
+                                                break
+                                        trades.append(trade_offer)
 
                         if index != len(self.SUPPORT_GAME_TYPES) - 1:
                             logger.info("为了避免访问接口过于频繁，休眠5秒...")
@@ -189,6 +205,8 @@ class BuffAutoAcceptOffer:
                     except Exception as e:
                         handle_caught_exception(e, "BuffAutoAcceptOffer")
                         logger.info("出现错误, 稍后再试!")
+                else:
+                    logger.info("没有待处理的交易报价")
             except Exception as e:
                 handle_caught_exception(e, "BuffAutoAcceptOffer")
                 logger.info("出现未知错误, 稍后再试!")
