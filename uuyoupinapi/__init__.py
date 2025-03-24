@@ -213,7 +213,7 @@ class UUAccount:
                 "CommodityId": int(item.orderNo),  # type: ignore
                 "IsCanLease": item.IsCanLease,
                 "IsCanSold": item.IsCanSold,
-                "LeaseDeposit": item.LeaseDeposit,
+                "LeaseDeposit": str(item.LeaseDeposit),
                 "LeaseMaxDays": item.LeaseMaxDays,
                 "LeaseUnitPrice": item.LeaseUnitPrice,
             }
@@ -234,7 +234,7 @@ class UUAccount:
         if rsp['Data']['FailCount'] != 0:
             for commodity in rsp["Data"]["Commoditys"]:
                 if commodity["IsSuccess"] != 1:
-                    logger.error(f"修改商品价格失败，商品ID：{commodity[id]}，原因：{commodity['Message']}")
+                    logger.error(f"修改商品价格失败，商品ID：{commodity['CommodityId']}，原因：{commodity['Message']}")
         return rsp['Data']['SuccessCount']
 
     def send_offer(self, orderNo):
@@ -469,6 +469,7 @@ class UUAccount:
                     )
                 )
         elif rsp["code"] == 9004001:
+            logger.info("暂无转租商品")
             pass
         else:
             raise Exception("获取悠悠租赁已上架物品失败!")
