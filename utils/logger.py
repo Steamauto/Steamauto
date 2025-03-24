@@ -152,7 +152,15 @@ def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False)
     elif isinstance(e, SteamError):
         plogger.error("Steam 异常, 异常id:" + str(e.error_code) + ", 异常信息:" + STEAM_ERROR_CODES.get(e.error_code, "未知Steam错误"))
     elif isinstance(e, ApiException):
-        plogger.error("Steam API 异常, 异常信息:" + str(e))
+        if 'Invalid trade offer state' in str(e):
+            if 'Canceled' in str(e):
+                plogger.error("交易已取消，无法接受报价")
+            elif 'Accepted' in str(e):
+                plogger.error("交易已接受，无法重复操作")
+            else:
+                plogger.error("交易状态异常，无法接受报价，异常信息：" + str(e))
+        else:
+            plogger.error("Steam API 异常, 异常信息: " + str(e))
     else:
         if not known:
             plogger.error(

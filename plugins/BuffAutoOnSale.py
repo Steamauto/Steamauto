@@ -3,7 +3,6 @@ import os
 import pickle
 import random
 import time
-from typing import Any
 
 import apprise
 import json5
