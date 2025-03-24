@@ -3,7 +3,7 @@ import os
 is_latest_version = False
 no_pause = False
 
-CURRENT_VERSION = "5.4.0"
+CURRENT_VERSION = "5.4.1"
 
 VERSION_FILE = "version.json"
 LOGS_FOLDER = "logs"

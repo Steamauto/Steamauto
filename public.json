@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.4.1",
+      "changelog": "修复BUFF求购订单无法供应",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.4.1/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.4.1/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "6bbe2c4abd1e9c05c3052b28e7991297b431c30e0f05651e0d55376ae37139c6",
+        "windows": "f7ee9442d871677efcc5c85b3465e6f52414c2d0e0d16a25eed061533fe704e6"
+      }
+    },
+    {
       "version": "5.4.0",
       "changelog": "BUFF自动发货现已经完全重写，减少了大量不必要的请求与功能，大大提升发货的稳定性。由于新的版本进行了大量的重构，因此旧版本的配置文件已经不再适用，建议删除配置文件重新生成！",
       "level": "stable",
