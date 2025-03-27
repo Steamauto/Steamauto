@@ -25,7 +25,6 @@ from utils.static import (
     CURRENT_VERSION,
     DEFAULT_CONFIG_JSON,
     DEFAULT_STEAM_ACCOUNT_JSON,
-    DEV_FILE_FOLDER,
     INTERNAL_PLUGINS,
     PLUGIN_FOLDER,
     SESSION_FOLDER,
@@ -53,7 +52,6 @@ def set_exit_code(code):
 # 文件缺失或格式错误返回0，首次运行返回1，非首次运行返回2
 def init_files_and_params() -> int:
     global config
-    development_mode = False
     patch()
     logger.info("欢迎使用Steamauto Github仓库:https://github.com/Steamauto/Steamauto")
     logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
@@ -102,16 +100,10 @@ def init_files_and_params() -> int:
     if not first_run:
         if "no_pause" in config:
             static.no_pause = config["no_pause"]
-        if "development_mode" not in config:
-            config["development_mode"] = False
         if "steam_login_ignore_ssl_error" not in config:
             config["steam_login_ignore_ssl_error"] = False
         if "steam_local_accelerate" not in config:
             config["steam_local_accelerate"] = False
-        if "development_mode" in config and config["development_mode"]:
-            development_mode = True
-        if development_mode:
-            logger.info("开发者模式已开启")
 
     if first_run:
         return 1
@@ -344,8 +336,6 @@ def main():
 if __name__ == "__main__":
     sys.excepthook = handle_global_exception
     signal.signal(signal.SIGINT, exit_app)
-    if not os.path.exists(DEV_FILE_FOLDER):
-        os.mkdir(DEV_FILE_FOLDER)
     if not os.path.exists(SESSION_FOLDER):
         os.mkdir(SESSION_FOLDER)
     exit_code.set(main())  # type: ignore

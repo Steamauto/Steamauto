@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 from utils.ApiCrypt import ApiCrypt
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception
-from utils.static import (BUFF_ACCOUNT_DEV_FILE_PATH, BUFF_COOKIES_FILE_PATH,
+from utils.static import (BUFF_COOKIES_FILE_PATH,
                           SESSION_FOLDER, SUPPORT_GAME_TYPES)
 from utils.tools import get_encoding
 
@@ -64,7 +64,6 @@ class BuffAutoOnSale:
         self.steam_client = steam_client
         self.config = config
         self.steam_client_mutex = steam_client_mutex
-        self.development_mode = self.config["development_mode"]
         self.asset = AppriseAsset()
         self.session = requests.session()
         self.lowest_price_cache = {}
@@ -75,24 +74,14 @@ class BuffAutoOnSale:
             return True
         return False
 
-    def check_buff_account_state(self, dev=False):
-        if dev and os.path.exists(BUFF_ACCOUNT_DEV_FILE_PATH):
-            self.logger.info("[BuffAutoOnSale] 开发模式, 使用本地账号")
-            with open(BUFF_ACCOUNT_DEV_FILE_PATH, "r", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
-                buff_account_data = json5.load(f)
-            return buff_account_data["data"]["nickname"]
-        else:
-            response_json = self.session.get("https://buff.163.com/account/api/user/info",
-                                             headers=self.buff_headers).json()
-            if dev:
-                self.logger.info("开发者模式, 保存账户信息到本地")
-                with open(BUFF_ACCOUNT_DEV_FILE_PATH, "w", encoding=get_encoding(BUFF_ACCOUNT_DEV_FILE_PATH)) as f:
-                    json5.dump(response_json, f, indent=4)
-            if response_json["code"] == "OK":
-                if "data" in response_json:
-                    if "nickname" in response_json["data"]:
-                        return response_json["data"]["nickname"]
-            self.logger.error("[BuffAutoOnSale] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
+    def check_buff_account_state(self):
+        response_json = self.session.get("https://buff.163.com/account/api/user/info",
+                                         headers=self.buff_headers).json()
+        if response_json["code"] == "OK":
+            if "data" in response_json:
+                if "nickname" in response_json["data"]:
+                    return response_json["data"]["nickname"]
+        self.logger.error("[BuffAutoOnSale] BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试! ")
 
     def get_buff_inventory(self, page_num=1, page_size=60, sort_by="time.desc", state="all", force=0, force_wear=0,
                            game="csgo", app_id=730):
@@ -495,7 +484,7 @@ class BuffAutoOnSale:
                 self.session.cookies["session"] = f.read().replace("session=", "").replace("\n", "").split(";")[0]
             self.logger.info("[BuffAutoOnSale] 已检测到cookies, 尝试登录")
             self.logger.info("[BuffAutoOnSale] 已经登录至BUFF 用户名: " +
-                             self.check_buff_account_state(dev=self.development_mode))
+                             self.check_buff_account_state())
         except TypeError as e:
             handle_caught_exception(e, known=True)
             self.logger.error("[BuffAutoOnSale] BUFF账户登录检查失败, 请检查buff_cookies.txt或稍后再试! ")
