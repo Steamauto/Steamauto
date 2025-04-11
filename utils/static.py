@@ -180,7 +180,9 @@ DEFAULT_CONFIG_JSON = r"""
     // 按现价固定比例设置价格
     "enable_fix_lease_ratio": false,
     // 出租价格比例, 如现价1000元, 0.001比例，出租价格为1000 * 0.001 = 1元 (不会低于正常计算的出租价格)
-    "fix_lease_ratio": 0.001
+    "fix_lease_ratio": 0.001,
+    // 赔付方式: 0(非会员), 7(v1), 其余的不知道
+    "compensation_type": 7
   },
   // 悠悠有品出售自动上架配置
   "uu_auto_sell_item": {
