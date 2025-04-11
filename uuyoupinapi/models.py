@@ -14,6 +14,7 @@ class UUOnLeaseShelfItem(BaseModel):
     LeaseMaxDays: int
     LeaseUnitPrice: float
     LongLeaseUnitPrice: Union[float, None] = None
+    CompensationType: Union[int, None] = None
     
     @classmethod
     def fromLeaseAsset(cls, leaseAsset: LeaseAsset):

@@ -21,6 +21,7 @@ class UUAutoLeaseItem:
         self.timeSleep = 10
         self.inventory_list = []
         self.lease_price_cache = {}
+        self.compensation_type = 0
 
     @property
     def leased_inventory_list(self) -> list:
@@ -153,7 +154,8 @@ class UUAutoLeaseItem:
                         LeaseMaxDays=self.config["uu_auto_lease_item"]["lease_max_days"],
                         LeaseUnitPrice=price_rsp["LeaseUnitPrice"],
                         LongLeaseUnitPrice=price_rsp["LongLeaseUnitPrice"],
-                        LeaseDeposit=str(price_rsp["LeaseDeposit"])
+                        LeaseDeposit=str(price_rsp["LeaseDeposit"]),
+                        CompensationType=self.compensation_type
                     )
                     if self.config["uu_auto_lease_item"]["lease_max_days"] <= 8:
                         lease_item.LongLeaseUnitPrice = None
@@ -220,7 +222,7 @@ class UUAutoLeaseItem:
             self.logger.info(f"{len(leased_item_list)} 件物品可以更新出租价格。")
             self.operate_sleep()
             if len(leased_item_list) > 0:
-                success_count = self.uuyoupin.change_leased_price(leased_item_list)
+                success_count = self.uuyoupin.change_leased_price(leased_item_list, compensation_type=self.compensation_type)
                 self.logger.info(f"成功修改 {success_count} 件物品出租价格。")
                 if len(leased_item_list) - success_count > 0:
                     self.logger.error(f"{len(leased_item_list) - success_count} 件物品出租价格修改失败。")
@@ -265,6 +267,8 @@ class UUAutoLeaseItem:
 
     def exec(self):
         self.logger.info(f"以下物品不会出租：{self.config['uu_auto_lease_item']['filter_name']}")
+        if "compensation_type" in self.config['uu_auto_lease_item']:
+            self.compensation_type = self.config['uu_auto_lease_item']['compensation_type']
 
         self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu())
 
@@ -314,6 +318,6 @@ if __name__ == "__main__":
         exit_code.set(1)
     else:
         uu_auto_lease.uuyoupin = uuyoupinapi.UUAccount(token)
-    uu_auto_lease.pre_check_price()
+    uu_auto_lease.auto_lease()
     # time.sleep(64)
     uu_auto_lease.auto_set_zero_cd()
