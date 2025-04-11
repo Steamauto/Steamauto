@@ -311,13 +311,12 @@ if __name__ == "__main__":
     with open("config/config.json5", "r", encoding="utf-8") as f:
         my_config = json5.load(f)
 
-    uu_auto_lease = UUAutoLeaseItem(my_config)
+    uu_auto_lease = UUAutoLeaseItem(None, None, my_config)
     token = get_valid_token_for_uu()
     if not token:
         uu_auto_lease.logger.error("由于登录失败，插件将自动退出")
         exit_code.set(1)
     else:
         uu_auto_lease.uuyoupin = uuyoupinapi.UUAccount(token)
-    uu_auto_lease.auto_lease()
-    # time.sleep(64)
-    uu_auto_lease.auto_set_zero_cd()
+    uu_auto_lease.auto_change_price()
+
