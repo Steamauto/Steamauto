@@ -17,7 +17,6 @@ from utils.tools import calculate_sha256, pause
 logger = PluginLogger('CloudService')
 
 
-
 def get_platform_info():
     system = platform.system().lower()
     machine = platform.machine().lower()
@@ -75,11 +74,13 @@ def compare_version(ver1, ver2):
 
     return 0
 
+
 def get_uu_uk_from_cloud():
     try:
         data = session.get('https://steamauto.jiajiaxd.com/tools/getUUuk').json()
         return data['uk']
     except Exception as e:
+        handle_caught_exception(e, known=True)
         logger.warning('云服务异常，无法获取UK，将使用默认配置')
         return ''
 

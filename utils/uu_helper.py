@@ -46,11 +46,11 @@ def get_token_automatically():
     引导用户输入手机号，发送验证码，输入验证码，自动登录，并且返回token
     :return: token
     """
-    device_info = uuyoupinapi.generate_device_info()
-    headers = uuyoupinapi.generate_headers(device_info["deviceId"], device_info["deviceId"])
+    device_info = uuyoupinapi.generate_random_string(10)
+    headers = uuyoupinapi.generate_headers(device_info, device_info)
 
     phone_number = input(f"{Style.BRIGHT+Fore.RED}请输入手机号(+86)(如果此时有其它插件输出请忽略！输入完按回车即可！)：{Style.RESET_ALL}")
-    token_id = device_info["deviceId"]
+    token_id = device_info
     logger.debug("随机生成的token_id：" + token_id)
     uk = ''
     try:
