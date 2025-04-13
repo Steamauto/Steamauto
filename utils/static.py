@@ -194,10 +194,24 @@ DEFAULT_CONFIG_JSON = r"""
     "take_profile_ratio": 0.1,
     // 自动上架每天定时运行时间
     "run_time": "15:30",
+    // 每隔多长时间重新上架一次（单位：分钟）
+    "sell_interval": 20,
+    // 价格高于 max_on_sale_price 的物品不会上架，设置为0则不限制
+    "max_on_sale_price": 1000,
     // 已上架的物品可以定时修改价格。设置的轮询间隔，单位为分钟
     "interval": 51,
-    // 出售的物品名字列表，示例：["物品A", "物品B"]（名字可以不写全，但是要写对，比如M4A1印花集）
-    "name": ["物品A", "物品B"]
+    // 出售的物品名字列表，示例：["物品A", "物品B"]（名字可以不写全，但是要写对）
+    "name": [
+      "AK",
+      "A1"
+    ],
+    // 不出售也不参与改价的物品名字列表，示例：["物品A", "物品B"]（优先级高于出售的物品名字列表）
+    "blacklist_words": [
+      "黑名单词语1",
+      "黑名单词语2"
+    ],
+    "use_price_adjustment": true, // 是否开启自动压价（-0.01）的功能
+    "price_adjustment_threshold": 1.0 // 价格高于此值才会自动压价
   },
   // Steam 自动接受礼物报价插件配置
   "steam_auto_accept_offer": {
