@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.5.0",
+      "changelog": "修复出租上架失败; 翻新UUAutoSellItem.py，添加大量功能（请重新生成配置文件）; 为uuyoupinapi添加求购获取接口、电脑版价格获取接口; 修复如果自定义标题会导致自定义标题被显示两遍的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.5.0/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.5.0/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "df83b64a65b12a830ca2c4e16ec7634f96630e5374a81a9630a1b71f0fe6f39a",
+        "windows": "4dd29440beabbe13f1ef42b7f190cb8fc24274181832a4bfe9a173aba8327849"
+      }
+    },
+    {
       "version": "5.4.1",
       "changelog": "修复BUFF求购订单无法供应",
       "level": "stable",
