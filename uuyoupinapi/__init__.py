@@ -192,8 +192,21 @@ class UUAccount:
             raise Exception(f"网络错误，或服务器被悠悠屏蔽！请求失败！")
 
         return response
+    
+    def pre_change_lease_price_post(self, commodity_ids):
+        rsp = self.call_api(
+            "POST",
+            "/api/youpin/bff/new/commodity/commodity/change/price/v3/init/info",
+            data={
+                "changePriceChannel": 0,
+                "commodityIdList": [str(commodity_id) for commodity_id in commodity_ids],
+                "gameId": "730",
+                "Sessionid": self.device_info["deviceId"],
+            },
+        ).json()
+        return
 
-    def change_leased_price(self, items: list[LeaseAsset]):
+    def change_leased_price(self, items: list[LeaseAsset], compensation_type=0):
         '''
         请求范例：
         {
@@ -226,6 +239,7 @@ class UUAccount:
         }
         '''
         item_infos = list()
+        commodity_ids = list()
         for item in items:
             item_info = {
                 "CommodityId": int(item.orderNo),  # type: ignore
@@ -240,8 +254,9 @@ class UUAccount:
                 item_info["LongLeaseUnitPrice"] = item.LongLeaseUnitPrice
             if item_info["IsCanSold"]:
                 item_info["Price"] = item.price
+            commodity_ids.append(item_info["CommodityId"])
             item_infos.append(item_info)
-
+        self.pre_change_lease_price_post(commodity_ids)
         rsp = self.call_api(
             "PUT",
             "/api/commodity/Commodity/PriceChangeWithLeaseV2",
