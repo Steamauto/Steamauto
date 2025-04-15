@@ -53,11 +53,19 @@ def is_json(data):
 
 
 class UUAccount:
-    def __init__(self, token: str, deviceToken=''):
+    def __init__(self, token: str, deviceToken='', proxy=None):
         """
         :param token: 通过抓包获得的token
         """
         self.session = requests.Session()
+        self.proxy = proxy
+        if isinstance(proxy, dict):
+            self.session.proxies = proxy
+        elif isinstance(proxy, str):
+            self.session.proxies = {
+                "http": proxy,
+                "https": proxy,
+            }
         random.seed(token)
         self.deviceToken = deviceToken
         self.session.headers.update(generate_headers(deviceToken, deviceToken, token=token))
@@ -201,7 +209,7 @@ class UUAccount:
                 "changePriceChannel": 0,
                 "commodityIdList": [str(commodity_id) for commodity_id in commodity_ids],
                 "gameId": "730",
-                "Sessionid": self.device_info["deviceId"],
+                "Sessionid": self.deviceToken,
             },
         ).json()
         return
