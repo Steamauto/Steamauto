@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.5.2",
+      "changelog": "修复无法正常识别是否为源码运行",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.5.2/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.5.2/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "849ef0bc464fdfb462df26203258b742bb95fe6e3b6db43238f569e3e771deb3",
+        "windows": "0794e3fa6779ab345db71c66eb7014402cbe16084df05cb9d58b6eaec5311dc4"
+      }
+    },
+    {
       "version": "5.5.1",
       "changelog": "修复悠悠因修改接口导致自动上架不可用",
       "level": "stable",
