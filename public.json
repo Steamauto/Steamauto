@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.5.1",
+      "changelog": "修复悠悠因修改接口导致自动上架不可用",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.5.1/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.5.1/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "9f02f9ec09f5aea4660ed8ace61873689d91e24e05b67e069d5c2f0bef88b9fd",
+        "windows": "11b508b9b2b84a321a0dc613436e1376bdf35dc6b6859f3fe1a41686a81f9ef8"
+      }
+    },
+    {
       "version": "5.5.0",
       "changelog": "修复出租上架失败; 翻新UUAutoSellItem.py，添加大量功能（请重新生成配置文件）; 为uuyoupinapi添加求购获取接口、电脑版价格获取接口; 修复如果自定义标题会导致自定义标题被显示两遍的问题",
       "level": "stable",
