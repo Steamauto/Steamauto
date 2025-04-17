@@ -1,6 +1,7 @@
 import datetime
 import random
 import time
+from venv import logger
 
 import schedule
 
@@ -43,30 +44,23 @@ class UUAutoSellItem:
                 self.logger.info(f"{commodity_name} 使用缓存结果，出售价格： {sale_price:.2f}")
                 return sale_price
 
-        sale_price_rsp = self.uuyoupin.call_api(
-            "POST",
-            "/api/homepage/v2/detail/commodity/list/sell",
-            data={
-                "pageIndex": 1,
-                "pageSize": 10,
-                "templateId": f"{item_id}"
-            },
-        ).json()
+
+        sale_price_rsp = self.uuyoupin.get_market_sale_list_with_abrade(item_id).json()
         if sale_price_rsp["Code"] == 0:
-            rsp_list = sale_price_rsp["Data"]["CommodityList"]
+            rsp_list = sale_price_rsp["Data"]
             rsp_cnt = len(rsp_list)
             if rsp_cnt == 0:
                 sale_price = 0
                 commodity_name = ""
                 self.logger.warning(f"市场上没有指定筛选条件的物品")
                 return sale_price
-            commodity_name = rsp_list[0]["CommodityName"]
+            commodity_name = rsp_list[0]["commodityName"]
 
             sale_price_list = []
             cnt = min(cnt, rsp_cnt)
             for i in range(cnt):
-                if rsp_list[i]["Price"] and i < cnt:
-                    sale_price_list.append(float(rsp_list[i]["Price"]))
+                if rsp_list[i]["price"] and i < cnt:
+                    sale_price_list.append(float(rsp_list[i]["price"]))
 
             if len(sale_price_list) == 1:
                 sale_price = sale_price_list[0]
@@ -100,7 +94,7 @@ class UUAutoSellItem:
         item_infos = items
         num = len(item_infos)
         if num == 0:
-            self.logger.info(f"没有物品可以出售。")
+            self.logger.info(f"没有物品可以出售")
             return 0
 
         try:
@@ -114,7 +108,7 @@ class UUAutoSellItem:
             ).json()
             if rsp["Code"] == 0:
                 success_count = len(item_infos)
-                self.logger.info(f"成功上架 {success_count} 个物品。")
+                self.logger.info(f"成功上架 {success_count} 个物品")
                 return success_count
             else:
                 self.logger.error(f"上架失败，返回结果：{rsp['Code']}，全部内容：{rsp}")
@@ -127,7 +121,7 @@ class UUAutoSellItem:
         item_infos = items
         num = len(item_infos)
         if num == 0:
-            self.logger.info(f"没有物品可以修改价格。")
+            self.logger.info(f"没有物品可以修改价格")
             return 0
 
         try:
@@ -161,7 +155,7 @@ class UUAutoSellItem:
                 if total_processed == 0 and success_count == 0 and fail_count == 0:
                     success_count = num
 
-                self.logger.info(f"尝试修改 {num} 个物品价格，成功 {success_count} 个，失败 {fail_count} 个。")
+                self.logger.info(f"尝试修改 {num} 个物品价格，成功 {success_count} 个，失败 {fail_count} 个")
                 return success_count
             else:
                 self.logger.error(f"修改出售价格失败，返回结果：{rsp['Code']}，全部内容：{rsp}")
@@ -188,7 +182,7 @@ class UUAutoSellItem:
                     asset_id = item["SteamAssetId"]
                     item_id = item["TemplateInfo"]["Id"]
                     short_name = item["TemplateInfo"]["CommodityName"]
-                    buy_price = float(item["AssetBuyPrice"][5:]) if "AssetBuyPrice" in item else 0
+                    buy_price = float(item.get('AssetBuyPrice', '0').replace('购￥', ''))
 
                     self.buy_price_cache[item_id] = buy_price
 
@@ -201,18 +195,24 @@ class UUAutoSellItem:
                     blacklist_words = self.config["uu_auto_sell_item"].get('blacklist_words', [])
                     if blacklist_words:
                         if any(s != "" and s in short_name for s in blacklist_words):
-                            self.logger.info(f"物品 {short_name} 命中黑名单，将不会上架。")
+                            self.logger.info(f"物品 {short_name} 命中黑名单，将不会上架")
                             continue
 
-                    sale_price = self.get_market_sale_price(item_id, good_name=short_name)
+                    try:
+                        sale_price = self.get_market_sale_price(item_id, good_name=short_name)
+                    except Exception as e:
+                        handle_caught_exception(e, "UUAutoSellItem", known=True)
+                        logger.error(f'获取 {short_name} 的市场价格失败: {e}，暂时跳过')
+                        continue
+                        
                     
                     if self.config['uu_auto_sell_item']['take_profile']:
-                        self.logger.info(f"按{self.config['uu_auto_sell_item']['take_profile_ratio']:.2f}止盈率设置价格。")
+                        self.logger.info(f"按{self.config['uu_auto_sell_item']['take_profile_ratio']:.2f}止盈率设置价格")
                         if buy_price > 0:
                             sale_price = max(sale_price, self.get_take_profile_price(buy_price))
-                            self.logger.info(f"最终出售价格{sale_price:.2f}。")
+                            self.logger.info(f"最终出售价格{sale_price:.2f}")
                         else:
-                            self.logger.info("未获取到购入价格。")
+                            self.logger.info("未获取到购入价格")
 
                     if sale_price == 0:
                         continue
@@ -225,7 +225,7 @@ class UUAutoSellItem:
 
                     max_price = self.config['uu_auto_sell_item'].get('max_on_sale_price', 0)
                     if max_price > 0 and sale_price > max_price:
-                        self.logger.info(f"物品 {short_name} 的价格超过了设定的最高价格，将不会上架。")
+                        self.logger.info(f"物品 {short_name} 的价格超过了设定的最高价格，将不会上架")
                         continue
 
                     self.logger.warning(f'即将上架：{short_name} 价格：{sale_price}')
@@ -244,11 +244,11 @@ class UUAutoSellItem:
 
                 self.operate_sleep()
                 self.sell_item(sale_item_list)
-                self.logger.info("上架完成。")
+                self.logger.info("上架完成")
 
             except TypeError as e:
                 handle_caught_exception(e, "UUAutoSellItem")
-                self.logger.error("悠悠有品出售自动上架出现错误。")
+                self.logger.error("悠悠有品出售自动上架出现错误")
                 exit_code.set(1)
                 return 1
             except Exception as e:
@@ -275,7 +275,7 @@ class UUAutoSellItem:
 
             new_sale_item_list = []
             if not self.sale_inventory_list:
-                self.logger.info("没有可用于改价的在售物品。")
+                self.logger.info("没有可用于改价的在售物品")
                 return
             for i, item in enumerate(self.sale_inventory_list):
                 asset_id = item["id"]
@@ -295,14 +295,14 @@ class UUAutoSellItem:
                 sale_price = self.get_market_sale_price(item_id, good_name=short_name)
                 
                 if self.config['uu_auto_sell_item']['take_profile']:
-                    self.logger.info(f"按{self.config['uu_auto_sell_item']['take_profile_ratio']:.2f}止盈率设置价格。")
+                    self.logger.info(f"按{self.config['uu_auto_sell_item']['take_profile_ratio']:.2f}止盈率设置价格")
                     if buy_price > 0:
                         self.logger.debug(sale_price)
                         self.logger.debug(self.get_take_profile_price(buy_price))
                         sale_price = max(sale_price, self.get_take_profile_price(buy_price))
                         self.logger.info(f"最终出售价格{sale_price:.2f}")
                     else:
-                        self.logger.info("未获取到购入价格。")
+                        self.logger.info("未获取到购入价格")
 
                 if sale_price == 0:
                     continue
@@ -316,7 +316,7 @@ class UUAutoSellItem:
                 sale_item = {"CommodityId": asset_id, "IsCanLease": False, "IsCanSold": True, "Price": sale_price, "Remark": ""}
                 new_sale_item_list.append(sale_item)
                 
-            self.logger.info(f"{len(new_sale_item_list)} 件物品可以更新出售价格。")
+            self.logger.info(f"{len(new_sale_item_list)} 件物品可以更新出售价格")
             self.operate_sleep()
             self.change_sale_price(new_sale_item_list)
 
@@ -350,8 +350,8 @@ class UUAutoSellItem:
         run_time = self.config['uu_auto_sell_item']['run_time']
         interval = self.config['uu_auto_sell_item']['interval']
 
-        self.logger.info(f"[自动出售] 等待到 {run_time} 开始执行。")
-        self.logger.info(f"[自动修改价格] 每隔 {interval} 分钟执行一次。")
+        self.logger.info(f"[自动出售] 等待到 {run_time} 开始执行")
+        self.logger.info(f"[自动修改价格] 每隔 {interval} 分钟执行一次")
 
         schedule.every().day.at(f"{run_time}").do(self.auto_sell)
         schedule.every(interval).minutes.do(self.auto_change_price)
