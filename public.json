@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.5.3",
+      "changelog": "修复被错误识别为非官方二进制构建; 修复悠悠自动上架插件导入失败",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.5.3/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.5.3/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "d0343c6786d53ac3203a9ab5f8a0df57f13fb33a635e1ec91daf67ef56206092",
+        "windows": "ed06e5bbff0be087ceb152c8f0418e67fd220c8b670fa9fce9eba32f355064a8"
+      }
+    },
+    {
       "version": "5.5.2",
       "changelog": "修复无法正常识别是否为源码运行",
       "level": "stable",
