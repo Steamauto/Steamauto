@@ -19,10 +19,24 @@ SESSION_FOLDER = "session"
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 UU_ARG_FILE_PATH = "uu.txt"
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
-BUILD_INFO = "正在使用源码运行" if not hasattr(sys, "_MEIPASS") else "非官方二进制构建运行"
+BUILD_INFO = "正在使用源码运行"
+if BUILD_INFO == "正在使用源码运行":
+    if hasattr(sys, "_MEIPASS"):
+        BUILD_INFO = "非官方二进制构建运行"
 STEAM_ACCOUNT_NAME = "暂未登录"
 STEAM_64_ID = "暂未登录"
-INTERNAL_PLUGINS = ["buff_auto_accept_offer", "buff_auto_comment", "buff_profit_report", "buff_auto_on_sale", "uu_auto_accept_offer", "uu_auto_lease_item", "uu_auto_sell_item", "steam_auto_accept_offer", "ecosteam", "c5_auto_accept_offer"]
+INTERNAL_PLUGINS = [
+    "buff_auto_accept_offer",
+    "buff_auto_comment",
+    "buff_profit_report",
+    "buff_auto_on_sale",
+    "uu_auto_accept_offer",
+    "uu_auto_lease_item",
+    "uu_auto_sell_item",
+    "steam_auto_accept_offer",
+    "ecosteam",
+    "c5_auto_accept_offer",
+]
 
 DEFAULT_STEAM_ACCOUNT_JSON = """
 {
