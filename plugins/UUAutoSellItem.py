@@ -1,18 +1,18 @@
 import datetime
 import random
 import time
-from venv import logger
 
 import schedule
 
 import uuyoupinapi
-from utils.logger import PluginLogger, handle_caught_exception
+from utils.logger import PluginLogger, handle_caught_exception, logger
 from utils.notifier import send_notification
 from utils.tools import exit_code
 from utils.uu_helper import get_valid_token_for_uu
 
 # 将sale_price_cache从实例变量改为模块级变量
 sale_price_cache = {}
+
 
 class UUAutoSellItem:
     def __init__(self, steam_client, steam_client_mutex, config):
@@ -43,7 +43,6 @@ class UUAutoSellItem:
                 sale_price = sale_price_cache[item_id]["sale_price"]
                 self.logger.info(f"{commodity_name} 使用缓存结果，出售价格： {sale_price:.2f}")
                 return sale_price
-
 
         sale_price_rsp = self.uuyoupin.get_market_sale_list_with_abrade(item_id).json()
         if sale_price_rsp["Code"] == 0:
@@ -101,10 +100,7 @@ class UUAutoSellItem:
             rsp = self.uuyoupin.call_api(
                 "POST",
                 "/api/commodity/Inventory/SellInventoryWithLeaseV2",
-                data={
-                    "GameId": "730",  # Csgo
-                    "itemInfos": item_infos
-                },
+                data={"GameId": "730", "itemInfos": item_infos},  # Csgo
             ).json()
             if rsp["Code"] == 0:
                 success_count = len(item_infos)
@@ -204,8 +200,7 @@ class UUAutoSellItem:
                         handle_caught_exception(e, "UUAutoSellItem", known=True)
                         logger.error(f'获取 {short_name} 的市场价格失败: {e}，暂时跳过')
                         continue
-                        
-                    
+
                     if self.config['uu_auto_sell_item']['take_profile']:
                         self.logger.info(f"按{self.config['uu_auto_sell_item']['take_profile_ratio']:.2f}止盈率设置价格")
                         if buy_price > 0:
@@ -293,7 +288,7 @@ class UUAutoSellItem:
                         continue
 
                 sale_price = self.get_market_sale_price(item_id, good_name=short_name)
-                
+
                 if self.config['uu_auto_sell_item']['take_profile']:
                     self.logger.info(f"按{self.config['uu_auto_sell_item']['take_profile_ratio']:.2f}止盈率设置价格")
                     if buy_price > 0:
@@ -315,7 +310,7 @@ class UUAutoSellItem:
 
                 sale_item = {"CommodityId": asset_id, "IsCanLease": False, "IsCanSold": True, "Price": sale_price, "Remark": ""}
                 new_sale_item_list.append(sale_item)
-                
+
             self.logger.info(f"{len(new_sale_item_list)} 件物品可以更新出售价格")
             self.operate_sleep()
             self.change_sale_price(new_sale_item_list)
