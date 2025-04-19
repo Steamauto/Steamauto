@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.5.4",
+      "changelog": "解决悠悠uk失效后大量请求失败的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.5.4/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.5.4/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "52bc0563d50a943e1dcbf1166772a0cf8ab35b6d43f5e387fb7bed13dfce04d3",
+        "windows": "3b39c6fe46ff15a875a531b8f80746eeee61d3121b3684cf910cc5cbae48dce0"
+      }
+    },
+    {
       "version": "5.5.3",
       "changelog": "修复被错误识别为非官方二进制构建; 修复悠悠自动上架插件导入失败",
       "level": "stable",

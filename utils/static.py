@@ -4,7 +4,7 @@ import sys
 is_latest_version = False
 no_pause = False
 
-CURRENT_VERSION = "5.5.3"
+CURRENT_VERSION = "5.5.4"
 
 VERSION_FILE = "version.json"
 LOGS_FOLDER = "logs"
