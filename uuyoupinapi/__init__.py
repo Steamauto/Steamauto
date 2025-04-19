@@ -167,7 +167,7 @@ class UUAccount:
                     self.session.headers['uk'] = self.uk
                     self.uk_time = time.time()
                 else:
-                    if time.time() - self.uk_time > 300:
+                    if time.time() - self.uk_time > 30:
                         self.uk = cloud_service.get_uu_uk_from_cloud()
                         self.session.headers['uk'] = self.uk
                         self.uk_time = time.time()
@@ -195,12 +195,15 @@ class UUAccount:
 
             if json_output.get('code') == 84101:
                 raise Exception('登录状态失效，请重新登录')
+        elif response.status_code == 405:
+            logger.error('悠悠UK令牌失效，等待一分钟程序继续运行')
+            time.sleep(60)
         else:
             logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
             raise Exception(f"网络错误，或服务器被悠悠屏蔽！请求失败！")
 
         return response
-    
+
     def pre_change_lease_price_post(self, commodity_ids):
         rsp = self.call_api(
             "POST",
@@ -602,7 +605,7 @@ class UUAccount:
     #         data['maxAbrade'] = maxAbrade
 
     #     return self.call_api("POST", "/api/homepage/v2/detail/commodity/list/sell", data=data)
-    
+
     def get_market_sale_list_with_abrade(self, template_id: int, pageIndex: int = 1, pageSize: int = 10, minAbrade: float | None = None, maxAbrade: float | None = None):
         """
         获取市场上指定模板ID的销售物品列表，支持按磨损范围过滤。
@@ -630,8 +633,8 @@ class UUAccount:
             },
         )
 
-    def sell_items(self, assets: dict):
-        item_infos = [{"AssetId": asset, "Price": assets[asset], "Remark": None} for asset in assets.keys()]
+    def sell_items(self, assets: dict, remark=None):
+        item_infos = [{"AssetId": asset, "Price": assets[asset], "Remark": remark} for asset in assets.keys()]
         rsp = self.call_api(
             "POST",
             "/api/commodity/Inventory/SellInventoryWithLeaseV2",
@@ -671,7 +674,7 @@ class UUAccount:
             "/api/commodity/Commodity/PriceChangeWithLeaseV2",
             data={
                 "Commoditys": items,
-                "Sessionid": self.deviceToken, # 添加 Sessionid，参照 change_leased_price
+                "Sessionid": self.deviceToken,  # 添加 Sessionid，参照 change_leased_price
             },
         )
 
