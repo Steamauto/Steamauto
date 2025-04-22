@@ -246,7 +246,7 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
                 logger.error(f"接受报价号{tradeOfferId}失败！")
         if relogin:
             logger.info("已经更新登录会话，正在重试接受报价号" + tradeOfferId)
-            return accept_trade_offer(client, mutex, tradeOfferId, retry=True)
+            return accept_trade_offer(client, mutex, tradeOfferId, retry=True, desc=desc)
         send_notification(f'报价号：{tradeOfferId}\n{desc}', title='接受报价失败')
         return False
 
