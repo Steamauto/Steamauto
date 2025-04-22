@@ -1,6 +1,8 @@
 import os
 import sys
 
+from utils.build_info import info
+
 is_latest_version = False
 no_pause = False
 
@@ -19,7 +21,7 @@ SESSION_FOLDER = "session"
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 UU_ARG_FILE_PATH = "uu.txt"
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
-BUILD_INFO = "正在使用源码运行"
+BUILD_INFO = info
 if BUILD_INFO == "正在使用源码运行":
     if hasattr(sys, "_MEIPASS"):
         BUILD_INFO = "非官方二进制构建运行"
