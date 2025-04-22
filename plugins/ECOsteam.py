@@ -367,12 +367,14 @@ class ECOsteamPlugin:
                 time.sleep(0.3)
                 tradeOfferId = detail["TradeOfferId"]
                 goodsName = detail["GoodsName"]
+                sellingPrice = detail["SellingPrice"]
+                buyerNickName = detail["BuyerNickName"]
                 if not tradeOfferId:
                     accept_offer_logger.warning(f"商品{goodsName}无法获取到交易报价号(可能由于ECO服务器正在发送报价)，暂时跳过处理")
                     continue
                 if tradeOfferId not in self.ignored_offer:
                     accept_offer_logger.info(f"正在发货商品{goodsName}，报价号{tradeOfferId}...")
-                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, tradeOfferId, desc=f"发货平台：ECOsteam\n发货商品：{goodsName}"):
+                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, tradeOfferId, desc=f"发货平台：ECOsteam\n发货饰品：{goodsName}\n饰品价格：{sellingPrice}\n买家昵称：{buyerNickName}"):
                         accept_offer_logger.info(f"已经成功发货商品{goodsName}，报价号{tradeOfferId}")
                         self.ignored_offer.append(tradeOfferId)
                 else:
