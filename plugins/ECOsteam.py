@@ -367,7 +367,7 @@ class ECOsteamPlugin:
                 time.sleep(0.3)
                 tradeOfferId = detail["TradeOfferId"]
                 goodsName = detail["GoodsName"]
-                sellingPrice = detail["SellingPrice"]
+                sellingPrice = detail["TotalMoney"]
                 buyerNickName = detail["BuyerNickname"]
                 if not tradeOfferId:
                     accept_offer_logger.warning(f"商品{goodsName}无法获取到交易报价号(可能由于ECO服务器正在发送报价)，暂时跳过处理")
