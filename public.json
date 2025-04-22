@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.5.5",
+      "changelog": "修复了一些问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.5.5/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.5.5/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "e16c571bffa6e4f020c01131dbf9f9355d50eec7a4038b3a133808f093cad167",
+        "windows": "022d2802883a88c27677c03f4cc283e2e6c8a07509d4ac58fd157833790ec16b"
+      }
+    },
+    {
       "version": "5.5.4",
       "changelog": "解决悠悠uk失效后大量请求失败的问题",
       "level": "stable",
