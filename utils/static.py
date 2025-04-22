@@ -211,7 +211,7 @@ DEFAULT_CONFIG_JSON = r"""
     "take_profile_ratio": 0.1,
     // 自动上架每天定时运行时间
     "run_time": "15:30",
-    // 每隔多长时间重新上架一次（单位：分钟）
+    // 每隔多长时间重新请求市场并改价一次（单位：分钟）
     "sell_interval": 20,
     // 价格高于 max_on_sale_price 的物品不会上架，设置为0则不限制
     "max_on_sale_price": 1000,
