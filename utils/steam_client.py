@@ -220,8 +220,8 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
             return False
         relogin = False
         if isinstance(e, ValueError):
-            if 'substring not found' in str(e):
-                logger.warning(f'报价号 {tradeOfferId} 可能已经处理过，无需再次处理')
+            if 'Accepted' in str(e):
+                logger.warning(f'报价号 {tradeOfferId} 已经处理过，无需再次处理')
                 handle_caught_exception(e, "SteamClient", known=True)
                 return True
         if isinstance(e, steampy.exceptions.ConfirmationExpected) or isinstance(e, steampy.exceptions.InvalidCredentials):
