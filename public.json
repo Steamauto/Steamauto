@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.5.6",
+      "changelog": "修复有时错误判断报价状态导致卡报价",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.5.6/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.5.6/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "d508b7f01b68179ea6f1aeaff8c29132da997eee82d9e5f2b1d8bf2b95595ca9",
+        "windows": "f3c5d2fc02bb0dc0627902f43d6733449c7cd7e879eaff9e31f1a2f9b186b372"
+      }
+    },
+    {
       "version": "5.5.5",
       "changelog": "修复了一些问题",
       "level": "stable",
