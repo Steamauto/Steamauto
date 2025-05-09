@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.5.7",
+      "changelog": "修改接受报价的一些错误提示",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.5.7/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.5.7/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "6cfc43384c2723409ad647d90bfb700fcc721f2cdeada9555d88451d327f366e",
+        "windows": "f20092b4f7f01279fbbb46a22b1fb7ea35e570e69b1e5b21071f9fe6ead6f91f"
+      }
+    },
+    {
       "version": "5.5.6",
       "changelog": "修复有时错误判断报价状态导致卡报价",
       "level": "stable",
