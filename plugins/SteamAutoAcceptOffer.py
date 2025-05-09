@@ -2,8 +2,6 @@ import os
 import pickle
 import time
 
-import json5
-
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import SESSION_FOLDER
 
@@ -19,8 +17,6 @@ class SteamAutoAcceptOffer:
         return False
 
     def exec(self):
-        self.logger.info("Steam自动接受礼物报价插件已启动, 休眠30秒, 与其它插件错开运行时间")
-        time.sleep(30)
         while True:
             try:
                 with self.steam_client_mutex:
@@ -31,6 +27,7 @@ class SteamAutoAcceptOffer:
                         steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
                         with open(steam_session_path, "wb") as f:
                             pickle.dump(self.steam_client.session, f)
+                self.logger.info('正在检查待处理的交易报价...')
                 with self.steam_client_mutex:
                     trade_summary = self.steam_client.get_trade_offers(merge=False)["response"]
                 self.logger.info(f"检测到有{len(trade_summary['trade_offers_received'])}个待处理的交易报价")
