@@ -16,7 +16,7 @@ def get_valid_token_for_uu():
     if os.path.exists(UU_TOKEN_FILE_PATH):
         with open(UU_TOKEN_FILE_PATH, "r", encoding=get_encoding(UU_TOKEN_FILE_PATH)) as f:
             try:
-                token = f.read()
+                token = f.read().split()
                 uuyoupin = uuyoupinapi.UUAccount(token)
                 logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
                 return token
