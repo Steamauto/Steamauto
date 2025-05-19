@@ -62,7 +62,7 @@ def get_token_automatically():
         pass
     result = uuyoupinapi.UUAccount.send_login_sms_code(phone_number, token_id, headers=headers, uk=uk)
     response = {}
-    if result["Code"] != 5050 or not ('成功' in result.get('Msg', '')):
+    if '成功' in result.get('Msg', ''):
         logger.info("发送验证码结果：" + result["Msg"])
         sms_code = input(f"{Style.BRIGHT+Fore.RED}请输入验证码(如果此时有其它插件输出请忽略！输入完按回车即可！)：{Style.RESET_ALL}")
         response = uuyoupinapi.UUAccount.sms_sign_in(phone_number, sms_code, token_id, headers=headers)
