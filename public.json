@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.5.9",
+      "changelog": "修复悠悠无法获取缓存的token",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.5.9/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.5.9/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "6038139bdf63fae28879491bea8997f2f11aa1ade5fd4725f3d5928565c7e5d8",
+        "windows": "b1f2af5420d4ec292554621280d0326ef056ccd1325e76a71d1ca8d1848d09d9"
+      }
+    },
+    {
       "version": "5.5.8",
       "changelog": "修复悠悠发送验证码失败后不自动回退手动发送",
       "level": "stable",
