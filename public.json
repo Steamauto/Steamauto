@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.5.8",
+      "changelog": "修复悠悠发送验证码失败后不自动回退手动发送",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.5.8/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.5.8/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "ddb7fc2bb7cbf07ed8f10cc2592dc00a72afba320c29f23a318f735ad9e7c18f",
+        "windows": "d1a9a237e7f49187cf10bbe526cda974ed887fc0eaf69e601c39ca1db25c15e4"
+      }
+    },
+    {
       "version": "5.5.7",
       "changelog": "修改接受报价的一些错误提示",
       "level": "stable",
