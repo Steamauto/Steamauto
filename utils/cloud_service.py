@@ -4,6 +4,7 @@ import signal
 import sys
 import threading
 import time
+from urllib import response
 import uuid
 
 import requests
@@ -77,7 +78,11 @@ def compare_version(ver1, ver2):
 
 def get_uu_uk_from_cloud():
     try:
-        data = session.get('https://steamauto.jiajiaxd.com/tools/getUUuk').json()
+        logger.debug('正在尝试从云服务获取UK...')
+        response = session.get('https://steamauto.jiajiaxd.com/tools/getUUuk')
+        response.raise_for_status()
+        logger.debug('服务器的响应: %s', response.text)
+        data = response.json()
         return data['uk']
     except Exception as e:
         handle_caught_exception(e, known=True)
