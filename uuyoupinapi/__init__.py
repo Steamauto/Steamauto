@@ -162,19 +162,30 @@ class UUAccount:
             try:
                 from utils import cloud_service
 
-                if not hasattr(self, 'uk'):
-                    self.uk = cloud_service.get_uu_uk_from_cloud()
-                    self.session.headers['uk'] = self.uk
-                    self.uk_time = time.time()
-                else:
-                    if time.time() - self.uk_time > 30:
-                        self.uk = cloud_service.get_uu_uk_from_cloud()
-                        self.session.headers['uk'] = self.uk
+                if not hasattr(self, 'uk') or not hasattr(self, 'uk_time') or (time.time() - self.uk_time > 30):
+                    if not hasattr(self, 'uk'):
+                        logger.debug('UK缓存不存在，尝试从云服务获取悠悠校验参数...')
+                    else: 
+                        logger.debug('UK缓存已过期或时间戳无效，尝试从云服务获取悠悠校验参数...')
+                    
+                    fetched_uk = cloud_service.get_uu_uk_from_cloud()
+                    if fetched_uk:
+                        self.uk = fetched_uk
                         self.uk_time = time.time()
-                    else:
                         self.session.headers['uk'] = self.uk
-            except:
-                logger.warning('无法从云服务获取悠悠校验参数，程序可能会出现运行错误')
+                        logger.debug(f'获取悠悠校验参数成功，已缓存。下次刷新时间: {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.uk_time + 30))}')
+                    else:
+                        logger.error('从云服务获取悠悠校验参数失败。本次请求将使用随机生成的UK，且不进行缓存')
+                        self.session.headers['uk'] = generate_random_string(65)
+                else:
+                    self.session.headers['uk'] = self.uk
+                    logger.debug('使用已缓存的有效悠悠校验参数')
+            
+            except ImportError:
+                logger.warning('无法启用云服务，尝试使用随机生成的UK')
+                self.session.headers['uk'] = generate_random_string(65)
+            except Exception as e:
+                logger.warning(f'获取或处理悠悠校验参数时发生错误: {e}。本次请求将使用随机生成的UK，且不进行缓存')
                 self.session.headers['uk'] = generate_random_string(65)
 
         if method == "GET":
