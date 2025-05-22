@@ -3,7 +3,7 @@ name: Generate Config HTML
 on:
   push:
     branches:
-      - main # Or your primary development branch
+      - *
     paths:
       - 'scripts/generate_config_html.py'
       - 'utils/static.py' # Where DEFAULT_CONFIG_TOML is defined
@@ -47,9 +47,9 @@ jobs:
           commit_user_email: 'github-actions[bot]@users.noreply.github.com'
           # The 'commit_author' field is often set to the committer by default if not specified,
           # but explicitly setting it ensures consistency.
-          # The format <github-actions[bot]@users.noreply.github.com> is usually implied by commit_user_email.
+          # The format users.noreply.github.com> is usually implied by commit_user_email.
           # For clarity, using the format specified in the prompt for the author as well.
-          commit_author: 'github-actions[bot] <github-actions[bot]@users.noreply.github.com>'
+          commit_author: 'github-actions[bot] users.noreply.github.com>'
           # Optional: Add a PGP key for signed commits if needed
           # signing_key: ${{ secrets.YOUR_GPG_SIGNING_KEY }}
           # push_options: '--force' # Use with caution
