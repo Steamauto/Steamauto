@@ -7,7 +7,6 @@ import requests
 
 from utils.logger import PluginLogger
 from uuyoupinapi import models
-from uuyoupinapi.models import Asset, LeaseAsset, UUMarketLeaseItem
 
 logger = PluginLogger("uuyoupinapi")
 
@@ -179,7 +178,7 @@ class UUAccount:
                         self.session.headers['uk'] = generate_random_string(65)
                 else:
                     self.session.headers['uk'] = self.uk
-                    logger.debug('使用已缓存的有效悠悠校验参数')
+                    logger.debug('使用已缓存的悠悠校验参数，下次刷新时间: ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.uk_time + 30)))
             
             except ImportError:
                 logger.warning('无法启用云服务，尝试使用随机生成的UK')
@@ -228,7 +227,7 @@ class UUAccount:
         ).json()
         return
 
-    def change_leased_price(self, items: list[LeaseAsset], compensation_type=0):
+    def change_leased_price(self, items: list[models.LeaseAsset], compensation_type=0):
         '''
         请求范例：
         {
@@ -490,12 +489,12 @@ class UUAccount:
                 logger.error(f"上架物品 {asset['AssetId']}(AssetId) 失败，原因：{asset['Remark']}")
         return success_count
 
-    def get_uu_leased_inventory(self, pageIndex=1, pageSize=100) -> list[LeaseAsset]:
+    def get_uu_leased_inventory(self, pageIndex=1, pageSize=100) -> list[models.LeaseAsset]:
         new_leased_inventory_list = self.get_one_channel_leased_inventory("/api/youpin/bff/new/commodity/v1/commodity/list/lease", pageIndex, pageSize)
         zero_leased_inventory_list = self.get_one_channel_leased_inventory("/api/youpin/bff/new/commodity/v1/commodity/list/zeroCDLease", pageIndex, pageSize)
         return new_leased_inventory_list + zero_leased_inventory_list
 
-    def get_one_channel_leased_inventory(self, path, pageIndex=1, pageSize=100) -> list[LeaseAsset]:
+    def get_one_channel_leased_inventory(self, path, pageIndex=1, pageSize=100) -> list[models.LeaseAsset]:
         rsp = self.call_api(
             "POST",
             path,
@@ -510,7 +509,7 @@ class UUAccount:
         if rsp['code'] == 0:
             for item in rsp["data"]["commodityInfoList"]:
                 leased_inventory_list.append(
-                    LeaseAsset(
+                    models.LeaseAsset(
                         assetid=str(item['steamAssetId']),
                         templateid=item['templateId'],
                         short_name=item['name'],
@@ -557,7 +556,7 @@ class UUAccount:
 
         return inventory_list
 
-    def get_market_lease_price(self, template_id: int, min_price=0, max_price=20000, cnt=15, sortTypeKey='LEASE_DEFAULT') -> list[UUMarketLeaseItem]:
+    def get_market_lease_price(self, template_id: int, min_price=0, max_price=20000, cnt=15, sortTypeKey='LEASE_DEFAULT') -> list[models.UUMarketLeaseItem]:
         rsp = self.call_api(
             "POST",
             "/api/homepage/v3/detail/commodity/list/lease",
@@ -589,7 +588,7 @@ class UUAccount:
                 item = rsp_list[i]
                 if item["LeaseDeposit"] and min_price < float(item["LeaseDeposit"]) < max_price:
                     lease_list.append(
-                        UUMarketLeaseItem(
+                        models.UUMarketLeaseItem(
                             LeaseUnitPrice=item["LeaseUnitPrice"] if item["LeaseUnitPrice"] else None,
                             LongLeaseUnitPrice=item["LongLeaseUnitPrice"] if item["LongLeaseUnitPrice"] else None,
                             LeaseDeposit=item["LeaseDeposit"] if item["LeaseDeposit"] else None,
@@ -689,7 +688,7 @@ class UUAccount:
             },
         )
 
-    def onshelf_sell_and_lease(self, sell_assets: list[Asset] = [], lease_assets: list[LeaseAsset] = []):
+    def onshelf_sell_and_lease(self, sell_assets: list[models.Asset] = [], lease_assets: list[models.LeaseAsset] = []):
         '''
         请求范例：
         {
@@ -826,7 +825,7 @@ class UUAccount:
         failure_count = len(item_infos) - success_count
         return success_count, failure_count
 
-    def change_price_sell_and_lease(self, sell_assets: list[Asset] = [], lease_assets: list[LeaseAsset] = []):
+    def change_price_sell_and_lease(self, sell_assets: list[models.Asset] = [], lease_assets: list[models.LeaseAsset] = []):
         '''
         请求示例：
         {
