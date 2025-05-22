@@ -2,12 +2,6 @@ name: Generate Config HTML
 
 on:
   push:
-    branches:
-      - *
-    paths:
-      - 'scripts/generate_config_html.py'
-      - 'utils/static.py' # Where DEFAULT_CONFIG_TOML is defined
-      - '.github/workflows/generate_config_html.yml' # To allow the workflow to update itself
 
 jobs:
   generate:
