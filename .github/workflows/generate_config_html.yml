@@ -50,5 +50,3 @@ jobs:
           # skip_dirty_check: false # Default is false, ensures only changed files are committed
           # skip_fetch: true # Default is true, action does not fetch before committing
           # skip_checkout: true # Default is true, action does not checkout before committing (assumes previous checkout step)
-
-```
