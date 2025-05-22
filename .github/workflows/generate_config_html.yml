@@ -1,0 +1,60 @@
+name: Generate Config HTML
+
+on:
+  push:
+    branches:
+      - main # Or your primary development branch
+    paths:
+      - 'scripts/generate_config_html.py'
+      - 'utils/static.py' # Where DEFAULT_CONFIG_TOML is defined
+      - '.github/workflows/generate_config_html.yml' # To allow the workflow to update itself
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Grant GITHUB_TOKEN permissions to write to the repository.
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10' 
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install toml
+          # If generate_config_html.py requires other packages from requirements.txt in the future,
+          # consider adding: pip install -r requirements.txt (if applicable and requirements.txt exists)
+
+      - name: Generate config.html
+        run: python scripts/generate_config_html.py
+
+      - name: Commit and push if changed
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'Docs: Auto-generate/update config.html'
+          branch: main # Ensure this matches your repository's default branch
+          # Optional: Specify a custom repository if the action runs in a different repo context (not needed here)
+          # repository: '.' 
+          file_pattern: 'pages/config.html' # Only commit this file if it changed
+          commit_user_name: 'github-actions[bot]'
+          commit_user_email: 'github-actions[bot]@users.noreply.github.com'
+          # The 'commit_author' field is often set to the committer by default if not specified,
+          # but explicitly setting it ensures consistency.
+          # The format <github-actions[bot]@users.noreply.github.com> is usually implied by commit_user_email.
+          # For clarity, using the format specified in the prompt for the author as well.
+          commit_author: 'github-actions[bot] <github-actions[bot]@users.noreply.github.com>'
+          # Optional: Add a PGP key for signed commits if needed
+          # signing_key: ${{ secrets.YOUR_GPG_SIGNING_KEY }}
+          # push_options: '--force' # Use with caution
+          # skip_dirty_check: false # Default is false, ensures only changed files are committed
+          # skip_fetch: true # Default is true, action does not fetch before committing
+          # skip_checkout: true # Default is true, action does not checkout before committing (assumes previous checkout step)
+
+```

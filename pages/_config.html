@@ -101,6 +101,18 @@
                 <option value="true">是</option>
             </select>
         </div>
+        <div class="mb-3">
+            <label class="form-label">源码运行时是否自动更新程序</label>
+            <select class="form-select" id="source_code_auto_update">
+                <option value="false" selected>否</option>
+                <option value="true">是</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">插件白名单（每行一个插件名，用于防止自动更新覆盖本地修改）</label>
+            <textarea class="form-control" id="plugin_whitelist" rows="3" placeholder="plugin_name_one
+plugin_name_two"></textarea>
+        </div>
         <div class="accordion" id="configAccordion">
             <!-- BUFF 自动发货插件配置 -->
             <div class="accordion-item">
@@ -479,6 +491,37 @@ Steam单价(参考): {steam_price_cny} RMB
                 </div>
             </div>
 
+            <!-- C5 自动发货插件配置 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingC5AutoAcceptOffer">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseC5AutoAcceptOffer" aria-expanded="false"
+                        aria-controls="collapseC5AutoAcceptOffer">
+                        C5 自动发货插件配置
+                    </button>
+                </h2>
+                <div id="collapseC5AutoAcceptOffer" class="accordion-collapse collapse"
+                    aria-labelledby="headingC5AutoAcceptOffer" data-bs-parent="#configAccordion">
+                    <div class="accordion-body">
+                        <div class="mb-3">
+                            <label class="form-label">是否启用 C5 自动发货功能</label>
+                            <select class="form-select" id="c5_auto_accept_offer_enable">
+                                <option value="false" selected>否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">检查新报价的间隔（秒）</label>
+                            <input type="number" class="form-control" id="c5_auto_accept_offer_interval" value="30">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">C5 AppKey</label>
+                            <input type="text" class="form-control" id="c5_auto_accept_offer_app_key" placeholder="C5Game AppKey">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ECOSteam 插件配置 -->
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingEcoSteam">
@@ -649,6 +692,8 @@ Steam单价(参考): {steam_price_cny} RMB
                 };
             }
             config.no_pause = JSON.parse(document.getElementById('no_pause').value);
+            config.source_code_auto_update = JSON.parse(document.getElementById('source_code_auto_update').value);
+            config.plugin_whitelist = document.getElementById('plugin_whitelist').value.split('\n').map(line => line.trim()).filter(line => line !== '');
 
             // BUFF 自动发货插件配置
             config.buff_auto_accept_offer = {
@@ -697,6 +742,13 @@ Steam单价(参考): {steam_price_cny} RMB
                     title: document.getElementById('on_sale_notification_title').value,
                     body: document.getElementById('on_sale_notification_body').value
                 }
+            };
+
+            // C5 自动发货插件配置
+            config.c5_auto_accept_offer = {
+                enable: JSON.parse(document.getElementById('c5_auto_accept_offer_enable').value),
+                interval: parseInt(document.getElementById('c5_auto_accept_offer_interval').value),
+                app_key: document.getElementById('c5_auto_accept_offer_app_key').value
             };
 
             // Steam 自动接受礼物报价插件配置

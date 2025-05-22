@@ -1,8 +1,4 @@
-import os
-import random
-import re
-
-import chardet
+import os # Retained for pause, though not strictly necessary for the remaining functions.
 from apscheduler.job import Job
 
 from utils.logger import logger
@@ -33,36 +29,21 @@ class jobHandler:
     @staticmethod
     def terminate_all():
         global jobs
-        for job in jobs:
-            job.pause()
-            job.remove()
-            del jobs[jobs.index(job)]
-
-
-# 用于解决读取文件时的编码问题
-def get_encoding(file_path):
-    if not os.path.exists(file_path):
-        return "utf-8"
-    with open(file_path, "rb") as f:
-        data = f.read()
-        charset = chardet.detect(data)["encoding"]
-    return charset
+        # Iterate safely for removal
+        for job in list(jobs): # Create a copy for iteration
+            try:
+                job.pause()
+                job.remove()
+                if job in jobs: # Check if still present before removing
+                    jobs.remove(job)
+            except Exception as e:
+                logger.error(f"终止任务 {job} 时出错: {e}")
 
 
 def pause():
     if not static.no_pause:
         logger.info("点击回车键继续...")
         input()
-
-
-def calculate_sha256(file_path: str) -> str:
-    import hashlib
-
-    hash_sha256 = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            hash_sha256.update(chunk)
-    return hash_sha256.hexdigest()
 
 
 def compare_version(ver1, ver2):
@@ -79,26 +60,3 @@ def compare_version(ver1, ver2):
             return 1
 
     return 0
-
-
-class accelerator:
-    def __call__(self, r):
-        domain_list = [
-            "steamcommunity-a.akamaihd.net",
-        ]
-        match = re.search(r"(https?://)([^/\s]+)", r.url)
-        if match:
-            domain = match.group(2)
-            r.headers["Host"] = domain
-            r.url = re.sub(r"(https?://)([^/\s]+)(.*)", r"\1" + random.choice(domain_list) + r"\3", r.url)
-        return r
-
-
-def is_subsequence(s, t):
-    t_index = 0
-    s_index = 0
-    while t_index < len(t) and s_index < len(s):
-        if s[s_index] == t[t_index]:
-            s_index += 1
-        t_index += 1
-    return s_index == len(s)
