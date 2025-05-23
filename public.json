@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.6.0",
+      "changelog": "优化悠悠有品相关功能",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.6.0/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.6.0/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "c2619271359dd90df126bb3c761f675753a05838c249d2bca9add8f350c56b85",
+        "windows": "43c64233ac1854b4f836cf5210f473c35789de070a5d3de76c7b873b89658b37"
+      }
+    },
+    {
       "version": "5.5.9",
       "changelog": "修复悠悠无法获取缓存的token",
       "level": "stable",
