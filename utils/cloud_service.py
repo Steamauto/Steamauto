@@ -77,17 +77,19 @@ def compare_version(ver1, ver2):
 
 
 def get_uu_uk_from_cloud():
-    try:
-        logger.debug('正在尝试从云服务获取UK...')
-        response = session.get('https://steamauto.jiajiaxd.com/tools/getUUuk')
-        response.raise_for_status()
-        logger.debug('服务器的响应: %s', response.text)
-        data = response.json()
-        return data['uk']
-    except Exception as e:
-        handle_caught_exception(e, known=True)
-        logger.warning('云服务异常，无法获取UK，将使用默认配置')
-        return ''
+    logger.debug('正在尝试从云服务获取UK...')
+    for i in range(3):
+        try:
+            response = session.get('https://steamauto.jiajiaxd.com/tools/getUUuk', timeout=5)
+            response.raise_for_status()
+            logger.debug('服务器的响应: %s', response.text)
+            data = response.json()
+            return data['uk']
+        except Exception as e:
+            logger.warning('云服务异常，无法获取UK，可能会导致悠悠某些功能无法正常使用')
+            handle_caught_exception(e, known=True)
+    return ''
+    return data['uk']
 
 
 def parseBroadcastMessage(message):
