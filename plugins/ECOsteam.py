@@ -190,10 +190,14 @@ class tasks:
             logger.info(f'即将向出售货架上架 {len(self.sell_queue)} 个商品')
             logger.info(f'即将向租赁货架上架 {len(self.lease_queue)} 个商品')
             success_count, failure_count = 0, 0
-            if isinstance(self.client, ECOsteamClient):
-                success_count, failure_count = self.client.PublishRentAndSaleGoods(self.steamid, 1, self.sell_queue, self.lease_queue)
-            elif isinstance(self.client, UUAccount):
-                success_count, failure_count = self.client.onshelf_sell_and_lease(self.sell_queue, self.lease_queue)
+            try:
+                if isinstance(self.client, ECOsteamClient):
+                    success_count, failure_count = self.client.PublishRentAndSaleGoods(self.steamid, 1, self.sell_queue, self.lease_queue)
+                elif isinstance(self.client, UUAccount):
+                    success_count, failure_count = self.client.onshelf_sell_and_lease(self.sell_queue, self.lease_queue)
+            except Exception as e:
+                handle_caught_exception(e, known=False)
+                logger.error(f'上架过程发生错误，错误信息：{e}')
             self.sell_queue = []
             self.sell_change_queue = []
             if failure_count != 0:
