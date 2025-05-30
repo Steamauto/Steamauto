@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.6.1",
+      "changelog": "修复Steam库存获取异常",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.6.1/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.6.1/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "a7b4096616d4cdf3ebbb3a5835ee0b84cf8cf1cb095760f9a2b0d0c93eb5cc39",
+        "windows": "a280ded7ce8409c17e44681769d5b5dbd3ced5de9fbe330c74437887ae0c0af7"
+      }
+    },
+    {
       "version": "5.6.0",
       "changelog": "优化悠悠有品相关功能",
       "level": "stable",
