@@ -162,5 +162,3 @@ pip install urllib3==1.25.11
 感谢 devgod, 14m0k(QQ群用户) 在开发供应求购订单功能时的巨大帮助！
 
 感谢 [1Password](https://1password.com/) 为开源项目提供免费的 [1Password](https://1password.com/) 团队账户的授权
-
-[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
