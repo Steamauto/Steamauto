@@ -18,3 +18,37 @@ launch.json
 .conda
 plugins/_*
 plugins/*External*
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.tox/
+.nox/
+
+# Claude
+.claude/*
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# Package manager
+# Note: Don't ignore poetry.lock or uv.lock
+dist/
+*.egg-info/
+.eggs/

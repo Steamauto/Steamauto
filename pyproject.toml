@@ -1,0 +1,122 @@
+[tool.poetry]
+name = "steamauto"
+version = "0.1.0"
+description = "Steam automation tools"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.31.0"
+apprise = "^1.7.1"
+colorama = "^0.4.6"
+colorlog = "^6.8.0"
+json5 = "^0.9.14"
+beautifulsoup4 = "^4.12.2"
+chardet = "^5.2.0"
+rsa = "^4.9"
+qrcode = {extras = ["pil"], version = "^7.4.2"}
+qrcode-terminal = "^0.8"
+pycryptodome = "^3.19.0"
+apscheduler = "^3.10.4"
+protobuf = "^4.25.1"
+pysocks = "^1.7.1"
+schedule = "^1.2.0"
+numpy = "^1.24.4"
+pytz = "^2023.3"
+pydantic = "^2.5.2"
+requests-toolbelt = "^1.0.0"
+tqdm = "^4.66.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.12.0"
+
+[tool.poetry.scripts]
+test = "pytest:main"
+tests = "pytest:main"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+    "--cov=steampy",
+    "--cov=utils", 
+    "--cov=plugins",
+    "--cov=BuffApi",
+    "--cov=PyC5Game",
+    "--cov=PyECOsteam",
+    "--cov=uuyoupinapi",
+    "--cov-branch",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=80",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests", 
+    "slow: Tests that take a long time to run",
+]
+
+[tool.coverage.run]
+source = [
+    "steampy",
+    "utils",
+    "plugins", 
+    "BuffApi",
+    "PyC5Game",
+    "PyECOsteam",
+    "uuyoupinapi",
+]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+    "*/env/*",
+    "*/.env/*",
+    "*/build/*",
+    "*/dist/*",
+    "*/.tox/*",
+    "*/.coverage/*",
+    "*/htmlcov/*",
+    "*/.pytest_cache/*",
+    "*/migrations/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+precision = 2
+show_missing = true
+skip_covered = true
+skip_empty = true
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
