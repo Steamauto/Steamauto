@@ -59,6 +59,7 @@ jobs:
           path: |
             utils/static.py
             public.json
+          retention-days: 3
 
   build:
     needs: prepare
@@ -117,6 +118,7 @@ jobs:
         with:
           name: binaries-${{ matrix.os }}
           path: dist/
+          retention-days: 3
 
   publish:
     needs: [prepare, build]

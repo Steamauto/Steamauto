@@ -50,6 +50,7 @@ jobs:
         with:
           name: ${{ matrix.os }}-dist
           path: dist
+          retention-days: 3
   Publish:
     needs: Build
     runs-on: ubuntu-latest
