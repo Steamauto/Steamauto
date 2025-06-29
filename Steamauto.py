@@ -123,6 +123,10 @@ def get_plugins_folder():
             for plugin in plugins:
                 plugin_absolute = os.path.join(sys._MEIPASS, PLUGIN_FOLDER, plugin)
                 local_plugin_absolute = os.path.join(base_path, PLUGIN_FOLDER, plugin)
+                if os.path.isdir(plugin_absolute):
+                    continue
+                if os.path.isdir(local_plugin_absolute):
+                    continue
                 if not os.path.exists(local_plugin_absolute):
                     shutil.copy(plugin_absolute, local_plugin_absolute)
                 else:
