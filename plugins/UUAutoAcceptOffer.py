@@ -32,7 +32,7 @@ class UUAutoAcceptOffer:
             return 1
         else:
             uuyoupin = uuyoupinapi.UUAccount(token)
-        ignored_offer = []
+        ignored_offer = {}
         interval = self.config["uu_auto_accept_offer"]["interval"]
         if uuyoupin is not None:
             while True:
@@ -48,11 +48,12 @@ class UUAutoAcceptOffer:
                             self.logger.info(f"正在接受悠悠有品待发货报价, 商品名: {item['item_name']}, " f"报价ID: {item['offer_id']}")
                             if item["offer_id"] is None:
                                 self.logger.warning("此订单为需要手动发货(或异常)的订单, 不能自动处理, 跳过此订单! ")
-                            elif item["offer_id"] in ignored_offer:
-                                self.logger.info("此交易报价已经被Steamauto处理过, 出现此提示的原因" "是悠悠系统延迟或者该订单为批量购买订单.这不是一个报错!")
+                            elif item["offer_id"] in ignored_offer and ignored_offer[item["offer_id"]] <= 10:
+                                self.logger.info("此交易报价已经被Steamauto处理过, 出现此提示的原因是悠悠系统延迟或者该订单为批量购买订单.这不是一个报错!")
+                                ignored_offer[item["offer_id"]] += 1
                             else:
                                 if accept_trade_offer(self.steam_client, self.steam_client_mutex, str(item["offer_id"]), desc="发货平台：悠悠有品"):
-                                    ignored_offer.append(item["offer_id"])
+                                    ignored_offer[str(item["offer_id"])] = 1
                                     self.logger.info(f'接受报价[{str(item["offer_id"])}]完成!')
                                     accepted = True
                             if (uu_wait_deliver_list.index(item) != len_uu_wait_deliver_list - 1) and accepted:
