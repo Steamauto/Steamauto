@@ -118,6 +118,23 @@ class LoginExecutor:
                 auth=token.params.auth,
                 steamid=auth_session.steamid,
             )
+        self._acknowledge_new_trade()
+
+    def _acknowledge_new_trade(self) -> str:
+        url = 'https://steamcommunity.com/trade/new/acknowledge'
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Accept': '*/*',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Referer': 'https://steamcommunity.com/trade/new',
+        }
+        payload = {
+            'sessionid': self.session.cookies.get_dict('steamcommunity.com')['sessionid'],
+            'message': 1
+        }
+        resp = self.session.post(url, headers=headers, data=payload, timeout=15)
+        resp.raise_for_status()
+        return resp.text
 
     def _refresh_cookies_with_refresh_token(self, steamid: str, refresh_token: str):
         post_data = {
