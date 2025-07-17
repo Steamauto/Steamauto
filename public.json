@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.6.3",
+      "changelog": "自动确认更新后的防盗提示",
+      "level": "stable",
+      "significance": "important",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.6.3/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.6.3/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "1b2a62db908fd420d8fbf79c4a10673d0ba5002883ac6084993fc3741c86bd84",
+        "windows": "f529979fbcab20f2c43e399a722f0dcf237b85cf6890cc0755f07d29721ad8ec"
+      }
+    },
+    {
       "version": "5.6.2",
       "changelog": "BUFF自动发货支持多Steam账号; 修复了plugins文件夹内有文件夹会导致程序无法正常启动; 修复了悠悠有品在特定情况下无法发货的bug",
       "level": "stable",
