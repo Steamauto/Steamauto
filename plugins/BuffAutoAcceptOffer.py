@@ -102,7 +102,7 @@ class BuffAutoAcceptOffer:
             exit_code.set(1)
             return 1
 
-        logger.info(f"已经登录至BUFF 用户名: {user_info["nickname"]}")
+        logger.info(f"已经登录至BUFF 用户名: {user_info['nickname']}")
         if not user_info['force_buyer_send_offer']:
             logger.warning("当前账号未开启只允许买家发起报价功能，正在自动开启...")
             self.require_buyer_send_offer()
