@@ -335,3 +335,13 @@ class ECOsteamClient:
                         success_count += 1
         failure_count = len(assets) - success_count
         return success_count, failure_count
+
+    def SellerSendOffer(self ,OrderNum, GameId=730):
+        """
+        卖家订单发送报价
+
+        :param OrderNum: 订单号
+        :param GameId: 游戏ID,默认为CSGO
+        :return:
+        """
+        return self.post("/Api/open/order/SellerSendOffer", {"OrderNum": OrderNum, "GameId": GameId})

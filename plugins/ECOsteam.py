@@ -364,8 +364,14 @@ class ECOsteamPlugin:
         if len(wait_deliver_orders) > 0:
             for order in wait_deliver_orders:
                 if '等待发送报价' in order.get('CancelReason', ''):
-                    accept_offer_logger.warning(f"订单号{order['OrderNum']}等待发送报价，暂时跳过处理")
-                    continue
+                    logger.info(f'检测到订单{order["OrderNum"]}未发送报价，正在发送报价...')
+                    try:
+                        self.client.SellerSendOffer(OrderNum=order["OrderNum"], GameId=730)
+                        accept_offer_logger.info(f"订单{order['OrderNum']}报价发送成功！")
+                    except Exception as e:
+                        handle_caught_exception(e, "ECOsteam.cn")
+                        accept_offer_logger.error(f"订单{order['OrderNum']}报价发送失败！请稍候再试！")
+                        continue                    
                 accept_offer_logger.debug(f'正在获取订单号{order["OrderNum"]}的详情！')
                 detail = self.client.GetSellerOrderDetail(OrderNum=order["OrderNum"]).json()["ResultData"]
                 time.sleep(0.3)
