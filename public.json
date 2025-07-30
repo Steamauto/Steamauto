@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.6.4",
+      "changelog": "ECO自动发货：未发送报价订单自动发送; 修复BUFF自动发货插件SyntaxError",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.6.4/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.6.4/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "4b04e8faa556992c243957b0632059c815a94aba6c897986fe8d1ee6cddc38dc",
+        "windows": "6fc87edd471a7014e51652882c8ba587b7e92dd0ce0dfc328d6ef7c8c067fd58"
+      }
+    },
+    {
       "version": "5.6.3",
       "changelog": "自动确认更新后的防盗提示",
       "level": "stable",
