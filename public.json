@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.6.5",
+      "changelog": "提供更稳定的Steam登录体验：为steampy增加refreshToken登录的支持; 更改登录信息缓存的方式",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.6.5/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.6.5/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "31e85bc02e1bc3107fc526150df2865b3bb773f7ff4cf1de3dbae196ef6d72da",
+        "windows": "b5763452839999b9e01af2a68e740b9440af8529b2f0b61fec29aceeb0569873"
+      }
+    },
+    {
       "version": "5.6.4",
       "changelog": "ECO自动发货：未发送报价订单自动发送; 修复BUFF自动发货插件SyntaxError",
       "level": "stable",
