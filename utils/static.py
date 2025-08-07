@@ -18,6 +18,7 @@ UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token.txt")
 STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
 STEAM_INVENTORY_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_inventory.json5")
 SESSION_FOLDER = "session"
+os.makedirs(SESSION_FOLDER, exist_ok=True)
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 UU_ARG_FILE_PATH = "uu.txt"
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")

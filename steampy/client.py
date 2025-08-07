@@ -47,13 +47,10 @@ class SteamClient:
         self._password = password
         self.market = SteamMarket(self._session)
         self.chat = SteamChat(self._session)
+        self.steamid = None
+        self.refreshToken = None
         if proxies:
             self._session.proxies = proxies
-            # try:
-            #     self._session.get(SteamUrl.COMMUNITY_URL)
-            # except (requests.exceptions.ConnectionError, TimeoutError) as e:
-            #     print("Proxy connection error: {}".format(e))
-            # print("Using proxies: {}".format(proxies))
 
     @login_required
     def get_steam64id_from_cookies(self):
@@ -68,7 +65,7 @@ class SteamClient:
         steam_guard,
         get_email_on_time_code_func: callable = None,
         func_2fa_input: callable = None,
-    ) -> None:
+    ):
         guard.try_to_get_time_delta_from_steam(self._session)
         self.steam_guard = guard.load_steam_guard(steam_guard) # self.steam_guard是Dict类型
         self.username = username
@@ -79,15 +76,40 @@ class SteamClient:
         self.was_login_executed = True
         self.update_access_token()
         self.market._set_login_executed(self.steam_guard, self._get_session_id())
-
+        self.steamid = self.get_steam64id_from_cookies()
+        self.refreshToken = self._session.cookies.get_dict().get('steamRefresh_steam')
+        if self.refreshToken:
+            self.refreshToken = self.refreshToken.split('%7C%7C')[1]
+            return {'steamid': self.steamid, 'refresh_token': self.refreshToken}
+            
+    def loginByRefreshToken(self, refresh_token: str, steamid: str, steam_guard):
+        self.steamid = steamid
+        self.refreshToken = refresh_token
+        guard.try_to_get_time_delta_from_steam(self._session)
+        self.steam_guard = guard.load_steam_guard(steam_guard)
+        post_url = 'https://api.steampowered.com/IAuthenticationService/GenerateAccessTokenForApp/v1/'
+        post_data = {'steamid': steamid, 'refresh_token': refresh_token}
+        response = self._session.post(post_url, data=post_data, allow_redirects=False, timeout=20)
+        while response.status_code == 302:
+            response = self._session.post(response.headers['Location'], data=post_data, allow_redirects=False, timeout=20)
+        access_token = response.json()['response']['access_token']
+        steam_login_secure = str(steamid) + '%7C%7C' + str(access_token)
+        self._session.cookies.set('steamLoginSecure', steam_login_secure, domain='steamcommunity.com')
+        self._session.cookies.set('steamLoginSecure', steam_login_secure, domain='steampowered.com')
+        self._session.cookies.set('steamRefresh_steam', refresh_token, domain='steamcommunity.com')
+        self.was_login_executed = True
+        self._session.get(SteamUrl.COMMUNITY_URL + '/my')
+        self.market._set_login_executed(self.steam_guard, self._get_session_id())
+        return self.is_access_token_valid()
+        
     @login_required
     def relogin(self):
         self._session.cookies.clear()
-        self.login(self.username, self._password, self.steam_guard)
+        return self.login(self.username, self._password, self.steam_guard)
 
     def update_access_token(self):
         try:
-            refresh_token = self._session.cookies.get_dict().get('steamRefresh_steam')
+            refresh_token = self.refreshToken
             steam_id = refresh_token.split('%7C%7C')[0]
             refresh = refresh_token.split('%7C%7C')[1]
             post_url = 'https://api.steampowered.com/IAuthenticationService/GenerateAccessTokenForApp/v1/'
@@ -124,18 +146,17 @@ class SteamClient:
     @login_required
     def is_session_alive(self):
         guard.try_to_get_time_delta_from_steam(self._session)
-        if not self.is_username_in_community():
+        if not self.is_access_token_valid():
             try:
                 self.update_access_token()
-                return self.is_username_in_community()
+                return self.is_access_token_valid()
             except:
                 return False
         return True
 
-    def is_username_in_community(self) -> bool:
-        steam_login = self.username
-        main_page_response = self._session.get(SteamUrl.COMMUNITY_URL, timeout=20)
-        return steam_login.lower() in main_page_response.text.lower()
+    def is_access_token_valid(self) -> bool:
+        main_page_response = self._session.get(SteamUrl.COMMUNITY_URL + r'/login/home/?goto=%2Fmy%2Fgoto', timeout=20, allow_redirects=False)
+        return main_page_response.status_code == 302
 
     def api_call(
         self, request_method: str, interface: str, api_method: str, version: str, params: dict = None
