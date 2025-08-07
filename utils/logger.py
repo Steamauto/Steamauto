@@ -145,8 +145,6 @@ def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False)
         plogger.error(str(e))
     elif isinstance(e, ConfirmationExpected):
         plogger.error("Steam Session已经过期, 请删除session文件夹并重启Steamauto")
-    # elif isinstance(e, ValueError):
-    #     plogger.error("Steam 宵禁限制, 请稍后再试!")
     elif isinstance(e, SystemError):
         plogger.error("无法连接至Steam，请检查Steam账户状态、网络连接、或重启Steamauto")
     elif isinstance(e, SteamError):
