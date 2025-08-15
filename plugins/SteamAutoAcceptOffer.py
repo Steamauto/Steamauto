@@ -7,7 +7,6 @@ from utils.logger import PluginLogger, handle_caught_exception
 from utils.static import SESSION_FOLDER
 
 
-
 class SteamAutoAcceptOffer:
     def __init__(self, steam_client, steam_client_mutex, config):
         self.logger = PluginLogger('SteamAutoAcceptOffer')

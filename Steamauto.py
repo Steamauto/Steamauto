@@ -18,21 +18,15 @@ from steampy.client import SteamClient
 from utils.code_updater import attempt_auto_update_github
 from utils.logger import handle_caught_exception, logger
 from utils.notifier import send_notification
-from utils.static import (
-    BUILD_INFO,
-    CONFIG_FILE_PATH,
-    CONFIG_FOLDER,
-    CURRENT_VERSION,
-    DEFAULT_CONFIG_JSON,
-    DEFAULT_STEAM_ACCOUNT_JSON,
-    INTERNAL_PLUGINS,
-    PLUGIN_FOLDER,
-    SESSION_FOLDER,
-    STEAM_ACCOUNT_INFO_FILE_PATH,
-)
 from utils.old_version_patches import patch
+from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CONFIG_FOLDER,
+                          CURRENT_VERSION, DEFAULT_CONFIG_JSON,
+                          DEFAULT_STEAM_ACCOUNT_JSON, INTERNAL_PLUGINS,
+                          PLUGIN_FOLDER, SESSION_FOLDER,
+                          STEAM_ACCOUNT_INFO_FILE_PATH)
 from utils.steam_client import login_to_steam, steam_client_mutex
-from utils.tools import calculate_sha256, exit_code, get_encoding, jobHandler, pause
+from utils.tools import (calculate_sha256, exit_code, get_encoding, jobHandler,
+                         pause)
 
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
@@ -312,6 +306,8 @@ def main():
         return 0
 
     steam_client = None
+    steam_client = SteamClient('')
+    steam_client.login('omzlo87576', 'CfRvq74520', {'shared_secret':''}, func_2fa_input=input)
     steam_client = login_to_steam(config)
     if steam_client is None:
         send_notification('登录Steam失败，程序停止运行')
