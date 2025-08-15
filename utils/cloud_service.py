@@ -89,7 +89,6 @@ def get_uu_uk_from_cloud():
             logger.warning('云服务异常，无法获取UK，可能会导致悠悠某些功能无法正常使用')
             handle_caught_exception(e, known=True)
     return ''
-    return data['uk']
 
 
 def parseBroadcastMessage(message):

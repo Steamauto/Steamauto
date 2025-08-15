@@ -8,6 +8,7 @@ from ssl import SSLCertVerificationError, SSLError
 
 import json5
 import requests
+from requests.exceptions import RequestException
 
 import steampy.exceptions
 from steampy.client import SteamClient
@@ -337,7 +338,10 @@ def login_to_steam(config: dict):
         return None
 
 
-def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, desc=""):
+def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, desc="", network_retry_count=0):
+    max_network_retries = 3
+    network_retry_delay = 5
+    
     try:
         with mutex:
             client.accept_trade_offer(str(tradeOfferId))
@@ -347,16 +351,26 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
         if retry:
             logger.error(f"接受报价号{tradeOfferId}失败！")
             return False
+            
+        # 处理网络错误，允许重试
+        if isinstance(e, RequestException):
+            if network_retry_count < max_network_retries:
+                logger.warning(f"接受报价号{tradeOfferId}遇到网络错误，正在重试 ({network_retry_count + 1}/{max_network_retries})...")
+                handle_caught_exception(e, "SteamClient", known=True)
+                time.sleep(network_retry_delay)
+                return accept_trade_offer(client, mutex, tradeOfferId, retry=False, desc=desc, network_retry_count=network_retry_count + 1)
+            else:
+                logger.error(f"接受报价号{tradeOfferId}网络错误重试次数已达到上限({max_network_retries})，操作失败")
+                handle_caught_exception(e, "SteamClient", known=True)
+                send_notification(f'报价号：{tradeOfferId}\n{desc}', title='接受报价失败(网络错误)')
+                return False
+        
         relogin = False
         if isinstance(e, ValueError):
             if 'Accepted' in str(e):
                 logger.warning(f'报价号 {tradeOfferId} 已经处理过，无需再次处理')
                 handle_caught_exception(e, "SteamClient", known=True)
                 return True
-            if 'substring not found' in str(e):
-                logger.error(f'由于Steam风控，报价号 {tradeOfferId} 处理失败，请检查IP/加速器/梯子')
-                handle_caught_exception(e, "SteamClient", known=True)
-                return False
         if isinstance(e, steampy.exceptions.ConfirmationExpected) or isinstance(e, steampy.exceptions.InvalidCredentials):
             relogin = True
             handle_caught_exception(e, "SteamClient", known=True)
@@ -386,9 +400,13 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
             except Exception as e:
                 handle_caught_exception(e, "SteamClient")
                 logger.error(f"接受报价号{tradeOfferId}失败！")
+        if 'substring not found' in str(e):
+                logger.error(f'由于Steam风控，报价号 {tradeOfferId} 处理失败，请检查IP/加速器/梯子')
+                handle_caught_exception(e, "SteamClient", known=True)
+                return False
         if relogin:
             logger.info("已经更新登录会话，正在重试接受报价号" + tradeOfferId)
-            return accept_trade_offer(client, mutex, tradeOfferId, retry=True, desc=desc)
+            return accept_trade_offer(client, mutex, tradeOfferId, retry=True, desc=desc, network_retry_count=network_retry_count)
         send_notification(f'报价号：{tradeOfferId}\n{desc}', title='接受报价失败')
         return False
 
