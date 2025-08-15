@@ -110,16 +110,16 @@ class SteamClient:
     def update_access_token(self):
         try:
             refresh_token = self.refreshToken
-            steam_id = refresh_token.split('%7C%7C')[0]
-            refresh = refresh_token.split('%7C%7C')[1]
+            steam_id = self.steamid
             post_url = 'https://api.steampowered.com/IAuthenticationService/GenerateAccessTokenForApp/v1/'
-            post_data = {'steamid': steam_id, 'refresh_token': refresh}
+            post_data = {'steamid': steam_id, 'refresh_token': refresh_token}
             response = self._session.post(post_url, data=post_data, allow_redirects=False, timeout=20)
             while response.status_code == 302:
                 response = self._session.post(response.headers['Location'], data=post_data, allow_redirects=False, timeout=20)
             access_token = response.json()['response']['access_token']
             steam_login_secure = str(steam_id) + '%7C%7C' + str(access_token)
             self._session.cookies.set('steamLoginSecure', steam_login_secure, domain='steamcommunity.com')
+            self._session.cookies.set('steamLoginSecure', steam_login_secure, domain='steampowered.com')
         except Exception as e:
             pass
 
