@@ -6,7 +6,7 @@ from utils.build_info import info
 is_latest_version = False
 no_pause = False
 
-CURRENT_VERSION = "5.6.5"
+CURRENT_VERSION = "5.7.0"
 
 VERSION_FILE = "version.json"
 LOGS_FOLDER = "logs"

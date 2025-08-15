@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.7.0",
+      "changelog": "优化Steam的Token刷新机制和报价接受重试机制，提供更稳定的报价处理体验",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.7.0/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.7.0/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "2d18bb5ea5fc1375c286b189fe6647576d1bcd8efc94f64f644638482c1aa9cd",
+        "windows": "d6319d425bf68d0b60072ea336f0e402572b6ce70dd2798d30be0a456643849d"
+      }
+    },
+    {
       "version": "5.6.5",
       "changelog": "提供更稳定的Steam登录体验：为steampy增加refreshToken登录的支持; 更改登录信息缓存的方式",
       "level": "stable",
