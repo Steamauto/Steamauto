@@ -397,16 +397,19 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
                 else:
                     handle_caught_exception(e, "SteamClient")
                     logger.error(f"接受报价号{tradeOfferId}失败！")
-            except Exception as e:
-                handle_caught_exception(e, "SteamClient")
+            except Exception as relogin_exception:
+                handle_caught_exception(relogin_exception, "SteamClient")
                 logger.error(f"接受报价号{tradeOfferId}失败！")
+
         if 'substring not found' in str(e):
-                logger.error(f'由于Steam风控，报价号 {tradeOfferId} 处理失败，请检查IP/加速器/梯子')
-                handle_caught_exception(e, "SteamClient", known=True)
-                return False
+            logger.error(f'由于Steam风控，报价号 {tradeOfferId} 处理失败，请检查IP/加速器/梯子')
+            handle_caught_exception(e, "SteamClient", known=True)
+            return False
+        
         if relogin:
             logger.info("已经更新登录会话，正在重试接受报价号" + tradeOfferId)
             return accept_trade_offer(client, mutex, tradeOfferId, retry=True, desc=desc, network_retry_count=network_retry_count)
+        
         send_notification(f'报价号：{tradeOfferId}\n{desc}', title='接受报价失败')
         return False
 
