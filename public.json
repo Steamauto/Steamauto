@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.7.1",
+      "changelog": "修复Steam登录失效后无法自动刷新的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.7.1/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.7.1/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "9a0ccb0a9727f89b63509964a04d229eab40b1a96182f11ef60957cf90b96ff4",
+        "windows": "22e2df7a55bd9bfdc2a375f57277dde81a0ae58823ed67d03f6f9d8b5095f507"
+      }
+    },
+    {
       "version": "5.7.0",
       "changelog": "优化Steam的Token刷新机制和报价接受重试机制，提供更稳定的报价处理体验",
       "level": "stable",
