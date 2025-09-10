@@ -318,7 +318,14 @@ class BuffAccount:
         """
         if headers:
             self.session.headers = headers
-        return json.loads(self.get(f"{self.BASE_URL}/api/message/notification").text).get("data")
+        response = self.get(f"{self.BASE_URL}/api/message/notification")
+        data = response.json()
+        if response.status_code == 200:
+            return data["data"]
+        elif 'error' in data:
+            return data
+        else:
+            return {}
 
     def get_steam_trade(self) -> list:
         response = self.get(f"{self.BASE_URL}/api/market/steam_trade")

@@ -133,6 +133,11 @@ class BuffAutoAcceptOffer:
                     self.buff_account = BuffAccount(session)
 
                 notification = self.buff_account.get_notification()
+                if 'error' in notification:
+                    logger.error(f"获取待发货订单信息失败! 错误信息: {notification['error']}")
+                    logger.info(f"将在{interval}秒后再次尝试获取待发货订单信息!")
+                    time.sleep(interval)
+                    continue
 
                 # 处理响应检查是否有错误
                 if isinstance(notification, dict) and "to_deliver_order" in notification:
