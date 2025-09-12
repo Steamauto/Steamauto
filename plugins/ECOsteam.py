@@ -15,7 +15,7 @@ from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import LogFilter, PluginLogger, handle_caught_exception
 from utils.models import Asset, LeaseAsset, ModelEncoder
 from utils.static import ECOSTEAM_RSAKEY_FILE
-from utils.steam_client import accept_trade_offer, get_cs2_inventory
+from utils.steam_client import accept_trade_offer, external_handler, get_cs2_inventory
 from utils.tools import exit_code, get_encoding
 from utils.uu_helper import get_valid_token_for_uu
 from uuyoupinapi import UUAccount
@@ -362,8 +362,9 @@ class ECOsteamPlugin:
         accept_offer_logger.info(f"检测到{len(wait_deliver_orders)}个待发货订单！")
         if len(wait_deliver_orders) > 0:
             for order in wait_deliver_orders:
-                if '等待发送报价' in order.get('CancelReason', ''):
-                    logger.info(f'检测到订单{order["OrderNum"]}未发送报价，正在发送报价...')
+                if order['OrderStateCode'] == 1:
+                    if external_handler('ECO-' + str(order['OrderNum']), desc=f"发货平台：ECOsteam\n发货饰品：{order['GoodsName']}\n饰品价格：{order['OrderAmount']}"):
+                        logger.info(f'检测到订单{order["OrderNum"]}未发送报价，正在发送报价...')
                     try:
                         self.client.SellerSendOffer(OrderNum=order["OrderNum"], GameId=730)
                         accept_offer_logger.info(f"订单{order['OrderNum']}报价发送成功！")
@@ -383,7 +384,7 @@ class ECOsteamPlugin:
                     continue
                 if tradeOfferId not in self.ignored_offer:
                     accept_offer_logger.info(f"正在发货商品{goodsName}，报价号{tradeOfferId}...")
-                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, tradeOfferId, desc=f"发货平台：ECOsteam\n发货饰品：{goodsName}\n饰品价格：{sellingPrice}\n买家昵称：{buyerNickName}"):
+                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, tradeOfferId, desc=f"发货平台：ECOsteam\n发货饰品：{goodsName}\n饰品价格：{sellingPrice}\n买家昵称：{buyerNickName}", reportToExternal=False):
                         accept_offer_logger.info(f"已经成功发货商品{goodsName}，报价号{tradeOfferId}")
                         self.ignored_offer.append(tradeOfferId)
                 else:

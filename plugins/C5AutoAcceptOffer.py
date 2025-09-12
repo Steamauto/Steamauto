@@ -2,7 +2,7 @@ import time
 
 from PyC5Game import C5Account
 from utils.logger import PluginLogger, handle_caught_exception
-from utils.steam_client import accept_trade_offer
+from utils.steam_client import accept_trade_offer, external_handler
 
 logger = PluginLogger("C5AutoAcceptOffer")
 
@@ -50,9 +50,12 @@ class C5AutoAcceptOffer:
                         break
                 logger.info(f"共检索到{len(notDeliveredOrders)}个待发货订单")
                 if notDeliveredOrders:
-                    notDeliveredOrderIds = [order['orderId'] for order in notDeliveredOrders]
-                    logger.info(f'正在发送报价...')
-                    self.client.deliver(notDeliveredOrderIds)
+                    toSendOrderIds = []
+                    for order in notDeliveredOrders:
+                        if external_handler('C5-' + str(order['orderId']), desc=f"发货平台：C5Game\n发货商品：{order['name']}+\n订单价格：{order['price']}元"):
+                            toSendOrderIds.append(order['orderId'])
+                    logger.info(f'正在发送 {len(toSendOrderIds)} 个报价...')
+                    self.client.deliver(toSendOrderIds)
                     logger.info('已请求C5服务器发送报价，60秒后获取报价ID')
                     time.sleep(60)
                 deliveringOrders = []
@@ -70,11 +73,11 @@ class C5AutoAcceptOffer:
                     if offerId in ignored_list:
                         logger.info(f'订单 {deliveringOrder["name"]} 已发货，跳过')
                         continue
-                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, offerId, desc=f"发货平台：C5Game\n发货商品：{deliveringOrder['name']}"):
+                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, offerId, desc=f"发货平台：C5Game\n发货商品：{deliveringOrder['name']}", reportToExternal=False):
                         logger.info(f'订单 {deliveringOrder["name"]} 发货完成')
                         ignored_list.append(offerId)
                         if deliveringOrders.index(deliveringOrder) != len(deliveringOrders) - 1:
-                            logger.info(f"为避免频繁访问Steam接口，等待3秒后处理下一个订单")
+                            logger.info("为避免频繁访问Steam接口，等待3秒后处理下一个订单")
                             time.sleep(3)
                     else:
                         logger.error(f'订单 {deliveringOrder["name"]} 发货失败，请检查网络或者Steam账号！')
