@@ -465,14 +465,65 @@ def _start_token_refresh_thread(username: str, config: dict):
 
 # 用于外部报价处理器交互
 # 使用前请自行确保配置文件中 external_offer_handler 配置项正确
-# 具体使用方法请直接查看代码，不提供额外文档
+# 具体使用方法请直接查看代码，不提供额外文档，对于C5自己发报价的情况，也已经适配
 def external_handler(tradeOfferId, desc) -> bool:
+    """
+    与外部报价处理器交互：
+    1. 先查询 /getToAcceptOffers 列表，如果报价号已经在待接受列表中则直接返回 True（避免重复提交）
+    2. 否则将报价提交到 /submit，由外部处理器决定是否处理（根据返回的 deliver 字段）
+    """
     if not isinstance(config, dict):
         return True
     external_handler = config.get("external_offer_handler", "").strip()
     if not external_handler:
         return True
-    external_handler_url = external_handler.rstrip("/") + "/submit"
+
+    base_url = external_handler.rstrip("/")
+
+    # 先检查外部处理器的待接受列表，若已存在则直接返回 True
+    try:
+        get_url = base_url + "/getToAcceptOffers"
+        logger.info(f'正在检查外部报价处理器的待接受列表 {get_url}，是否包含报价号 {tradeOfferId} ...')
+        resp = requests.get(get_url, timeout=10)
+        resp.raise_for_status()
+        try:
+            payload = resp.json()
+        except Exception:
+            payload = None
+
+        offers = []
+        if isinstance(payload, dict):
+            # 插件通常返回 { "status":"ok", "data": [...] }
+            if payload.get("status") == "ok":
+                offers = payload.get("data", [])
+            else:
+                # 兼容直接返回 {"data": [...]} 或其他格式
+                offers = payload.get("data", []) if "data" in payload else []
+        elif isinstance(payload, list):
+            offers = payload
+
+        # 提取所有报价ID为字符串集合，兼容多种数据格式
+        offer_ids = set()
+        try:
+            for item in offers:
+                if isinstance(item, dict):
+                    oid = item.get("offerId") or item.get("offer_id") or item.get("id")
+                    if oid is not None:
+                        offer_ids.add(str(oid))
+                else:
+                    offer_ids.add(str(item))
+        except Exception:
+            offer_ids = set()
+
+        if str(tradeOfferId) in offer_ids:
+            logger.info(f'报价号 {tradeOfferId} 已存在于外部处理器的待接受列表，直接接受')
+            return True
+    except Exception:
+        # 无法获取待接受列表时忽略此步，继续走提交逻辑
+        logger.debug("无法检查外部处理器的待接受列表，继续提交 /submit（如果可用）")
+
+    # 提交到 /submit，由外部处理器决定是否处理
+    external_handler_url = base_url + "/submit"
     try:
         data = {
             "offerId": tradeOfferId,
@@ -480,7 +531,13 @@ def external_handler(tradeOfferId, desc) -> bool:
         }
         logger.info(f'正在将报价号 {tradeOfferId} 发送到外部报价处理器 {external_handler_url} ...')
         response = requests.post(external_handler_url, json=data, timeout=15)
-        if response.json()['deliver']:
+        try:
+            result = response.json()
+        except Exception:
+            logger.error(f'无法解析外部处理器 {external_handler_url} 的响应为 JSON，已跳过该报价')
+            return False
+
+        if isinstance(result, dict) and result.get('deliver'):
             logger.info(f'外部报价处理器接受处理报价号 {tradeOfferId}')
             return True
         else:
