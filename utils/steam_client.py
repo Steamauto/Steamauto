@@ -18,7 +18,7 @@ from steampy.models import GameOptions
 from utils import static
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.notifier import send_notification
-from utils.static import SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH
+from utils.static import SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH, CONFIG_FILE_PATH
 from utils.tools import accelerator, get_encoding, pause
 
 logger = PluginLogger('SteamClient')
@@ -26,6 +26,12 @@ logger = PluginLogger('SteamClient')
 steam_client_mutex = threading.Lock()
 steam_client: Optional[SteamClient] = None
 token_refresh_thread = None  # 后台刷新线程引用
+
+with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
+    try:
+        config = json5.loads(f.read())
+    except Exception:
+        pass
 
 # ================= JWT 解析与缓存辅助 ===================
 
@@ -457,11 +463,39 @@ def _start_token_refresh_thread(username: str, config: dict):
         handle_caught_exception(e, known=True)
         logger.error("启动 TokenRefreshThread 失败")
 
-# ================== 业务操作 ===========================
+# 用于外部报价处理器交互
+# 使用前请自行确保配置文件中 external_offer_handler 配置项正确
+# 具体使用方法请直接查看代码，不提供额外文档
+def external_handler(tradeOfferId, desc) -> bool:
+    if not isinstance(config, dict):
+        return True
+    external_handler_url = config.get("external_offer_handler", "").strip()
+    if not external_handler_url:
+        return True
+    try:
+        data = {
+            "offerId": tradeOfferId,
+            "description": desc
+        }
+        logger.info(f'正在将报价号 {tradeOfferId} 发送到外部报价处理器 {external_handler_url} ...')
+        response = requests.post(external_handler_url, json=data, timeout=15)
+        if response.json()['deliver']:
+            logger.info(f'外部报价处理器接受处理报价号 {tradeOfferId}')
+            return True
+        else:
+            logger.info(f'外部报价处理器拒绝报价号 {tradeOfferId}，已跳过')
+            return False
+    except Exception:
+        logger.error("无法连接到外部报价处理器，已跳过该报价")
+        return False
 
-def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, desc="", network_retry_count=0):
+def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, desc="", network_retry_count=0, reportToExternal=True):
     max_network_retries = 3
     network_retry_delay = 5
+    
+    if reportToExternal:
+        if not external_handler(tradeOfferId, desc):
+            return True
 
     try:
         with mutex:
