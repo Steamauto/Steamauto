@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.7.2",
+      "changelog": "修复BUFF提示请求繁忙时报错的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.7.2/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.7.2/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "ba8a2f0291b283cc04cd649f292180b7777b96083655154a9bc6d23ac69a3797",
+        "windows": "4d5f27e301ef8df2eb7006a7f2e3fa0e1bc930a0573e37cc5f99e514b83189a0"
+      }
+    },
+    {
       "version": "5.7.1",
       "changelog": "修复Steam登录失效后无法自动刷新的问题",
       "level": "stable",
