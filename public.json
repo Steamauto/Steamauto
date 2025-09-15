@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.7.3",
+      "changelog": "修复无法自动生成配置文件、报错指示错误的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.7.3/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.7.3/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "4a09b81691d824220d929c2979d56af85f7b0dafe0946f8dc3c406276dd8902a",
+        "windows": "38b6fd965051a92769b90aeb7c975bf2fca0e8a3811ca3493efcd9f7238cccb2"
+      }
+    },
+    {
       "version": "5.7.2",
       "changelog": "修复BUFF提示请求繁忙时报错的问题",
       "level": "stable",
