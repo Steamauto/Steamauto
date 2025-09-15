@@ -27,11 +27,11 @@ steam_client_mutex = threading.Lock()
 steam_client: Optional[SteamClient] = None
 token_refresh_thread = None  # 后台刷新线程引用
 
-with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
-    try:
+try:
+    with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
         config = json5.loads(f.read())
-    except Exception:
-        pass
+except Exception:
+    pass
 
 # ================= JWT 解析与缓存辅助 ===================
 
@@ -440,8 +440,8 @@ def login_to_steam(config: dict):
         )
         pause()
         return None
-    except (ValueError, ApiException):
-        logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
+    except (ApiException):
+        logger.error("登录失败. 请检查网络是否正常或被Steam屏蔽!\n")
         pause()
         return None
     except (TypeError, AttributeError):
