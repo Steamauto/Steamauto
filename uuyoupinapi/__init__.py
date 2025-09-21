@@ -411,7 +411,7 @@ class UUAccount:
                     },
                 ).json()
                 orderDetail = orderDetail["data"]
-                if orderDetail and 'tradeOfferId' in orderDetail:
+                if orderDetail and 'tradeOfferId' in orderDetail and '系统验证中' not in str(orderDetail):
                     data_to_return.append(
                         {
                             "offer_id": orderDetail["tradeOfferId"],
