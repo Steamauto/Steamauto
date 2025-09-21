@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.7.4",
+      "changelog": "修复有品系统验证中订单被错误当成待发货订单",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.7.4/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.7.4/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "33aa746963558f14682654eee3b58cfd9f4e4fb9c360938a57bd9b9f2660e8ea",
+        "windows": "38bc764d91ab35b2d5893820bf8bb3cf0d648236fc599f3fdc3dd7df96e50ac4"
+      }
+    },
+    {
       "version": "5.7.3",
       "changelog": "修复无法自动生成配置文件、报错指示错误的问题",
       "level": "stable",
