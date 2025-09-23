@@ -363,7 +363,7 @@ class ECOsteamPlugin:
         if len(wait_deliver_orders) > 0:
             for order in wait_deliver_orders:
                 if order['OrderStateCode'] == 1:
-                    if not external_handler('ECO-' + str(order['OrderNum']), desc=f"发货平台：ECOsteam\n发货饰品：{order['GoodsName']}\n饰品价格：{order['OrderAmount']}"):
+                    if not external_handler('ECO-' + str(order['OrderNum']), desc=f"发货平台：ECOsteam\n发货饰品：{order['GoodsName']}\n订单价格：{order['OrderAmount']}"):
                         accept_offer_logger.info(f'订单{order["OrderNum"]}已被外部报价处理器忽略，跳过发送报价')
                         continue
                     logger.info(f'检测到订单{order["OrderNum"]}未发送报价，正在发送报价...')
@@ -386,7 +386,7 @@ class ECOsteamPlugin:
                     continue
                 if tradeOfferId not in self.ignored_offer:
                     accept_offer_logger.info(f"正在发货商品{goodsName}，报价号{tradeOfferId}...")
-                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, tradeOfferId, desc=f"发货平台：ECOsteam\n发货饰品：{goodsName}\n饰品价格：{sellingPrice}\n买家昵称：{buyerNickName}", reportToExternal=False):
+                    if accept_trade_offer(self.steam_client, self.steam_client_mutex, tradeOfferId, desc=f"发货平台：ECOsteam\n发货饰品：{goodsName}\n订单价格：{sellingPrice}\n买家昵称：{buyerNickName}", reportToExternal=False):
                         accept_offer_logger.info(f"已经成功发货商品{goodsName}，报价号{tradeOfferId}")
                         self.ignored_offer.append(tradeOfferId)
                 else:

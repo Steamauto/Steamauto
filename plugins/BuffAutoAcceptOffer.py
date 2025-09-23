@@ -57,13 +57,13 @@ class BuffAutoAcceptOffer:
         result = "发货平台：网易BUFF\n"
 
         for good_id, good_item in trade["goods_infos"].items():
-            result += f"发货商品：{good_item['name']}"
+            result += f"发货饰品：{good_item['name']}"
             if len(trade.get('items_to_trade', [])) > 1:
                 result += f" 等{len(trade['items_to_trade'])}个物品"
 
             if trade["tradeofferid"] in self.order_info:
                 price = float(self.order_info[trade["tradeofferid"]]["price"])
-                result += f"\n售价：{price} 元"
+                result += f"\n订单价格：{price} 元"
 
             break  # 只处理第一个物品，因为批量购买的物品通常是相同的
 
@@ -82,7 +82,7 @@ class BuffAutoAcceptOffer:
             time.sleep(5)
             steam_info = self.get_steam_info()
         except Exception as e:
-            logger.error(f"获取BUFF用户信息失败！")
+            logger.error("获取BUFF用户信息失败！")
             handle_caught_exception(e, "BuffAutoAcceptOffer")
             exit_code.set(1)
             return 1
@@ -98,7 +98,7 @@ class BuffAutoAcceptOffer:
                     to_exit = False
                     break
         if to_exit:
-            logger.error(f"当前登录的Steam账号不在BUFF账号绑定列表中，无法进行自动发货！")
+            logger.error("当前登录的Steam账号不在BUFF账号绑定列表中，无法进行自动发货！")
             exit_code.set(1)
             return 1
 
@@ -210,7 +210,7 @@ class BuffAutoAcceptOffer:
                                         del ignored_offer[offer_id]  # 从忽略字典中移除
                                         process_this_offer = True  # 标记需要处理
                                     else:
-                                        logger.info(f"该报价已被处理过，跳过")
+                                        logger.info("该报价已被处理过，跳过")
                                         process_this_offer = False  # 标记不需要处理
                                 else:
                                     # 如果不在忽略列表里，标记需要处理

@@ -52,7 +52,7 @@ class UUAutoAcceptOffer:
                                 self.logger.info("此交易报价已经被Steamauto处理过, 出现此提示的原因是悠悠系统延迟或者该订单为批量购买订单.这不是一个报错!")
                                 ignored_offer[item["offer_id"]] += 1
                             else:
-                                if accept_trade_offer(self.steam_client, self.steam_client_mutex, str(item["offer_id"]), desc=f"发货平台：悠悠有品\n商品名：{item['item_name']}"):
+                                if accept_trade_offer(self.steam_client, self.steam_client_mutex, str(item["offer_id"]), desc=f"发货平台：悠悠有品\n发货饰品：{item['item_name']}"):
                                     ignored_offer[str(item["offer_id"])] = 1
                                     self.logger.info(f'接受报价[{str(item["offer_id"])}]完成!')
                                     accepted = True
