@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.7.5",
+      "changelog": "修复BUFF系统繁忙情况下完全无法发货",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.7.5/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.7.5/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "04b4d1ae011a913a1f99aed72380e0654e485bf69629190ede7c82229e1d4caa",
+        "windows": "7bd49a3941914cf65f5f3a04a8abedf93e6067a64008a6015455bb6ee74381c0"
+      }
+    },
+    {
       "version": "5.7.4",
       "changelog": "修复有品系统验证中订单被错误当成待发货订单",
       "level": "stable",
