@@ -39,11 +39,11 @@ def compare_shelves(A: List[Asset], B: List[Asset], ratio: float) -> Union[bool,
     # 检查是否有不是Asset的元素，如果有则警告并删除
     for asset in A.copy():
         if not isinstance(asset, Asset):
-            sell_logger.debug(f"A列表可能存在未下架的物品")
+            sell_logger.debug("A列表可能存在未下架的物品")
             A.remove(asset)
     for asset in B.copy():
         if not isinstance(asset, Asset):
-            sell_logger.debug(f"B列表可能存在未下架的物品")
+            sell_logger.debug("B列表可能存在未下架的物品")
             B.remove(asset)
 
     # 创建字典用于快速查找
@@ -83,11 +83,11 @@ def compare_lease_shelf(A: List[LeaseAsset], B: List[LeaseAsset], ratio: float) 
     # 检查是否有不是Asset的元素，如果有则警告并删除
     for asset in A:
         if not isinstance(asset, Asset):
-            sell_logger.debug(f"A列表可能存在未下架的物品")
+            sell_logger.debug("A列表可能存在未下架的物品")
             A.remove(asset)
     for asset in B:
         if not isinstance(asset, Asset):
-            sell_logger.debug(f"B列表可能存在未下架的物品")
+            sell_logger.debug("B列表可能存在未下架的物品")
             B.remove(asset)
 
     # 创建字典用于快速查找
@@ -234,7 +234,7 @@ class ECOsteamPlugin:
         return False
 
     def exec(self):
-        logger.info(f"ECOsteam插件已启动")
+        logger.info("ECOsteam插件已启动")
         logger.info("正在登录ECOsteam...")
         try:
             with open(ECOSTEAM_RSAKEY_FILE, "r", encoding=get_encoding(ECOSTEAM_RSAKEY_FILE)) as f:
@@ -404,7 +404,7 @@ class ECOsteamPlugin:
             config_sync_sell_shelf = self.config["ecosteam"]["auto_sync_sell_shelf"]
             sync_sell_shelf_enabled = True
             config_sync_sell_shelf["enabled_platforms"].append("eco")
-            if not config_sync_sell_shelf["main_platform"] in config_sync_sell_shelf["enabled_platforms"]:
+            if config_sync_sell_shelf["main_platform"] not in config_sync_sell_shelf["enabled_platforms"]:
                 sell_logger.error("主平台必须在enabled_platforms中！请重新修改检查配置文件！")
                 sync_sell_shelf_enabled = False
             platforms = list(copy.deepcopy(config_sync_sell_shelf["enabled_platforms"]))
@@ -414,7 +414,7 @@ class ECOsteamPlugin:
                     sell_logger.error("当前仅支持UU/ECO/BUFF平台，请检查配置！")
                     sync_sell_shelf_enabled = False
                     break
-            if not config_sync_sell_shelf["main_platform"] in config_sync_sell_shelf["enabled_platforms"]:
+            if config_sync_sell_shelf["main_platform"] not in config_sync_sell_shelf["enabled_platforms"]:
                 sell_logger.error("由于主平台未启用，自动同步平台功能已经自动关闭")
                 sync_sell_shelf_enabled = False
             if not sync_sell_shelf_enabled:
@@ -432,7 +432,7 @@ class ECOsteamPlugin:
                     config_sync_sell_shelf["enabled_platforms"].remove("buff")
                 else:
                     self.buff_client = BuffAccount(buff_session)
-                    sell_logger.info(f"已经获取到有效的BUFF session")
+                    sell_logger.info("已经获取到有效的BUFF session")
 
             # 悠悠登录
             if "uu" in config_sync_sell_shelf["enabled_platforms"] and not (hasattr(self, "uu_client") and self.uu_client):
@@ -609,7 +609,7 @@ class ECOsteamPlugin:
                                 sell_logger.info(f"下架{count}个商品成功！下架{len(problems)}个商品失败！")
                             except Exception as e:
                                 handle_caught_exception(e, "ECOsteam.cn", known=True)
-                                sell_logger.error(f"下架商品失败！可能有部分下架成功")
+                                sell_logger.error("下架商品失败！可能有部分下架成功")
                         elif platform == "uu":
                             response = self.uu_client.off_shelf(offshelf_list)
                             if int(response.json()["Code"]) == "0":
@@ -688,7 +688,7 @@ class ECOsteamPlugin:
                     sell_logger.info(f"上架{len(success)}个商品到BUFF成功！上架{len(failure)}个商品失败！")
                 except Exception as e:
                     handle_caught_exception(e, "ECOsteam.cn")
-                    sell_logger.error(f"上架商品失败！可能部分上架成功！")
+                    sell_logger.error("上架商品失败！可能部分上架成功！")
 
             # 下架商品
             assets = difference["delete"]
@@ -703,7 +703,7 @@ class ECOsteamPlugin:
                     sell_logger.info(f"下架{success}个商品成功！下架{len(failure)}个商品失败！")
                 except Exception as e:
                     handle_caught_exception(e, "ECOsteam.cn")
-                    sell_logger.error(f"下架商品失败！可能部分下架成功！")
+                    sell_logger.error("下架商品失败！可能部分下架成功！")
 
             # 更改价格
             assets = difference["change"]

@@ -73,13 +73,25 @@ class BuffAccount:
         self.get_notification(headers=headers)
 
     def get(self, url, **kwargs):
-        response = self.session.get(url, **kwargs)
-        logger.debug(f"GET {url} {response.status_code} {json.dumps(response.json(),ensure_ascii=False)}")
+        for i in range(10):
+            response = self.session.get(url, **kwargs)
+            logger.debug(f"GET {url} {response.status_code} {json.dumps(response.json(),ensure_ascii=False)}")
+            if '系统繁忙' in response.text:
+                logger.warning(f'BUFF接口繁忙，正在重试...{i+1}/10')
+                time.sleep(2)
+            else:
+                break
         return response
 
     def post(self, url, **kwargs):
-        response = self.session.post(url, **kwargs)
-        logger.debug(f"POST {url} {response.status_code} {json.dumps(response.json(),ensure_ascii=False)}")
+        for i in range(5):
+            response = self.session.post(url, **kwargs)
+            logger.debug(f"POST {url} {response.status_code} {json.dumps(response.json(),ensure_ascii=False)}")
+            if '系统繁忙' in response.text:
+                logger.warning(f'BUFF接口繁忙，正在重试...{i+1}/10')
+                time.sleep(2)
+            else:
+                break
         return response
 
     def get_user_nickname(self) -> str:

@@ -24,6 +24,7 @@ def get_steam_server_time(session: Session) -> int:
 
 
 def try_to_get_time_delta_from_steam(session: Session) -> int:
+    return 0
     global time_delta
     if time_delta == sys.maxsize:
         for _ in range(3):

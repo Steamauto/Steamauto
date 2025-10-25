@@ -134,29 +134,27 @@ class BuffAutoAcceptOffer:
 
                 notification = self.buff_account.get_notification()
                 if 'error' in notification:
-                    logger.error(f"获取待发货订单信息失败! 错误信息: {notification['error']}")
-                    logger.info(f"将在{interval}秒后再次尝试获取待发货订单信息!")
-                    time.sleep(interval)
-                    continue
-
+                    logger.error(f"获取待发货订单信息失败! 错误信息: {notification['error']}，正在尝试其它方式获取...")
+                    notification = None
+                else:
                 # 处理响应检查是否有错误
-                if isinstance(notification, dict) and "to_deliver_order" in notification:
-                    to_deliver_order = notification["to_deliver_order"]
-                    try:
-                        csgo_count = 0 if "csgo" not in to_deliver_order else int(to_deliver_order["csgo"])
-                        dota2_count = 0 if (dota2_support or ("dota2" not in to_deliver_order)) else int(to_deliver_order["dota2"])
-                        total_count = csgo_count + dota2_count
+                    if isinstance(notification, dict) and "to_deliver_order" in notification:
+                        to_deliver_order = notification["to_deliver_order"]
+                        try:
+                            csgo_count = 0 if "csgo" not in to_deliver_order else int(to_deliver_order["csgo"])
+                            dota2_count = 0 if (dota2_support or ("dota2" not in to_deliver_order)) else int(to_deliver_order["dota2"])
+                            total_count = csgo_count + dota2_count
 
-                        if csgo_count != 0 or dota2_count != 0:
-                            logger.info(f"检测到{total_count}个待发货请求!")
-                            logger.info(f"CSGO待发货: {csgo_count}个")
-                            if dota2_support:
-                                logger.info(f"DOTA2待发货: {dota2_count}个")
-                    except TypeError as e:
-                        handle_caught_exception(e, "BuffAutoAcceptOffer", known=True)
-                        logger.error("Buff接口返回数据异常! 请检查网络连接或稍后再试!")
+                            if csgo_count != 0 or dota2_count != 0:
+                                logger.info(f"检测到{total_count}个待发货请求!")
+                                logger.info(f"CSGO待发货: {csgo_count}个")
+                                if dota2_support:
+                                    logger.info(f"DOTA2待发货: {dota2_count}个")
+                        except TypeError as e:
+                            handle_caught_exception(e, "BuffAutoAcceptOffer", known=True)
+                            logger.error("Buff接口返回数据异常! 请检查网络连接或稍后再试!")
 
-                if any(list(notification["to_deliver_order"].values()) + list(notification["to_confirm_sell"].values())):
+                if not notification or any(list(notification["to_deliver_order"].values()) + list(notification["to_confirm_sell"].values())):
                     # 获取待处理交易
                     trades = self.buff_account.get_steam_trade()
                     logger.info("为了避免访问接口过于频繁，休眠5秒...")
