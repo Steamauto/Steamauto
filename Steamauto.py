@@ -2,6 +2,7 @@ import importlib
 import importlib.util
 import inspect
 import os
+import random
 import re
 import shutil
 import signal
@@ -274,8 +275,11 @@ def init_plugins_and_start(plugins_enabled):
         for plugin in plugins_enabled:
             threads.append(threading.Thread(target=plugin.exec))
         for thread in threads:
+            random_jitter = random.randint(0, 10)
             thread.daemon = True
             thread.start()
+            logger.info(f"插件线程 {thread.name} 已启动，等待 {random_jitter} 秒后启动下一个插件线程...")
+            time.sleep(random_jitter)
         for thread in threads:
             thread.join()
     if exit_code.get() != 0:
