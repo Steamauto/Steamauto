@@ -27,11 +27,13 @@ except Exception as e:
 
 def send_notification(steam_client, message, title=""):
     steam_64_id = "未登录"
+    steam_username = "暂未登录"
     if steam_client:
         try:
             steam_64_id = steam_client.get_steam64id_from_cookies()
         except:
             pass
+        steam_username = steam_client.username
     if config.get("notifiers", False):
         for black in config.get("blacklist_words", []):
             if black in message or black in title:
@@ -44,7 +46,7 @@ def send_notification(steam_client, message, title=""):
                     message = f"{title}\n{message}"
                     title = config.get("custom_title")
                 if config.get("include_steam_info", False):
-                    message += f"\nSteam 用户名：{static.STEAM_ACCOUNT_NAME}\nSteam ID：{steam_64_id}"
+                    message += f"\nSteam 用户名：{steam_username}\nSteam ID：{steam_64_id}"
                 apobj = apprise.Apprise()
                 apobj.add(notifier)
                 apobj.notify(title=title, body=message)  # type: ignore

@@ -362,7 +362,8 @@ def login_to_steam(config: dict):
             if client.set_and_verify_access_token(steamid_cache, access_token, steam_account_info):
                 logger.info("使用缓存 access_token 登录成功")
                 steam_client = client
-                static.STEAM_ACCOUNT_NAME = client.username or username
+                if username and not client.username:
+                    client.username = username
                 # 启动刷新线程
                 if token_refresh_thread is None or not token_refresh_thread.is_alive():
                     _start_token_refresh_thread(username, config)
@@ -397,7 +398,8 @@ def login_to_steam(config: dict):
                     logger.info("使用 refresh_token 登录成功")
                     steam_client = client
                     _save_token_cache(username, auth_info)
-                    static.STEAM_ACCOUNT_NAME = client.username or username
+                    if username and not client.username:
+                        client.username = username
                     if token_refresh_thread is None or not token_refresh_thread.is_alive():
                         _start_token_refresh_thread(username, config)
                     return steam_client
@@ -424,7 +426,6 @@ def login_to_steam(config: dict):
             steam_client = client
             if auth_info and isinstance(auth_info, dict):
                 _save_token_cache(username, auth_info)
-            static.STEAM_ACCOUNT_NAME = client.username
             if token_refresh_thread is None or not token_refresh_thread.is_alive():
                 _start_token_refresh_thread(username, config)
             return steam_client
