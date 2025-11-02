@@ -4,6 +4,20 @@
   },
   "versions": [
     {
+      "version": "5.7.6",
+      "changelog": "修复Steam登录BUFF时如果权限不足，不自动回退到扫码登录",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.7.6/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.7.6/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "d677dc7d90cf1b9a6353a7a94bf8eebf1dadd24e8f98950f2437a9d3fd02a925",
+        "windows": "4335f07b1a609ed0a1e7b20dddd519decd1b95526994941230e6e480b544a06e"
+      }
+    },
+    {
       "version": "5.7.5",
       "changelog": "修复BUFF系统繁忙情况下完全无法发货",
       "level": "stable",
