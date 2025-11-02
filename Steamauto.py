@@ -257,13 +257,6 @@ def plugins_check(plugins_enabled):
     return 1
 
 
-def get_steam_client_mutexs(num):
-    steam_client_mutexs = []
-    for i in range(num):
-        steam_client_mutexs.append(threading.Lock())
-    return steam_client_mutexs
-
-
 def init_plugins_and_start(plugins_enabled):
     logger.info("初始化完成, 开始运行插件!")
     print("\n")
