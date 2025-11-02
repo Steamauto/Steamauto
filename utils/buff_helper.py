@@ -27,8 +27,9 @@ def parse_openid_params(response: str) -> Dict[str, str]:
     return params
 
 
-def get_openid_params(steam_client: SteamClient):
+def get_openid_params(steam_client: SteamClient, proxies=None):
     session = requests.Session()
+    session.proxies = proxies
     response = requests.get("https://buff.163.com/account/login/steam?back_url=/", allow_redirects=False)
     location_url = response.headers["Location"]
     response = steam_client._session.get(location_url)
@@ -36,8 +37,8 @@ def get_openid_params(steam_client: SteamClient):
 
 
 # Return the cookies of buff
-def login_to_buff_by_steam(steam_client: SteamClient):
-    params, location_url, session = get_openid_params(steam_client)
+def login_to_buff_by_steam(steam_client: SteamClient, proxies=None):
+    params, location_url, session = get_openid_params(steam_client, proxies)
     multipart_data = MultipartEncoder(fields=params)
     headers = {
         "Content-Type": multipart_data.content_type,
@@ -60,8 +61,9 @@ def login_to_buff_by_steam(steam_client: SteamClient):
         return ""
 
 
-def login_to_buff_by_qrcode(steam_client) -> str:
+def login_to_buff_by_qrcode(steam_client, proxies=None) -> str:
     session = requests.session()
+    session.proxies = proxies
     response_json = session.get("https://buff.163.com/account/api/qr_code_login_open", params={"_": str(int(time.time() * 1000))}).json()
     if response_json["code"] != "OK":
         return ""
@@ -105,11 +107,11 @@ def login_to_buff_by_qrcode(steam_client) -> str:
     return cookies["session"]
 
 
-def is_session_has_enough_permission(session: str) -> bool:
+def is_session_has_enough_permission(session: str, proxies=None) -> bool:
     if not session.startswith("session="):
         session = "session=" + session
     try:
-        response_json = requests.get("https://buff.163.com/api/market/steam_trade", headers={"Cookie": session}).json()
+        response_json = requests.get("https://buff.163.com/api/market/steam_trade", headers={"Cookie": session}, proxies=proxies).json()
         if "data" not in response_json:
             return False
         return True
@@ -117,8 +119,10 @@ def is_session_has_enough_permission(session: str) -> bool:
         return False
 
 
-def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
+def get_valid_session_for_buff(steam_client: SteamClient, logger, proxies=None) -> str:
     logger.info("[BuffLoginSolver] 正在获取与检查BUFF session...")
+    if proxies:
+        logger.info("[BuffLoginSolver] 检测到Steam代理设置，正在为BUFF设置相同的代理...")
     global session
     session = ""
     if not os.path.exists(BUFF_COOKIES_FILE_PATH.format(steam_username=steam_client.username)):
@@ -130,7 +134,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
         if session and session != "session=":
             logger.info("[BuffLoginSolver] 使用缓存的session")
             logger.info("[BuffLoginSolver] 检测session是否有效...")
-            if not is_session_has_enough_permission(session):
+            if not is_session_has_enough_permission(session, proxies):
                 logger.error("[BuffLoginSolver] 缓存的session无效")
                 session = ""
             else:
@@ -140,8 +144,8 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
     if not session:  # 尝试通过Steam
         logger.info("[BuffLoginSolver] 正在尝试通过Steam登录至BUFF...")
         try:
-            got_cookies = login_to_buff_by_steam(steam_client)
-            if is_session_has_enough_permission(got_cookies):
+            got_cookies = login_to_buff_by_steam(steam_client, proxies)
+            if is_session_has_enough_permission(got_cookies, proxies):
                 logger.info("[BuffLoginSolver] 使用Steam登录至BUFF成功")
                 session = got_cookies
             else:
@@ -154,8 +158,8 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
     if not session:  # 尝试通过二维码
         logger.info("[BuffLoginSolver] 正在尝试通过二维码登录至BUFF...")
         try:
-            session = login_to_buff_by_qrcode(steam_client)
-            if (not session) or (not is_session_has_enough_permission(session)):
+            session = login_to_buff_by_qrcode(steam_client, proxies)
+            if (not session) or (not is_session_has_enough_permission(session, proxies)):
                 logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
             else:
                 logger.info("[BuffLoginSolver] 使用二维码登录至BUFF成功")

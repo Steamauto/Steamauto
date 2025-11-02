@@ -68,8 +68,13 @@ class BuffAccount:
 
     BASE_URL = "https://buff.163.com"
 
-    def __init__(self, buffcookie, user_agent=get_ua()):
+    def __init__(self, buffcookie, user_agent=None, proxies=None):
+        if not user_agent:
+            user_agent = get_ua()
+        if proxies:
+            logger.info("检测到Buff代理设置，正在为Buff设置相同的代理...")
         self.session = requests.session()
+        self.session.proxies = proxies
         self.session.headers = {"User-Agent": user_agent}
         headers = copy.deepcopy(self.session.headers)
         headers["Cookie"] = buffcookie
