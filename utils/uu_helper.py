@@ -12,10 +12,10 @@ from utils.tools import get_encoding
 logger = PluginLogger("UULoginSolver")
 
 
-def get_valid_token_for_uu():
+def get_valid_token_for_uu(steam_client):
     logger.info("正在为悠悠有品获取有效的token...")
-    if os.path.exists(UU_TOKEN_FILE_PATH):
-        with open(UU_TOKEN_FILE_PATH, "r", encoding=get_encoding(UU_TOKEN_FILE_PATH)) as f:
+    if os.path.exists(UU_TOKEN_FILE_PATH.format(steam_username=steam_client.username)):
+        with open(UU_TOKEN_FILE_PATH.format(steam_username=steam_client.username), "r", encoding=get_encoding(UU_TOKEN_FILE_PATH.format(steam_username=steam_client.username))) as f:
             try:
                 token = f.read().strip()
                 uuyoupin = uuyoupinapi.UUAccount(token)
@@ -31,7 +31,7 @@ def get_valid_token_for_uu():
     try:
         uuyoupin = uuyoupinapi.UUAccount(token)
         logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
-        with open(UU_TOKEN_FILE_PATH, "w", encoding="utf-8") as f:
+        with open(UU_TOKEN_FILE_PATH.format(steam_username=steam_client.username), "w", encoding="utf-8") as f:
             f.write(token)
         logger.info("悠悠有品Token已自动缓存到本地")
         return token

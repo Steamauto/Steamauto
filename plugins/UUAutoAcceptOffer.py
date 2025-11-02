@@ -16,7 +16,7 @@ class UUAutoAcceptOffer:
         self.config = config
 
     def init(self) -> bool:
-        token = get_valid_token_for_uu()
+        token = get_valid_token_for_uu(self.steam_client)
         if not token:
             self.logger.error("悠悠有品登录失败！即将关闭程序！")
             exit_code.set(1)
@@ -25,7 +25,7 @@ class UUAutoAcceptOffer:
 
     def exec(self):
         uuyoupin = None
-        token = get_valid_token_for_uu()
+        token = get_valid_token_for_uu(self.steam_client)
         if not token:
             self.logger.error("由于登录失败，插件将自动退出")
             exit_code.set(1)

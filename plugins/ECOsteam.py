@@ -443,7 +443,7 @@ class ECOsteamPlugin:
             # 悠悠登录
             if "uu" in config_sync_sell_shelf["enabled_platforms"] and not (hasattr(self, "uu_client") and self.uu_client):
                 sell_logger.info("由于已经启用悠悠平台，正在联系UULoginSolver获取有效的session...")
-                token = get_valid_token_for_uu()
+                token = get_valid_token_for_uu(self.steam_client)
                 if token:
                     self.uu_client = UUAccount(token)
                 else:
@@ -459,7 +459,7 @@ class ECOsteamPlugin:
             # 检查悠悠是否正常登录
             if not (hasattr(self, "uu_client") and self.uu_client):
                 lease_logger.info("由于已经启用悠悠平台，正在联系UULoginSolver获取有效的session...")
-                token = get_valid_token_for_uu()
+                token = get_valid_token_for_uu(self.steam_client)
                 if token:
                     self.uu_client = UUAccount(token)
                 else:

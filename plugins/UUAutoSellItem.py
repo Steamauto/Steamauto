@@ -335,7 +335,7 @@ class UUAutoSellItem:
                 return 1
 
     def exec(self):
-        self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu())  # type: ignore
+        self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu(self.steam_client))  # type: ignore
         if not self.uuyoupin:
             self.logger.error("由于登录失败，插件将自动退出")
             exit_code.set(1)

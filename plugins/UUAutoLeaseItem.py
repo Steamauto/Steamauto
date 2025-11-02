@@ -261,7 +261,7 @@ class UUAutoLeaseItem:
         if "compensation_type" in self.config["uu_auto_lease_item"]:
             self.compensation_type = self.config["uu_auto_lease_item"]["compensation_type"]
 
-        self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu())
+        self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu(self.steam_client))
 
         self.pre_check_price()
         self.auto_lease()
@@ -303,7 +303,7 @@ if __name__ == "__main__":
         my_config = json5.load(f)
 
     uu_auto_lease = UUAutoLeaseItem(None, None, my_config)
-    token = get_valid_token_for_uu()
+    token = get_valid_token_for_uu(self.steam_client)
     if not token:
         uu_auto_lease.logger.error("由于登录失败，插件将自动退出")
         exit_code.set(1)
