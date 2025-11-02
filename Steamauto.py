@@ -35,6 +35,8 @@ from utils.static import (
 from utils.steam_client import login_to_steam, steam_client_mutex
 from utils.tools import calculate_sha256, exit_code, get_encoding, jobHandler, pause
 
+config = {}
+
 
 def handle_global_exception(exc_type, exc_value, exc_traceback):
     logger.exception(

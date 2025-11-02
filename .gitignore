@@ -18,3 +18,5 @@ launch.json
 .conda
 plugins/_*
 plugins/*External*
+maFiles
+accounts.txt
