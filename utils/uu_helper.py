@@ -29,7 +29,7 @@ def get_valid_token_for_uu(steam_client, proxies=None):
     else:
         logger.info("未检测到存储的悠悠token")
     logger.info("即将重新登录悠悠有品！")
-    token = str(get_token_automatically())
+    token = str(get_token_automatically(proxies))
     try:
         uuyoupin = uuyoupinapi.UUAccount(token, proxy=proxies)
         logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
@@ -45,7 +45,7 @@ def get_valid_token_for_uu(steam_client, proxies=None):
         return False
 
 
-def get_token_automatically():
+def get_token_automatically(proxies=None):
     """
     引导用户输入手机号，发送验证码，输入验证码，自动登录，并且返回token
     :return: token
@@ -64,15 +64,15 @@ def get_token_automatically():
     except Exception:
         logger.warning("由于云服务已经关闭，无法获取UK，将使用默认配置")
         pass
-    result = uuyoupinapi.UUAccount.send_login_sms_code(phone_number, token_id, headers=headers, uk=uk)
+    result = uuyoupinapi.UUAccount.send_login_sms_code(phone_number, token_id, headers=headers, uk=uk, proxies=proxies)
     response = {}
     if "成功" in result.get("Msg", ""):
         logger.info("发送验证码结果：" + result["Msg"])
         sms_code = input(f"{Style.BRIGHT + Fore.RED}请输入验证码(如果此时有其它插件输出请忽略！输入完按回车即可！)：{Style.RESET_ALL}")
-        response = uuyoupinapi.UUAccount.sms_sign_in(phone_number, sms_code, token_id, headers=headers)
+        response = uuyoupinapi.UUAccount.sms_sign_in(phone_number, sms_code, token_id, headers=headers, proxies=proxies)
     else:
         logger.info("该手机号需要手动发送短信进行验证，正在获取相关信息...")
-        result = uuyoupinapi.UUAccount.get_smsUpSignInConfig(headers).json()
+        result = uuyoupinapi.UUAccount.get_smsUpSignInConfig(headers, proxies).json()
         if result["Code"] == 0:
             logger.info("请求结果：" + result["Msg"])
             logger.info(
@@ -81,7 +81,7 @@ def get_token_automatically():
             input()
             logger.info("请稍候...")
             time.sleep(3)  # 防止短信发送延迟
-            response = uuyoupinapi.UUAccount.sms_sign_in(phone_number, "", token_id, headers=headers)
+            response = uuyoupinapi.UUAccount.sms_sign_in(phone_number, "", token_id, headers=headers, proxies=proxies)
     logger.info("登录结果：" + response["Msg"])
     try:
         got_token = response["Data"]["Token"]

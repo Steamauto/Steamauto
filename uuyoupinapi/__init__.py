@@ -84,14 +84,15 @@ class UUAccount:
         return "".join(random.sample(string.ascii_letters + string.digits, length))
 
     @staticmethod
-    def get_smsUpSignInConfig(headers):
+    def get_smsUpSignInConfig(headers, proxies=None):
         return requests.get(
             "https://api.youpin898.com/api/user/Auth/GetSmsUpSignInConfig",
             headers=headers,
+            proxies=proxies
         )
 
     @staticmethod
-    def send_login_sms_code(phone, session: str, headers={}, region_code=86, uk=""):
+    def send_login_sms_code(phone, session: str, headers={}, region_code=86, uk="", proxies=None):
         """
         发送登录短信验证码
         :param phone: 手机号
@@ -104,10 +105,11 @@ class UUAccount:
             "https://api.youpin898.com/api/user/Auth/SendSignInSmsCode",
             json={"Area": region_code, "Mobile": phone, "Sessionid": session, "Code": ""},
             headers=headers,
+            proxies=proxies,
         ).json()
 
     @staticmethod
-    def sms_sign_in(phone, code, session, headers={}):
+    def sms_sign_in(phone, code, session, headers={}, proxies=None):
         """
         通过短信验证码登录，返回值内包含Token
         :param phone: 发送验证码时的手机号
@@ -129,6 +131,7 @@ class UUAccount:
                 "Mobile": phone,
             },
             headers=headers,
+            proxies=proxies,
         ).json()
 
     def get_user_nickname(self):
