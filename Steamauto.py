@@ -263,8 +263,7 @@ def get_steam_client_mutexs(num):
     return steam_client_mutexs
 
 
-def init_plugins_and_start(steam_client, steam_client_mutex):
-    plugins_enabled = get_plugins_enabled(steam_client, steam_client_mutex)
+def init_plugins_and_start(plugins_enabled):
     logger.info("初始化完成, 开始运行插件!")
     print("\n")
     time.sleep(0.1)
@@ -330,7 +329,7 @@ def main():
 
     if steam_client is not None:
         send_notification(steam_client, "Steamauto 已经成功登录Steam并开始运行")
-        init_plugins_and_start(steam_client, steam_client_mutex)
+        init_plugins_and_start(plugins_enabled)
 
     logger.info("由于所有插件已经关闭,程序即将退出...")
     pause()
