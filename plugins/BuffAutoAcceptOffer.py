@@ -12,11 +12,13 @@ logger = PluginLogger("BuffAutoAcceptOffer")
 
 class BuffAutoAcceptOffer:
     def __init__(self, steam_client, steam_client_mutex, config):
+        global logger
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}]
         self.config = config
         self.order_info = {}
+        logger = PluginLogger(f"BuffAutoAcceptOffer-steam:{steam_client.username}")
 
     def init(self) -> bool:
         return False
@@ -70,10 +72,17 @@ class BuffAutoAcceptOffer:
         return result
 
     def exec(self):
+        global logger
         logger.info("BUFF自动接受报价插件已启动.请稍候...")
 
         session = get_valid_session_for_buff(self.steam_client, logger)
         self.buff_account = BuffAccount(session)
+        try:
+            username = self.buff_account.get_user_nickname()
+            if username:
+                logger = PluginLogger(f"BuffAutoAcceptOffer-{username}-steam:{self.steam_client.username}")
+        except:
+            pass
 
         try:
             user_info = self.buff_account.get_user_info()
