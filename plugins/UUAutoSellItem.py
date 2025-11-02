@@ -131,22 +131,22 @@ class UUAutoSellItem:
             if rsp["Code"] == 0:
                 success_count = 0
                 fail_count = 0
-                data_section = rsp.get('Data', {})
+                data_section = rsp.get("Data", {})
 
-                if isinstance(data_section, dict) and 'Commoditys' in data_section:
-                    total_processed = len(data_section['Commoditys'])
-                    for commodity_result in data_section['Commoditys']:
-                        if commodity_result.get('IsSuccess') == 1:
+                if isinstance(data_section, dict) and "Commoditys" in data_section:
+                    total_processed = len(data_section["Commoditys"])
+                    for commodity_result in data_section["Commoditys"]:
+                        if commodity_result.get("IsSuccess") == 1:
                             success_count += 1
                         else:
                             fail_count += 1
-                            error_msg = commodity_result.get('Message', '未知错误')
-                            comm_id = commodity_result.get('CommodityId', '未知ID')
+                            error_msg = commodity_result.get("Message", "未知错误")
+                            comm_id = commodity_result.get("CommodityId", "未知ID")
                             self.logger.error(f"修改商品 {comm_id} 价格失败: {error_msg}")
 
-                    if 'SuccessCount' in data_section:
-                        success_count = data_section.get('SuccessCount', success_count)
-                        fail_count = data_section.get('FailCount', fail_count)
+                    if "SuccessCount" in data_section:
+                        success_count = data_section.get("SuccessCount", success_count)
+                        fail_count = data_section.get("FailCount", fail_count)
 
                 if total_processed == 0 and success_count == 0 and fail_count == 0:
                     success_count = num
@@ -178,7 +178,7 @@ class UUAutoSellItem:
                     asset_id = item["SteamAssetId"]
                     item_id = item["TemplateInfo"]["Id"]
                     short_name = item["TemplateInfo"]["CommodityName"]
-                    buy_price = float(item.get('AssetBuyPrice', '0').replace('购￥', ''))
+                    buy_price = float(item.get("AssetBuyPrice", "0").replace("购￥", ""))
 
                     self.buy_price_cache[item_id] = buy_price
 
@@ -188,7 +188,7 @@ class UUAutoSellItem:
                     if not any((s and s in short_name) for s in self.config["uu_auto_sell_item"]["name"]):
                         continue
 
-                    blacklist_words = self.config["uu_auto_sell_item"].get('blacklist_words', [])
+                    blacklist_words = self.config["uu_auto_sell_item"].get("blacklist_words", [])
                     if blacklist_words:
                         if any(s != "" and s in short_name for s in blacklist_words):
                             self.logger.info(f"物品 {short_name} 命中黑名单，将不会上架")
@@ -198,10 +198,10 @@ class UUAutoSellItem:
                         sale_price = self.get_market_sale_price(item_id, good_name=short_name)
                     except Exception as e:
                         handle_caught_exception(e, "UUAutoSellItem", known=True)
-                        logger.error(f'获取 {short_name} 的市场价格失败: {e}，暂时跳过')
+                        logger.error(f"获取 {short_name} 的市场价格失败: {e}，暂时跳过")
                         continue
 
-                    if self.config['uu_auto_sell_item']['take_profile']:
+                    if self.config["uu_auto_sell_item"]["take_profile"]:
                         self.logger.info(f"按{self.config['uu_auto_sell_item']['take_profile_ratio']:.2f}止盈率设置价格")
                         if buy_price > 0:
                             sale_price = max(sale_price, self.get_take_profile_price(buy_price))
@@ -212,18 +212,18 @@ class UUAutoSellItem:
                     if sale_price == 0:
                         continue
 
-                    price_threshold = self.config['uu_auto_sell_item'].get('price_adjustment_threshold', 1.0)
-                    if self.config['uu_auto_sell_item'].get('use_price_adjustment', True):
+                    price_threshold = self.config["uu_auto_sell_item"].get("price_adjustment_threshold", 1.0)
+                    if self.config["uu_auto_sell_item"].get("use_price_adjustment", True):
                         if sale_price > price_threshold:
                             sale_price = max(price_threshold, sale_price - 0.01)
                             sale_price = round(sale_price, 2)
 
-                    max_price = self.config['uu_auto_sell_item'].get('max_on_sale_price', 0)
+                    max_price = self.config["uu_auto_sell_item"].get("max_on_sale_price", 0)
                     if max_price > 0 and sale_price > max_price:
                         self.logger.info(f"物品 {short_name} 的价格超过了设定的最高价格，将不会上架")
                         continue
 
-                    self.logger.warning(f'即将上架：{short_name} 价格：{sale_price}')
+                    self.logger.warning(f"即将上架：{short_name} 价格：{sale_price}")
 
                     sale_item = {
                         "AssetId": asset_id,
@@ -254,7 +254,7 @@ class UUAutoSellItem:
                 except KeyError as e:
                     handle_caught_exception(e, "UUAutoSellItem", known=True)
                     self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
-                    send_notification('检测到悠悠有品登录已经失效,请重新登录', title='悠悠有品登录失效')
+                    send_notification("检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
                     self.logger.error("由于登录失败，插件将自动退出")
                     exit_code.set(1)
                     return 1
@@ -281,7 +281,7 @@ class UUAutoSellItem:
                 if not any((s and s in short_name) for s in self.config["uu_auto_sell_item"]["name"]):
                     continue
 
-                blacklist_words = self.config["uu_auto_sell_item"].get('blacklist_words', [])
+                blacklist_words = self.config["uu_auto_sell_item"].get("blacklist_words", [])
                 if blacklist_words:
                     if any(s != "" and s in short_name for s in blacklist_words):
                         self.logger.info(f"改价跳过：{short_name} 命中黑名单")
@@ -289,7 +289,7 @@ class UUAutoSellItem:
 
                 sale_price = self.get_market_sale_price(item_id, good_name=short_name)
 
-                if self.config['uu_auto_sell_item']['take_profile']:
+                if self.config["uu_auto_sell_item"]["take_profile"]:
                     self.logger.info(f"按{self.config['uu_auto_sell_item']['take_profile_ratio']:.2f}止盈率设置价格")
                     if buy_price > 0:
                         self.logger.debug(sale_price)
@@ -302,8 +302,8 @@ class UUAutoSellItem:
                 if sale_price == 0:
                     continue
 
-                price_threshold = self.config['uu_auto_sell_item'].get('price_adjustment_threshold', 1.0)
-                if self.config['uu_auto_sell_item'].get('use_price_adjustment', True):
+                price_threshold = self.config["uu_auto_sell_item"].get("price_adjustment_threshold", 1.0)
+                if self.config["uu_auto_sell_item"].get("use_price_adjustment", True):
                     if sale_price > price_threshold:
                         sale_price = max(price_threshold, sale_price - 0.01)
                         sale_price = round(sale_price, 2)
@@ -327,7 +327,7 @@ class UUAutoSellItem:
                 self.uuyoupin.get_user_nickname()
             except KeyError as e:
                 handle_caught_exception(e, "UUAutoSellItem-AutoChangePrice", known=True)
-                send_notification('检测到悠悠有品登录已经失效,请重新登录', title='悠悠有品登录失效')
+                send_notification("检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
                 self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                 self.logger.error("由于登录失败，插件将自动退出")
                 exit_code.set(1)
@@ -342,8 +342,8 @@ class UUAutoSellItem:
         self.logger.info(f"以下物品会出售：{self.config['uu_auto_sell_item']['name']}")
         self.auto_sell()
 
-        run_time = self.config['uu_auto_sell_item']['run_time']
-        interval = self.config['uu_auto_sell_item']['interval']
+        run_time = self.config["uu_auto_sell_item"]["run_time"]
+        interval = self.config["uu_auto_sell_item"]["interval"]
 
         self.logger.info(f"[自动出售] 等待到 {run_time} 开始执行")
         self.logger.info(f"[自动修改价格] 每隔 {interval} 分钟执行一次")
@@ -363,5 +363,5 @@ class UUAutoSellItem:
         time.sleep(sleep)
 
     def get_take_profile_price(self, buy_price):
-        take_profile_ratio = self.config['uu_auto_sell_item']['take_profile_ratio']
+        take_profile_ratio = self.config["uu_auto_sell_item"]["take_profile_ratio"]
         return buy_price * (1 + take_profile_ratio)

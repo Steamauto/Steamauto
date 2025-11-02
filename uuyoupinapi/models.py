@@ -3,7 +3,7 @@ from typing import Optional, Union
 from pydantic import BaseModel
 
 
-from utils.models import LeaseAsset,Asset
+from utils.models import LeaseAsset, Asset
 
 
 class UUOnLeaseShelfItem(BaseModel):
@@ -15,7 +15,7 @@ class UUOnLeaseShelfItem(BaseModel):
     LeaseUnitPrice: float
     LongLeaseUnitPrice: Union[float, None] = None
     CompensationType: Union[int, None] = None
-    
+
     @classmethod
     def fromLeaseAsset(cls, leaseAsset: LeaseAsset):
         return cls(
@@ -23,7 +23,7 @@ class UUOnLeaseShelfItem(BaseModel):
             LeaseDeposit=str(leaseAsset.LeaseDeposit),
             LeaseMaxDays=leaseAsset.LeaseMaxDays,
             LeaseUnitPrice=leaseAsset.LeaseUnitPrice,
-            LongLeaseUnitPrice=leaseAsset.LongLeaseUnitPrice
+            LongLeaseUnitPrice=leaseAsset.LongLeaseUnitPrice,
         )
 
 
@@ -33,18 +33,17 @@ class UUMarketLeaseItem(BaseModel):
     LongLeaseUnitPrice: Optional[float] = None
     CommodityName: Optional[str] = None
 
+
 class UUOnSellShelfItem(BaseModel):
     AssetId: int
     IsCanLease: bool = False
     IsCanSold: bool = True
     Price: float
-    
+
     @classmethod
     def fromAsset(cls, asset: Asset):
-        return cls(
-            AssetId=int(asset.assetid),
-            Price=asset.price
-        )
+        return cls(AssetId=int(asset.assetid), Price=asset.price)
+
 
 class UUChangePriceItem(BaseModel):
     CommodityId: int
@@ -55,24 +54,24 @@ class UUChangePriceItem(BaseModel):
     LeaseUnitPrice: Union[float, None] = None
     LongLeaseUnitPrice: Union[float, None] = None
     Price: Union[float, None] = None
-    
-    @classmethod 
+
+    @classmethod
     def fromAsset(cls, asset: Asset):
         return cls(
-            CommodityId=int(asset.orderNo), # type: ignore
+            CommodityId=int(asset.orderNo),  # type: ignore
             Price=asset.price,
             IsCanLease=False,
             IsCanSold=True,
         )
-    
+
     @classmethod
     def fromLeaseAsset(cls, leaseAsset: LeaseAsset):
         return cls(
-            CommodityId=int(leaseAsset.orderNo), # type: ignore
+            CommodityId=int(leaseAsset.orderNo),  # type: ignore
             LeaseDeposit=str(leaseAsset.LeaseDeposit),
             LeaseMaxDays=leaseAsset.LeaseMaxDays,
             LeaseUnitPrice=leaseAsset.LeaseUnitPrice,
             LongLeaseUnitPrice=leaseAsset.LongLeaseUnitPrice,
             IsCanLease=True,
-            IsCanSold=False
+            IsCanSold=False,
         )

@@ -10,13 +10,13 @@ def normalize_key(private_key_str):
     # Remove surrounding whitespace
     private_key_str = private_key_str.strip()
 
-    key_data = private_key_str.replace('-----BEGIN PRIVATE KEY-----\n', '').replace('\n-----END PRIVATE KEY-----', '').replace('\n', '')
+    key_data = private_key_str.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").replace("\n", "")
 
     # Ensure proper line breaks every 64 characters
-    key_data = re.sub(r'(.{64})', r'\1\n', key_data)
+    key_data = re.sub(r"(.{64})", r"\1\n", key_data)
 
     # Reconstruct the key with headers and footers
-    private_key_str = '-----BEGIN PRIVATE KEY-----\n' + key_data + '\n-----END PRIVATE KEY-----'
+    private_key_str = "-----BEGIN PRIVATE KEY-----\n" + key_data + "\n-----END PRIVATE KEY-----"
 
     return private_key_str
 
@@ -30,14 +30,14 @@ def generate_rsa_signature(private_key_str, params):
 
     # 拼接参数，遇到字典或列表则转换成JSON字符串
     message_parts = []
-    for key in sorted(params.keys(),key=str.lower):
+    for key in sorted(params.keys(), key=str.lower):
         value = params[key]
-        if isinstance(value, dict) or isinstance(value,list):
-            message_parts.append('{}={}'.format(key,json.dumps(value,sort_keys=False,ensure_ascii=False,separators=(',',':'))))
+        if isinstance(value, dict) or isinstance(value, list):
+            message_parts.append("{}={}".format(key, json.dumps(value, sort_keys=False, ensure_ascii=False, separators=(",", ":"))))
         else:
             if value is None:
                 continue
-            message_parts.append('{}={}'.format(key,value))
+            message_parts.append("{}={}".format(key, value))
 
     message = "&".join(message_parts)
 

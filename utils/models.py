@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class Asset(BaseModel):
     assetid: str
     templateid: Union[int, None] = None
-    appid: Union[str, int, None] = '730'
+    appid: Union[str, int, None] = "730"
     classid: Union[str, int, None] = None
     instanceid: Union[str, int, None] = None
     contextid: Union[int, str, None] = 2
@@ -15,6 +15,7 @@ class Asset(BaseModel):
     short_name: Union[str, None] = None
     orderNo: Union[str, int, None] = None
     price: float = float(0)
+
 
 class LeaseAsset(Asset):
     price: Union[float, None] = None
@@ -25,6 +26,7 @@ class LeaseAsset(Asset):
     LeaseUnitPrice: float
     LongLeaseUnitPrice: float = float(0)
     orderNo: Union[str, int, None] = None
+
 
 class ModelEncoder(json.JSONEncoder):
     def default(self, obj):

@@ -16,6 +16,7 @@ from utils.logger import handle_caught_exception, logger
 GITHUB_REPO_OWNER = "Steamauto"
 GITHUB_REPO_NAME = "Steamauto"
 
+
 def attempt_auto_update_github(current_version: str):
     """
     检查 GitHub 上是否有新版本。如果有，则下载 zip 包、解压缩、覆盖当前目录，并重启脚本。
@@ -65,8 +66,7 @@ def attempt_auto_update_github(current_version: str):
 
             # 4) 找到解压后的根文件夹（GitHub 通常命名为 <repo>-<commit>）
             #    在 temp_update_folder 中定位该文件夹
-            extracted_subfolders = [f for f in os.listdir(temp_update_folder)
-                                    if os.path.isdir(os.path.join(temp_update_folder, f))]
+            extracted_subfolders = [f for f in os.listdir(temp_update_folder) if os.path.isdir(os.path.join(temp_update_folder, f))]
             if not extracted_subfolders:
                 logger.warning("在下载的 zip 中未找到任何子文件夹。跳过自动更新。")
                 return
@@ -83,10 +83,7 @@ def attempt_auto_update_github(current_version: str):
                 try:
                     logger.info("正在从 requirements.txt 安装或更新依赖包...")
                     # 建议通过 'python -m pip ...' 来调用 pip
-                    subprocess.check_call([
-                        sys.executable, "-m", "pip",
-                        "install", "-r", "requirements.txt"
-                    ])
+                    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
                     logger.info("依赖包已更新成功。")
                 except Exception as e:
                     handle_caught_exception(e)
@@ -109,6 +106,7 @@ def attempt_auto_update_github(current_version: str):
     except Exception as e:
         handle_caught_exception(e)
         logger.warning("由于异常导致自动更新失败。")
+
 
 def copy_over(src: str, dst: str, skip_folders=None):
     """

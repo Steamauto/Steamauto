@@ -15,7 +15,7 @@ def get_release_assets(repo, version, token):
     return response.json()["assets"]
 
 
-def calculate_sha256(url, token, file_path='cache'):
+def calculate_sha256(url, token, file_path="cache"):
     """下载文件到磁盘并计算 SHA256 哈希值"""
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get(url, headers=headers, stream=True, allow_redirects=True)
@@ -24,12 +24,12 @@ def calculate_sha256(url, token, file_path='cache'):
     response.raise_for_status()
 
     # 将文件下载到磁盘
-    with open(file_path, 'wb') as file:
+    with open(file_path, "wb") as file:
         for chunk in response.iter_content(chunk_size=8192):
             if chunk:
                 file.write(chunk)
     print(f"Downloaded {url} to {file_path} Size(MB): {os.path.getsize(file_path) / 1024 / 1024}")
-    
+
     # 从磁盘读取文件并计算 SHA256 哈希值
     hash_sha256 = hashlib.sha256()
     with open(file_path, "rb") as f:

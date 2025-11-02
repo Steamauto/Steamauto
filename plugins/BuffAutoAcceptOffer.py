@@ -23,7 +23,7 @@ class BuffAutoAcceptOffer:
 
     def require_buyer_send_offer(self):
         try:
-            logger.info('正在开启只允许买家发起报价功能...')
+            logger.info("正在开启只允许买家发起报价功能...")
             result = self.buff_account.set_force_buyer_send_offer()
             if result:
                 logger.info("已开启买家发起交易报价功能")
@@ -33,7 +33,7 @@ class BuffAutoAcceptOffer:
             logger.error(f"开启买家发起交易报价功能失败: {str(e)}")
 
     def get_steam_info(self):
-        steam_info = self.buff_account.get('https://buff.163.com/account/api/steam/info').json()['data']
+        steam_info = self.buff_account.get("https://buff.163.com/account/api/steam/info").json()["data"]
         return steam_info
 
     def check_buff_account_state(self):
@@ -58,7 +58,7 @@ class BuffAutoAcceptOffer:
 
         for good_id, good_item in trade["goods_infos"].items():
             result += f"发货饰品：{good_item['name']}"
-            if len(trade.get('items_to_trade', [])) > 1:
+            if len(trade.get("items_to_trade", [])) > 1:
                 result += f" 等{len(trade['items_to_trade'])}个物品"
 
             if trade["tradeofferid"] in self.order_info:
@@ -77,8 +77,8 @@ class BuffAutoAcceptOffer:
 
         try:
             user_info = self.buff_account.get_user_info()
-            steamid_buff = user_info['steamid']
-            logger.info('为了避免访问接口过于频繁，休眠5秒...')
+            steamid_buff = user_info["steamid"]
+            logger.info("为了避免访问接口过于频繁，休眠5秒...")
             time.sleep(5)
             steam_info = self.get_steam_info()
         except Exception as e:
@@ -88,13 +88,13 @@ class BuffAutoAcceptOffer:
             return 1
 
         to_exit = True
-        if steam_info['max_bind_count'] == 1:
+        if steam_info["max_bind_count"] == 1:
             if str(static.STEAM_64_ID) == steamid_buff:
                 to_exit = False
         else:
-            for account in steam_info['items']:
-                if account['steamid'] == str(static.STEAM_64_ID):
-                    logger.info(f'检测到当前已经登录多个Steam账号，只会处理SteamID为{static.STEAM_64_ID}的交易')
+            for account in steam_info["items"]:
+                if account["steamid"] == str(static.STEAM_64_ID):
+                    logger.info(f"检测到当前已经登录多个Steam账号，只会处理SteamID为{static.STEAM_64_ID}的交易")
                     to_exit = False
                     break
         if to_exit:
@@ -103,7 +103,7 @@ class BuffAutoAcceptOffer:
             return 1
 
         logger.info(f"已经登录至BUFF 用户名: {user_info['nickname']}")
-        if not user_info['force_buyer_send_offer']:
+        if not user_info["force_buyer_send_offer"]:
             logger.warning("当前账号未开启只允许买家发起报价功能，正在自动开启...")
             self.require_buyer_send_offer()
         else:
@@ -114,8 +114,8 @@ class BuffAutoAcceptOffer:
         interval = self.config["buff_auto_accept_offer"]["interval"]
         dota2_support = self.config["buff_auto_accept_offer"].get("dota2_support", False)
 
-        if 'sell_protection' in self.config['buff_auto_accept_offer']:
-            logger.warning('你正在使用旧版本配置文件，BUFF自动发货插件已经重写并精简功能，建议删除配置文件重新生成！')
+        if "sell_protection" in self.config["buff_auto_accept_offer"]:
+            logger.warning("你正在使用旧版本配置文件，BUFF自动发货插件已经重写并精简功能，建议删除配置文件重新生成！")
 
         if dota2_support:
             self.SUPPORT_GAME_TYPES.append({"game": "dota2", "app_id": 570})
@@ -133,11 +133,11 @@ class BuffAutoAcceptOffer:
                     self.buff_account = BuffAccount(session)
 
                 notification = self.buff_account.get_notification()
-                if 'error' in notification:
+                if "error" in notification:
                     logger.error(f"获取待发货订单信息失败! 错误信息: {notification['error']}，正在尝试其它方式获取...")
                     notification = None
                 else:
-                # 处理响应检查是否有错误
+                    # 处理响应检查是否有错误
                     if isinstance(notification, dict) and "to_deliver_order" in notification:
                         to_deliver_order = notification["to_deliver_order"]
                         try:
@@ -174,7 +174,7 @@ class BuffAutoAcceptOffer:
                                 if trade_offer["tradeofferid"] is not None and trade_offer["tradeofferid"] != "":
                                     self.order_info[trade_offer["tradeofferid"]] = trade_offer
                                     if not any(trade_offer["tradeofferid"] == trade["tradeofferid"] for trade in trades):
-                                        if str(trade_offer['seller_steamid']) != str(static.STEAM_64_ID):
+                                        if str(trade_offer["seller_steamid"]) != str(static.STEAM_64_ID):
                                             continue  # 跳过不是当前账号的报价
                                         for goods_id, goods_info in response_data["goods_infos"].items():
                                             goods_id = str(goods_id)
@@ -197,14 +197,14 @@ class BuffAutoAcceptOffer:
                         if len(trades) != 0:
                             for i, trade in enumerate(trades):
                                 offer_id = trade["tradeofferid"]
-                                logger.info(f"正在处理第 {i+1} 个交易报价 报价ID：{offer_id}")
+                                logger.info(f"正在处理第 {i + 1} 个交易报价 报价ID：{offer_id}")
 
                                 process_this_offer = False  # 标记是否需要处理当前报价
 
                                 if offer_id in ignored_offer:
                                     ignored_offer[offer_id] += 1  # 增加计数
                                     if ignored_offer[offer_id] > REPROCESS_THRESHOLD:
-                                        logger.warning(f"报价 {offer_id} 已被忽略 {ignored_offer[offer_id]-1} 次，超过阈值 {REPROCESS_THRESHOLD}，将尝试重新处理")
+                                        logger.warning(f"报价 {offer_id} 已被忽略 {ignored_offer[offer_id] - 1} 次，超过阈值 {REPROCESS_THRESHOLD}，将尝试重新处理")
                                         del ignored_offer[offer_id]  # 从忽略字典中移除
                                         process_this_offer = True  # 标记需要处理
                                     else:

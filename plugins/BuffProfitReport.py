@@ -10,15 +10,13 @@ from apprise import AppriseAsset, AppriseAttachment
 
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception
-from utils.static import (BUFF_COOKIES_FILE_PATH, SESSION_FOLDER,
-                          SUPPORT_GAME_TYPES)
+from utils.static import BUFF_COOKIES_FILE_PATH, SESSION_FOLDER, SUPPORT_GAME_TYPES
 from utils.tools import get_encoding
 
 
 class BuffProfitReport:
     buff_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
     }
 
     def __init__(self, logger, steam_client, steam_client_mutex, config):
@@ -45,15 +43,7 @@ class BuffProfitReport:
         url = "https://buff.163.com/api/market/steam_inventory"
         total_items = []
         while True:
-            params = {
-                "page_num": page_num,
-                "page_size": page_size,
-                "sort_by": sort_by,
-                "state": state,
-                "force": force,
-                "force_wear": force_wear,
-                "game": game
-            }
+            params = {"page_num": page_num, "page_size": page_size, "sort_by": sort_by, "state": state, "force": force, "force_wear": force_wear, "game": game}
             self.logger.info("[BuffProfitReport] 避免被封号, 休眠15秒")
             time.sleep(15)
             response_json = self.session.get(url, headers=self.buff_headers, params=params).json()
@@ -84,8 +74,7 @@ class BuffProfitReport:
             should_break = False
             self.logger.info("[BuffProfitReport] 为了避免被封号, 休眠15秒")
             time.sleep(15)
-            url = ('https://buff.163.com/api/market/sell_order/history?page_num=' + str(page_num) +
-                   '&page_size=' + str(page_size) + '&game=' + game)
+            url = "https://buff.163.com/api/market/sell_order/history?page_num=" + str(page_num) + "&page_size=" + str(page_size) + "&game=" + game
             response_json = self.session.get(url, headers=self.buff_headers).json()
             if response_json["code"] != "OK":
                 self.logger.error("[BuffProfitReport] 获取历史订单失败")
@@ -126,8 +115,7 @@ class BuffProfitReport:
         result = {}
         while True:
             self.logger.debug("[BuffProfitReport] 正在获取" + game + " 购买记录, 页数: " + str(page_num))
-            url = ("https://buff.163.com/api/market/buy_order/history?page_num=" + str(page_num) +
-                   "&page_size=300&game=" + game)
+            url = "https://buff.163.com/api/market/buy_order/history?page_num=" + str(page_num) + "&page_size=300&game=" + game
             response_json = self.session.get(url, headers=self.buff_headers).json()
             if response_json["code"] != "OK":
                 self.logger.error("[BuffProfitReport] 获取历史订单失败")
@@ -167,14 +155,9 @@ class BuffProfitReport:
     def get_lowest_price(self, goods_id, game="csgo"):
         sleep_seconds_to_prevent_buff_ban = 30
         self.logger.info("[BuffProfitReport] 获取BUFF商品最低价")
-        self.logger.info("[BuffProfitReport] 为了避免被封IP, 休眠" +
-                         str(sleep_seconds_to_prevent_buff_ban) + "秒")
+        self.logger.info("[BuffProfitReport] 为了避免被封IP, 休眠" + str(sleep_seconds_to_prevent_buff_ban) + "秒")
         time.sleep(sleep_seconds_to_prevent_buff_ban)
-        url = (
-                "https://buff.163.com/api/market/goods/sell_order?goods_id="
-                + str(goods_id)
-                + "&page_num=1&page_size=24&allow_tradable_cooldown=1&sort_by=default&game="
-                + game)
+        url = "https://buff.163.com/api/market/goods/sell_order?goods_id=" + str(goods_id) + "&page_num=1&page_size=24&allow_tradable_cooldown=1&sort_by=default&game=" + game
         response_json = self.session.get(url, headers=self.buff_headers).json()
         if response_json["code"] == "OK":
             if len(response_json["data"]["items"]) == 0:  # 无商品
@@ -226,10 +209,7 @@ class BuffProfitReport:
                     if not self.steam_client.is_session_alive():
                         self.logger.info("[BuffProfitReport] Steam会话已过期, 正在重新登录...")
                         self.steam_client._session.cookies.clear()
-                        self.steam_client.login(
-                            self.steam_client.username, self.steam_client._password,
-                            json5.dumps(self.steam_client.steam_guard)
-                        )
+                        self.steam_client.login(self.steam_client.username, self.steam_client._password, json5.dumps(self.steam_client.steam_guard))
                         self.logger.info("[BuffProfitReport] Steam会话已更新")
                         steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
                         with open(steam_session_path, "wb") as f:
@@ -243,21 +223,21 @@ class BuffProfitReport:
                 time.sleep(sleep_interval)
                 continue
             profit_in_inventory = {}
-            total_profit_in_inventory = Decimal('0.00')
-            total_profit_after_fee_in_inventory = Decimal('0.00')
+            total_profit_in_inventory = Decimal("0.00")
+            total_profit_after_fee_in_inventory = Decimal("0.00")
             inventory_profit_result = []
             profit_in_sold = {}
-            total_profit_in_sold = Decimal('0.00')
-            total_profit_after_fee_in_sold = Decimal('0.00')
+            total_profit_in_sold = Decimal("0.00")
+            total_profit_after_fee_in_sold = Decimal("0.00")
             sold_profit_result = []
-            total_profit_in_missing = Decimal('0.00')
-            total_profit_after_fee_in_missing = Decimal('0.00')
+            total_profit_in_missing = Decimal("0.00")
+            total_profit_after_fee_in_missing = Decimal("0.00")
             missing_profit_result = []
             try:
                 for game in SUPPORT_GAME_TYPES:
-                    transaction_fee = Decimal('0.975')
-                    if game['game'] == "dota2":
-                        transaction_fee = Decimal('0.982')
+                    transaction_fee = Decimal("0.975")
+                    if game["game"] == "dota2":
+                        transaction_fee = Decimal("0.982")
                     self.logger.info("[BuffProfitReport] 正在获取" + game["game"] + " 购买记录...")
                     buy_history = self.get_buy_history(game["game"])
                     if not buy_history:
@@ -280,35 +260,30 @@ class BuffProfitReport:
                         asset_id = item["asset_info"]["assetid"]
                         class_id = item["asset_info"]["classid"]
                         context_id = item["asset_info"]["contextid"]
-                        trade_id_to_pop = ''
+                        trade_id_to_pop = ""
                         for trade_id in buy_history:
-                            if buy_history[trade_id]["asset_info"]["assetid"] == asset_id and \
-                                    buy_history[trade_id]["asset_info"]["classid"] == class_id and \
-                                    buy_history[trade_id]["asset_info"]["contextid"] == context_id:
+                            if (
+                                buy_history[trade_id]["asset_info"]["assetid"] == asset_id
+                                and buy_history[trade_id]["asset_info"]["classid"] == class_id
+                                and buy_history[trade_id]["asset_info"]["contextid"] == context_id
+                            ):
                                 profit_in_inventory[trade_id] = {"buy": buy_history[trade_id], "sell": item}
                                 trade_id_to_pop = trade_id
                                 inventory_items_to_pop.append(item)
                                 break
-                        if trade_id_to_pop != '':
+                        if trade_id_to_pop != "":
                             buy_history.pop(trade_id_to_pop)
                     for item in inventory_items_to_pop:
                         game_inventory.remove(item)
                     for trade_id in profit_in_inventory:
-                        profit = (Decimal(profit_in_inventory[trade_id]['sell']['sell_min_price']) -
-                                  Decimal(profit_in_inventory[trade_id]['buy']['price']))
-                        real_price = Decimal(profit_in_inventory[trade_id]['sell']['sell_min_price']) * transaction_fee  # 交易手续费
-                        real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
-                        real_price = Decimal(real_price) * Decimal('0.99')  # 提现手续费
-                        real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
-                        profit_after_fee = Decimal(real_price) - Decimal(profit_in_inventory[trade_id]['buy']['price'])
+                        profit = Decimal(profit_in_inventory[trade_id]["sell"]["sell_min_price"]) - Decimal(profit_in_inventory[trade_id]["buy"]["price"])
+                        real_price = Decimal(profit_in_inventory[trade_id]["sell"]["sell_min_price"]) * transaction_fee  # 交易手续费
+                        real_price = Decimal(real_price).quantize(Decimal("0.00"), rounding="ROUND_DOWN")
+                        real_price = Decimal(real_price) * Decimal("0.99")  # 提现手续费
+                        real_price = Decimal(real_price).quantize(Decimal("0.00"), rounding="ROUND_DOWN")
+                        profit_after_fee = Decimal(real_price) - Decimal(profit_in_inventory[trade_id]["buy"]["price"])
                         item_name = profit_in_inventory[trade_id]["buy"]["item_details"]["name"]
-                        inventory_profit_result.append(
-                            {
-                                "item_name": item_name,
-                                "profit": str(profit),
-                                "profit_after_fee": str(profit_after_fee)
-                            }
-                        )
+                        inventory_profit_result.append({"item_name": item_name, "profit": str(profit), "profit_after_fee": str(profit_after_fee)})
                         total_profit_in_inventory += profit
                         total_profit_after_fee_in_inventory += profit_after_fee
                     self.logger.info("[BuffProfitReport] 处理找不到买入记录的库存物品...")
@@ -321,11 +296,11 @@ class BuffProfitReport:
                             except Exception as e:
                                 buy_price = Decimal("0")
                         if buy_price != Decimal("0"):
-                            profit = (Decimal(item['sell_min_price']) - buy_price)
-                            real_price = Decimal(item['sell_min_price']) * transaction_fee
-                            real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
-                            real_price = Decimal(real_price) * Decimal('0.99')
-                            real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
+                            profit = Decimal(item["sell_min_price"]) - buy_price
+                            real_price = Decimal(item["sell_min_price"]) * transaction_fee
+                            real_price = Decimal(real_price).quantize(Decimal("0.00"), rounding="ROUND_DOWN")
+                            real_price = Decimal(real_price) * Decimal("0.99")
+                            real_price = Decimal(real_price).quantize(Decimal("0.00"), rounding="ROUND_DOWN")
                             profit_after_fee = Decimal(real_price) - buy_price
                             item_name = item["name"]
                             inventory_profit_result.append(
@@ -334,7 +309,7 @@ class BuffProfitReport:
                                     "profit": str(profit),
                                     "profit_after_fee": str(profit_after_fee),
                                     "purchase_price": str(buy_price),
-                                    "sold_price": item['sell_min_price']
+                                    "sold_price": item["sell_min_price"],
                                 }
                             )
                             total_profit_in_inventory += profit
@@ -344,33 +319,33 @@ class BuffProfitReport:
                         asset_id = sell_history[trade_id]["asset_info"]["assetid"]
                         class_id = sell_history[trade_id]["asset_info"]["classid"]
                         context_id = sell_history[trade_id]["asset_info"]["contextid"]
-                        trade_id_to_pop = ''
+                        trade_id_to_pop = ""
                         for trade_id2 in buy_history:
-                            if buy_history[trade_id2]["asset_info"]["assetid"] == asset_id and \
-                                    buy_history[trade_id2]["asset_info"]["classid"] == class_id and \
-                                    buy_history[trade_id2]["asset_info"]["contextid"] == context_id:
-                                profit_in_sold[trade_id] = {"buy": buy_history[trade_id2],
-                                                            "sell": sell_history[trade_id]}
+                            if (
+                                buy_history[trade_id2]["asset_info"]["assetid"] == asset_id
+                                and buy_history[trade_id2]["asset_info"]["classid"] == class_id
+                                and buy_history[trade_id2]["asset_info"]["contextid"] == context_id
+                            ):
+                                profit_in_sold[trade_id] = {"buy": buy_history[trade_id2], "sell": sell_history[trade_id]}
                                 trade_id_to_pop = trade_id2
                                 break
-                        if trade_id_to_pop != '':
+                        if trade_id_to_pop != "":
                             buy_history.pop(trade_id_to_pop)
                     for trade_id in profit_in_sold:
-                        profit = (Decimal(profit_in_sold[trade_id]['sell']['price']) -
-                                  Decimal(profit_in_sold[trade_id]['buy']['price']))
-                        real_price = Decimal(profit_in_sold[trade_id]['sell']['price']) * transaction_fee
-                        real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
-                        real_price = Decimal(real_price) * Decimal('0.99')
-                        real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
-                        profit_after_fee = Decimal(real_price) - Decimal(profit_in_sold[trade_id]['buy']['price'])
+                        profit = Decimal(profit_in_sold[trade_id]["sell"]["price"]) - Decimal(profit_in_sold[trade_id]["buy"]["price"])
+                        real_price = Decimal(profit_in_sold[trade_id]["sell"]["price"]) * transaction_fee
+                        real_price = Decimal(real_price).quantize(Decimal("0.00"), rounding="ROUND_DOWN")
+                        real_price = Decimal(real_price) * Decimal("0.99")
+                        real_price = Decimal(real_price).quantize(Decimal("0.00"), rounding="ROUND_DOWN")
+                        profit_after_fee = Decimal(real_price) - Decimal(profit_in_sold[trade_id]["buy"]["price"])
                         item_name = profit_in_sold[trade_id]["buy"]["item_details"]["name"]
                         sold_profit_result.append(
                             {
                                 "item_name": item_name,
                                 "profit": str(profit),
                                 "profit_after_fee": str(profit_after_fee),
-                                "purchase_price": profit_in_sold[trade_id]['buy']['price'],
-                                "sold_price": profit_in_sold[trade_id]['sell']['sell_min_price']
+                                "purchase_price": profit_in_sold[trade_id]["buy"]["price"],
+                                "sold_price": profit_in_sold[trade_id]["sell"]["sell_min_price"],
                             }
                         )
                         total_profit_in_sold += profit
@@ -382,8 +357,7 @@ class BuffProfitReport:
                         purchase_price = buy_history[trade_id]["price"]
                         if goods_id not in purchased_items:
                             purchased_items[goods_id] = []
-                        purchased_items[goods_id].append({"purchase_price": purchase_price,
-                                                          "name": buy_history[trade_id]["item_details"]["name"]})
+                        purchased_items[goods_id].append({"purchase_price": purchase_price, "name": buy_history[trade_id]["item_details"]["name"]})
                     purchased_items_stats = {}
                     for goods_id in purchased_items:
                         total_amount = len(purchased_items[goods_id])
@@ -395,7 +369,7 @@ class BuffProfitReport:
                             "total_amount": total_amount,
                             "total_price": total_price,
                             "average_price": average_price,
-                            "name": purchased_items[goods_id][0]["name"]
+                            "name": purchased_items[goods_id][0]["name"],
                         }
                     for goods_id in purchased_items_stats:
                         lowest_price = self.get_lowest_price(goods_id, game=game["game"])
@@ -403,14 +377,12 @@ class BuffProfitReport:
                             continue
                         keywords = ["total_price", "average_price"]
                         for keyword in keywords:
-                            purchased_items_stats[goods_id][keyword] = Decimal(
-                                purchased_items_stats[goods_id][keyword]).quantize(Decimal('0.00'),
-                                                                                   rounding="ROUND_DOWN")
-                        profit = (lowest_price - purchased_items_stats[goods_id]["average_price"])
+                            purchased_items_stats[goods_id][keyword] = Decimal(purchased_items_stats[goods_id][keyword]).quantize(Decimal("0.00"), rounding="ROUND_DOWN")
+                        profit = lowest_price - purchased_items_stats[goods_id]["average_price"]
                         real_price = lowest_price * transaction_fee
-                        real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
-                        real_price = Decimal(real_price) * Decimal('0.99')
-                        real_price = Decimal(real_price).quantize(Decimal('0.00'), rounding="ROUND_DOWN")
+                        real_price = Decimal(real_price).quantize(Decimal("0.00"), rounding="ROUND_DOWN")
+                        real_price = Decimal(real_price) * Decimal("0.99")
+                        real_price = Decimal(real_price).quantize(Decimal("0.00"), rounding="ROUND_DOWN")
                         profit_after_fee = Decimal(real_price) - purchased_items_stats[goods_id]["average_price"]
                         item_name = purchased_items_stats[goods_id]["name"]
                         missing_profit_result.append(
@@ -421,13 +393,11 @@ class BuffProfitReport:
                                 "total_amount": purchased_items_stats[goods_id]["total_amount"],
                                 "total_price": purchased_items_stats[goods_id]["total_price"],
                                 "average_price": purchased_items_stats[goods_id]["average_price"],
-                                "sold_price": lowest_price
+                                "sold_price": lowest_price,
                             }
                         )
-                        total_profit_in_missing += (Decimal(profit) *
-                                                    Decimal(purchased_items_stats[goods_id]["total_amount"]))
-                        total_profit_after_fee_in_missing += (Decimal(profit_after_fee) *
-                                                              Decimal(purchased_items_stats[goods_id]["total_amount"]))
+                        total_profit_in_missing += Decimal(profit) * Decimal(purchased_items_stats[goods_id]["total_amount"])
+                        total_profit_after_fee_in_missing += Decimal(profit_after_fee) * Decimal(purchased_items_stats[goods_id]["total_amount"])
                 message = ""
                 message += "库存总利润: " + str(total_profit_in_inventory) + " RMB\n"
                 message += "库存总利润(扣除手续费): " + str(total_profit_after_fee_in_inventory) + " RMB\n"
@@ -460,16 +430,12 @@ class BuffProfitReport:
                 message += "----------------------------------\n\n\n"
                 message += "总利润: " + str(total_profit_in_inventory + total_profit_in_sold + total_profit_in_missing) + " RMB\n"
                 report_file_path = os.path.join(SESSION_FOLDER, "report.txt")
-                with open(report_file_path, 'w', encoding="utf-8") as f:
+                with open(report_file_path, "w", encoding="utf-8") as f:
                     f.write(message)
                 apprise_obj = apprise.Apprise(asset=self.asset)
                 for server in servers:
                     apprise_obj.add(server)
-                apprise_obj.notify(
-                    title='BUFF每日利润统计报告',
-                    body='BUFF每日利润统计报告', 
-                    attach=AppriseAttachment(report_file_path)
-                )
+                apprise_obj.notify(title="BUFF每日利润统计报告", body="BUFF每日利润统计报告", attach=AppriseAttachment(report_file_path))
             except Exception as e:
                 handle_caught_exception(e, "[BuffProfitReport]", known=True)
                 self.logger.error("[BuffProfitReport] 生成BUFF利润报告失败, 错误信息: " + str(e), exc_info=True)

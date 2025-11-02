@@ -11,17 +11,15 @@ import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
 import utils.static as static
-from steampy.exceptions import (ApiException, ConfirmationExpected,
-                                EmptyResponse, InvalidCredentials,
-                                InvalidResponse, SteamError)
-from utils.static import (BUILD_INFO, CONFIG_FILE_PATH, CURRENT_VERSION,
-                          LOGS_FOLDER, STEAM_ERROR_CODES)
+from steampy.exceptions import ApiException, ConfirmationExpected, EmptyResponse, InvalidCredentials, InvalidResponse, SteamError
+from utils.static import BUILD_INFO, CONFIG_FILE_PATH, CURRENT_VERSION, LOGS_FOLDER, STEAM_ERROR_CODES
 
 sensitive_data = []
 sensitive_keys = ["ApiKey", "TradeLink", "JoinTime", "NickName", "access_token", "trade_url", "TransactionUrl", "RealName", "IdCard"]
 
 if not os.path.exists(LOGS_FOLDER):
     os.mkdir(LOGS_FOLDER)
+
 
 class LogFilter(logging.Filter):
     @staticmethod
@@ -62,17 +60,18 @@ class LogFilter(logging.Filter):
 
         return True
 
+
 log_retention_days = None
 log_level = None
 try:
-    with open(CONFIG_FILE_PATH, "r", encoding='utf-8') as f:
-            config = json5.loads(f.read())
-            if isinstance(config, dict):
-                log_level = str(config.get("log_level", "DEBUG")).upper()
-                log_retention_days = int(config.get("log_retention_days", 7))
+    with open(CONFIG_FILE_PATH, "r", encoding="utf-8") as f:
+        config = json5.loads(f.read())
+        if isinstance(config, dict):
+            log_level = str(config.get("log_level", "DEBUG")).upper()
+            log_retention_days = int(config.get("log_retention_days", 7))
 except Exception as e:
     pass
-    
+
 if log_retention_days:
     for log_file in os.listdir(LOGS_FOLDER):
         if log_file.endswith(".log"):
@@ -95,11 +94,11 @@ logger.addHandler(s_handler)
 f_handler = logging.FileHandler(os.path.join(LOGS_FOLDER, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".log"), encoding="utf-8")
 if log_level and log_level.isdigit():
     f_handler.setLevel(int(log_level))
-elif log_level=="INFO":
+elif log_level == "INFO":
     f_handler.setLevel(logging.INFO)
-elif log_level=="WARNING":
+elif log_level == "WARNING":
     f_handler.setLevel(logging.WARNING)
-elif log_level=="ERROR":
+elif log_level == "ERROR":
     f_handler.setLevel(logging.ERROR)
 else:
     f_handler.setLevel(logging.DEBUG)
@@ -114,6 +113,7 @@ logger.debug(f"Python version: {os.sys.version}")  # type: ignore
 logger.debug(f"Build info: {BUILD_INFO}")
 logger.debug(f"Attributes check: _MEIPASS: {hasattr(sys, '_MEIPASS')}, frozen: {hasattr(sys, 'frozen')}")
 logger.debug(f"日志已经经过脱敏处理，请放心转发至公共平台！")
+
 
 def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False):
     plogger = logger
@@ -150,10 +150,10 @@ def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False)
     elif isinstance(e, SteamError):
         plogger.error("Steam 异常, 异常id:" + str(e.error_code) + ", 异常信息:" + STEAM_ERROR_CODES.get(e.error_code, "未知Steam错误"))
     elif isinstance(e, ApiException):
-        if 'Invalid trade offer state' in str(e):
-            if 'Canceled' in str(e):
+        if "Invalid trade offer state" in str(e):
+            if "Canceled" in str(e):
                 plogger.error("交易已取消，无法接受报价")
-            elif 'Accepted' in str(e):
+            elif "Accepted" in str(e):
                 plogger.error("交易已接受，无法重复操作")
             else:
                 plogger.error("交易状态异常，无法接受报价，异常信息：" + str(e))
@@ -162,18 +162,18 @@ def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False)
     else:
         if not known:
             plogger.error(
-                f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})\n编译信息：{BUILD_INFO}\n" # type: ignore
+                f"当前Steamauto版本：{CURRENT_VERSION}\nPython版本：{os.sys.version}\n系统版本：{platform.system()} {platform.release()}({platform.version()})\n编译信息：{BUILD_INFO}\n"  # type: ignore
             )
             plogger.error("发生未知异常, 异常信息:" + str(e) + ", 异常类型:" + str(type(e)) + ", 建议反馈至开发者！截图此页面对开发者没有任何帮助！请同时向开发者提供日志文件！")
-        
-        if BUILD_INFO == '正在使用源码运行':
+
+        if BUILD_INFO == "正在使用源码运行":
             plogger.error(e, exc_info=True)
 
 
 class PluginLogger:
     def __init__(self, pluginName):
-        if '[' and ']' not in pluginName:
-            self.pluginName = f'[{pluginName}]'
+        if "[" and "]" not in pluginName:
+            self.pluginName = f"[{pluginName}]"
         else:
             self.pluginName = pluginName
 
@@ -191,6 +191,6 @@ class PluginLogger:
 
     def critical(self, msg, *args, **kwargs):
         logger.critical(f"{self.pluginName} {msg}", *args, **kwargs)
-    
+
     def log(self, level, msg, *args, **kwargs):
         logger.log(level, f"{self.pluginName} {msg}", *args, **kwargs)

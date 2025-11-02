@@ -1,0 +1,4 @@
+line-length = 180
+exclude = ["protobufs"]
+[lint]
+ignore = ["E712", "E722"]

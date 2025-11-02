@@ -35,17 +35,13 @@ class UUAutoLeaseItem:
         return False
 
     def get_lease_price(self, template_id, min_price=0, max_price=20000, cnt=15):
-
         if template_id in self.lease_price_cache:
             if datetime.datetime.now() - self.lease_price_cache[template_id]["cache_time"] <= datetime.timedelta(minutes=20):
                 commodity_name = self.lease_price_cache[template_id]["commodity_name"]
                 lease_unit_price = self.lease_price_cache[template_id]["lease_unit_price"]
                 long_lease_unit_price = self.lease_price_cache[template_id]["long_lease_unit_price"]
                 lease_deposit = self.lease_price_cache[template_id]["lease_deposit"]
-                self.logger.info(
-                    f"物品 {commodity_name} 使用缓存价格设置，"
-                    f"短租价格：{lease_unit_price:.2f}，长租价格：{long_lease_unit_price:.2f}，押金：{lease_deposit:.2f}"
-                )
+                self.logger.info(f"物品 {commodity_name} 使用缓存价格设置，短租价格：{lease_unit_price:.2f}，长租价格：{long_lease_unit_price:.2f}，押金：{lease_deposit:.2f}")
                 return {
                     "LeaseUnitPrice": lease_unit_price,
                     "LongLeaseUnitPrice": long_lease_unit_price,
@@ -88,19 +84,14 @@ class UUAutoLeaseItem:
         long_lease_unit_price = min(round(long_lease_unit_price, 2), lease_unit_price)
         lease_deposit = round(lease_deposit, 2)
 
-        if self.config['uu_auto_lease_item']['enable_fix_lease_ratio'] and min_price > 0:
-            ratio = self.config['uu_auto_lease_item']['fix_lease_ratio']
+        if self.config["uu_auto_lease_item"]["enable_fix_lease_ratio"] and min_price > 0:
+            ratio = self.config["uu_auto_lease_item"]["fix_lease_ratio"]
             lease_unit_price = max(lease_unit_price, min_price * ratio)
             long_lease_unit_price = max(long_lease_unit_price, lease_unit_price * 0.98)
 
-            self.logger.info(
-                f"物品 {commodity_name}，启用比例定价，市场价 {min_price}，租金比例 {ratio}"
-            )
+            self.logger.info(f"物品 {commodity_name}，启用比例定价，市场价 {min_price}，租金比例 {ratio}")
 
-        self.logger.info(
-            f"物品 {commodity_name}，"
-            f"短租价格：{lease_unit_price:.2f}，长租价格：{long_lease_unit_price:.2f}，押金：{lease_deposit:.2f}"
-        )
+        self.logger.info(f"物品 {commodity_name}，短租价格：{lease_unit_price:.2f}，长租价格：{long_lease_unit_price:.2f}，押金：{lease_deposit:.2f}")
         if lease_unit_price != 0:
             self.lease_price_cache[template_id] = {
                 "commodity_name": commodity_name,
@@ -143,10 +134,10 @@ class UUAutoLeaseItem:
                         continue
                     self.operate_sleep()
 
-                    price_rsp = self.get_lease_price(template_id, min_price=price, max_price=price*2)
+                    price_rsp = self.get_lease_price(template_id, min_price=price, max_price=price * 2)
                     if price_rsp["LeaseUnitPrice"] == 0:
                         continue
-                    
+
                     lease_item = models.UUOnLeaseShelfItem(
                         AssetId=asset_id,
                         IsCanLease=True,
@@ -155,7 +146,7 @@ class UUAutoLeaseItem:
                         LeaseUnitPrice=price_rsp["LeaseUnitPrice"],
                         LongLeaseUnitPrice=price_rsp["LongLeaseUnitPrice"],
                         LeaseDeposit=str(price_rsp["LeaseDeposit"]),
-                        CompensationType=self.compensation_type
+                        CompensationType=self.compensation_type,
                     )
                     if self.config["uu_auto_lease_item"]["lease_max_days"] <= 8:
                         lease_item.LongLeaseUnitPrice = None
@@ -186,7 +177,7 @@ class UUAutoLeaseItem:
                     self.uuyoupin.get_user_nickname()
                 except KeyError as e:
                     handle_caught_exception(e, "UUAutoLeaseItem", known=True)
-                    send_notification('检测到悠悠有品登录已经失效,请重新登录', title='悠悠有品登录失效')
+                    send_notification("检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
                     self.logger.error("检测到悠悠有品登录已经失效,请重新登录。")
                     self.logger.error("由于登录失败，插件将自动退出。")
                     exit_code.set(1)
@@ -200,7 +191,6 @@ class UUAutoLeaseItem:
             self.logger.info("正在获取悠悠有品出租已上架物品...")
             leased_item_list = self.leased_inventory_list
             for i, item in enumerate(leased_item_list):
-
                 template_id = item.templateid
                 short_name = item.short_name
                 price = item.price
@@ -208,7 +198,7 @@ class UUAutoLeaseItem:
                 if any(s != "" and is_subsequence(s, short_name) for s in self.config["uu_auto_lease_item"]["filter_name"]):
                     continue
 
-                price_rsp = self.get_lease_price(template_id, min_price=price, max_price=price*2)
+                price_rsp = self.get_lease_price(template_id, min_price=price, max_price=price * 2)
                 if price_rsp["LeaseUnitPrice"] == 0:
                     continue
 
@@ -267,8 +257,8 @@ class UUAutoLeaseItem:
 
     def exec(self):
         self.logger.info(f"以下物品不会出租：{self.config['uu_auto_lease_item']['filter_name']}")
-        if "compensation_type" in self.config['uu_auto_lease_item']:
-            self.compensation_type = self.config['uu_auto_lease_item']['compensation_type']
+        if "compensation_type" in self.config["uu_auto_lease_item"]:
+            self.compensation_type = self.config["uu_auto_lease_item"]["compensation_type"]
 
         self.uuyoupin = uuyoupinapi.UUAccount(get_valid_token_for_uu())
 
@@ -276,10 +266,10 @@ class UUAutoLeaseItem:
         self.auto_lease()
         self.auto_set_zero_cd()
 
-        run_time = self.config['uu_auto_lease_item']['run_time']
-        interval = self.config['uu_auto_lease_item']['interval']
-        if "zero_cd_run_time" in self.config['uu_auto_lease_item']:
-            zero_cd_run_time = self.config['uu_auto_lease_item']['zero_cd_run_time']
+        run_time = self.config["uu_auto_lease_item"]["run_time"]
+        interval = self.config["uu_auto_lease_item"]["interval"]
+        if "zero_cd_run_time" in self.config["uu_auto_lease_item"]:
+            zero_cd_run_time = self.config["uu_auto_lease_item"]["zero_cd_run_time"]
         else:
             zero_cd_run_time = "23:30"
         self.logger.info(f"[自动出售] 等待到 {run_time} 开始执行。")
@@ -319,4 +309,3 @@ if __name__ == "__main__":
     else:
         uu_auto_lease.uuyoupin = uuyoupinapi.UUAccount(token)
     uu_auto_lease.auto_change_price()
-

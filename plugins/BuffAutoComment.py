@@ -7,15 +7,13 @@ import requests
 
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception
-from utils.static import (BUFF_COOKIES_FILE_PATH, SESSION_FOLDER,
-                          SUPPORT_GAME_TYPES)
+from utils.static import BUFF_COOKIES_FILE_PATH, SESSION_FOLDER, SUPPORT_GAME_TYPES
 from utils.tools import get_encoding
 
 
 class BuffAutoComment:
     buff_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27",
     }
 
     def __init__(self, logger, steam_client, steam_client_mutex, config):
@@ -43,8 +41,7 @@ class BuffAutoComment:
         result = {}
         while True:
             self.logger.debug("[BuffAutoComment] 正在获取" + game + " 购买记录, 页数: " + str(page_num))
-            url = ("https://buff.163.com/api/market/buy_order/history?page_num=" + str(page_num) +
-                   "&page_size=300&game=" + game)
+            url = "https://buff.163.com/api/market/buy_order/history?page_num=" + str(page_num) + "&page_size=300&game=" + game
             response_json = self.session.get(url, headers=self.buff_headers).json()
             if response_json["code"] != "OK":
                 self.logger.error("[BuffAutoComment] 获取历史订单失败")
@@ -52,7 +49,7 @@ class BuffAutoComment:
             items = response_json["data"]["items"]
             should_break = False
             for item in items:
-                if item['state'] != 'SUCCESS':
+                if item["state"] != "SUCCESS":
                     continue
                 keys_to_form_dict_key = ["appid", "assetid", "classid", "contextid"]
                 keys_list = []
@@ -99,15 +96,7 @@ class BuffAutoComment:
         url = "https://buff.163.com/api/market/steam_inventory"
         total_items = []
         while True:
-            params = {
-                "page_num": page_num,
-                "page_size": page_size,
-                "sort_by": sort_by,
-                "state": state,
-                "force": force,
-                "force_wear": force_wear,
-                "game": game
-            }
+            params = {"page_num": page_num, "page_size": page_size, "sort_by": sort_by, "state": state, "force": force, "force_wear": force_wear, "game": game}
             self.logger.info("[BuffAutoComment] 避免被封号, 休眠15秒")
             time.sleep(15)
             response_json = self.session.get(url, headers=self.buff_headers, params=params).json()
@@ -142,9 +131,7 @@ class BuffAutoComment:
                     if not self.steam_client.is_session_alive():
                         self.logger.info("[BuffAutoComment] Steam会话已过期, 正在重新登录...")
                         self.steam_client._session.cookies.clear()
-                        self.steam_client.login(
-                            self.steam_client.username, self.steam_client._password, json5.dumps(self.steam_client.steam_guard)
-                        )
+                        self.steam_client.login(self.steam_client.username, self.steam_client._password, json5.dumps(self.steam_client.steam_guard))
                         self.logger.info("[BuffAutoComment] Steam会话已更新")
                         steam_session_path = os.path.join(SESSION_FOLDER, self.steam_client.username.lower() + ".pkl")
                         with open(steam_session_path, "wb") as f:
@@ -175,7 +162,7 @@ class BuffAutoComment:
                         for key in keys_to_form_dict_key:
                             keys_list.append(str(item["asset_info"][key]))
                         key_str = "_".join(keys_list)
-                        price = ''
+                        price = ""
                         if key_str in trade_history:
                             self.logger.debug("[BuffAutoComment] " + key_str + " 购买价格为: " + str(trade_history[key_str]))
                             price = trade_history[key_str]
@@ -192,16 +179,10 @@ class BuffAutoComment:
                         comment = price + " " + current_comment
                         if current_comment == "":
                             comment = price
-                        assets.append({
-                            "assetid": item["asset_info"]["assetid"],
-                            "remark": comment
-                        })
+                        assets.append({"assetid": item["asset_info"]["assetid"], "remark": comment})
                     if assets:
                         post_url = "https://buff.163.com/api/market/steam_asset_remark/change"
-                        post_data = {
-                            "appid": game["app_id"],
-                            "assets": assets
-                        }
+                        post_data = {"appid": game["app_id"], "assets": assets}
                         self.logger.info("[BuffAutoComment] 避免被封号, 休眠20秒")
                         time.sleep(20)
                         self.logger.info("[BuffAutoComment] 正在提交备注...")

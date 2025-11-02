@@ -21,7 +21,7 @@ from utils.notifier import send_notification
 from utils.static import SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH, CONFIG_FILE_PATH
 from utils.tools import accelerator, get_encoding, pause
 
-logger = PluginLogger('SteamClient')
+logger = PluginLogger("SteamClient")
 
 steam_client_mutex = threading.Lock()
 steam_client: Optional[SteamClient] = None
@@ -35,25 +35,28 @@ except Exception:
 
 # ================= JWT 解析与缓存辅助 ===================
 
+
 def _parse_jwt_exp(jwt_token: Optional[str]) -> int:
     if not jwt_token:
         return 0
     try:
-        parts = jwt_token.split('.')
+        parts = jwt_token.split(".")
         if len(parts) != 3:
             return 0
         payload = parts[1]
-        payload += '=' * (4 - len(payload) % 4)
+        payload += "=" * (4 - len(payload) % 4)
         decoded_payload = base64.b64decode(payload)
         payload_data = json.loads(decoded_payload)
-        return payload_data.get('exp', 0)
+        return payload_data.get("exp", 0)
     except Exception as e:
         handle_caught_exception(e, known=True)
         logger.warning("解析JWT过期时间失败")
         return 0
 
+
 def _get_token_cache_path(username: str) -> str:
     return os.path.join(SESSION_FOLDER, f"steam_account_{username.lower()}.json")
+
 
 def _load_token_cache(username: str) -> dict:
     cache_path = _get_token_cache_path(username)
@@ -65,6 +68,7 @@ def _load_token_cache(username: str) -> dict:
             handle_caught_exception(e, known=True)
             logger.warning(f"读取token缓存文件失败: {cache_path}")
     return {}
+
 
 def _save_token_cache(username: str, auth_info: Dict[str, Any]):
     """
@@ -112,7 +116,9 @@ def _save_token_cache(username: str, auth_info: Dict[str, Any]):
         handle_caught_exception(e, known=True)
         logger.error(f"保存token缓存失败: {cache_path}")
 
+
 # ================== 会话与代理设置 ======================
+
 
 def _setup_client_session(client: SteamClient, config: dict):
     if config["steam_login_ignore_ssl_error"]:
@@ -130,6 +136,7 @@ def _setup_client_session(client: SteamClient, config: dict):
         client._session.proxies = config["proxies"]
         logger.info("已经启用Steam代理")
 
+
 def _check_proxy_availability(config: dict) -> bool:
     if not config.get("use_proxies", False):
         return True
@@ -146,7 +153,9 @@ def _check_proxy_availability(config: dict) -> bool:
         logger.error("代理服务器不可用，请检查配置文件，或者将use_proxies配置项设置为false")
         return False
 
+
 # ================== 后台刷新线程 ========================
+
 
 class TokenRefreshThread(threading.Thread):
     """
@@ -157,6 +166,7 @@ class TokenRefreshThread(threading.Thread):
       - 如果 session 失效或刷新失败 -> relogin()
       - 若完全失败 -> 发送通知
     """
+
     def __init__(self, username: str, config: dict):
         super().__init__(daemon=True)
         self.username = username
@@ -280,14 +290,16 @@ class TokenRefreshThread(threading.Thread):
                     logger.error("后台刷新失败，无法延长会话")
                     send_notification("Steam 会话维持失败", "自动刷新与重登录均失败，请检查账号或网络")
         except requests.exceptions.RequestException:
-            logger.error('无法检查Steam会话状态，请检查网络连接或代理设置')
+            logger.error("无法检查Steam会话状态，请检查网络连接或代理设置")
         except Exception as e:
             handle_caught_exception(e, known=False)
 
     def stop(self):
         self.stop_event.set()
 
+
 # ================== 登录主流程 ==========================
+
 
 def login_to_steam(config: dict):
     """
@@ -405,8 +417,8 @@ def login_to_steam(config: dict):
         else:
             client = SteamClient(api_key="")
         _setup_client_session(client, config)
-        if config['use_proxies'] and config['steam_local_accelerate']:
-            logger.warning('检测到你已经同时开启内置加速和代理功能！正常情况下不推荐通过这种方式使用软件')
+        if config["use_proxies"] and config["steam_local_accelerate"]:
+            logger.warning("检测到你已经同时开启内置加速和代理功能！正常情况下不推荐通过这种方式使用软件")
         logger.info("正在登录...")
         auth_info = client.login(username, password, steam_account_info)
         if client.is_session_alive():
@@ -440,7 +452,7 @@ def login_to_steam(config: dict):
         )
         pause()
         return None
-    except (ApiException):
+    except ApiException:
         logger.error("登录失败. 请检查网络是否正常或被Steam屏蔽!\n")
         pause()
         return None
@@ -454,6 +466,7 @@ def login_to_steam(config: dict):
         pause()
         return None
 
+
 def _start_token_refresh_thread(username: str, config: dict):
     global token_refresh_thread
     try:
@@ -462,6 +475,7 @@ def _start_token_refresh_thread(username: str, config: dict):
     except Exception as e:
         handle_caught_exception(e, known=True)
         logger.error("启动 TokenRefreshThread 失败")
+
 
 # 用于外部报价处理器交互
 # 使用前请自行确保配置文件中 external_offer_handler 配置项正确
@@ -483,7 +497,7 @@ def external_handler(tradeOfferId, desc) -> bool:
     # 先检查外部处理器的待接受列表，若已存在则删除并直接返回 True
     try:
         get_url = f"{base_url}/getToAcceptOffers"
-        logger.info(f'正在检查外部报价处理器的待接受列表 {get_url}，是否包含报价号 {tradeOfferId} ...')
+        logger.info(f"正在检查外部报价处理器的待接受列表 {get_url}，是否包含报价号 {tradeOfferId} ...")
         resp = requests.get(get_url, timeout=10)
         resp.raise_for_status()
         payload = resp.json()
@@ -497,19 +511,19 @@ def external_handler(tradeOfferId, desc) -> bool:
             if offer_id is None:
                 continue
             if str(offer_id) == str(tradeOfferId):
-                    logger.info(f'报价号 {tradeOfferId} 已存在于外部处理器的待接受列表，尝试删除后直接接受')
-                    try:
-                        delete_url = f"{base_url}/deleteOffer"
-                        del_resp = requests.post(delete_url, json={"offerId": offer_id}, timeout=10)
-                        del_resp.raise_for_status()
-                        del_result = del_resp.json()
-                        if isinstance(del_result, dict) and del_result.get("status") == "ok":
-                            logger.info(f"已从外部处理器删除报价: {tradeOfferId}")
-                        else:
-                            logger.error(f"从外部处理器删除报价失败: {tradeOfferId} -> {del_result}")
-                    except Exception as e:
-                        logger.error(f"向外部处理器请求删除报价时出错: {e}")
-                    return True
+                logger.info(f"报价号 {tradeOfferId} 已存在于外部处理器的待接受列表，尝试删除后直接接受")
+                try:
+                    delete_url = f"{base_url}/deleteOffer"
+                    del_resp = requests.post(delete_url, json={"offerId": offer_id}, timeout=10)
+                    del_resp.raise_for_status()
+                    del_result = del_resp.json()
+                    if isinstance(del_result, dict) and del_result.get("status") == "ok":
+                        logger.info(f"已从外部处理器删除报价: {tradeOfferId}")
+                    else:
+                        logger.error(f"从外部处理器删除报价失败: {tradeOfferId} -> {del_result}")
+                except Exception as e:
+                    logger.error(f"向外部处理器请求删除报价时出错: {e}")
+                return True
     except Exception:
         # 无法获取待接受列表时忽略此步，继续走提交逻辑
         logger.debug("无法检查外部处理器的待接受列表，继续提交 /submit")
@@ -517,32 +531,30 @@ def external_handler(tradeOfferId, desc) -> bool:
     # 提交到 /submit，由外部处理器决定是否处理
     external_handler_url = base_url + "/submit"
     try:
-        data = {
-            "offerId": tradeOfferId,
-            "description": desc
-        }
-        logger.info(f'正在将报价号 {tradeOfferId} 发送到外部报价处理器 {external_handler_url} ...')
+        data = {"offerId": tradeOfferId, "description": desc}
+        logger.info(f"正在将报价号 {tradeOfferId} 发送到外部报价处理器 {external_handler_url} ...")
         response = requests.post(external_handler_url, json=data, timeout=15)
         try:
             result = response.json()
         except Exception:
-            logger.error(f'无法解析外部处理器 {external_handler_url} 的响应为 JSON，已跳过该报价')
+            logger.error(f"无法解析外部处理器 {external_handler_url} 的响应为 JSON，已跳过该报价")
             return False
 
-        if isinstance(result, dict) and result.get('deliver'):
-            logger.info(f'外部报价处理器接受处理报价号 {tradeOfferId}')
+        if isinstance(result, dict) and result.get("deliver"):
+            logger.info(f"外部报价处理器接受处理报价号 {tradeOfferId}")
             return True
         else:
-            logger.info(f'外部报价处理器拒绝报价号 {tradeOfferId}，已跳过')
+            logger.info(f"外部报价处理器拒绝报价号 {tradeOfferId}，已跳过")
             return False
     except Exception:
         logger.error("无法连接到外部报价处理器，已跳过该报价")
         return False
 
+
 def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, desc="", network_retry_count=0, reportToExternal=True):
     max_network_retries = 3
     network_retry_delay = 5
-    
+
     if reportToExternal:
         if not external_handler(tradeOfferId, desc):
             return True
@@ -550,7 +562,7 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
     try:
         with mutex:
             client.accept_trade_offer(str(tradeOfferId))
-        send_notification(f'报价号：{tradeOfferId}\n{desc}', title='接受报价成功')
+        send_notification(f"报价号：{tradeOfferId}\n{desc}", title="接受报价成功")
         return True
     except Exception as e:
         if retry:
@@ -563,24 +575,22 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
                 logger.warning(f"接受报价号{tradeOfferId}遇到网络错误，正在重试 ({network_retry_count + 1}/{max_network_retries})...")
                 handle_caught_exception(e, "SteamClient", known=True)
                 time.sleep(network_retry_delay)
-                return accept_trade_offer(
-                    client, mutex, tradeOfferId, retry=False, desc=desc, network_retry_count=network_retry_count + 1
-                )
+                return accept_trade_offer(client, mutex, tradeOfferId, retry=False, desc=desc, network_retry_count=network_retry_count + 1)
             else:
                 logger.error(f"接受报价号{tradeOfferId}网络错误重试次数已达到上限({max_network_retries})，操作失败")
                 handle_caught_exception(e, "SteamClient", known=True)
-                send_notification(f'报价号：{tradeOfferId}\n{desc}', title='接受报价失败(网络错误)')
+                send_notification(f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(网络错误)")
                 return False
 
         if isinstance(e, ValueError):
-            if 'Accepted' in str(e):
-                logger.warning(f'报价号 {tradeOfferId} 已经处理过，无需再次处理')
+            if "Accepted" in str(e):
+                logger.warning(f"报价号 {tradeOfferId} 已经处理过，无需再次处理")
                 handle_caught_exception(e, "SteamClient", known=True)
                 return True
         if isinstance(e, (steampy.exceptions.ConfirmationExpected, steampy.exceptions.InvalidCredentials)):
             logger.error(f"接受报价号{tradeOfferId}失败：会话或凭据无效，放弃本次处理")
             handle_caught_exception(e, "SteamClient", known=True)
-            send_notification(f'报价号：{tradeOfferId}\n{desc}', title='接受报价失败(会话无效)')
+            send_notification(f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(会话无效)")
             return False
         if isinstance(e, KeyError):
             logger.error(f"接受报价号{tradeOfferId}失败！未找到报价号或报价号已过期")
@@ -590,22 +600,22 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
         handle_caught_exception(e, "SteamClient")
         logger.error(f"接受报价号{tradeOfferId}失败！")
 
-        if 'substring not found' in str(e):
-            logger.error(f'由于Steam风控，报价号 {tradeOfferId} 处理失败，请检查IP/加速器/梯子')
+        if "substring not found" in str(e):
+            logger.error(f"由于Steam风控，报价号 {tradeOfferId} 处理失败，请检查IP/加速器/梯子")
             handle_caught_exception(e, "SteamClient", known=True)
             return False
 
-
-        send_notification(f'报价号：{tradeOfferId}\n{desc}', title='接受报价失败')
+        send_notification(f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败")
         return False
+
 
 def get_cs2_inventory(client: SteamClient, mutex):
     inventory = None
     try:
         with mutex:
             inventory = client.get_my_inventory(game=GameOptions.CS)  # type: ignore
-            logger.log(5, '获取到的Steam库存:' + json.dumps(inventory, ensure_ascii=False))
+            logger.log(5, "获取到的Steam库存:" + json.dumps(inventory, ensure_ascii=False))
     except Exception as e:
         handle_caught_exception(e, "SteamClient", known=True)
-        send_notification('获取库存失败，请检查服务器网络', title='获取库存失败')
+        send_notification("获取库存失败，请检查服务器网络", title="获取库存失败")
     return inventory

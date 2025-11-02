@@ -19,10 +19,10 @@ class Confirmation:
 
 
 class Tag(enum.Enum):
-    CONF = 'conf'
-    DETAILS = 'details'
-    ALLOW = 'allow'
-    CANCEL = 'cancel'
+    CONF = "conf"
+    DETAILS = "details"
+    ALLOW = "allow"
+    CANCEL = "cancel"
 
 
 class ConfirmationExecutor:
@@ -51,11 +51,11 @@ class ConfirmationExecutor:
     def _send_confirmation(self, confirmation: Confirmation) -> dict:
         tag = Tag.ALLOW
         params = self._create_confirmation_params(tag.value)
-        params['op'] = tag.value,
-        params['cid'] = confirmation.data_confid
-        params['ck'] = confirmation.nonce
-        headers = {'X-Requested-With': 'XMLHttpRequest'}
-        return self._session.get(self.CONF_URL + '/ajaxop', params=params, headers=headers, timeout=15).json()
+        params["op"] = (tag.value,)
+        params["cid"] = confirmation.data_confid
+        params["ck"] = confirmation.nonce
+        headers = {"X-Requested-With": "XMLHttpRequest"}
+        return self._session.get(self.CONF_URL + "/ajaxop", params=params, headers=headers, timeout=15).json()
 
     def _get_confirmations(self) -> List[Confirmation]:
         confirmations = []
@@ -63,10 +63,10 @@ class ConfirmationExecutor:
             confirmations_page = self._fetch_confirmations_page()
             if confirmations_page.status_code == 200:
                 confirmations_json = json.loads(confirmations_page.text)
-                for conf in confirmations_json['conf']:
-                    data_confid = conf['id']
-                    nonce = conf['nonce']
-                    creator_id = conf['creator_id']
+                for conf in confirmations_json["conf"]:
+                    data_confid = conf["id"]
+                    nonce = conf["nonce"]
+                    creator_id = conf["creator_id"]
                     confirmations.append(Confirmation(data_confid, nonce, creator_id))
                 return confirmations
             time.sleep(1)
@@ -76,35 +76,29 @@ class ConfirmationExecutor:
     def _fetch_confirmations_page(self) -> requests.Response:
         tag = Tag.CONF.value
         params = self._create_confirmation_params(tag)
-        headers = {'X-Requested-With': 'com.valvesoftware.android.steam.community'}
-        response = self._session.get(self.CONF_URL + '/getlist', params=params, headers=headers, timeout=15)
-        if 'Steam Guard Mobile Authenticator is providing incorrect Steam Guard codes.' in response.text:
-            raise InvalidCredentials('Invalid Steam Guard file')
+        headers = {"X-Requested-With": "com.valvesoftware.android.steam.community"}
+        response = self._session.get(self.CONF_URL + "/getlist", params=params, headers=headers, timeout=15)
+        if "Steam Guard Mobile Authenticator is providing incorrect Steam Guard codes." in response.text:
+            raise InvalidCredentials("Invalid Steam Guard file")
         return response
 
     def _fetch_confirmation_details_page(self, confirmation: Confirmation) -> str:
-        tag = 'details' + confirmation.data_confid
+        tag = "details" + confirmation.data_confid
         params = self._create_confirmation_params(tag)
-        response = self._session.get(self.CONF_URL + '/details/' + confirmation.data_confid, params=params, timeout=15)
-        return response.json()['html']
+        response = self._session.get(self.CONF_URL + "/details/" + confirmation.data_confid, params=params, timeout=15)
+        return response.json()["html"]
 
     def _create_confirmation_params(self, tag_string: str) -> dict:
         timestamp = int(time.time())
         confirmation_key = guard.generate_confirmation_key(self._identity_secret, tag_string, timestamp)
         android_id = guard.generate_device_id(self._my_steam_id)
-        return {'p': android_id,
-                'a': self._my_steam_id,
-                'k': confirmation_key,
-                't': timestamp,
-                'm': 'android',
-                'tag': tag_string}
+        return {"p": android_id, "a": self._my_steam_id, "k": confirmation_key, "t": timestamp, "m": "android", "tag": tag_string}
 
-    def _select_trade_offer_confirmation(self, confirmations: List[Confirmation], trade_offer_id: str,
-                                         match_end: bool = False) -> Confirmation:
+    def _select_trade_offer_confirmation(self, confirmations: List[Confirmation], trade_offer_id: str, match_end: bool = False) -> Confirmation:
         for confirmation in confirmations:
             confirmation_details_page = self._fetch_confirmation_details_page(confirmation)
             confirmation_id = self._get_confirmation_trade_offer_id(confirmation_details_page)
-            if confirmation_id == '' or confirmation_id is None or not confirmation_id.isdigit():
+            if confirmation_id == "" or confirmation_id is None or not confirmation_id.isdigit():
                 confirmation_id = confirmation.creator_id
             if confirmation_id == trade_offer_id:
                 return confirmation
@@ -122,22 +116,22 @@ class ConfirmationExecutor:
 
     @staticmethod
     def _get_confirmation_sell_listing_id(confirmation_details_page: str) -> str:
-        soup = BeautifulSoup(confirmation_details_page, 'html.parser')
+        soup = BeautifulSoup(confirmation_details_page, "html.parser")
         scr_raw = soup.select("script")[2].string.strip()
-        scr_raw = scr_raw[scr_raw.index("'confiteminfo', ") + 16:]
-        scr_raw = scr_raw[:scr_raw.index(", UserYou")].replace("\n", "")
+        scr_raw = scr_raw[scr_raw.index("'confiteminfo', ") + 16 :]
+        scr_raw = scr_raw[: scr_raw.index(", UserYou")].replace("\n", "")
         return json.loads(scr_raw)["id"]
 
     @staticmethod
     def _get_confirmation_trade_offer_id(confirmation_details_page: str) -> str:
-        soup = BeautifulSoup(confirmation_details_page, 'html.parser')
-        trade_offer_id = soup.select('.tradeoffer')
+        soup = BeautifulSoup(confirmation_details_page, "html.parser")
+        trade_offer_id = soup.select(".tradeoffer")
         if len(trade_offer_id) != 0:
-            full_offer_id = soup.select('.tradeoffer')[0]['id']
-            return full_offer_id.split('_')[1]
+            full_offer_id = soup.select(".tradeoffer")[0]["id"]
+            return full_offer_id.split("_")[1]
         else:
-            div = soup.select('div')
+            div = soup.select("div")
             if len(div) > 3:
-                return soup.select('div')[3].text.replace('\r', '').replace('\n', '').replace('\t', '')
+                return soup.select("div")[3].text.replace("\r", "").replace("\n", "").replace("\t", "")
             else:
-                return ''
+                return ""

@@ -34,13 +34,13 @@ OSkVea8JGUUD8PliMtRJOQkCAwEAAQ=="""
 
         # Encrypt the content with AES
         cipher_aes = AES.new(aes_key, AES.MODE_CBC, iv)
-        content_bytes = content.encode('utf-8')
+        content_bytes = content.encode("utf-8")
         encrypted_content = cipher_aes.encrypt(pad(content_bytes, AES.block_size))
 
         # Concatenate the encrypted AES key, IV, and content
         encrypted_data = encrypted_aes_key + iv + encrypted_content
 
         # Encode the encrypted data in base64
-        encrypted_base64 = base64.b64encode(encrypted_data).decode('utf-8')
+        encrypted_base64 = base64.b64encode(encrypted_data).decode("utf-8")
 
         return encrypted_base64

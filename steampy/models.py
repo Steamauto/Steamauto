@@ -3,15 +3,15 @@ from collections import namedtuple
 
 
 class GameOptions:
-    PredefinedOptions = namedtuple('PredefinedOptions', ['app_id', 'context_id'])
+    PredefinedOptions = namedtuple("PredefinedOptions", ["app_id", "context_id"])
 
-    STEAM = PredefinedOptions('753', '6')
-    DOTA2 = PredefinedOptions('570', '2')
-    CS = PredefinedOptions('730', '2')
-    TF2 = PredefinedOptions('440', '2')
-    PUBG = PredefinedOptions('578080', '2')
-    RUST = PredefinedOptions('252490', '2')
-    BANANA = PredefinedOptions('2923300', '2')
+    STEAM = PredefinedOptions("753", "6")
+    DOTA2 = PredefinedOptions("570", "2")
+    CS = PredefinedOptions("730", "2")
+    TF2 = PredefinedOptions("440", "2")
+    PUBG = PredefinedOptions("578080", "2")
+    RUST = PredefinedOptions("252490", "2")
+    BANANA = PredefinedOptions("2923300", "2")
 
     def __init__(self, app_id: str, context_id: str) -> None:
         self.app_id = app_id
@@ -25,12 +25,7 @@ class Asset:
         self.amount = amount
 
     def to_dict(self):
-        return {
-            'appid': int(self.game.app_id),
-            'contextid': self.game.context_id,
-            'amount': self.amount,
-            'assetid': self.asset_id
-        }
+        return {"appid": int(self.game.app_id), "contextid": self.game.context_id, "amount": self.amount, "assetid": self.asset_id}
 
 
 class Currency(enum.IntEnum):
@@ -100,7 +95,7 @@ class TradeOfferState(enum.IntEnum):
 class SteamUrl:
     API_URL = "https://api.steampowered.com"
     COMMUNITY_URL = "https://steamcommunity.com"
-    STORE_URL = 'https://store.steampowered.com'
+    STORE_URL = "https://store.steampowered.com"
 
 
 class Endpoints:

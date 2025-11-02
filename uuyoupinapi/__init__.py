@@ -36,7 +36,7 @@ def generate_headers(devicetoken, deviceid, token=""):
         "platform": "android",
         "accept-encoding": "gzip",
         "Gameid": "730",
-        'Device-Info': json.dumps(
+        "Device-Info": json.dumps(
             {"deviceId": deviceid, "deviceType": deviceid, "hasSteamApp": 1, "requestTag": generate_random_string(32).upper(), "systemName ": "Android", "systemVersion": "15"},
             ensure_ascii=False,
         ),
@@ -52,7 +52,7 @@ def is_json(data):
 
 
 class UUAccount:
-    def __init__(self, token: str, deviceToken='', proxy=None):
+    def __init__(self, token: str, deviceToken="", proxy=None):
         """
         :param token: 通过抓包获得的token
         """
@@ -87,7 +87,7 @@ class UUAccount:
         )
 
     @staticmethod
-    def send_login_sms_code(phone, session: str, headers={}, region_code=86, uk=''):
+    def send_login_sms_code(phone, session: str, headers={}, region_code=86, uk=""):
         """
         发送登录短信验证码
         :param phone: 手机号
@@ -95,7 +95,7 @@ class UUAccount:
         :return:
         """
         if uk:
-            headers['uk'] = uk
+            headers["uk"] = uk
         return requests.post(
             "https://api.youpin898.com/api/user/Auth/SendSignInSmsCode",
             json={"Area": region_code, "Mobile": phone, "Sessionid": session, "Code": ""},
@@ -150,42 +150,42 @@ class UUAccount:
         """
         url = "https://api.youpin898.com" + path
         if pc_platform:
-            self.session.headers['platform'] = 'pc'
+            self.session.headers["platform"] = "pc"
         else:
-            self.session.headers['platform'] = 'android'
+            self.session.headers["platform"] = "android"
 
         if not uk_verify:
-            if 'uk' in self.session.headers:
-                self.session.headers.pop('uk')
+            if "uk" in self.session.headers:
+                self.session.headers.pop("uk")
         else:
             try:
                 from utils import cloud_service
 
-                if not hasattr(self, 'uk') or not hasattr(self, 'uk_time') or (time.time() - self.uk_time > 30):
-                    if not hasattr(self, 'uk'):
-                        logger.debug('UK缓存不存在，尝试从云服务获取悠悠校验参数...')
-                    else: 
-                        logger.debug('UK缓存已过期或时间戳无效，尝试从云服务获取悠悠校验参数...')
-                    
+                if not hasattr(self, "uk") or not hasattr(self, "uk_time") or (time.time() - self.uk_time > 30):
+                    if not hasattr(self, "uk"):
+                        logger.debug("UK缓存不存在，尝试从云服务获取悠悠校验参数...")
+                    else:
+                        logger.debug("UK缓存已过期或时间戳无效，尝试从云服务获取悠悠校验参数...")
+
                     fetched_uk = cloud_service.get_uu_uk_from_cloud()
                     if fetched_uk:
                         self.uk = fetched_uk
                         self.uk_time = time.time()
-                        self.session.headers['uk'] = self.uk
-                        logger.debug(f'获取悠悠校验参数成功，已缓存。下次刷新时间: {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.uk_time + 30))}')
+                        self.session.headers["uk"] = self.uk
+                        logger.debug(f"获取悠悠校验参数成功，已缓存。下次刷新时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.uk_time + 30))}")
                     else:
-                        logger.error('从云服务获取悠悠校验参数失败。本次请求将使用随机生成的UK，且不进行缓存')
-                        self.session.headers['uk'] = generate_random_string(65)
+                        logger.error("从云服务获取悠悠校验参数失败。本次请求将使用随机生成的UK，且不进行缓存")
+                        self.session.headers["uk"] = generate_random_string(65)
                 else:
-                    self.session.headers['uk'] = self.uk
-                    logger.debug('使用已缓存的悠悠校验参数，下次刷新时间: ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.uk_time + 30)))
-            
+                    self.session.headers["uk"] = self.uk
+                    logger.debug("使用已缓存的悠悠校验参数，下次刷新时间: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.uk_time + 30)))
+
             except ImportError:
-                logger.warning('无法启用云服务，尝试使用随机生成的UK')
-                self.session.headers['uk'] = generate_random_string(65)
+                logger.warning("无法启用云服务，尝试使用随机生成的UK")
+                self.session.headers["uk"] = generate_random_string(65)
             except Exception as e:
-                logger.warning(f'获取或处理悠悠校验参数时发生错误: {e}。本次请求将使用随机生成的UK，且不进行缓存')
-                self.session.headers['uk'] = generate_random_string(65)
+                logger.warning(f"获取或处理悠悠校验参数时发生错误: {e}。本次请求将使用随机生成的UK，且不进行缓存")
+                self.session.headers["uk"] = generate_random_string(65)
 
         if method == "GET":
             response = self.session.get(url, params=data)
@@ -203,10 +203,10 @@ class UUAccount:
             log_output = json.dumps(json_output, ensure_ascii=False)
             logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
 
-            if json_output.get('code') == 84101:
-                raise Exception('登录状态失效，请重新登录')
+            if json_output.get("code") == 84101:
+                raise Exception("登录状态失效，请重新登录")
         elif response.status_code == 405:
-            logger.error('悠悠UK令牌失效，等待一分钟程序继续运行')
+            logger.error("悠悠UK令牌失效，等待一分钟程序继续运行")
             time.sleep(60)
         else:
             logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
@@ -228,7 +228,7 @@ class UUAccount:
         return
 
     def change_leased_price(self, items: list[models.LeaseAsset], compensation_type=0):
-        '''
+        """
         请求范例：
         {
             "Commoditys": [{
@@ -258,7 +258,7 @@ class UUAccount:
                 }]
             }
         }
-        '''
+        """
         item_infos = list()
         commodity_ids = list()
         for item in items:
@@ -286,33 +286,33 @@ class UUAccount:
                 "Sessionid": self.deviceToken,
             },
         ).json()
-        if rsp['Data']['FailCount'] != 0:
+        if rsp["Data"]["FailCount"] != 0:
             for commodity in rsp["Data"]["Commoditys"]:
                 if commodity["IsSuccess"] != 1:
                     logger.error(f"修改商品价格失败，商品ID：{commodity[id]}，原因：{commodity['Message']}")
-        return rsp['Data']['SuccessCount']
+        return rsp["Data"]["SuccessCount"]
 
     def send_offer(self, orderNo):
         rsp = self.call_api(
-            'PUT',
-            '/api/youpin/bff/trade/v1/order/sell/delivery/send-offer',
-            data={'orderNo': orderNo, 'Sessionid': self.deviceToken},
+            "PUT",
+            "/api/youpin/bff/trade/v1/order/sell/delivery/send-offer",
+            data={"orderNo": orderNo, "Sessionid": self.deviceToken},
         ).json()
-        if rsp['code'] == 0:
+        if rsp["code"] == 0:
             return True
         else:
-            return rsp['msg']
+            return rsp["msg"]
 
     def get_offer_status(self, orderNo):
         rsp = self.call_api(
-            'POST',
-            '/api/youpin/bff/trade/v1/order/sell/delivery/get-offer-status',
-            data={'orderNo': orderNo, 'Sessionid': self.deviceToken},
+            "POST",
+            "/api/youpin/bff/trade/v1/order/sell/delivery/get-offer-status",
+            data={"orderNo": orderNo, "Sessionid": self.deviceToken},
         ).json()
-        if rsp['code'] == 0:
+        if rsp["code"] == 0:
             return rsp
         else:
-            return rsp['msg']
+            return rsp["msg"]
 
     def get_wait_deliver_list(self, game_id=730, return_offer_id=True):
         """
@@ -333,24 +333,24 @@ class UUAccount:
         ).json()
         toDoList = dict()
         for order in toDoList_response["data"]:
-            if '赠送' in order["message"]:
-                logger.warning(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})为赠送订单，暂不支持赠送订单')
+            if "赠送" in order["message"]:
+                logger.warning(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})为赠送订单，暂不支持赠送订单")
             elif order["message"] == "有买家下单，待您发送报价":
-                logger.info(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})为待发送报价订单，正在尝试发送报价...')
+                logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})为待发送报价订单，正在尝试发送报价...")
                 result = self.send_offer(order["orderNo"])
                 if result == True:
-                    logger.info(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})的报价已经在发送，正在等待发送完成...')
+                    logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价已经在发送，正在等待发送完成...")
                     for i in range(5):
                         result = self.get_offer_status(order["orderNo"])
-                        if result['data']['status'] == 3:
-                            logger.info(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})的报价发送成功，将会在下一次轮询进行令牌确认')
+                        if result["data"]["status"] == 3:
+                            logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价发送成功，将会在下一次轮询进行令牌确认")
                             break
                         if i == 4:
-                            logger.warning(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})的报价发送等待超时')
+                            logger.warning(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价发送等待超时")
                             break
                         time.sleep(1.5)
                 else:
-                    logger.error(f'[UUAutoAcceptOffer] 订单号为 {order["orderNo"]} 的订单({order["commodityName"]})发送报价失败，原因：{result}')
+                    logger.error(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})发送报价失败，原因：{result}")
             else:
                 toDoList[order["orderNo"]] = order
         data_to_return = []
@@ -388,9 +388,9 @@ class UUAccount:
                         "Sessionid": self.deviceToken,
                     },
                 ).json()
-                if orderDetail["data"] and 'orderDetail' in orderDetail["data"]:
+                if orderDetail["data"] and "orderDetail" in orderDetail["data"]:
                     orderDetail = orderDetail["data"]["orderDetail"]
-                    if 'offerId' in orderDetail:
+                    if "offerId" in orderDetail:
                         data_to_return.append(
                             {
                                 "offer_id": orderDetail["offerId"],
@@ -411,7 +411,7 @@ class UUAccount:
                     },
                 ).json()
                 orderDetail = orderDetail["data"]
-                if orderDetail and 'tradeOfferId' in orderDetail and '系统验证中' not in str(orderDetail):
+                if orderDetail and "tradeOfferId" in orderDetail and "系统验证中" not in str(orderDetail):
                     data_to_return.append(
                         {
                             "offer_id": orderDetail["tradeOfferId"],
@@ -441,7 +441,7 @@ class UUAccount:
         return shelf
 
     def put_items_on_lease_shelf(self, item_infos: list[models.UUOnLeaseShelfItem], GameId=730):
-        '''
+        """
         请求范例：
         {
             "AppType": 3,
@@ -471,7 +471,7 @@ class UUAccount:
                 "Remark": ""
             }]
         }
-        '''
+        """
         lease_on_shelf_rsp = self.call_api(
             "POST",
             "/api/commodity/Inventory/SellInventoryWithLeaseV2",
@@ -506,21 +506,21 @@ class UUAccount:
             },
         ).json()
         leased_inventory_list = []
-        if rsp['code'] == 0:
+        if rsp["code"] == 0:
             for item in rsp["data"]["commodityInfoList"]:
                 leased_inventory_list.append(
                     models.LeaseAsset(
-                        assetid=str(item['steamAssetId']),
-                        templateid=item['templateId'],
-                        short_name=item['name'],
-                        LeaseDeposit=float(item['depositAmount']),
-                        LeaseUnitPrice=float(item['shortLeaseAmount']),
-                        LongLeaseUnitPrice=float(item['longLeaseAmount']) if item['longLeaseAmount'] else float(0),
-                        LeaseMaxDays=item['leaseMaxDays'],
-                        IsCanSold=bool(item['commodityCanSell']),
-                        IsCanLease=bool(item['commodityCanLease']),
-                        orderNo=item['id'],
-                        price=float(item['referencePrice'][1:]),
+                        assetid=str(item["steamAssetId"]),
+                        templateid=item["templateId"],
+                        short_name=item["name"],
+                        LeaseDeposit=float(item["depositAmount"]),
+                        LeaseUnitPrice=float(item["shortLeaseAmount"]),
+                        LongLeaseUnitPrice=float(item["longLeaseAmount"]) if item["longLeaseAmount"] else float(0),
+                        LeaseMaxDays=item["leaseMaxDays"],
+                        IsCanSold=bool(item["commodityCanSell"]),
+                        IsCanLease=bool(item["commodityCanLease"]),
+                        orderNo=item["id"],
+                        price=float(item["referencePrice"][1:]),
                     )
                 )
         elif rsp["code"] == 9004001:
@@ -539,8 +539,8 @@ class UUAccount:
             "Sessionid": self.deviceToken,
         }
         if refresh:
-            data_to_send['IsRefresh'] = True
-            data_to_send['RefreshType'] = 2
+            data_to_send["IsRefresh"] = True
+            data_to_send["RefreshType"] = 2
         inventory_list_rsp = self.call_api(
             "POST",
             "/api/commodity/Inventory/GetUserInventoryDataListV3",
@@ -556,7 +556,7 @@ class UUAccount:
 
         return inventory_list
 
-    def get_market_lease_price(self, template_id: int, min_price=0, max_price=20000, cnt=15, sortTypeKey='LEASE_DEFAULT') -> list[models.UUMarketLeaseItem]:
+    def get_market_lease_price(self, template_id: int, min_price=0, max_price=20000, cnt=15, sortTypeKey="LEASE_DEFAULT") -> list[models.UUMarketLeaseItem]:
         rsp = self.call_api(
             "POST",
             "/api/homepage/v3/detail/commodity/list/lease",
@@ -626,9 +626,9 @@ class UUAccount:
             "templateId": str(template_id),
         }
         if minAbrade is not None:
-            data['minAbrade'] = str(minAbrade)
+            data["minAbrade"] = str(minAbrade)
         if maxAbrade is not None:
-            data['maxAbrade'] = str(maxAbrade)
+            data["maxAbrade"] = str(maxAbrade)
 
         return self.call_api("POST", "/api/homepage/pc/goods/market/queryOnSaleCommodityList", data=data, uk_verify=True, pc_platform=True)
 
@@ -656,7 +656,7 @@ class UUAccount:
         success_count = 0
         for commodity in rsp["Data"]:
             if commodity["Status"] != 1:
-                if '不能重复上架' not in commodity['Remark']:
+                if "不能重复上架" not in commodity["Remark"]:
                     logger.error(f"商品 {commodity['AssetId']} 上架失败，原因：{commodity['Remark']}")
                 else:
                     logger.warning(f"商品 {commodity['AssetId']} 可能因为悠悠服务器延迟而导致程序重复上架")
@@ -689,7 +689,7 @@ class UUAccount:
         )
 
     def onshelf_sell_and_lease(self, sell_assets: list[models.Asset] = [], lease_assets: list[models.LeaseAsset] = []):
-        '''
+        """
         请求范例：
         {
             "AppType": 3,
@@ -720,7 +720,7 @@ class UUAccount:
                 "Remark": ""
             }]
         }
-        '''
+        """
         item_infos = []
         sell_assets_dict = dict({asset.assetid: asset for asset in sell_assets})
         lease_assets_dict = dict({asset.assetid: asset for asset in lease_assets})
@@ -758,51 +758,50 @@ class UUAccount:
                     "Sessionid": self.deviceToken,
                 },
             ).json()
-            if not rsp.get('Data'):
-                logger.error(f'上架{len(batch)}个物品失败，原因：{rsp}')
-                if 'Steam服务异常' in rsp.get('Msg', ''):
-                    logger.warning('检测到Steam服务异常，正在刷新库存...')
+            if not rsp.get("Data"):
+                logger.error(f"上架{len(batch)}个物品失败，原因：{rsp}")
+                if "Steam服务异常" in rsp.get("Msg", ""):
+                    logger.warning("检测到Steam服务异常，正在刷新库存...")
                     self.get_inventory(refresh=True)
-                    logger.info('刷新库存完成，等待5秒后继续上架')
+                    logger.info("刷新库存完成，等待5秒后继续上架")
                     time.sleep(5)
                 continue
             for asset in rsp["Data"]:
                 if asset["Status"] == 1:
                     success_count += 1
                 else:
-                    if '不能重复上架' in asset['Remark']:
+                    if "不能重复上架" in asset["Remark"]:
                         logger.warning(f"上架物品 {asset['AssetId']} 可能已经在租赁/出售货架上架(通常为可租可售商品需要以此方式上架) 稍后通过改价方式上架")
                         for item in batch:
-                            if item['AssetId'] == asset['AssetId']:
+                            if item["AssetId"] == asset["AssetId"]:
                                 change_price_onshelf_list.append(item)
                                 break
                     else:
                         logger.error(f"上架物品 {asset['AssetId']} 失败，原因：{asset['Remark']}")
         if change_price_onshelf_list:
-
-            logger.info(f'即将通过改价方式上架{len(change_price_onshelf_list)}个物品')
+            logger.info(f"即将通过改价方式上架{len(change_price_onshelf_list)}个物品")
             sell_shelf = self.get_sell_list()
             lease_shelf = self.get_uu_leased_inventory()
             for asset in change_price_onshelf_list:
-                if asset['IsCanSold']:
+                if asset["IsCanSold"]:
                     for lease_asset in lease_shelf:
-                        if asset['AssetId'] == int(lease_asset.assetid):
-                            asset['CommodityId'] = lease_asset.orderNo
-                            asset['LeaseDeposit'] = str(lease_asset.LeaseDeposit)
-                            asset['LeaseMaxDays'] = lease_asset.LeaseMaxDays
-                            asset['LeaseUnitPrice'] = lease_asset.LeaseUnitPrice
+                        if asset["AssetId"] == int(lease_asset.assetid):
+                            asset["CommodityId"] = lease_asset.orderNo
+                            asset["LeaseDeposit"] = str(lease_asset.LeaseDeposit)
+                            asset["LeaseMaxDays"] = lease_asset.LeaseMaxDays
+                            asset["LeaseUnitPrice"] = lease_asset.LeaseUnitPrice
                             if lease_asset.LongLeaseUnitPrice:
-                                asset['LongLeaseUnitPrice'] = lease_asset.LongLeaseUnitPrice
-                            asset['IsCanLease'] = True
-                            del asset['AssetId']
+                                asset["LongLeaseUnitPrice"] = lease_asset.LongLeaseUnitPrice
+                            asset["IsCanLease"] = True
+                            del asset["AssetId"]
                             break
-                elif asset['IsCanLease']:
+                elif asset["IsCanLease"]:
                     for sell_asset in sell_shelf:
-                        if asset['AssetId'] == int(sell_asset['steamAssetId']):
-                            asset['CommodityId'] = sell_asset['id']
-                            asset['Price'] = sell_asset['price']
-                            asset['IsCanSold'] = True
-                            del asset['AssetId']
+                        if asset["AssetId"] == int(sell_asset["steamAssetId"]):
+                            asset["CommodityId"] = sell_asset["id"]
+                            asset["Price"] = sell_asset["price"]
+                            asset["IsCanSold"] = True
+                            del asset["AssetId"]
                             break
             batches = [change_price_onshelf_list[i : i + 50] for i in range(0, len(change_price_onshelf_list), 50)]
             for batch in batches:
@@ -815,7 +814,7 @@ class UUAccount:
                     },
                 ).json()
                 try:
-                    for asset in rsp["Data"]['Commoditys']:
+                    for asset in rsp["Data"]["Commoditys"]:
                         if asset["IsSuccess"] == 1:
                             success_count += 1
                         else:
@@ -826,7 +825,7 @@ class UUAccount:
         return success_count, failure_count
 
     def change_price_sell_and_lease(self, sell_assets: list[models.Asset] = [], lease_assets: list[models.LeaseAsset] = []):
-        '''
+        """
         请求示例：
         {
             "Commoditys": [{
@@ -856,7 +855,7 @@ class UUAccount:
                 }]
             }
         }
-        '''
+        """
         item_infos = []
         sell_assets_dict = dict({asset.assetid: asset for asset in sell_assets})
         lease_assets_dict = dict({asset.assetid: asset for asset in lease_assets})
@@ -892,15 +891,15 @@ class UUAccount:
                     "Sessionid": self.deviceToken,
                 },
             ).json()
-            for asset in rsp["Data"]['Commoditys']:
+            for asset in rsp["Data"]["Commoditys"]:
                 if asset["IsSuccess"] == 1:
                     success_count += 1
                 else:
-                    reason = '未知'
-                    if asset.get('Remark'):
-                        reason = asset['Remark']
-                    elif asset.get('Message'):
-                        reason = asset['Message']
+                    reason = "未知"
+                    if asset.get("Remark"):
+                        reason = asset["Remark"]
+                    elif asset.get("Message"):
+                        reason = asset["Message"]
                     logger.error(f"上架物品 {asset['CommodityId']}(悠悠商品编号) 失败，原因：{reason}")
         failure_count = len(item_infos) - success_count
         return success_count, failure_count
@@ -909,7 +908,7 @@ class UUAccount:
         data = {"gameId": 730, "pageIndex": 0, "pageSize": 50, "sortType": 0, "keywords": ""}
         result = []
         while True:
-            data['pageIndex'] += 1
+            data["pageIndex"] += 1
             response = self.call_api("POST", "/api/youpin/bff/trade/v1/order/lease/out/list", data=data).json()
             result += response["data"]["orderDataList"]
             if len(response["data"]["orderDataList"]) < 50:
@@ -918,14 +917,14 @@ class UUAccount:
 
     def get_template_id_by_order_id(self, order_id):
         response = self.call_api("POST", "/api/youpin/bff/order/v2/detail", data={"orderId": order_id}).json()
-        return response['data']['orderDetail']['productDetail']['commodityTemplateId']
+        return response["data"]["orderDetail"]["productDetail"]["commodityTemplateId"]
 
     def get_least_market_price(self, template_id):
         response = self.call_api("POST", "/api/homepage/v2/detail/commodity/list/sell", data={"templateId": template_id}).json()
-        if response['Code'] == 84104:
-            raise SystemError('悠悠风控，暂时无法获取价格')
+        if response["Code"] == 84104:
+            raise SystemError("悠悠风控，暂时无法获取价格")
         try:
-            return response['Data']['CommodityList'][0]['Price']
+            return response["Data"]["CommodityList"][0]["Price"]
         except:
             return 0
 
@@ -995,7 +994,7 @@ class UUAccount:
                                 "name": product["commodityName"],
                                 "order_time": int(order["finishOrderTime"]),
                                 "type_name": product["typeName"],
-                                "buy_from": 'uu',
+                                "buy_from": "uu",
                             }
                         )
                 else:
@@ -1029,7 +1028,7 @@ class UUAccount:
                         "buy_price": float(commodity["price"]),
                         "name": commodity["name"],
                         "order_time": int(data["orderCanceledTime"]),
-                        "buy_from": 'uu',
+                        "buy_from": "uu",
                     }
                 )
 
@@ -1065,7 +1064,7 @@ class UUAccount:
         else:
             logger.error(f"0cd出租设置失败，原因：{enable_zero_cd_rsp}")
 
-    def publish_purchase_order(self, templateId, templateHashName, commodityName, purchasePrice, purchaseNum, orderNo='', supplyQuantity=0):
+    def publish_purchase_order(self, templateId, templateHashName, commodityName, purchasePrice, purchaseNum, orderNo="", supplyQuantity=0):
         data = {
             "templateId": templateId,
             "templateHashName": templateHashName,
@@ -1082,10 +1081,10 @@ class UUAccount:
         }
         url = "/api/youpin/bff/trade/purchase/order/savePurchaseOrder"
         if orderNo:
-            data['orderNo'] = orderNo
+            data["orderNo"] = orderNo
             url = "/api/youpin/bff/trade/purchase/order/updatePurchaseOrder"
-            data['templateName'] = commodityName
-            data['supplyQuantity'] = supplyQuantity
+            data["templateName"] = commodityName
+            data["supplyQuantity"] = supplyQuantity
         response = self.call_api(
             "POST",
             url,
@@ -1095,8 +1094,8 @@ class UUAccount:
 
     def get_template_purchase_order(self, templateId, pageIndex=1, pageSize=30, minAbrade=0, maxAbrade=1, typeId=-1):
         response = self.call_api(
-            'POST',
-            '/api/youpin/bff/trade/purchase/order/getTemplatePurchaseOrderList',
+            "POST",
+            "/api/youpin/bff/trade/purchase/order/getTemplatePurchaseOrderList",
             data={
                 "templateId": templateId,
                 "pageIndex": pageIndex,
@@ -1110,8 +1109,8 @@ class UUAccount:
 
     def get_template_purchase_order_pc(self, templateId, pageIndex=1, pageSize=30, minAbrade=0, maxAbrade=1, typeId=-1):
         response = self.call_api(
-            'POST',
-            '/api/youpin/bff/trade/purchase/order/getTemplatePurchaseOrderListPC',
+            "POST",
+            "/api/youpin/bff/trade/purchase/order/getTemplatePurchaseOrderListPC",
             data={
                 "templateId": templateId,
                 "pageIndex": pageIndex,
@@ -1126,7 +1125,7 @@ class UUAccount:
         return response
 
     def search_purchase_order_list(self, pageIndex=1, pageSize=40, status=20):
-        response = self.call_api('POST', "/api/youpin/bff/trade/purchase/order/searchPurchaseOrderList", data={"pageIndex": pageIndex, "pageSize": pageSize, "status": status})
+        response = self.call_api("POST", "/api/youpin/bff/trade/purchase/order/searchPurchaseOrderList", data={"pageIndex": pageIndex, "pageSize": pageSize, "status": status})
         return response
 
     def get_full_purchase_order_list(self, status=20):
@@ -1138,9 +1137,9 @@ class UUAccount:
             response = self.search_purchase_order_list(index, 40, status)
             response.raise_for_status()
             data = response.json()
-            if '成功' in data['msg']:
-                purchase_order_list += data['data']
-            if len(data['data']) < 40:
+            if "成功" in data["msg"]:
+                purchase_order_list += data["data"]
+            if len(data["data"]) < 40:
                 break
             index += 1
         return purchase_order_list
