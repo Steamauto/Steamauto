@@ -105,7 +105,7 @@ DEFAULT_CONFIG_JSON = r"""
     // 是否开启dota2支持
     "dota2_support": false,
     // 是否使用全局代理设置中的代理连接BUFF
-    "use_proxies": true
+    "use_proxies": false
   },
   // BUFF 自动备注购买价格插件配置
   "buff_auto_comment": {
@@ -179,7 +179,7 @@ DEFAULT_CONFIG_JSON = r"""
     // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
     "interval": 300,
     //是否使用全局代理设置中的代理连接悠悠有品
-    "use_proxies": true,
+    "use_proxies": false,
   },
   // 悠悠有品租赁自动上架配置
   "uu_auto_lease_item": {
