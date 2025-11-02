@@ -62,7 +62,7 @@ class UUAutoAcceptOffer:
                 except Exception as e:
                     if "登录状态失效，请重新登录" in str(e):
                         handle_caught_exception(e, "UUAutoAcceptOffer", known=True)
-                        send_notification("检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
+                        send_notification(self.steam_client, "检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
                         self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                         self.logger.error("由于登录失败，插件将自动退出")
                         exit_code.set(1)

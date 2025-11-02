@@ -315,7 +315,7 @@ def main():
     steam_client = SteamClient("")
     steam_client = login_to_steam(config)
     if steam_client is None:
-        send_notification("登录Steam失败，程序停止运行")
+        send_notification(steam_client, "登录Steam失败，程序停止运行")
         pause()
         return 1
     # 仅用于获取启用的插件
@@ -329,7 +329,7 @@ def main():
         return 1
 
     if steam_client is not None:
-        send_notification("Steamauto 已经成功登录Steam并开始运行")
+        send_notification(steam_client, "Steamauto 已经成功登录Steam并开始运行")
         init_plugins_and_start(steam_client, steam_client_mutex)
 
     logger.info("由于所有插件已经关闭,程序即将退出...")

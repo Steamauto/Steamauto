@@ -89,12 +89,12 @@ class BuffAutoAcceptOffer:
 
         to_exit = True
         if steam_info["max_bind_count"] == 1:
-            if str(static.STEAM_64_ID) == steamid_buff:
+            if str(self.steam_client.get_steam64id_from_cookies()) == steamid_buff:
                 to_exit = False
         else:
             for account in steam_info["items"]:
-                if account["steamid"] == str(static.STEAM_64_ID):
-                    logger.info(f"检测到当前已经登录多个Steam账号，只会处理SteamID为{static.STEAM_64_ID}的交易")
+                if account["steamid"] == str(self.steam_client.get_steam64id_from_cookies()):
+                    logger.info(f"检测到当前已经登录多个Steam账号，只会处理SteamID为{self.steam_client.get_steam64id_from_cookies()}的交易")
                     to_exit = False
                     break
         if to_exit:
@@ -174,7 +174,7 @@ class BuffAutoAcceptOffer:
                                 if trade_offer["tradeofferid"] is not None and trade_offer["tradeofferid"] != "":
                                     self.order_info[trade_offer["tradeofferid"]] = trade_offer
                                     if not any(trade_offer["tradeofferid"] == trade["tradeofferid"] for trade in trades):
-                                        if str(trade_offer["seller_steamid"]) != str(static.STEAM_64_ID):
+                                        if str(trade_offer["seller_steamid"]) != str(self.steam_client.get_steam64id_from_cookies()):
                                             continue  # 跳过不是当前账号的报价
                                         for goods_id, goods_info in response_data["goods_infos"].items():
                                             goods_id = str(goods_id)

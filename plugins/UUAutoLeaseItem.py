@@ -22,6 +22,7 @@ class UUAutoLeaseItem:
         self.inventory_list = []
         self.lease_price_cache = {}
         self.compensation_type = 0
+        self.steam_client = steam_client
 
     @property
     def leased_inventory_list(self) -> list:
@@ -177,7 +178,7 @@ class UUAutoLeaseItem:
                     self.uuyoupin.get_user_nickname()
                 except KeyError as e:
                     handle_caught_exception(e, "UUAutoLeaseItem", known=True)
-                    send_notification("检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
+                    send_notification(self.steam_client, "检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
                     self.logger.error("检测到悠悠有品登录已经失效,请重新登录。")
                     self.logger.error("由于登录失败，插件将自动退出。")
                     exit_code.set(1)

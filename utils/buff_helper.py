@@ -60,7 +60,7 @@ def login_to_buff_by_steam(steam_client: SteamClient):
         return ""
 
 
-def login_to_buff_by_qrcode() -> str:
+def login_to_buff_by_qrcode(steam_client) -> str:
     session = requests.session()
     response_json = session.get("https://buff.163.com/account/api/qr_code_login_open", params={"_": str(int(time.time() * 1000))}).json()
     if response_json["code"] != "OK":
@@ -76,7 +76,7 @@ def login_to_buff_by_qrcode() -> str:
     img = qrcode.make(qr_code_url)
     img.save("qrcode.png")  # type: ignore
     url = "https://api.cl2wm.cn/api/qrcode/code?text=" + qr_code_url
-    send_notification(f"BUFF登录已失效！请使用手机打开以下链接获取二维码，并使用BUFF扫描该二维码以登录: {url}", "BUFF登录二维码")
+    send_notification(steam_client, f"BUFF登录已失效！请使用手机打开以下链接获取二维码，并使用BUFF扫描该二维码以登录: {url}", "BUFF登录二维码")
     logger.info("请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描")
     status = 0
     scanned = False
@@ -101,7 +101,7 @@ def login_to_buff_by_qrcode() -> str:
             os.remove("qrcode.png")
         except:
             pass
-    send_notification("BUFF登录成功！", "BUFF登录")
+    send_notification(steam_client, "BUFF登录成功！", "BUFF登录")
     return cookies["session"]
 
 
@@ -154,7 +154,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
     if not session:  # 尝试通过二维码
         logger.info("[BuffLoginSolver] 正在尝试通过二维码登录至BUFF...")
         try:
-            session = login_to_buff_by_qrcode()
+            session = login_to_buff_by_qrcode(steam_client)
             if (not session) or (not is_session_has_enough_permission(session)):
                 logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
             else:
@@ -164,7 +164,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
             session = ""
     if not session:  # 无法登录至BUFF
         logger.error("[BuffLoginSolver] 无法登录至BUFF, 请手动更新BUFF cookies! ")
-        send_notification("无法登录至BUFF，请手动更新BUFF cookies!", "BUFF登录失败")
+        send_notification(steam_client, "无法登录至BUFF，请手动更新BUFF cookies!", "BUFF登录失败")
     else:
         with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
             f.write("session=" + session.replace("session=", ""))

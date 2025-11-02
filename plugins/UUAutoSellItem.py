@@ -22,6 +22,7 @@ class UUAutoSellItem:
         self.inventory_list = []
         self.buy_price_cache = {}
         self.sale_inventory_list = None
+        self.steam_client = steam_client
 
     def init(self) -> bool:
         return False
@@ -254,7 +255,7 @@ class UUAutoSellItem:
                 except KeyError as e:
                     handle_caught_exception(e, "UUAutoSellItem", known=True)
                     self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
-                    send_notification("检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
+                    send_notification(self.steam_client, "检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
                     self.logger.error("由于登录失败，插件将自动退出")
                     exit_code.set(1)
                     return 1
@@ -327,7 +328,7 @@ class UUAutoSellItem:
                 self.uuyoupin.get_user_nickname()
             except KeyError as e:
                 handle_caught_exception(e, "UUAutoSellItem-AutoChangePrice", known=True)
-                send_notification("检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
+                send_notification(self.steam_client, "检测到悠悠有品登录已经失效,请重新登录", title="悠悠有品登录失效")
                 self.logger.error("检测到悠悠有品登录已经失效,请重新登录")
                 self.logger.error("由于登录失败，插件将自动退出")
                 exit_code.set(1)

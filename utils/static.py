@@ -27,7 +27,6 @@ if BUILD_INFO == "正在使用源码运行":
     if hasattr(sys, "_MEIPASS"):
         BUILD_INFO = "非官方二进制构建运行"
 STEAM_ACCOUNT_NAME = "暂未登录"
-STEAM_64_ID = "暂未登录"
 INTERNAL_PLUGINS = [
     "buff_auto_accept_offer",
     "buff_auto_comment",

@@ -255,7 +255,7 @@ class TokenRefreshThread(threading.Thread):
                     except Exception as e:
                         handle_caught_exception(e, known=True)
                         logger.error("会话失效，刷新失败")
-                        send_notification("Steam 会话刷新失败", "会话失效后 refresh_token 与重登录均失败，请检查账号或网络")
+                        send_notification(steam_client, "Steam 会话刷新失败", "会话失效后 refresh_token 与重登录均失败，请检查账号或网络")
                         return
 
                 if need_refresh:
@@ -288,7 +288,7 @@ class TokenRefreshThread(threading.Thread):
                         handle_caught_exception(e, known=True)
 
                     logger.error("后台刷新失败，无法延长会话")
-                    send_notification("Steam 会话维持失败", "自动刷新与重登录均失败，请检查账号或网络")
+                    send_notification(steam_client, "Steam 会话维持失败", "自动刷新与重登录均失败，请检查账号或网络")
         except requests.exceptions.RequestException:
             logger.error("无法检查Steam会话状态，请检查网络连接或代理设置")
         except Exception as e:
@@ -363,7 +363,6 @@ def login_to_steam(config: dict):
                 logger.info("使用缓存 access_token 登录成功")
                 steam_client = client
                 static.STEAM_ACCOUNT_NAME = client.username or username
-                static.STEAM_64_ID = client.get_steam64id_from_cookies()
                 # 启动刷新线程
                 if token_refresh_thread is None or not token_refresh_thread.is_alive():
                     _start_token_refresh_thread(username, config)
@@ -399,7 +398,6 @@ def login_to_steam(config: dict):
                     steam_client = client
                     _save_token_cache(username, auth_info)
                     static.STEAM_ACCOUNT_NAME = client.username or username
-                    static.STEAM_64_ID = client.get_steam64id_from_cookies()
                     if token_refresh_thread is None or not token_refresh_thread.is_alive():
                         _start_token_refresh_thread(username, config)
                     return steam_client
@@ -427,7 +425,6 @@ def login_to_steam(config: dict):
             if auth_info and isinstance(auth_info, dict):
                 _save_token_cache(username, auth_info)
             static.STEAM_ACCOUNT_NAME = client.username
-            static.STEAM_64_ID = client.get_steam64id_from_cookies()
             if token_refresh_thread is None or not token_refresh_thread.is_alive():
                 _start_token_refresh_thread(username, config)
             return steam_client
@@ -562,7 +559,7 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
     try:
         with mutex:
             client.accept_trade_offer(str(tradeOfferId))
-        send_notification(f"报价号：{tradeOfferId}\n{desc}", title="接受报价成功")
+        send_notification(steam_client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价成功")
         return True
     except Exception as e:
         if retry:
@@ -579,7 +576,7 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
             else:
                 logger.error(f"接受报价号{tradeOfferId}网络错误重试次数已达到上限({max_network_retries})，操作失败")
                 handle_caught_exception(e, "SteamClient", known=True)
-                send_notification(f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(网络错误)")
+                send_notification(steam_client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(网络错误)")
                 return False
 
         if isinstance(e, ValueError):
@@ -590,7 +587,7 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
         if isinstance(e, (steampy.exceptions.ConfirmationExpected, steampy.exceptions.InvalidCredentials)):
             logger.error(f"接受报价号{tradeOfferId}失败：会话或凭据无效，放弃本次处理")
             handle_caught_exception(e, "SteamClient", known=True)
-            send_notification(f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(会话无效)")
+            send_notification(steam_client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(会话无效)")
             return False
         if isinstance(e, KeyError):
             logger.error(f"接受报价号{tradeOfferId}失败！未找到报价号或报价号已过期")
@@ -605,7 +602,7 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
             handle_caught_exception(e, "SteamClient", known=True)
             return False
 
-        send_notification(f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败")
+        send_notification(steam_client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败")
         return False
 
 
@@ -617,5 +614,5 @@ def get_cs2_inventory(client: SteamClient, mutex):
             logger.log(5, "获取到的Steam库存:" + json.dumps(inventory, ensure_ascii=False))
     except Exception as e:
         handle_caught_exception(e, "SteamClient", known=True)
-        send_notification("获取库存失败，请检查服务器网络", title="获取库存失败")
+        send_notification(steam_client, "获取库存失败，请检查服务器网络", title="获取库存失败")
     return inventory

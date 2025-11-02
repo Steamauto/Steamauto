@@ -246,6 +246,7 @@ def checkVersion():
             os.kill(pid, signal.SIGTERM)
         else:
             send_notification(
+                None,
                 title="Steamauto有新版本可用",
                 message=f"当前版本：{static.CURRENT_VERSION}\n最新版本：{response['latestVersion']}\n更新日志：{response['changelog']}",
             )

@@ -224,7 +224,7 @@ class ECOsteamPlugin:
         self.steam_client_mutex = steam_client_mutex
         self.config = config
         self.ignored_offer = []
-        self.steam_id = static.STEAM_64_ID
+        self.steam_id = steam_client.get_steam64id_from_cookies()
 
     def init(self):
         if not os.path.exists(ECOSTEAM_RSAKEY_FILE):
