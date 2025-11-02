@@ -121,11 +121,11 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
     logger.info("[BuffLoginSolver] 正在获取与检查BUFF session...")
     global session
     session = ""
-    if not os.path.exists(BUFF_COOKIES_FILE_PATH):
-        with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
+    if not os.path.exists(BUFF_COOKIES_FILE_PATH.format(steam_username=steam_client.username)):
+        with open(BUFF_COOKIES_FILE_PATH.format(steam_username=steam_client.username), "w", encoding="utf-8") as f:
             f.write("session=")
     else:
-        with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
+        with open(BUFF_COOKIES_FILE_PATH.format(steam_username=steam_client.username), "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH.format(steam_username=steam_client.username))) as f:
             session = f.read().replace("\n", "")
         if session and session != "session=":
             logger.info("[BuffLoginSolver] 使用缓存的session")
@@ -166,7 +166,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
         logger.error("[BuffLoginSolver] 无法登录至BUFF, 请手动更新BUFF cookies! ")
         send_notification(steam_client, "无法登录至BUFF，请手动更新BUFF cookies!", "BUFF登录失败")
     else:
-        with open(BUFF_COOKIES_FILE_PATH, "w", encoding="utf-8") as f:
+        with open(BUFF_COOKIES_FILE_PATH.format(steam_username=steam_client.username), "w", encoding="utf-8") as f:
             f.write("session=" + session.replace("session=", ""))
     if "session=" not in session:
         session = "session=" + session

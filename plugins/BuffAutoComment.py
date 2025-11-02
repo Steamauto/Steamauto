@@ -117,7 +117,7 @@ class BuffAutoComment:
         sleep_interval = 60 * 60 * 2  # 2小时
         try:
             self.logger.info("[BuffAutoComment] 正在准备登录至BUFF...")
-            with open(BUFF_COOKIES_FILE_PATH, "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH)) as f:
+            with open(BUFF_COOKIES_FILE_PATH.format(steam_username=self.steam_client.username), "r", encoding=get_encoding(BUFF_COOKIES_FILE_PATH.format(steam_username=self.steam_client.username))) as f:
                 self.session.cookies["session"] = f.read().replace("session=", "").replace("\n", "").split(";")[0]
             self.logger.info("[BuffAutoComment] 已检测到cookies, 尝试登录")
             self.logger.info("[BuffAutoComment] 已经登录至BUFF 用户名: " + self.check_buff_account_state())
