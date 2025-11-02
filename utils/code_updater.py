@@ -8,9 +8,6 @@ import zipfile
 import requests
 
 from utils.tools import compare_version
-
-GITHUB_REPO_OWNER = "Steamauto"
-GITHUB_REPO_NAME = "Steamauto"
 from utils.logger import handle_caught_exception, logger
 
 GITHUB_REPO_OWNER = "Steamauto"
