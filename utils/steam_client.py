@@ -23,7 +23,7 @@ from utils.tools import accelerator, get_encoding, pause
 
 logger = PluginLogger("SteamClient")
 
-steam_client_mutex = threading.Lock()
+steam_client_mutex = {}  # 每个SteamClient实例对应一个互斥锁
 token_refresh_thread = []  # 后台刷新线程引用
 
 try:
@@ -210,7 +210,7 @@ class TokenRefreshThread(threading.Thread):
 
     def _refresh_cycle(self):
         try:
-            with steam_client_mutex:
+            with steam_client_mutex.get(self.steam_client.username):
                 # 如果会话还活着且 access_token 也未临期则直接返回
                 cache = _load_token_cache(self.steam_client.username)
                 access_exp = cache.get("access_token_exp_timestamp", 0)
@@ -334,6 +334,8 @@ def login_to_steam(config: dict):
     if not username or not password:
         logger.error("Steam用户名或密码为空，请检查配置文件")
         return None
+    if steam_client_mutex.get(username) is None:
+        steam_client_mutex[username] = threading.Lock()
 
     config["use_proxies"] = config.get("use_proxies", False)
     if not _check_proxy_availability(config):

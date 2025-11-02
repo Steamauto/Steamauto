@@ -316,7 +316,7 @@ def main():
         return 1
     # 仅用于获取启用的插件
     import_all_plugins()
-    plugins_enabled = get_plugins_enabled(steam_client, steam_client_mutex)
+    plugins_enabled = get_plugins_enabled(steam_client, steam_client_mutex.get(steam_client.username))
     # 检查插件是否正确初始化
     plugins_check_status = plugins_check(plugins_enabled)
     if plugins_check_status == 0:
