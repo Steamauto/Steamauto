@@ -62,11 +62,13 @@ class UUAccount:
         self.proxy = proxy
         if isinstance(proxy, dict):
             self.session.proxies = proxy
+            logger.info("UU使用代理：" + str(proxy))
         elif isinstance(proxy, str):
             self.session.proxies = {
                 "http": proxy,
                 "https": proxy,
             }
+            logger.info("UU使用代理：" + str(proxy))
         random.seed(token)
         self.deviceToken = deviceToken
         self.session.headers.update(generate_headers(deviceToken, deviceToken, token=token))

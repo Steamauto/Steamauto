@@ -16,12 +16,15 @@ class UUAutoAcceptOffer:
         self.config = config
 
     def init(self) -> bool:
-        token = get_valid_token_for_uu(self.steam_client)
+        proxies = None
+        if self.config["use_proxies"]:
+            proxies = self.config["proxies"]
+        token = get_valid_token_for_uu(self.steam_client, proxies=proxies)
         if not token:
             self.logger.error("悠悠有品登录失败！即将关闭程序！")
             exit_code.set(1)
             return True
-        self.uuyoupin = uuyoupinapi.UUAccount(token)
+        self.uuyoupin = uuyoupinapi.UUAccount(token, proxy=proxies)
         self.logger = PluginLogger(f"UUAutoAcceptOffer-{self.uuyoupin.get_user_nickname()}-steam:{self.steam_client.username}")
         return False
 

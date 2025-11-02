@@ -12,13 +12,15 @@ from utils.tools import get_encoding
 logger = PluginLogger("UULoginSolver")
 
 
-def get_valid_token_for_uu(steam_client):
+def get_valid_token_for_uu(steam_client, proxies=None):
+    if proxies:
+        logger.info("检测到Steam代理设置，正在为悠悠有品设置相同的代理...")
     logger.info("正在为悠悠有品获取有效的token...")
     if os.path.exists(UU_TOKEN_FILE_PATH.format(steam_username=steam_client.username)):
         with open(UU_TOKEN_FILE_PATH.format(steam_username=steam_client.username), "r", encoding=get_encoding(UU_TOKEN_FILE_PATH.format(steam_username=steam_client.username))) as f:
             try:
                 token = f.read().strip()
-                uuyoupin = uuyoupinapi.UUAccount(token)
+                uuyoupin = uuyoupinapi.UUAccount(token, proxy=proxies)
                 logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
                 return token
             except Exception as e:
@@ -29,7 +31,7 @@ def get_valid_token_for_uu(steam_client):
     logger.info("即将重新登录悠悠有品！")
     token = str(get_token_automatically())
     try:
-        uuyoupin = uuyoupinapi.UUAccount(token)
+        uuyoupin = uuyoupinapi.UUAccount(token, proxy=proxies)
         logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
         with open(UU_TOKEN_FILE_PATH.format(steam_username=steam_client.username), "w", encoding="utf-8") as f:
             f.write(token)

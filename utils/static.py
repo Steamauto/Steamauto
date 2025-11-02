@@ -175,7 +175,9 @@ DEFAULT_CONFIG_JSON = r"""
     // 悠悠有品自动发货功能是否启用，默认为false
     "enable": false,
     // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
-    "interval": 300
+    "interval": 300,
+    //是否使用全局代理设置中的代理连接悠悠有品
+    "use_proxies": true,
   },
   // 悠悠有品租赁自动上架配置
   "uu_auto_lease_item": {
