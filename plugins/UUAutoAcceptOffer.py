@@ -10,7 +10,7 @@ from utils.uu_helper import get_valid_token_for_uu
 
 class UUAutoAcceptOffer:
     def __init__(self, steam_client, steam_client_mutex, config):
-        self.logger = PluginLogger("UUAutoAcceptOffer")
+        self.logger = PluginLogger(f"UUAutoAcceptOffer-steam:{steam_client.username}")
         self.steam_client = steam_client
         self.steam_client_mutex = steam_client_mutex
         self.config = config
@@ -21,25 +21,19 @@ class UUAutoAcceptOffer:
             self.logger.error("悠悠有品登录失败！即将关闭程序！")
             exit_code.set(1)
             return True
+        self.uuyoupin = uuyoupinapi.UUAccount(token)
+        self.logger = PluginLogger(f"UUAutoAcceptOffer-{self.uuyoupin.get_user_nickname()}-steam:{self.steam_client.username}")
         return False
 
     def exec(self):
-        uuyoupin = None
-        token = get_valid_token_for_uu(self.steam_client)
-        if not token:
-            self.logger.error("由于登录失败，插件将自动退出")
-            exit_code.set(1)
-            return 1
-        else:
-            uuyoupin = uuyoupinapi.UUAccount(token)
         ignored_offer = {}
         interval = self.config["uu_auto_accept_offer"]["interval"]
-        if uuyoupin is not None:
+        if self.uuyoupin is not None:
             while True:
                 try:
-                    uuyoupin.send_device_info()
+                    self.uuyoupin.send_device_info()
                     self.logger.info("正在检查悠悠有品待发货信息...")
-                    uu_wait_deliver_list = uuyoupin.get_wait_deliver_list()
+                    uu_wait_deliver_list = self.uuyoupin.get_wait_deliver_list()
                     len_uu_wait_deliver_list = len(uu_wait_deliver_list)
                     self.logger.info("" + str(len_uu_wait_deliver_list) + "个悠悠有品待发货订单")
                     if len(uu_wait_deliver_list) != 0:
