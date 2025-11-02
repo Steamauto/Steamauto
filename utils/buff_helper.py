@@ -50,11 +50,15 @@ def login_to_buff_by_steam(steam_client: SteamClient):
     while response.status_code == 302:
         response = session.get(response.headers["Location"], allow_redirects=False)
     # 测试是否可用
+    data = session.get('https://buff.163.com/account/api/steam/info').json()
+    if data['code'] != 'OK':
+        return ""
     data = session.get(url='https://buff.163.com/account/api/login/status').json()['data']
     if data['state'] == 2:
         return session.cookies.get_dict(domain="buff.163.com").get("session", "")
     else:
         return ""
+    
 
 
 def login_to_buff_by_qrcode() -> str:
@@ -146,7 +150,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger) -> str:
             
         except Exception as e:
             handle_caught_exception(e)
-            logger.error(f"[BuffLoginSolver] 使用Steam登录至BUFF失败")
+            logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
 
     if not session:  # 尝试通过二维码
         logger.info("[BuffLoginSolver] 正在尝试通过二维码登录至BUFF...")
