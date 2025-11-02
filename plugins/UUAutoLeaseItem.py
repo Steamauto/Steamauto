@@ -303,7 +303,7 @@ if __name__ == "__main__":
         my_config = json5.load(f)
 
     uu_auto_lease = UUAutoLeaseItem(None, None, my_config)
-    token = get_valid_token_for_uu(self.steam_client)
+    token = get_valid_token_for_uu(uu_auto_lease.steam_client)
     if not token:
         uu_auto_lease.logger.error("由于登录失败，插件将自动退出")
         exit_code.set(1)
