@@ -29,18 +29,18 @@ class BuffAutoAcceptOffer:
         try:
             username = self.buff_account.get_user_nickname()
             if username:
-                logger = PluginLogger(f"BuffAutoAcceptOffer-{username}-steam:{self.steam_client.username}")
+                self.logger = PluginLogger(f"BuffAutoAcceptOffer-{username}-steam:{self.steam_client.username}")
         except:
             pass
 
         try:
             user_info = self.buff_account.get_user_info()
             steamid_buff = user_info["steamid"]
-            logger.info("为了避免访问接口过于频繁，休眠5秒...")
+            self.logger.info("为了避免访问接口过于频繁，休眠5秒...")
             time.sleep(5)
             steam_info = self.get_steam_info()
         except Exception as e:
-            logger.error("获取BUFF用户信息失败！")
+            self.logger.error("获取BUFF用户信息失败！")
             handle_caught_exception(e, "BuffAutoAcceptOffer")
             exit_code.set(1)
             return True
@@ -52,11 +52,11 @@ class BuffAutoAcceptOffer:
         else:
             for account in steam_info["items"]:
                 if account["steamid"] == str(self.steam_client.get_steam64id_from_cookies()):
-                    logger.info(f"检测到当前已经登录多个Steam账号，只会处理SteamID为{self.steam_client.get_steam64id_from_cookies()}的交易")
+                    self.logger.info(f"检测到当前已经登录多个Steam账号，只会处理SteamID为{self.steam_client.get_steam64id_from_cookies()}的交易")
                     to_exit = False
                     break
         if to_exit:
-            logger.error("当前登录的Steam账号不在BUFF账号绑定列表中，无法进行自动发货！")
+            self.logger.error("当前登录的Steam账号不在BUFF账号绑定列表中，无法进行自动发货！")
             exit_code.set(1)
             return True
         return False
