@@ -56,14 +56,9 @@ def get_token_automatically(proxies=None):
     phone_number = input(f"{Style.BRIGHT + Fore.RED}请输入手机号(+86)(如果此时有其它插件输出请忽略！输入完按回车即可！)：{Style.RESET_ALL}")
     token_id = device_info
     logger.debug("随机生成的token_id：" + token_id)
-    uk = ""
-    try:
-        from utils.cloud_service import get_uu_uk_from_cloud
-
-        uk = get_uu_uk_from_cloud()
-    except Exception:
-        logger.warning("由于云服务已经关闭，无法获取UK，将使用默认配置")
-        pass
+    uk = uuyoupinapi.UUAccount.get_uu_uk()
+    if not uk:
+        logger.warning("获取UK失败，将使用默认配置")
     result = uuyoupinapi.UUAccount.send_login_sms_code(phone_number, token_id, headers=headers, uk=uk, proxies=proxies)
     response = {}
     if "成功" in result.get("Msg", ""):

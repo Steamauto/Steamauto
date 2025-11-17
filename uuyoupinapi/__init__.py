@@ -4,9 +4,12 @@ import json
 import random
 import string
 import time
+import base64
+import uuid
 
 import requests
 
+from utils.ApiCrypt import UUApiCrypt
 from utils.logger import PluginLogger
 from uuyoupinapi import models
 
@@ -134,6 +137,28 @@ class UUAccount:
             proxies=proxies,
         ).json()
 
+    def get_uu_uk(self, headers={}, proxies=None):
+        api_crypt = UUApiCrypt(generate_random_string(16))
+        data = {"iud": str(uuid.uuid4())}
+        resp = requests.post(
+            "https://api.youpin898.com/api/deviceW2",
+            json={
+                "encryptedData": api_crypt.uu_encrypt(json.dumps(data)),
+                "encryptedAesKey": api_crypt.get_encrypted_aes_key()
+            },
+            headers=headers,
+            proxies=proxies,
+        )
+        if resp.status_code != 200 or resp.content is None:
+            logger.error("获取uk失败")
+            return ""
+        try:
+            uk_dict = json.loads(api_crypt.uu_decrypt(resp.content))
+            return uk_dict['u']
+        except Exception as e:
+            logger.error(f"获取uk，解析响应失败：{e}")
+        return ""
+
     def get_user_nickname(self):
         return self.nickname
 
@@ -166,30 +191,26 @@ class UUAccount:
                 self.session.headers.pop("uk")
         else:
             try:
-                from utils import cloud_service
 
                 if not hasattr(self, "uk") or not hasattr(self, "uk_time") or (time.time() - self.uk_time > 30):
                     if not hasattr(self, "uk"):
-                        logger.debug("UK缓存不存在，尝试从云服务获取悠悠校验参数...")
+                        logger.debug("UK缓存不存在，尝试获取悠悠校验参数...")
                     else:
-                        logger.debug("UK缓存已过期或时间戳无效，尝试从云服务获取悠悠校验参数...")
+                        logger.debug("UK缓存已过期或时间戳无效，尝试获取悠悠校验参数...")
 
-                    fetched_uk = cloud_service.get_uu_uk_from_cloud()
+                    fetched_uk = self.get_uu_uk()
                     if fetched_uk:
                         self.uk = fetched_uk
                         self.uk_time = time.time()
                         self.session.headers["uk"] = self.uk
                         logger.debug(f"获取悠悠校验参数成功，已缓存。下次刷新时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.uk_time + 30))}")
                     else:
-                        logger.error("从云服务获取悠悠校验参数失败。本次请求将使用随机生成的UK，且不进行缓存")
+                        logger.error("获取悠悠校验参数失败。本次请求将使用随机生成的UK，且不进行缓存")
                         self.session.headers["uk"] = generate_random_string(65)
                 else:
                     self.session.headers["uk"] = self.uk
                     logger.debug("使用已缓存的悠悠校验参数，下次刷新时间: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.uk_time + 30)))
 
-            except ImportError:
-                logger.warning("无法启用云服务，尝试使用随机生成的UK")
-                self.session.headers["uk"] = generate_random_string(65)
             except Exception as e:
                 logger.warning(f"获取或处理悠悠校验参数时发生错误: {e}。本次请求将使用随机生成的UK，且不进行缓存")
                 self.session.headers["uk"] = generate_random_string(65)
