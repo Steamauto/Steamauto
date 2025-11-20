@@ -9,7 +9,7 @@ import uuid
 
 import requests
 
-from utils.ApiCrypt import UUApiCrypt
+from utils.UUApiCrypt import UUApiCrypt
 from utils.logger import PluginLogger
 from uuyoupinapi import models
 
