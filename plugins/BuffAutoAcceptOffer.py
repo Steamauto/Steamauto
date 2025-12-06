@@ -20,7 +20,7 @@ class BuffAutoAcceptOffer:
     def init(self) -> bool:
         self.logger.info("BUFF自动接受报价插件已启动.请稍候...")
         proxies = None
-        if self.config["buff_auto_accept_offer"]["use_proxies"]:
+        if self.config["buff_auto_accept_offer"].get("use_proxies"):
             proxies = self.config["proxies"]
             self.logger.info("检测到Steam代理设置，正在为BUFF设置相同的代理...")
 
