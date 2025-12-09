@@ -1,6 +1,5 @@
 import time
 
-import utils.static as static
 from BuffApi import BuffAccount
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import PluginLogger, handle_caught_exception

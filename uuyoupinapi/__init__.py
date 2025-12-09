@@ -4,12 +4,11 @@ import json
 import random
 import string
 import time
-import base64
 import uuid
 
 import requests
 
-from utils.UUApiCrypt import UUApiCrypt
+from uuyoupinapi.UUApiCrypt import UUApiCrypt
 from utils.logger import PluginLogger
 from uuyoupinapi import models
 
