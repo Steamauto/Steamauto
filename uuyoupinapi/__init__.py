@@ -355,7 +355,7 @@ class UUAccount:
             data={
                 "userId": self.userId,
                 "pageIndex": 1,
-                "pageSize": 100,
+                "pageSize": 20,
                 "Sessionid": self.deviceToken,
             },
         ).json()
@@ -391,7 +391,7 @@ class UUAccount:
                     "keys": "",
                     "orderStatus": "140",
                     "pageIndex": 1,
-                    "pageSize": 100,
+                    "pageSize": 20,
                 },
             ).json()["data"]
             for order in data["orderList"]:
