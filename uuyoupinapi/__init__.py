@@ -349,62 +349,80 @@ class UUAccount:
         :param game_id: 游戏ID，默认为730(CSGO)
         :return: 待发货列表，格式为[{'order_id': '订单号', 'item_name': '物品名称', 'offer_id': 'steam交易报价号'}... , ...]
         """
-        toDoList_response = self.call_api(
-            "POST",
-            "/api/youpin/bff/trade/todo/v1/orderTodo/list",
-            data={
-                "userId": self.userId,
-                "pageIndex": 1,
-                "pageSize": 20,
-                "Sessionid": self.deviceToken,
-            },
-        ).json()
+        page_index = 1
+        page_size = 20
         toDoList = dict()
-        for order in toDoList_response["data"]:
-            if "赠送" in order["message"]:
-                logger.warning(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})为赠送订单，暂不支持赠送订单")
-            elif order["message"] == "有买家下单，待您发送报价":
-                logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})为待发送报价订单，正在尝试发送报价...")
-                result = self.send_offer(order["orderNo"])
-                if result == True:
-                    logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价已经在发送，正在等待发送完成...")
-                    for i in range(5):
-                        result = self.get_offer_status(order["orderNo"])
-                        if result["data"]["status"] == 3:
-                            logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价发送成功，将会在下一次轮询进行令牌确认")
-                            break
-                        if i == 4:
-                            logger.warning(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价发送等待超时")
-                            break
-                        time.sleep(1.5)
+        while True:
+            toDoList_response = self.call_api(
+                "POST",
+                "/api/youpin/bff/trade/todo/v1/orderTodo/list",
+                data={
+                    "userId": self.userId,
+                    "pageIndex": page_index,
+                    "pageSize": page_size,
+                    "Sessionid": self.deviceToken,
+                },
+            ).json()
+            current_list = toDoList_response.get("data", [])
+            for order in current_list:
+                if "赠送" in order["message"]:
+                    logger.warning(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})为赠送订单，暂不支持赠送订单")
+                elif order["message"] == "有买家下单，待您发送报价":
+                    logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})为待发送报价订单，正在尝试发送报价...")
+                    result = self.send_offer(order["orderNo"])
+                    if result == True:
+                        logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价已经在发送，正在等待发送完成...")
+                        for i in range(5):
+                            result = self.get_offer_status(order["orderNo"])
+                            if result["data"]["status"] == 3:
+                                logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价发送成功，将会在下一次轮询进行令牌确认")
+                                break
+                            if i == 4:
+                                logger.warning(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价发送等待超时")
+                                break
+                            time.sleep(1.5)
+                    else:
+                        logger.error(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})发送报价失败，原因：{result}")
                 else:
-                    logger.error(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})发送报价失败，原因：{result}")
-            else:
-                toDoList[order["orderNo"]] = order
+                    toDoList[order["orderNo"]] = order
+            if len(current_list) == page_size:
+                page_index += 1
+                time.sleep(0.5)
+                continue
+            break
         data_to_return = []
         # 傻逼悠悠有3种获取报价ID的方式
         if len(toDoList.keys()) != 0:
-            data = self.call_api(
-                "POST",
-                "/api/youpin/bff/trade/sale/v1/sell/list",
-                data={
-                    "keys": "",
-                    "orderStatus": "140",
-                    "pageIndex": 1,
-                    "pageSize": 20,
-                },
-            ).json()["data"]
-            for order in data["orderList"]:
-                if int(order["offerType"]) == 2:
-                    if order["tradeOfferId"] is not None:
-                        if order["orderNo"] in toDoList.keys():
-                            del toDoList[order["orderNo"]]
-                        data_to_return.append(
-                            {
-                                "offer_id": order["tradeOfferId"],
-                                "item_name": order["productDetail"]["commodityName"],
-                            }
-                        )
+            page_index = 1
+            page_size = 20
+            while True:
+                data = self.call_api(
+                    "POST",
+                    "/api/youpin/bff/trade/sale/v1/sell/list",
+                    data={
+                        "keys": "",
+                        "orderStatus": "140",
+                        "pageIndex": page_index,
+                        "pageSize": page_size,
+                    },
+                ).json()["data"]
+                order_list = data.get("orderList", [])
+                for order in order_list:
+                    if int(order["offerType"]) == 2:
+                        if order["tradeOfferId"] is not None:
+                            if order["orderNo"] in toDoList.keys():
+                                del toDoList[order["orderNo"]]
+                            data_to_return.append(
+                                {
+                                    "offer_id": order["tradeOfferId"],
+                                    "item_name": order["productDetail"]["commodityName"],
+                                }
+                            )
+                if len(order_list) == page_size:
+                    page_index += 1
+                    time.sleep(0.5)
+                    continue
+                break
         if len(toDoList.keys()) != 0:
             for order in list(toDoList.keys()):
                 time.sleep(3)
