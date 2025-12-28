@@ -523,7 +523,7 @@ class UUAccount:
             "/api/commodity/Inventory/SellInventoryWithLeaseV2",
             data={
                 "GameId": GameId,
-                "itemInfos": [item.model_dump(exclude_none=True) for item in item_infos],
+                "ItemInfos": [item.model_dump(exclude_none=True) for item in item_infos],
                 "Sessionid": self.deviceToken,
             },
         ).json()
