@@ -73,8 +73,8 @@ class BuffAccount:
             user_agent = get_ua()
         if proxies:
             logger.info("检测到Buff代理设置，正在为Buff设置相同的代理...")
+            self.session.proxies = proxies
         self.session = requests.session()
-        self.session.proxies = proxies
         self.session.headers = {"User-Agent": user_agent}
         headers = copy.deepcopy(self.session.headers)
         headers["Cookie"] = buffcookie
@@ -192,33 +192,26 @@ class BuffAccount:
             "page_num": page_num,
             "sort_by": sort_by,
         }
-        need_login = False
-        if min_paintseed:
+        need_login = (
+            (min_paintseed is not None) or
+            (max_paintseed is not None) or
+            (sort_by != "default")
+        )
+        if min_paintseed is not None:
             params["min_paintseed"] = min_paintseed
-            need_login = True
-        if max_paintseed:
+        if max_paintseed is not None:
             params["max_paintseed"] = max_paintseed
-            need_login = True
-        if sort_by != "default":
-            need_login = True
-        if need_login:
-            return json.loads(
-                self.get(
-                    f"{self.BASE_URL}/api/market/goods/sell_order",
-                    params=params,
-                    headers=get_random_header(),
-                    proxies=proxy,
-                ).text
-            ).get("data")
-        else:
-            return json.loads(
-                requests.get(
-                    f"{self.BASE_URL}/api/market/goods/sell_order",
-                    params=params,
-                    headers=get_random_header(),
-                    proxies=proxy,
-                ).text
-            ).get("data")
+        request_method = self if need_login else requests
+        url = f"{self.BASE_URL}/api/market/goods/sell_order"
+        headers = get_random_header()
+        try:
+            return request_method.get(url, params=params, headers=headers, proxies=proxy, timeout=10).json().get("data")
+        except requests.exceptions.RequestException as e:
+            print(f"请求失败: {e}")
+            return None
+        except ValueError as e:
+            print(f"响应非 JSON 格式: {e}")
+            return None
 
     def get_available_payment_methods(self, sell_order_id, goods_id, price, game_name="csgo") -> dict:
         """
@@ -228,29 +221,29 @@ class BuffAccount:
         :param price:饰品价格
         :return: dict key只会包含buff-alipay和buff-bankcard，若不存在key，则代表此支付方式不可用。value值为当前余额
         """
-
-        methods = (
-            json.loads(
-                self.get(
-                    f"{self.BASE_URL}/api/market/goods/buy/preview",
+        try:
+            data = self.get( f"{self.BASE_URL}/api/market/goods/buy/preview",
                     params={
                         "game": game_name,
                         "sell_order_id": sell_order_id,
                         "goods_id": goods_id,
                         "price": price,
-                    },
-                ).text
-            )
-            .get("data")
-            .get("pay_methods")
-        )
-        available_methods = dict()
-        if methods[0].get("error") is None:
-            available_methods["buff-alipay"] = methods[0].get("balance")
-        if methods[2].get("error") is None:
-            available_methods["buff-bankcard"] = methods[2].get("balance")
-        return available_methods
-
+                    }
+                ).json().get("data", {})
+            if not data:
+                raise ValueError("无法获取支付方式，请检查参数是否正确或账户状态是否正常。")
+            methods = data.get("pay_methods", [])
+            available_methods = dict()
+            if not methods or len(methods) < 3:
+                raise ValueError("无法获取支付方式，请检查参数是否正确或账户状态是否正常。")
+            if methods[0].get("error") is None:
+                available_methods["buff-alipay"] = methods[0].get("balance")
+            if methods[2].get("error") is None:
+                available_methods["buff-bankcard"] = methods[2].get("balance")
+            return available_methods
+        except requests.exceptions.RequestException as e:
+            print(f"请求失败: {e}")
+            return None
     def buy_goods(
         self,
         sell_order_id,
@@ -274,6 +267,20 @@ class BuffAccount:
         :param game_name: 默认为csgo
         :return:若购买成功则返回'购买成功'，购买失败则返回错误信息
         """
+        PAY_METHOD_MAP = {
+            "buff-bankcard": 1,
+            "buff-alipay": 3,
+        }
+        def _safe_get_nested(data: dict, *keys):
+            """安全获取嵌套字典值，任一环节为 None 或缺失则返回 None"""
+            for key in keys:
+                if isinstance(data, dict) and key in data:
+                    data = data[key]
+                else:
+                    return None
+            return data
+        if pay_method not in PAY_METHOD_MAP:
+            raise ValueError("Invalid pay_method")
         load = {
             "game": game_name,
             "goods_id": goods_id,
@@ -281,13 +288,15 @@ class BuffAccount:
             "sell_order_id": sell_order_id,
             "token": "",
             "cdkey_id": "",
+            "pay_method": PAY_METHOD_MAP[pay_method]
         }
-        if pay_method == "buff-bankcard":
-            load["pay_method"] = 1
-        elif pay_method == "buff-alipay":
-            load["pay_method"] = 3
-        else:
-            raise ValueError("Invalid pay_method")
+        try:
+            # 获取最新csrf_token
+            self.get(f"{self.BASE_URL}/api/message/notification")
+            self.session.cookies.get("csrf_token")
+        except Exception as e:
+            raise ValueError("无法获取CSRF Token，请检查登录状态是否正常.") from e
+
         headers = copy.deepcopy(self.session.headers)
         headers["accept"] = "application/json, text/javascript, */*; q=0.01"
         headers["content-type"] = "application/json"
@@ -295,12 +304,13 @@ class BuffAccount:
         headers["origin"] = self.BASE_URL
         headers["referer"] = f"{self.BASE_URL}/goods/{str(goods_id)}?from=market"
         headers["x-requested-with"] = "XMLHttpRequest"
-        # 获取最新csrf_token
-        self.get(f"{self.BASE_URL}/api/message/notification")
-        self.session.cookies.get("csrf_token")
         headers["x-csrftoken"] = str(self.session.cookies.get("csrf_token"))
-        response = json.loads(self.post(f"{self.BASE_URL}/api/market/goods/buy", json=load, headers=headers).text)
-        bill_id = response.get("data").get("id")
+    
+        response = self.post(f"{self.BASE_URL}/api/market/goods/buy", json=load, headers=headers).json()
+        data = response.get("data", {})
+        bill_id = data.get("id", None)
+        if bill_id is None:
+            raise ValueError("无法获取订单ID，请检查参数是否正确或账户状态是否正常。")
         self.get(
             f"{self.BASE_URL}/api/market/bill_order/batch/info",
             params={"bill_orders": bill_id},
@@ -321,7 +331,7 @@ class BuffAccount:
                 json=load,
                 headers=headers,
             )
-        response = json.loads(response.text)
+        response = response.json()
         if response.get("msg") is None and response.get("code") == "OK":
             return "购买成功"
         else:
