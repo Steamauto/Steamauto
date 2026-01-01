@@ -271,14 +271,6 @@ class BuffAccount:
             "buff-bankcard": 1,
             "buff-alipay": 3,
         }
-        def _safe_get_nested(data: dict, *keys):
-            """安全获取嵌套字典值，任一环节为 None 或缺失则返回 None"""
-            for key in keys:
-                if isinstance(data, dict) and key in data:
-                    data = data[key]
-                else:
-                    return None
-            return data
         if pay_method not in PAY_METHOD_MAP:
             raise ValueError("Invalid pay_method")
         load = {
@@ -292,7 +284,7 @@ class BuffAccount:
         }
         try:
             # 获取最新csrf_token
-            self.get(f"{self.BASE_URL}/api/message/notification")
+            self.get_notification()
             self.session.cookies.get("csrf_token")
         except Exception as e:
             raise ValueError("无法获取CSRF Token，请检查登录状态是否正常.") from e
@@ -318,24 +310,11 @@ class BuffAccount:
         headers["x-csrftoken"] = str(self.session.cookies.get("csrf_token"))
         time.sleep(0.5)  # 由于Buff服务器处理支付需要一定的时间，所以一定要在这里加上sleep，否则无法发送下一步请求
         if ask_seller_send_offer:
-            load = {"bill_orders": [bill_id], "game": game_name}
-            response = self.post(
-                f"{self.BASE_URL}/api/market/bill_order/ask_seller_to_send_offer",
-                json=load,
-                headers=headers,
-            )
+            response = self.ask_seller_to_send_offer( bill_id, headers, game_name)
         else:
-            load = {"bill_order_id": bill_id, "game": game_name}
-            response = self.post(
-                f"{self.BASE_URL}/api/market/bill_order/notify_buyer_to_send_offer",
-                json=load,
-                headers=headers,
-            )
-        response = response.json()
-        if response.get("msg") is None and response.get("code") == "OK":
-            return "购买成功"
-        else:
-            return response
+            response = self.notify_buyer_to_send_offer( bill_id, headers, game_name)
+        # 业务逻辑交给上层判断
+        return response
 
     def get_notification(self, headers=None) -> dict:
         """
@@ -459,3 +438,24 @@ class BuffAccount:
             }
         )
         return headers
+
+    def get_steam_info(self):
+        steam_info = self.get(f"{self.BASE_URL}/account/api/steam/info").json()["data"]
+        return steam_info
+    
+    def ask_seller_to_send_offer(self, bill_id, headers, game_name="csgo"):
+        load = {"bill_orders": [bill_id], "game": game_name}
+        response = self.post(
+            f"{self.BASE_URL}/api/market/bill_order/ask_seller_to_send_offer",
+            json=load,
+            headers=headers
+        )
+        return response.json()
+    def notify_buyer_to_send_offer(self, bill_id, headers, game_name="csgo"):
+        load = {"bill_order_id": bill_id, "game": game_name}
+        response = self.post(
+            f"{self.BASE_URL}/api/market/bill_order/notify_buyer_to_send_offer",
+            json=load,
+            headers=headers
+        )
+        return response.json()
