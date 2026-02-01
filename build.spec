@@ -12,6 +12,7 @@ hidden_imports = [
         'utils.buff_helper',
         'utils.uu_helper',
         'utils.ApiCrypt',
+        'utils.BuffApiCrypt',
         'PyC5Game',
         'PyECOsteam',
         'uuyoupinapi',

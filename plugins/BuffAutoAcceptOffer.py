@@ -1,6 +1,5 @@
 import time
 
-import utils.static as static
 from BuffApi import BuffAccount
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import PluginLogger, handle_caught_exception
@@ -20,7 +19,7 @@ class BuffAutoAcceptOffer:
     def init(self) -> bool:
         self.logger.info("BUFF自动接受报价插件已启动.请稍候...")
         proxies = None
-        if self.config["buff_auto_accept_offer"]["use_proxies"]:
+        if self.config["buff_auto_accept_offer"].get("use_proxies"):
             proxies = self.config["proxies"]
             self.logger.info("检测到Steam代理设置，正在为BUFF设置相同的代理...")
 

@@ -29,7 +29,10 @@ class UUAutoLeaseItem:
         return self.uuyoupin.get_uu_leased_inventory()
 
     def init(self) -> bool:
-        if not get_valid_token_for_uu():
+        proxies = None
+        if self.config["use_proxies"]:
+            proxies = self.config["proxies"]
+        if not get_valid_token_for_uu(self.steam_client, proxies=proxies):
             self.logger.error("悠悠有品登录失败！即将关闭程序！")
             exit_code.set(1)
             return True

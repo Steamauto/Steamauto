@@ -10,7 +10,7 @@ import requests
 from apprise import AppriseAsset
 from bs4 import BeautifulSoup
 
-from utils.ApiCrypt import ApiCrypt
+from utils.BuffApiCrypt import BuffApiCrypt
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import handle_caught_exception
 from utils.static import BUFF_COOKIES_FILE_PATH, SESSION_FOLDER, SUPPORT_GAME_TYPES
@@ -580,7 +580,7 @@ class BuffAutoOnSale:
             steam_cookies = ""
             for key in steam_cookies_dict:
                 steam_cookies += key + "=" + steam_cookies_dict[key] + "; "
-            api_crypt = ApiCrypt()
+            api_crypt = BuffApiCrypt()
             encrypted_steam_cookies = api_crypt.encrypt(steam_cookies)
             post_data = {"seller_info": encrypted_steam_cookies, "bill_orders": [order_id]}
             csrf_token = self.session.cookies.get("csrf_token", domain="buff.163.com")

@@ -4,9 +4,11 @@ import json
 import random
 import string
 import time
+import uuid
 
 import requests
 
+from uuyoupinapi.UUApiCrypt import UUApiCrypt
 from utils.logger import PluginLogger
 from uuyoupinapi import models
 
@@ -134,6 +136,29 @@ class UUAccount:
             proxies=proxies,
         ).json()
 
+    @staticmethod
+    def get_uu_uk(headers={}, proxies=None):
+        api_crypt = UUApiCrypt(generate_random_string(16))
+        data = {"iud": str(uuid.uuid4())}
+        resp = requests.post(
+            "https://api.youpin898.com/api/deviceW2",
+            json={
+                "encryptedData": api_crypt.uu_encrypt(json.dumps(data)),
+                "encryptedAesKey": api_crypt.get_encrypted_aes_key()
+            },
+            headers=headers,
+            proxies=proxies,
+        )
+        if resp.status_code != 200 or resp.content is None:
+            logger.error("获取uk失败")
+            return ""
+        try:
+            uk_dict = json.loads(api_crypt.uu_decrypt(resp.content))
+            return uk_dict['u']
+        except Exception as e:
+            logger.error(f"获取uk，解析响应失败：{e}")
+        return ""
+
     def get_user_nickname(self):
         return self.nickname
 
@@ -166,30 +191,26 @@ class UUAccount:
                 self.session.headers.pop("uk")
         else:
             try:
-                from utils import cloud_service
 
                 if not hasattr(self, "uk") or not hasattr(self, "uk_time") or (time.time() - self.uk_time > 30):
                     if not hasattr(self, "uk"):
-                        logger.debug("UK缓存不存在，尝试从云服务获取悠悠校验参数...")
+                        logger.debug("UK缓存不存在，尝试获取悠悠校验参数...")
                     else:
-                        logger.debug("UK缓存已过期或时间戳无效，尝试从云服务获取悠悠校验参数...")
+                        logger.debug("UK缓存已过期或时间戳无效，尝试获取悠悠校验参数...")
 
-                    fetched_uk = cloud_service.get_uu_uk_from_cloud()
+                    fetched_uk = UUAccount.get_uu_uk()
                     if fetched_uk:
                         self.uk = fetched_uk
                         self.uk_time = time.time()
                         self.session.headers["uk"] = self.uk
                         logger.debug(f"获取悠悠校验参数成功，已缓存。下次刷新时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.uk_time + 30))}")
                     else:
-                        logger.error("从云服务获取悠悠校验参数失败。本次请求将使用随机生成的UK，且不进行缓存")
+                        logger.error("获取悠悠校验参数失败。本次请求将使用随机生成的UK，且不进行缓存")
                         self.session.headers["uk"] = generate_random_string(65)
                 else:
                     self.session.headers["uk"] = self.uk
                     logger.debug("使用已缓存的悠悠校验参数，下次刷新时间: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.uk_time + 30)))
 
-            except ImportError:
-                logger.warning("无法启用云服务，尝试使用随机生成的UK")
-                self.session.headers["uk"] = generate_random_string(65)
             except Exception as e:
                 logger.warning(f"获取或处理悠悠校验参数时发生错误: {e}。本次请求将使用随机生成的UK，且不进行缓存")
                 self.session.headers["uk"] = generate_random_string(65)
@@ -328,62 +349,80 @@ class UUAccount:
         :param game_id: 游戏ID，默认为730(CSGO)
         :return: 待发货列表，格式为[{'order_id': '订单号', 'item_name': '物品名称', 'offer_id': 'steam交易报价号'}... , ...]
         """
-        toDoList_response = self.call_api(
-            "POST",
-            "/api/youpin/bff/trade/todo/v1/orderTodo/list",
-            data={
-                "userId": self.userId,
-                "pageIndex": 1,
-                "pageSize": 100,
-                "Sessionid": self.deviceToken,
-            },
-        ).json()
+        page_index = 1
+        page_size = 20
         toDoList = dict()
-        for order in toDoList_response["data"]:
-            if "赠送" in order["message"]:
-                logger.warning(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})为赠送订单，暂不支持赠送订单")
-            elif order["message"] == "有买家下单，待您发送报价":
-                logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})为待发送报价订单，正在尝试发送报价...")
-                result = self.send_offer(order["orderNo"])
-                if result == True:
-                    logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价已经在发送，正在等待发送完成...")
-                    for i in range(5):
-                        result = self.get_offer_status(order["orderNo"])
-                        if result["data"]["status"] == 3:
-                            logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价发送成功，将会在下一次轮询进行令牌确认")
-                            break
-                        if i == 4:
-                            logger.warning(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价发送等待超时")
-                            break
-                        time.sleep(1.5)
+        while True:
+            toDoList_response = self.call_api(
+                "POST",
+                "/api/youpin/bff/trade/todo/v1/orderTodo/list",
+                data={
+                    "userId": self.userId,
+                    "pageIndex": page_index,
+                    "pageSize": page_size,
+                    "Sessionid": self.deviceToken,
+                },
+            ).json()
+            current_list = toDoList_response.get("data", [])
+            for order in current_list:
+                if "赠送" in order["message"]:
+                    logger.warning(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})为赠送订单，暂不支持赠送订单")
+                elif order["message"] == "有买家下单，待您发送报价":
+                    logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})为待发送报价订单，正在尝试发送报价...")
+                    result = self.send_offer(order["orderNo"])
+                    if result == True:
+                        logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价已经在发送，正在等待发送完成...")
+                        for i in range(5):
+                            result = self.get_offer_status(order["orderNo"])
+                            if result["data"]["status"] == 3:
+                                logger.info(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价发送成功，将会在下一次轮询进行令牌确认")
+                                break
+                            if i == 4:
+                                logger.warning(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})的报价发送等待超时")
+                                break
+                            time.sleep(1.5)
+                    else:
+                        logger.error(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})发送报价失败，原因：{result}")
                 else:
-                    logger.error(f"[UUAutoAcceptOffer] 订单号为 {order['orderNo']} 的订单({order['commodityName']})发送报价失败，原因：{result}")
-            else:
-                toDoList[order["orderNo"]] = order
+                    toDoList[order["orderNo"]] = order
+            if len(current_list) == page_size:
+                page_index += 1
+                time.sleep(0.5)
+                continue
+            break
         data_to_return = []
         # 傻逼悠悠有3种获取报价ID的方式
         if len(toDoList.keys()) != 0:
-            data = self.call_api(
-                "POST",
-                "/api/youpin/bff/trade/sale/v1/sell/list",
-                data={
-                    "keys": "",
-                    "orderStatus": "140",
-                    "pageIndex": 1,
-                    "pageSize": 100,
-                },
-            ).json()["data"]
-            for order in data["orderList"]:
-                if int(order["offerType"]) == 2:
-                    if order["tradeOfferId"] is not None:
-                        if order["orderNo"] in toDoList.keys():
-                            del toDoList[order["orderNo"]]
-                        data_to_return.append(
-                            {
-                                "offer_id": order["tradeOfferId"],
-                                "item_name": order["productDetail"]["commodityName"],
-                            }
-                        )
+            page_index = 1
+            page_size = 20
+            while True:
+                data = self.call_api(
+                    "POST",
+                    "/api/youpin/bff/trade/sale/v1/sell/list",
+                    data={
+                        "keys": "",
+                        "orderStatus": "140",
+                        "pageIndex": page_index,
+                        "pageSize": page_size,
+                    },
+                ).json()["data"]
+                order_list = data.get("orderList", [])
+                for order in order_list:
+                    if int(order["offerType"]) == 2:
+                        if order["tradeOfferId"] is not None:
+                            if order["orderNo"] in toDoList.keys():
+                                del toDoList[order["orderNo"]]
+                            data_to_return.append(
+                                {
+                                    "offer_id": order["tradeOfferId"],
+                                    "item_name": order["productDetail"]["commodityName"],
+                                }
+                            )
+                if len(order_list) == page_size:
+                    page_index += 1
+                    time.sleep(0.5)
+                    continue
+                break
         if len(toDoList.keys()) != 0:
             for order in list(toDoList.keys()):
                 time.sleep(3)
@@ -484,7 +523,7 @@ class UUAccount:
             "/api/commodity/Inventory/SellInventoryWithLeaseV2",
             data={
                 "GameId": GameId,
-                "itemInfos": [item.model_dump(exclude_none=True) for item in item_infos],
+                "ItemInfos": [item.model_dump(exclude_none=True) for item in item_infos],
                 "Sessionid": self.deviceToken,
             },
         ).json()

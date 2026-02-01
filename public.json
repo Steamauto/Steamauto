@@ -4,6 +4,34 @@
   },
   "versions": [
     {
+      "version": "5.8.1",
+      "changelog": "修复部分插件无法导入导致程序无法启动的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.8.1/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.8.1/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "d53d35e6fbcafe8b137c447da3b5605e95a1cd28369123f9256ecd1bf07c7658",
+        "windows": "b4dbc92da214ffb26cd035f434a245c0505b254b0f53c4fdd01c69fec5a276b3"
+      }
+    },
+    {
+      "version": "5.8.0",
+      "changelog": "1.修复悠悠有品无法发货的问题\\n2.日志支持显示Steam账号\\n3.支持本地生成有品UK\\n4.代码优化",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "linux": "https://github.com/Steamauto/Steamauto/releases/download/5.8.0/Steamauto-ubuntu-latest",
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.8.0/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "linux": "58c74136223b2ce39860720dfdd30a92e3efc234c6cec55e280f50c4a2b6f33d",
+        "windows": "9f845e0f76db035197110605f7a67d700aa6ddc86cd3449d6591a957d77f7985"
+      }
+    },
+    {
       "version": "5.7.6",
       "changelog": "修复Steam登录BUFF时如果权限不足，不自动回退到扫码登录",
       "level": "stable",
