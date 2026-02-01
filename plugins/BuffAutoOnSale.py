@@ -254,6 +254,13 @@ class BuffAutoOnSale:
             sell_price = price
             if sell_price == -1:
                 sell_price = self.get_lowest_sell_price(item["goods_id"], game, app_id, min_paint_wear, max_paint_wear)
+
+            # 价格上限过滤, 参考悠悠有品实现,在获取最终价格后检查
+            if sell_price > 0:
+                max_price = self.config["buff_auto_on_sale"].get("max_price", 0)
+                if max_price > 0 and sell_price > max_price:
+                    self.logger.info("[BuffAutoOnSale] 商品 " + item["market_hash_name"] + " 的价格 " + str(sell_price) + " 超过了设定的最高价格 " + str(max_price) + "，将不会上架")
+                    continue
             if supply_buy_orders:
                 highest_buy_order = self.get_highest_buy_order(
                     item["goods_id"], game, app_id, paint_wear=paint_wear, require_auto_accept=only_auto_accept, supported_payment_methods=supported_payment_method
