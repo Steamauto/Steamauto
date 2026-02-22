@@ -37,7 +37,7 @@ class BuffAutoAcceptOffer:
             steamid_buff = user_info["steamid"]
             self.logger.info("为了避免访问接口过于频繁，休眠5秒...")
             time.sleep(5)
-            steam_info = self.get_steam_info()
+            steam_info = self.buff_account.get_steam_info()
         except Exception as e:
             self.logger.error("获取BUFF用户信息失败！")
             handle_caught_exception(e, "BuffAutoAcceptOffer")
@@ -70,10 +70,6 @@ class BuffAutoAcceptOffer:
                 self.logger.error("开启买家发起交易报价功能失败")
         except Exception as e:
             self.logger.error(f"开启买家发起交易报价功能失败: {str(e)}")
-
-    def get_steam_info(self):
-        steam_info = self.buff_account.get("https://buff.163.com/account/api/steam/info").json()["data"]
-        return steam_info
 
     def check_buff_account_state(self):
         try:
