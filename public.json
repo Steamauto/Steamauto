@@ -4,6 +4,18 @@
   },
   "versions": [
     {
+      "version": "5.8.2",
+      "changelog": "修复已知问题、代码优化提升",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.8.2/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "windows": "383b242081274f1e0ce94451d43ac12f383aa8be1d41fa9b249361ed040c76a7"
+      }
+    },
+    {
       "version": "5.8.1",
       "changelog": "修复部分插件无法导入导致程序无法启动的问题",
       "level": "stable",
