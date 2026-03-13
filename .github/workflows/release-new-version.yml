@@ -81,6 +81,34 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Validate version files
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import re
+
+          expected = "${{ github.event.inputs.version }}"
+          static_text = pathlib.Path("utils/static.py").read_text(encoding="utf-8")
+          match = re.search(r'CURRENT_VERSION\s*=\s*["\']([^"\']+)["\']', static_text)
+          if not match:
+              raise SystemExit("CURRENT_VERSION not found in utils/static.py")
+
+          static_version = match.group(1)
+          public_data = json.loads(pathlib.Path("public.json").read_text(encoding="utf-8"))
+          public_version = public_data["versions"][0]["version"] if public_data.get("versions") else None
+
+          print(f"expected={expected}")
+          print(f"utils/static.py={static_version}")
+          print(f"public.json={public_version}")
+
+          if static_version != expected:
+              raise SystemExit(f"utils/static.py version mismatch: expected {expected}, got {static_version}")
+          if public_version != expected:
+              raise SystemExit(f"public.json version mismatch: expected {expected}, got {public_version}")
+          PY
+
       - name: Install UPX (Windows)
         if: matrix.os == 'windows-latest'
         run: |
@@ -124,31 +152,20 @@ jobs:
     needs: [prepare, build]
     runs-on: ubuntu-latest
     steps:
-      - name: Download Windows binary
+      - name: Download release artifacts
         uses: actions/download-artifact@v4
         with:
-          name: binaries-windows-latest
-          path: artifacts/windows
-
-      - name: Download Linux binary
-        uses: actions/download-artifact@v4
-        with:
-          name: binaries-ubuntu-latest
-          path: artifacts/linux
+          pattern: binaries-*
+          path: release_files
+          merge-multiple: true
 
       - name: Prepare release files
         run: |
-          mkdir -p release_files
-          
-          if [ -n "$(ls -A artifacts/windows/* 2>/dev/null)" ]; then
-            cp -r artifacts/windows/* release_files/
-          fi
-          
-          if [ -n "$(ls -A artifacts/linux/* 2>/dev/null)" ]; then
-            cp -r artifacts/linux/* release_files/
-          fi
-          
-          tree release_files
+          test -n "$(find release_files -maxdepth 1 -type f -print -quit)" || {
+            echo "No release files were downloaded into release_files/"
+            exit 1
+          }
+          ls -lah release_files
 
       - name: Prepare release body
         run: |
