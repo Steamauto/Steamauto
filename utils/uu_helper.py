@@ -1,6 +1,5 @@
 import os
 import time
-from traceback import print_exc
 
 from colorama import Fore, Style
 
@@ -23,8 +22,7 @@ def get_valid_token_for_uu(steam_client, proxies=None):
                 uuyoupin = uuyoupinapi.UUAccount(token, proxy=proxies)
                 logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
                 return token
-            except Exception as e:
-                print_exc()
+            except Exception:
                 logger.warning("缓存的悠悠有品Token无效")
     else:
         logger.info("未检测到存储的悠悠token")
