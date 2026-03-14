@@ -4,6 +4,18 @@
   },
   "versions": [
     {
+      "version": "5.8.3",
+      "changelog": "代码整理，程序本体体积优化",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.8.3/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "windows": "aae213d1211d1dc0ce590381904c55572ca96b20c2d45a8bdfd396fec59a2fbd"
+      }
+    },
+    {
       "version": "5.8.2",
       "changelog": "修复已知问题、代码优化提升",
       "level": "stable",
