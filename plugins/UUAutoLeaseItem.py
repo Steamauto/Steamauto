@@ -2,7 +2,6 @@ import datetime
 import time
 
 import json5
-import numpy as np
 import schedule
 
 import uuyoupinapi
@@ -12,6 +11,10 @@ from utils.notifier import send_notification
 from utils.tools import exit_code, is_subsequence
 from utils.uu_helper import get_valid_token_for_uu
 from uuyoupinapi import models
+
+
+def _mean(values):
+    return sum(values) / len(values) if values else 0.0
 
 
 class UUAutoLeaseItem:
@@ -68,16 +71,22 @@ class UUAutoLeaseItem:
                 if item.LongLeaseUnitPrice:
                     long_lease_unit_price_list.append(float(item.LongLeaseUnitPrice))
 
-            lease_unit_price = float(np.mean(lease_unit_price_list)) * 0.97
-            lease_unit_price = max(lease_unit_price, float(lease_unit_price_list[0]), 0.01)
-
-            long_lease_unit_price = min(lease_unit_price * 0.98, float(np.mean(long_lease_unit_price_list)) * 0.95)
-            if len(long_lease_unit_price_list) == 0:
-                long_lease_unit_price = max(lease_unit_price - 0.01, 0.01)
+            if len(lease_unit_price_list) > 0:
+                lease_unit_price = _mean(lease_unit_price_list) * 0.97
+                lease_unit_price = max(lease_unit_price, float(lease_unit_price_list[0]), 0.01)
             else:
+                lease_unit_price = 0
+
+            if len(long_lease_unit_price_list) == 0:
+                long_lease_unit_price = max(lease_unit_price - 0.01, 0.01) if lease_unit_price > 0 else 0
+            else:
+                long_lease_unit_price = min(lease_unit_price * 0.98, _mean(long_lease_unit_price_list) * 0.95)
                 long_lease_unit_price = max(long_lease_unit_price, float(long_lease_unit_price_list[0]), 0.01)
 
-            lease_deposit = max(float(np.mean(lease_deposit_list)) * 0.98, float(min(lease_deposit_list)))
+            if len(lease_deposit_list) > 0:
+                lease_deposit = max(_mean(lease_deposit_list) * 0.98, float(min(lease_deposit_list)))
+            else:
+                lease_deposit = 0
 
             self.logger.info(f"短租参考价格：{lease_unit_price_list}，长租参考价格：{long_lease_unit_price_list}")
         else:
