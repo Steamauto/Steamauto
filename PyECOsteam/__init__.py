@@ -1,46 +1,30 @@
 import json
-import logging
 import time
 
 import requests
-from apscheduler.schedulers.background import BackgroundScheduler
-from pytz import timezone
 
 import PyECOsteam.models as models
 from PyECOsteam.sign import generate_rsa_signature
 from utils.logger import PluginLogger
 from utils.models import Asset, LeaseAsset
 from utils.static import CURRENT_VERSION
-from utils.tools import jobHandler
 
 
 class ECOsteamClient:
     # https://openapi.ecosteam.cn/index.html/ 查看API文档
-    def __rps_counter(self):
-        try:
-            self.rps = 0
-        except RuntimeError:
-            pass
+
 
     def __init__(self, partnerId, RSAKey, qps=10) -> None:
         self.logger = PluginLogger("ECOsteam.cn")
         self.partnerId = partnerId
         self.RSAKey = RSAKey
-        self.qps = qps
-        self.rps = 0
-        logging.getLogger("apscheduler").propagate = False
-        logging.getLogger("apscheduler").setLevel(logging.WARNING)
-        scheduler = BackgroundScheduler(timezone=timezone("Asia/Shanghai"))
-        jobHandler.add(scheduler.add_job(self.__rps_counter, "interval", seconds=1))
-        scheduler.start()
+
 
     def post(self, api: str, data: dict):
         data["PartnerId"] = self.partnerId
         data["Timestamp"] = int(time.time())
         data["Sign"] = generate_rsa_signature(self.RSAKey, data)
-        if self.rps >= self.qps:
-            time.sleep(1)
-        self.rps += 1
+
         resp = requests.post(
             "https://openapi.ecosteam.cn" + api,
             data=json.dumps(data, indent=4),
@@ -54,7 +38,7 @@ class ECOsteamClient:
         if "ResultCode" in resp_json:
             if resp_json["ResultCode"] != "0":
                 if api == "/Api/Selling/OffshelfGoods" and resp.text == '{"ResultCode":"1","ResultMsg":"操作失败","ResultData":false}':
-                    self.logger.warning(f"下架操作出现异常,可能是因为商品已经下架,一般不影响程序运行,请忽略")
+                    self.logger.warning("下架操作出现异常,可能是因为商品已经下架,一般不影响程序运行,请忽略")
                 else:
                     raise Exception(f"{resp.text}")
         return resp

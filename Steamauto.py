@@ -33,7 +33,7 @@ from utils.static import (
     STEAM_ACCOUNT_INFO_FILE_PATH,
 )
 from utils.steam_client import login_to_steam, steam_client_mutex
-from utils.tools import calculate_sha256, exit_code, get_encoding, jobHandler, pause
+from utils.tools import calculate_sha256, exit_code, get_encoding, pause
 
 config = {}
 
@@ -288,7 +288,6 @@ def exit_app(signal_, frame):
     global tried_exit
     if not tried_exit:
         tried_exit = True
-        jobHandler.terminate_all()
         logger.warning("正在退出...若无响应，请再按一次Ctrl+C或者直接关闭窗口")
         os._exit(exit_code.get())
     else:
