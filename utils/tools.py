@@ -3,7 +3,6 @@ import random
 import re
 
 import chardet
-from apscheduler.job import Job
 
 from utils.logger import logger
 import utils.static as static
@@ -22,22 +21,6 @@ class exit_code:
     def get() -> int:
         global current_exit_code
         return current_exit_code
-
-
-class jobHandler:
-    @staticmethod
-    def add(job: Job):
-        global jobs
-        jobs.append(job)
-
-    @staticmethod
-    def terminate_all():
-        global jobs
-        for job in jobs:
-            job.pause()
-            job.remove()
-            del jobs[jobs.index(job)]
-
 
 # 用于解决读取文件时的编码问题
 def get_encoding(file_path):

@@ -9,7 +9,6 @@ rsa
 qrcode[pil]
 qrcode_terminal
 PyCryptodome
-apscheduler
 protobuf
 PySocks
 schedule
