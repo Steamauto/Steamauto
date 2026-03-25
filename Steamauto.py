@@ -56,9 +56,10 @@ def set_exit_code(code):
 def init_files_and_params() -> int:
     global config
     patch()
-    logger.info("欢迎使用Steamauto Github仓库:https://github.com/Steamauto/Steamauto")
-    logger.info("欢迎加入Steamauto 官方QQ群 群号: 425721057")
-    logger.info("若您觉得Steamauto好用, 请给予Star支持, 谢谢! \n")
+    logger.info("欢迎使用 Steamauto GitHub 仓库: https://github.com/Steamauto/Steamauto")
+    logger.info("欢迎加入 Steamauto 官方QQ群 群号: 425721057")
+    logger.info("若出现技术问题，请先查看README和常见问题解答，仍未解决请加入QQ群并在群内咨询！")
+    logger.info("若您觉得Steamauto好用, 请给予Star支持, 感谢!")
     logger.info(f"{Fore.RED + Style.BRIGHT}！！！ 本程序完全{Fore.YELLOW}免费开源 {Fore.RED}若有人向你售卖，请立即投诉并申请退款 ！！！ \n")
     logger.info(f"当前版本: {CURRENT_VERSION}   编译信息: {BUILD_INFO}")
     try:
@@ -92,7 +93,7 @@ def init_files_and_params() -> int:
                 config = json5.load(f)
             except Exception as e:
                 handle_caught_exception(e, known=True)
-                logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
+                logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确, 或尝试重新生成配置文件并重新配置! ")
                 return 0
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "w", encoding="utf-8") as f:

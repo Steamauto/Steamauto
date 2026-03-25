@@ -438,12 +438,12 @@ def login_to_steam(config: dict):
         return None
     except (requests.exceptions.ConnectionError, TimeoutError):
         logger.error(
-            "网络错误! \n强烈建议使用Steamauto内置加速，仅需在配置文件中将steam_login_ignore_ssl_error和steam_local_accelerate设置为true即可使用 \n注意: 使用游戏加速器并不能解决问题，请使用代理软件如Clash/Proxifier等"
+            "网络错误! \n该问题在国内网络环境下较为常见，可尝试部署至海外服务器，或尝试内置加速、代理软件等\n注意: 使用游戏加速器并不能解决问题，请使用代理软件如Clash/Proxifier等"
         )
         pause()
         return None
     except ApiException:
-        logger.error("登录失败. 请检查网络是否正常或被Steam屏蔽!\n")
+        logger.error("登录失败. 请检查网络是否正常或被Steam屏蔽!")
         pause()
         return None
     except (TypeError, AttributeError):
@@ -590,16 +590,14 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
         if isinstance(e, KeyError):
             logger.error(f"接受报价号{tradeOfferId}失败！未找到报价号或报价号已过期")
             return False
-
+        
+        if "substring not found" in str(e):
+            logger.error(f"由于网络被Steam风控，报价号 {tradeOfferId} 处理失败，请检查服务器IP/代理软件或稍后再试。")
+            handle_caught_exception(e, "SteamClient", known=True)
+            return False
         # 其它错误统一处理
         handle_caught_exception(e, "SteamClient")
         logger.error(f"接受报价号{tradeOfferId}失败！")
-
-        if "substring not found" in str(e):
-            logger.error(f"由于Steam风控，报价号 {tradeOfferId} 处理失败，请检查IP/加速器/梯子")
-            handle_caught_exception(e, "SteamClient", known=True)
-            return False
-
         send_notification(client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败")
         return False
 
