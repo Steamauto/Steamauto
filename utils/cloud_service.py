@@ -42,7 +42,11 @@ def get_platform_info():
 
 
 def get_user_uuid():
-    app_dir = os.path.expanduser("~/.steamauto")
+    # UUID 存储在程序所在目录下的 .steamauto 文件夹中
+    if hasattr(sys, "_MEIPASS"):
+        app_dir = os.path.join(os.path.dirname(sys.executable), ".steamauto")
+    else:
+        app_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".steamauto")
     uuid_file = os.path.join(app_dir, "uuid.txt")
     if not os.path.exists(app_dir):
         os.makedirs(app_dir)

@@ -3,20 +3,29 @@ import sys
 
 from utils.build_info import info
 
+# 检测基础路径：打包后使用可执行文件所在目录，源码运行使用当前工作目录
+if hasattr(sys, "_MEIPASS"):
+    # PyInstaller 打包后的环境
+    BASE_PATH = os.path.dirname(sys.executable)
+else:
+    # 源码运行环境
+    BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 is_latest_version = False
 no_pause = False
 
 CURRENT_VERSION = "5.8.3"
 
-VERSION_FILE = "version.json"
-LOGS_FOLDER = "logs"
-CONFIG_FOLDER = "config"
-PLUGIN_FOLDER = "plugins"
+VERSION_FILE = os.path.join(BASE_PATH, "version.json")
+LOGS_FOLDER = os.path.join(BASE_PATH, "logs")
+CONFIG_FOLDER = os.path.join(BASE_PATH, "config")
+PLUGIN_FOLDER = os.path.join(BASE_PATH, "plugins")
 CONFIG_FILE_PATH = os.path.join(CONFIG_FOLDER, "config.json5")
 BUFF_COOKIES_FILE_PATH = os.path.join(CONFIG_FOLDER, "buff_cookies_{steam_username}.txt")
 UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token_{steam_username}.txt")
 STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
-SESSION_FOLDER = "session"
+SESSION_FOLDER = os.path.join(BASE_PATH, "session")
+# 确保 session 文件夹存在
 os.makedirs(SESSION_FOLDER, exist_ok=True)
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")

@@ -20,3 +20,4 @@ plugins/_*
 plugins/*External*
 maFiles
 accounts.txt
+.DS_Store

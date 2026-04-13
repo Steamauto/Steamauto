@@ -21,6 +21,7 @@ from utils.logger import handle_caught_exception, logger
 from utils.notifier import send_notification
 from utils.old_version_patches import patch
 from utils.static import (
+    BASE_PATH,
     BUILD_INFO,
     CONFIG_FILE_PATH,
     CONFIG_FOLDER,
@@ -117,16 +118,16 @@ def init_files_and_params() -> int:
 
 @no_type_check
 def get_plugins_folder():
-    base_path = os.path.dirname(os.path.abspath(__file__))
+    # PLUGIN_FOLDER 现在已经是基于 BASE_PATH 的完整路径
     if hasattr(sys, "_MEIPASS"):
-        base_path = os.path.dirname(sys.executable)
-        if not os.path.exists(os.path.join(base_path, PLUGIN_FOLDER)):
-            shutil.copytree(os.path.join(sys._MEIPASS, PLUGIN_FOLDER), os.path.join(base_path, PLUGIN_FOLDER))
+        # 打包环境：从 _MEIPASS 复制插件到 BASE_PATH
+        if not os.path.exists(PLUGIN_FOLDER):
+            shutil.copytree(os.path.join(sys._MEIPASS, "plugins"), PLUGIN_FOLDER)
         else:
-            plugins = os.listdir(os.path.join(sys._MEIPASS, PLUGIN_FOLDER))
+            plugins = os.listdir(os.path.join(sys._MEIPASS, "plugins"))
             for plugin in plugins:
-                plugin_absolute = os.path.join(sys._MEIPASS, PLUGIN_FOLDER, plugin)
-                local_plugin_absolute = os.path.join(base_path, PLUGIN_FOLDER, plugin)
+                plugin_absolute = os.path.join(sys._MEIPASS, "plugins", plugin)
+                local_plugin_absolute = os.path.join(PLUGIN_FOLDER, plugin)
                 if os.path.isdir(plugin_absolute):
                     continue
                 if os.path.isdir(local_plugin_absolute):
@@ -142,7 +143,7 @@ def get_plugins_folder():
                             shutil.copy(plugin_absolute, local_plugin_absolute)
                         else:
                             logger.info("插件" + plugin + "与本地版本不同 由于已被加入白名单，不会自动更新")
-    return os.path.join(base_path, PLUGIN_FOLDER)
+    return PLUGIN_FOLDER
 
 
 def import_module_from_file(module_name, file_path):
