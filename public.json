@@ -4,6 +4,18 @@
   },
   "versions": [
     {
+      "version": "5.8.4",
+      "changelog": "1.增强稳定性\\n2.移除 BUFF自动上架、BUFF自动备注、BUFF利润报告插件",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.8.4/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "windows": "98df08d219fa169a2c62fa29fc637cdf8b5782d61a7d79e363682e54a3108422"
+      }
+    },
+    {
       "version": "5.8.3",
       "changelog": "代码整理，程序本体体积优化",
       "level": "stable",
