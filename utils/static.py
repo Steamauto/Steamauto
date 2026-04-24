@@ -26,9 +26,6 @@ if BUILD_INFO == "正在使用源码运行":
         BUILD_INFO = "非官方二进制构建运行"
 INTERNAL_PLUGINS = [
     "buff_auto_accept_offer",
-    "buff_auto_comment",
-    "buff_profit_report",
-    "buff_auto_on_sale",
     "uu_auto_accept_offer",
     "uu_auto_lease_item",
     "uu_auto_sell_item",
@@ -101,73 +98,6 @@ DEFAULT_CONFIG_JSON = r"""
     "dota2_support": false,
     // 是否使用全局代理设置中的代理连接BUFF
     "use_proxies": false
-  },
-  // BUFF 自动备注购买价格插件配置
-  "buff_auto_comment": {
-    // 是否启用BUFF自动备注购买价格功能
-    "enable": false
-  },
-  // BUFF 自动计算利润插件配置
-  "buff_profit_report": {
-    // 是否启用BUFF自动计算利润功能
-    "enable": false,
-    // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
-    "servers": [
-    ],
-    // 每日发送报告时间, 24小时制
-    "send_report_time": "20:30"
-  },
-  // BUFF 自动上架插件配置
-  "buff_auto_on_sale": {
-    // 是否启用BUFF自动以最低价上架所有库存
-    "enable": false,
-    // 每次检查库存强制刷新BUFF库存, 若为否, 刷新不一定会加载最新库存
-    "force_refresh": true,
-    // 使用磨损区间最低价上架, 若为否, 则使用类型最低价上架
-    // 注意: 该功能会导致增加更多的请求, 请谨慎开启
-    "use_range_price": false,
-    // 黑名单时间, 为小时, int格式, 空为不启用黑名单, 当前小时如果等于黑名单时间, 则不会自动上架
-    "blacklist_time": [],
-    // 白名单时间, 为小时, int格式, 空为不启用白名单, 当前小时如果不等于白名单时间, 则不会自动上架
-    "whitelist_time": [],
-    // 随机上架几率, 为整数, 1~100, 100为100%上架, 1为1%上架, 0为不上架
-    "random_chance": 100,
-    // 价格上限过滤, 高于此价格的商品不会上架, 设置为0则不限制
-    "max_price": 1000,
-    // 商品上架描述, 为字符串, 为空则不填写描述
-    "description": "",
-    // 检查库存间隔时间
-    "interval": 1800,
-    // 每个请求间隔时间 (秒) - 用于防止被BUFF封禁
-    "sleep_seconds_to_prevent_buff_ban": 10,
-    // 供应求购相关配置
-    "buy_order": {
-      // 是否供应求购订单
-      "enable": true,
-      // 是否只供应给开启自动收货的求购订单
-      "only_auto_accept": true,
-      // 支持收款方式 支付宝 微信
-      "supported_payment_method": ["支付宝"],
-      // 低于多少金额的商品直接塞求购
-      "min_price": 5
-    },
-    // 上架通知配置(如不需要可直接删除)
-    "on_sale_notification": {
-        // 上架通知标题
-        "title": "游戏 {game} 成功上架 {sold_count} 件饰品",
-        // 上架通知内容
-        "body": "上架详情:\n{item_list}"
-    },
-    // 出现验证码通知配置(如不需要可直接删除)
-    "captcha_notification": {
-        // 出现验证码通知标题
-        "title": "上架饰品时出现验证码",
-        // 出现验证码通知内容
-        "body": "使用session={session}并使用浏览器打开以下链接并完成验证:\n{captcha_url}"
-    },
-    // 通知服务器列表，使用Apprise格式，详见https://github.com/caronc/apprise/
-    "servers": [
-    ]
   },
   // 悠悠有品自动发货插件配置
   "uu_auto_accept_offer": {
