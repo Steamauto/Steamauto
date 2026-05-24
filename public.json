@@ -4,6 +4,18 @@
   },
   "versions": [
     {
+      "version": "5.8.5",
+      "changelog": "修复C5平台无法发货的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.8.5/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "windows": "50649d42cf19f9ce698e502cec51388aa29350a10b25da212237a1bd95bba621"
+      }
+    },
+    {
       "version": "5.8.4",
       "changelog": "1.增强稳定性\\n2.移除 BUFF自动上架、BUFF自动备注、BUFF利润报告插件",
       "level": "stable",
