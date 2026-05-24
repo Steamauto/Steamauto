@@ -17,7 +17,7 @@ class C5Account:
         self.logger = PluginLogger("C5Game API")
 
     def post(self, path, data):
-        url = "http://openapi.c5game.com/" + path
+        url = "https://openapi.c5game.com/" + path
         resp = self.client.post(url, json=data)
         self.logger.debug(f"POST {path} {json.dumps(data, ensure_ascii=False)} {resp.text}")
 
