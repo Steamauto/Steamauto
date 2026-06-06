@@ -116,6 +116,52 @@ def _save_token_cache(username: str, auth_info: Dict[str, Any]):
         logger.error(f"保存token缓存失败: {cache_path}")
 
 
+def _bind_client_credentials(client: SteamClient, username: str, password: str):
+    client.username = username
+    client._password = password
+
+
+def _refresh_steam_session(client: SteamClient) -> bool:
+    """
+    刷新当前 SteamClient 的登录会话。
+    优先使用 refresh_token 续期 access_token，失败后再回退到账密重登。
+    """
+    username = client.username
+    if not username:
+        logger.error("无法刷新Steam会话：缺少Steam用户名")
+        return False
+
+    cache = _load_token_cache(username)
+    refresh_token = cache.get("refresh_token")
+    steamid = cache.get("steamid")
+
+    if refresh_token and steamid:
+        logger.info("尝试使用 refresh_token 刷新 Steam 会话...")
+        try:
+            auth_info = client.loginByRefreshToken(refresh_token, steamid, client.steam_guard)
+            if auth_info and isinstance(auth_info, dict):
+                _save_token_cache(username, auth_info)
+                logger.info("Steam 会话 refresh_token 刷新成功")
+                return True
+            raise Exception("loginByRefreshToken 未返回有效 auth_info")
+        except Exception as e:
+            handle_caught_exception(e, known=True)
+            logger.warning("使用 refresh_token 刷新 Steam 会话失败: %s", e)
+
+    logger.info("refresh_token 刷新失败或不可用, 尝试使用账密重新登录 Steam...")
+    try:
+        auth_info = client.relogin()
+        if auth_info and isinstance(auth_info, dict):
+            _save_token_cache(username, auth_info)
+            logger.info("Steam 会话账密重新登录成功")
+            return True
+        raise Exception("relogin 未返回有效 auth_info")
+    except Exception as e:
+        handle_caught_exception(e, known=True)
+        logger.error("Steam 会话刷新失败")
+        return False
+
+
 # ================== 会话与代理设置 ======================
 
 
@@ -192,7 +238,7 @@ class TokenRefreshThread(threading.Thread):
           - 没有过期信息: 默认 6 小时
         """
         try:
-            cache = _load_token_cache(self.username)
+            cache = _load_token_cache(self.steam_client.username)
             exp = cache.get("access_token_exp_timestamp", 0)
             if not exp:
                 return 6 * 3600
@@ -221,69 +267,15 @@ class TokenRefreshThread(threading.Thread):
 
                 if not self.steam_client.is_session_alive():
                     logger.info("检测到会话已失效, 尝试刷新会话...")
-                    # 优先使用 refresh_token
-                    cache = _load_token_cache(self.steam_client.username)
-                    refresh_token = cache.get("refresh_token")
-                    steamid = cache.get("steamid")
-                    if refresh_token and steamid:
-                        logger.info("尝试使用 refresh_token 刷新 access_token...")
-                        try:
-                            auth_info = self.steam_client.loginByRefreshToken(refresh_token, steamid, self.steam_client.steam_guard)
-                            if auth_info and isinstance(auth_info, dict):
-                                _save_token_cache(self.steam_client.username, auth_info)
-                                logger.info("后台 refresh_token 刷新成功")
-                                return
-                            else:
-                                raise Exception("loginByRefreshToken 未返回有效 auth_info")
-                        except Exception as e:
-                            handle_caught_exception(e, known=True)
-                            logger.warning("使用 refresh_token 刷新失败: %s", e)
-                    # refresh_token 失败后回退 relogin
-                    logger.info("refresh_token 刷新失败或不可用, 尝试使用账密重新登录...")
-                    try:
-                        auth_info = self.steam_client.relogin()
-                        if auth_info and isinstance(auth_info, dict):
-                            _save_token_cache(self.steam_client.username, auth_info)
-                            logger.info("使用账密重新登录成功")
-                            return
-                        else:
-                            raise Exception("relogin 未返回有效 auth_info")
-                    except Exception as e:
-                        handle_caught_exception(e, known=True)
-                        logger.error("会话失效，刷新失败")
+                    if _refresh_steam_session(self.steam_client):
+                        return
+                    else:
                         send_notification(self.steam_client, "Steam 会话刷新失败", "会话失效后 refresh_token 与重登录均失败，请检查账号或网络")
                         return
 
                 if need_refresh:
-                    # 使用 refresh_token 刷新
-                    cache = _load_token_cache(self.steam_client.username)
-                    refresh_token = cache.get("refresh_token")
-                    steamid = cache.get("steamid")
-                    if refresh_token and steamid:
-                        logger.info("尝试使用 refresh_token 刷新 access_token...")
-                        try:
-                            auth_info = self.steam_client.loginByRefreshToken(refresh_token, steamid, self.steam_client.steam_guard)
-                            if auth_info and isinstance(auth_info, dict):
-                                _save_token_cache(self.steam_client.username, auth_info)
-                                logger.info("后台 refresh_token 刷新成功")
-                                return
-                            else:
-                                raise Exception("loginByRefreshToken 未返回有效 auth_info")
-                        except Exception as e:
-                            handle_caught_exception(e, known=True)
-                            logger.warning("使用 refresh_token 刷新失败: %s", e)
-
-                    # 再次尝试 relogin
-                    try:
-                        auth_info = self.steam_client.relogin()
-                        if auth_info and isinstance(auth_info, dict):
-                            _save_token_cache(self.steam_client.username, auth_info)
-                            logger.info("relogin 成功(刷新阶段)")
-                            return
-                    except Exception as e:
-                        handle_caught_exception(e, known=True)
-
-                    logger.error("后台刷新失败，无法延长会话")
+                    if _refresh_steam_session(self.steam_client):
+                        return
                     send_notification(self.steam_client, "Steam 会话维持失败", "自动刷新与重登录均失败，请检查账号或网络")
         except requests.exceptions.RequestException:
             logger.error("无法检查Steam会话状态，请检查网络连接或代理设置")
@@ -359,8 +351,7 @@ def login_to_steam(config: dict):
             _setup_client_session(client, config)
             if client.set_and_verify_access_token(steamid_cache, access_token, steam_account_info):
                 logger.info("使用缓存 access_token 登录成功")
-                if username and not client.username:
-                    client.username = username
+                _bind_client_credentials(client, username, password)
                 # 启动刷新线程
                 _start_token_refresh_thread(client, config)
                 return client
@@ -393,8 +384,7 @@ def login_to_steam(config: dict):
                 if auth_info and client.is_session_alive():
                     logger.info("使用 refresh_token 登录成功")
                     _save_token_cache(username, auth_info)
-                    if username and not client.username:
-                        client.username = username
+                    _bind_client_credentials(client, username, password)
                     _start_token_refresh_thread(client, config)
                     return client
                 else:
@@ -417,6 +407,7 @@ def login_to_steam(config: dict):
         auth_info = client.login(username, password, steam_account_info)
         if client.is_session_alive():
             logger.info("账密登录成功")
+            _bind_client_credentials(client, username, password)
             if auth_info and isinstance(auth_info, dict):
                 _save_token_cache(username, auth_info)
             _start_token_refresh_thread(client, config)
@@ -546,7 +537,7 @@ def external_handler(tradeOfferId, desc) -> bool:
         return False
 
 
-def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, desc="", network_retry_count=0, reportToExternal=True):
+def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, desc="", network_retry_count=0, reportToExternal=True, session_retry=False):
     max_network_retries = 3
     network_retry_delay = 5
 
@@ -570,7 +561,16 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
                 logger.warning(f"接受报价号{tradeOfferId}遇到网络错误，正在重试 ({network_retry_count + 1}/{max_network_retries})...")
                 handle_caught_exception(e, "SteamClient", known=True)
                 time.sleep(network_retry_delay)
-                return accept_trade_offer(client, mutex, tradeOfferId, retry=False, desc=desc, network_retry_count=network_retry_count + 1)
+                return accept_trade_offer(
+                    client,
+                    mutex,
+                    tradeOfferId,
+                    retry=False,
+                    desc=desc,
+                    network_retry_count=network_retry_count + 1,
+                    reportToExternal=False,
+                    session_retry=session_retry,
+                )
             else:
                 logger.error(f"接受报价号{tradeOfferId}网络错误重试次数已达到上限({max_network_retries})，操作失败")
                 handle_caught_exception(e, "SteamClient", known=True)
@@ -582,7 +582,41 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
                 logger.warning(f"报价号 {tradeOfferId} 已经处理过，无需再次处理")
                 handle_caught_exception(e, "SteamClient", known=True)
                 return True
-        if isinstance(e, (steampy.exceptions.ConfirmationExpected, steampy.exceptions.InvalidCredentials)):
+        if isinstance(e, steampy.exceptions.InvalidCredentials):
+            should_refresh = "Invalid API key" in str(e)
+            if not should_refresh:
+                try:
+                    should_refresh = not client.is_session_alive()
+                except Exception:
+                    should_refresh = True
+
+            if should_refresh and not session_retry:
+                logger.warning(f"接受报价号{tradeOfferId}时检测到Steam会话失效，正在刷新会话后重试...")
+                handle_caught_exception(e, "SteamClient", known=True)
+                with mutex:
+                    refreshed = _refresh_steam_session(client)
+                if refreshed:
+                    logger.info(f"Steam会话刷新成功，正在重试接受报价号{tradeOfferId}")
+                    return accept_trade_offer(
+                        client,
+                        mutex,
+                        tradeOfferId,
+                        retry=False,
+                        desc=desc,
+                        network_retry_count=network_retry_count,
+                        reportToExternal=False,
+                        session_retry=True,
+                    )
+                logger.error(f"接受报价号{tradeOfferId}失败：Steam会话刷新失败，放弃本次处理")
+                send_notification(client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(会话刷新失败)")
+                return False
+
+            logger.error(f"接受报价号{tradeOfferId}失败：会话或凭据无效，放弃本次处理")
+            handle_caught_exception(e, "SteamClient", known=True)
+            send_notification(client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(会话无效)")
+            return False
+
+        if isinstance(e, steampy.exceptions.ConfirmationExpected):
             logger.error(f"接受报价号{tradeOfferId}失败：会话或凭据无效，放弃本次处理")
             handle_caught_exception(e, "SteamClient", known=True)
             send_notification(client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(会话无效)")
