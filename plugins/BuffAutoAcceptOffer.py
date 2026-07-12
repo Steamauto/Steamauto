@@ -16,6 +16,52 @@ class BuffAutoAcceptOffer:
         self.config = config
         self.order_info = {}
 
+    def get_steam_cookies(self):
+        cookies = self.steam_client._session.cookies.get_dict("steamcommunity.com")
+        return "; ".join(f"{key}={value}" for key, value in cookies.items())
+
+    def send_pending_buyer_offers(self):
+        """为当前 Steam 账号的 CS2 买家订单发起报价。"""
+        self.logger.info("正在检查是否有未发起报价的买家订单...")
+        result = self.buff_account.get_buy_orders_waiting_to_send_offer()
+        if not result["success"]:
+            self.logger.error(f"获取未发起报价的买家订单失败: {result['error']}")
+            return
+
+        steam_id = str(self.steam_client.get_steam64id_from_cookies())
+        order_ids = [
+            order["id"]
+            for order in result["items"]
+            if str(order.get("buyer_steamid")) == steam_id and order.get("state_text") == "等待你发起报价"
+        ]
+        if not order_ids:
+            return
+
+        send_result = self.buff_account.buyer_send_offer(self.get_steam_cookies(), order_ids, steam_id)
+        if send_result["success"]:
+            self.logger.info(f"成功为 {len(order_ids)} 个买家订单发起报价！")
+        else:
+            self.logger.error(f"为买家订单 {order_ids} 发起报价失败: {send_result['error']}")
+
+    def send_pending_seller_offer(self, trade_offer):
+        """为单个 CS2 卖家待发货订单发起报价。"""
+        order_id = trade_offer["id"]
+        self.logger.info(f"检测到卖家发起报价订单 {order_id}，正在尝试发起报价...")
+        result = self.buff_account.seller_send_offer(self.get_steam_cookies(), [order_id])
+        if result["success"]:
+            self.logger.info(f"订单 {order_id} 发起 Steam 报价成功，将在下次轮询时处理")
+        else:
+            self.logger.error(f"订单 {order_id} 发起 Steam 报价失败: {result['error']}")
+
+    @staticmethod
+    def should_send_seller_offer(trade_offer, game):
+        return (
+            game == "csgo"
+            and not trade_offer.get("tradeofferid")
+            and trade_offer.get("state") == "TO_DELIVER"
+            and bool(trade_offer.get("is_seller_asked_to_send_offer"))
+        )
+
     def init(self) -> bool:
         self.logger.info("BUFF自动接受报价插件已启动.请稍候...")
         proxies = None
@@ -136,6 +182,11 @@ class BuffAutoAcceptOffer:
                         return
                     self.buff_account = BuffAccount(session, proxies=self.buff_account.session.proxies)
 
+                try:
+                    self.send_pending_buyer_offers()
+                except Exception as e:
+                    self.logger.error(f"自动发起买家报价时出错: {str(e)}", exc_info=True)
+
                 notification = self.buff_account.get_notification()
                 if "error" in notification:
                     self.logger.error(f"获取待发货订单信息失败! 错误信息: {notification['error']}，正在尝试其它方式获取...")
@@ -188,6 +239,11 @@ class BuffAutoAcceptOffer:
                                                 trade_offer["goods_infos"][goods_id] = goods_info
                                                 break
                                         trades.append(trade_offer)
+                                elif self.should_send_seller_offer(trade_offer, game["game"]):
+                                    try:
+                                        self.send_pending_seller_offer(trade_offer)
+                                    except Exception as e:
+                                        self.logger.error(f"自动发起卖家订单报价时出错: {str(e)}", exc_info=True)
 
                         if index != len(self.SUPPORT_GAME_TYPES) - 1:
                             self.logger.info("为了避免访问接口过于频繁，休眠5秒...")

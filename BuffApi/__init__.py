@@ -20,6 +20,7 @@ from typing import no_type_check, Dict, List, Union
 import requests
 
 from utils.logger import PluginLogger
+from utils.BuffApiCrypt import BuffApiCrypt
 from BuffApi import models
 
 logger = PluginLogger("BuffApi")
@@ -71,10 +72,10 @@ class BuffAccount:
     def __init__(self, buffcookie, user_agent=None, proxies=None):
         if not user_agent:
             user_agent = get_ua()
+        self.session = requests.session()
         if proxies:
             logger.info("检测到Buff代理设置，正在为Buff设置相同的代理...")
             self.session.proxies = proxies
-        self.session = requests.session()
         self.session.headers = {"User-Agent": user_agent}
         headers = copy.deepcopy(self.session.headers)
         headers["Cookie"] = buffcookie
@@ -151,6 +152,64 @@ class BuffAccount:
             if data["code"] == "OK" and "data" in data:
                 return data["data"]
         return {}
+
+    def get_buy_orders_waiting_to_send_offer(self, game: str = "csgo", appid: Union[str, int] = 730) -> Dict:
+        """获取等待买家发起 Steam 报价的订单。"""
+        response = self.get(
+            f"{self.BASE_URL}/api/market/buy_order/wait_send_offers",
+            params={"game": game, "appid": str(appid)},
+        )
+        return self._parse_offer_action_response(response, items_key="items")
+
+    def buyer_send_offer(self, steam_cookies: str, bill_orders: List, steamid: Union[str, int]) -> Dict:
+        """为买家订单批量发起 Steam 报价。"""
+        if not bill_orders:
+            return {"success": True, "data": {}, "error": ""}
+        response = self.post(
+            f"{self.BASE_URL}/api/market/manual_plus/buyer_send_offer",
+            json={
+                "buyer_info": BuffApiCrypt().encrypt(steam_cookies),
+                "bill_orders": bill_orders,
+                "steamid": str(steamid),
+            },
+            headers=self.CSRF_Fucker(),
+        )
+        return self._parse_offer_action_response(response)
+
+    def seller_send_offer(self, steam_cookies: str, bill_orders: List) -> Dict:
+        """为卖家待发货订单批量发起 Steam 报价。"""
+        if not bill_orders:
+            return {"success": True, "data": {}, "error": ""}
+        response = self.post(
+            f"{self.BASE_URL}/api/market/manual_plus/seller_send_offer",
+            json={
+                "seller_info": BuffApiCrypt().encrypt(steam_cookies),
+                "bill_orders": bill_orders,
+            },
+            headers=self.CSRF_Fucker(),
+        )
+        return self._parse_offer_action_response(response)
+
+    @staticmethod
+    def _parse_offer_action_response(response, items_key=None) -> Dict:
+        """将自动发起报价相关接口统一为结构化结果。"""
+        try:
+            payload = response.json()
+        except (TypeError, ValueError) as e:
+            return {"success": False, "data": {}, "error": f"BUFF返回了无效响应: {e}"}
+
+        if not isinstance(payload, dict):
+            return {"success": False, "data": {}, "error": "BUFF返回了无效响应"}
+
+        if response.status_code != 200 or payload.get("code") != "OK":
+            error = payload.get("error") or payload.get("msg") or f"HTTP {response.status_code}"
+            return {"success": False, "data": payload.get("data", {}), "error": str(error)}
+
+        data = payload.get("data", {})
+        result = {"success": True, "data": data, "error": ""}
+        if items_key:
+            result[items_key] = data.get(items_key, []) if isinstance(data, dict) else []
+        return result
 
     def get_sell_order_history(self, appid: Union[str, int]) -> List:
         """获取销售历史记录"""
