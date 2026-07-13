@@ -4,6 +4,18 @@
   },
   "versions": [
     {
+      "version": "5.9.0",
+      "changelog": "BUFF自动发货插件支持卖家发送报价的订单",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.9.0/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "windows": "934648d68b964fa19aef3fe155509860cd83a9ef526bb321d95df21dd2b068b9"
+      }
+    },
+    {
       "version": "5.8.6",
       "changelog": "修复在特定情况下无法自动刷新Steam登录信息的问题",
       "level": "stable",
