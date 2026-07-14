@@ -4,6 +4,18 @@
   },
   "versions": [
     {
+      "version": "5.9.1",
+      "changelog": "修复特定情况下无法访问steam相关服务的问题",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.9.1/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "windows": "a51d473c731823434af12e48f2d489c61deb55bb5db87c9f38f1d6e82ca62de2"
+      }
+    },
+    {
       "version": "5.9.0",
       "changelog": "BUFF自动发货插件支持卖家发送报价的订单",
       "level": "stable",
