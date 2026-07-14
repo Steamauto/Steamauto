@@ -12,7 +12,7 @@ import requests
 from requests.exceptions import RequestException
 
 import steampy.exceptions
-from steampy.client import SteamClient
+from steampy.client import STEAM_USER_AGENT, SteamClient
 from steampy.exceptions import ApiException
 from steampy.models import GameOptions
 from utils import static
@@ -190,7 +190,12 @@ def _check_proxy_availability(config: dict) -> bool:
         return False
     logger.info("正在检查代理服务器可用性...")
     try:
-        requests.get("https://steamcommunity.com", proxies=config["proxies"], timeout=10)
+        requests.get(
+            "https://steamcommunity.com",
+            headers={"User-Agent": STEAM_USER_AGENT},
+            proxies=config["proxies"],
+            timeout=10,
+        )
         logger.info("代理服务器可用")
         return True
     except Exception as e:

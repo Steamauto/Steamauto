@@ -34,6 +34,12 @@ from steampy.utils import (
     texts_between,
 )
 
+STEAM_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/150.0.0.0 Safari/537.36"
+)
+
 
 def login_required(func):
     def func_wrapper(self, *args, **kwargs):
@@ -56,6 +62,7 @@ class SteamClient:
     ) -> None:
         self._api_key = api_key
         self._session = requests.Session()
+        self._session.headers["User-Agent"] = STEAM_USER_AGENT
         self.steam_guard = steam_guard
         self.was_login_executed = False
         self.username = username
@@ -287,9 +294,23 @@ class SteamClient:
     def api_call(self, request_method: str, interface: str, api_method: str, version: str, params: dict = None) -> requests.Response:
         url = "/".join([SteamUrl.API_URL, interface, api_method, version])
         if request_method == "GET":
-            response = requests.get(url, params=params, verify=self._session.verify, auth=self._session.auth, timeout=15)
+            response = requests.get(
+                url,
+                params=params,
+                headers=self._session.headers,
+                verify=self._session.verify,
+                auth=self._session.auth,
+                timeout=15,
+            )
         else:
-            response = requests.post(url, data=params, verify=self._session.verify, auth=self._session.auth, timeout=15)
+            response = requests.post(
+                url,
+                data=params,
+                headers=self._session.headers,
+                verify=self._session.verify,
+                auth=self._session.auth,
+                timeout=15,
+            )
         if self.is_invalid_api_key(response):
             raise InvalidCredentials("Invalid API key")
         return response
