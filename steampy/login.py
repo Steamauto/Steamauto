@@ -1,5 +1,6 @@
 import base64
 import json
+import secrets
 from time import time
 from http import HTTPStatus
 from base64 import b64encode
@@ -53,6 +54,16 @@ class LoginExecutor:
         self._send_login_request_protobuf()
         return self.session
 
+    def _get_or_create_session_id(self) -> str:
+        community_domain = SteamUrl.COMMUNITY_URL[8:]
+        store_domain = SteamUrl.STORE_URL[8:]
+        sessionid = self.session.cookies.get_dict(community_domain).get("sessionid") or self.session.cookies.get_dict().get("sessionid")
+        if not sessionid:
+            sessionid = secrets.token_hex(12)
+        self.session.cookies.set("sessionid", sessionid, domain=community_domain)
+        self.session.cookies.set("sessionid", sessionid, domain=store_domain)
+        return sessionid
+
     def _send_login_request(self) -> Response:
         rsa_params = self._fetch_rsa_params()
         encrypted_password = self._encrypt_password(rsa_params)
@@ -62,6 +73,7 @@ class LoginExecutor:
 
     def _send_login_request_protobuf(self) -> None:
         rsa_params = self._fetch_rsa_params_protobuf()
+        sessionid = self._get_or_create_session_id()
         encrypted_password = self._encrypt_password_protobuf(rsa_params)
         rsa_timestamp = rsa_params.timestamp
         auth_session = self._begin_auth_session_protobuf(
@@ -102,7 +114,7 @@ class LoginExecutor:
         )
         tokens = self._finalize_login_protobuf(
             refresh_token=session.refresh_token,
-            sessionid=self.session.cookies.get_dict()["sessionid"],
+            sessionid=sessionid,
         )
         for token in tokens.transfer_info:
             self._set_token_protobuf(

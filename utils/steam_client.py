@@ -226,22 +226,26 @@ class TokenRefreshThread(threading.Thread):
     def run(self):
         while not self.stop_event.is_set():
             try:
-                self._refresh_cycle()
+                refresh_succeeded = self._refresh_cycle()
             except Exception as e:
                 handle_caught_exception(e, known=True)
                 logger.error("后台Token刷新循环出现异常")
+                refresh_succeeded = False
             # 计算下一次检查间隔
-            wait_seconds = self._compute_wait_interval()
+            wait_seconds = self._compute_wait_interval(refresh_failed=not refresh_succeeded)
             self.stop_event.wait(wait_seconds)
 
-    def _compute_wait_interval(self) -> int:
+    def _compute_wait_interval(self, refresh_failed: bool = False) -> int:
         """
         基于缓存中 access_token 过期时间决定下一次检查:
           - 距离过期 > 6h: 3h 后检查
           - 距离过期 1h~6h: 1h 后检查
           - 距离过期 < 1h: 10 分钟后检查
           - 没有过期信息: 默认 6 小时
+          - 上次刷新失败: 5 分钟后重试
         """
+        if refresh_failed:
+            return 300
         try:
             cache = _load_token_cache(self.steam_client.username)
             exp = cache.get("access_token_exp_timestamp", 0)
@@ -259,7 +263,7 @@ class TokenRefreshThread(threading.Thread):
         except Exception:
             return 6 * 3600
 
-    def _refresh_cycle(self):
+    def _refresh_cycle(self) -> bool:
         try:
             with steam_client_mutex.get(self.steam_client.username):
                 # 如果会话还活着且 access_token 也未临期则直接返回
@@ -273,19 +277,23 @@ class TokenRefreshThread(threading.Thread):
                 if not self.steam_client.is_session_alive():
                     logger.info("检测到会话已失效, 尝试刷新会话...")
                     if _refresh_steam_session(self.steam_client):
-                        return
+                        return True
                     else:
                         send_notification(self.steam_client, "Steam 会话刷新失败", "会话失效后 refresh_token 与重登录均失败，请检查账号或网络")
-                        return
+                        return False
 
                 if need_refresh:
                     if _refresh_steam_session(self.steam_client):
-                        return
+                        return True
                     send_notification(self.steam_client, "Steam 会话维持失败", "自动刷新与重登录均失败，请检查账号或网络")
+                    return False
+                return True
         except requests.exceptions.RequestException:
             logger.error("无法检查Steam会话状态，请检查网络连接或代理设置")
+            return False
         except Exception as e:
             handle_caught_exception(e, known=False)
+            return False
 
     def stop(self):
         self.stop_event.set()
@@ -587,8 +595,9 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
                 logger.warning(f"报价号 {tradeOfferId} 已经处理过，无需再次处理")
                 handle_caught_exception(e, "SteamClient", known=True)
                 return True
-        if isinstance(e, steampy.exceptions.InvalidCredentials):
-            should_refresh = "Invalid API key" in str(e)
+        missing_login_cookie = isinstance(e, ApiException) and "steamLoginSecure" in str(e)
+        if isinstance(e, steampy.exceptions.InvalidCredentials) or missing_login_cookie:
+            should_refresh = missing_login_cookie or "Invalid API key" in str(e)
             if not should_refresh:
                 try:
                     should_refresh = not client.is_session_alive()
