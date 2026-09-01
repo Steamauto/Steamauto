@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steamauto 控制台</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <div class="brand">Steamauto <span>图形控制台</span></div>
+    <nav>
+      <button class="tab-btn active" data-tab="dashboard">仪表盘</button>
+      <button class="tab-btn" data-tab="config">配置</button>
+      <button class="tab-btn" data-tab="login">平台登录</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 仪表盘 -->
+    <section id="tab-dashboard" class="tab active">
+      <div class="status-card">
+        <div class="status-row">
+          <span>运行状态</span>
+          <span id="status-badge" class="badge stopped">未运行</span>
+        </div>
+        <div class="status-row">
+          <span>进程 PID</span>
+          <span id="status-pid">—</span>
+        </div>
+        <div class="actions">
+          <button id="btn-start" class="btn">启动 Steamauto</button>
+          <button id="btn-stop" class="btn btn-stop" disabled>停止</button>
+        </div>
+      </div>
+
+      <div class="log-panel-wrap">
+        <div class="log-header">
+          <span>实时日志</span>
+          <button id="btn-clear-log" class="btn-mini">清空显示</button>
+        </div>
+        <pre id="log-panel" class="log-panel"></pre>
+      </div>
+    </section>
+
+    <!-- 配置 -->
+    <section id="tab-config" class="tab">
+      <div class="config-block">
+        <div class="config-header">
+          <h2>主配置 config/config.json5</h2>
+          <div class="view-toggle">
+            <button id="btn-view-table" class="btn-mini active">表格</button>
+            <button id="btn-view-text" class="btn-mini">文本</button>
+          </div>
+        </div>
+        <p class="hint">表格模式：结构化编辑，每项标注默认值、可填值与作用。文本模式：直接编辑 JSON5（保留注释）。</p>
+
+        <div id="config-table-view">
+          <div id="config-table" class="config-table"></div>
+          <div class="config-actions">
+            <button id="btn-save-table" class="btn">保存表格设置</button>
+            <span id="config-table-msg" class="msg"></span>
+          </div>
+        </div>
+
+        <div id="config-text-view" style="display:none">
+          <textarea id="config-editor" class="editor" spellcheck="false"></textarea>
+          <div class="config-actions">
+            <button id="btn-save-config" class="btn">校验并保存</button>
+            <span id="config-msg" class="msg"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-block">
+        <div class="config-header">
+          <h2>Steam 账号信息 config/steam_account_info.json5</h2>
+          <div class="view-toggle">
+            <button id="btn-acc-form" class="btn-mini active">表单</button>
+            <button id="btn-acc-text" class="btn-mini">文本</button>
+          </div>
+        </div>
+        <p class="hint">表单与文本实时同步（不写文件），点击「保存」才写入。令牌参数通过 Watt Toolkit 等工具获取。</p>
+
+        <div id="acc-form-view">
+          <div class="form">
+            <label>Steam 用户名
+              <input id="acc-username" type="text" autocomplete="off">
+            </label>
+            <label>Steam 密码
+              <input id="acc-password" type="password" autocomplete="off">
+            </label>
+            <label>shared_secret（令牌）
+              <input id="acc-shared" type="text" autocomplete="off">
+            </label>
+            <label>identity_secret（令牌）
+              <input id="acc-identity" type="text" autocomplete="off">
+            </label>
+          </div>
+        </div>
+
+        <div id="acc-text-view" style="display:none">
+          <textarea id="account-editor" class="editor-small" spellcheck="false"></textarea>
+        </div>
+
+        <div class="config-actions">
+          <button id="btn-save-account" class="btn">保存</button>
+          <button id="btn-acc-reset" class="btn">恢复默认</button>
+          <button id="btn-acc-import" class="btn">导入</button>
+          <button id="btn-acc-export" class="btn">导出</button>
+          <input type="file" id="acc-import-file" accept=".json5,.json,.txt" style="display:none">
+          <span id="account-msg" class="msg"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 平台登录 -->
+    <section id="tab-login" class="tab">
+      <div class="login-grid">
+        <div class="login-card">
+          <h2>Steam</h2>
+          <p class="hint">需先在「配置」页填写账号信息与令牌（shared_secret）</p>
+          <span id="login-steam-badge" class="badge stopped">未登录</span>
+          <div class="login-msg" id="login-steam-msg"></div>
+          <button class="btn" data-login="steam">登录 Steam</button>
+        </div>
+        <div class="login-card">
+          <h2>网易 BUFF</h2>
+          <p class="hint">依赖 Steam 登录，优先自动登录，失效时扫码</p>
+          <span id="login-buff-badge" class="badge stopped">未登录</span>
+          <div class="login-msg" id="login-buff-msg"></div>
+          <button class="btn" data-login="buff">登录 BUFF</button>
+        </div>
+        <div class="login-card">
+          <h2>悠悠有品</h2>
+          <p class="hint">依赖 Steam 登录，手机号 + 短信验证码</p>
+          <span id="login-uu-badge" class="badge stopped">未登录</span>
+          <div class="login-msg" id="login-uu-msg"></div>
+          <button class="btn" data-login="uu">登录悠悠有品</button>
+        </div>
+      </div>
+
+      <div id="login-interact" class="login-interact" style="display:none">
+        <div id="interact-qrcode" class="interact-qrcode" style="display:none">
+          <img id="interact-qr-img" src="" alt="二维码">
+          <p class="hint">请用手机 BUFF App 扫描上方二维码登录</p>
+        </div>
+        <div id="interact-input" class="interact-input" style="display:none">
+          <p id="interact-prompt" class="hint"></p>
+          <div class="config-actions">
+            <input id="interact-value" type="text" class="interact-field" autocomplete="off">
+            <button id="interact-submit" class="btn">提交</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast"></div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

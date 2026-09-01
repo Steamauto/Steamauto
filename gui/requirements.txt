@@ -1,0 +1,4 @@
+# Steamauto GUI（可选）的额外依赖
+# 用法：pip install -r gui/requirements.txt
+# 注意：json5 已包含在项目根 requirements.txt 中
+flask
