@@ -13,19 +13,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@main
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v4
         with:
           python-version: "3.12"
+          cache: true
 
-      - name: Install requirements and build
+      - name: Install dependencies and build
         env:
           MATRIX_OS: ${{ matrix.os }}
         run: |
-          pip install pyinstaller
-          pip install -r requirements.txt
-          python .github/scripts/add_build_info.py
-          pyinstaller build.spec
+          pdm install --check --no-self -G build
+          pdm run python .github/scripts/add_build_info.py
+          pdm run pyinstaller build.spec
 
       - name: Upload artifacts~
         uses: actions/upload-artifact@main

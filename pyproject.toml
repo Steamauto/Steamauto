@@ -22,6 +22,11 @@ dependencies = [
 ]
 requires-python = ">=3.12"
 
+[dependency-groups]
+build = [
+    "pyinstaller>=6.22.2; python_version < '3.16'",
+]
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"

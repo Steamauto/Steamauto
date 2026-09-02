@@ -76,10 +76,11 @@ jobs:
           name: config-files
           path: .
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4
         with:
           python-version: '3.12'
+          cache: true
 
       - name: Validate version files
         shell: bash
@@ -120,19 +121,18 @@ jobs:
           Move-Item C:\upx_temp\upx-5.0.0-win64\* C:\upx -Force
           Remove-Item C:\upx_temp, $output -Recurse -Force
 
-      - name: Install requirements and build
+      - name: Install dependencies and build
         shell: bash
         env:
           MATRIX_OS: ${{ matrix.os }}
         run: |
-          pip install pyinstaller
-          pip install -r requirements.txt
-          python .github/scripts/add_build_info.py
+          pdm install --check --no-self -G build
+          pdm run python .github/scripts/add_build_info.py
 
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            pyinstaller build.spec --upx-dir C:\\upx
+            pdm run pyinstaller build.spec --upx-dir C:\\upx
           else
-            pyinstaller build.spec
+            pdm run pyinstaller build.spec
           fi
 
       - name: Check build result
