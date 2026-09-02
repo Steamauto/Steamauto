@@ -4,11 +4,13 @@ import secrets
 from time import time
 from http import HTTPStatus
 from base64 import b64encode
-from typing import List, Dict, Any
+from typing import List
 
 import rsa
+from google.protobuf.message import DecodeError
 from rsa import encrypt, PublicKey
 from requests import Session, Response
+from requests.exceptions import HTTPError, RequestException
 from protobufs.enums_pb2 import ESessionPersistence
 from protobufs.steammessages_auth.steamclient_pb2 import *
 
@@ -16,8 +18,16 @@ from steampy.schemas import FinalizeLoginStatus, TransferInfoItem, Params
 from steampy.utils import check_error
 from steampy import guard
 from steampy.models import SteamUrl
-from steampy.exceptions import InvalidCredentials, CaptchaRequired, ApiException, EmptyResponse, SteamError
-from steampy.steam_error_codes import STEAM_ERROR_CODES
+from steampy.exceptions import InvalidCredentials, CaptchaRequired, ApiException, EmptyResponse, SteamError, SteamLoginError
+
+
+LOGIN_API_STAGES = {
+    "GetPasswordRSAPublicKey": "获取 Steam RSA 登录密钥",
+    "BeginAuthSessionViaCredentials": "验证 Steam 账号和密码",
+    "UpdateAuthSessionWithSteamGuardCode": "提交 Steam Guard 验证",
+    "PollAuthSessionStatus": "等待 Steam 登录确认",
+    "GenerateAccessTokenForApp": "刷新 Steam 访问令牌",
+}
 
 
 class LoginExecutor:
@@ -33,22 +43,48 @@ class LoginExecutor:
 
     def _api_call(self, method: str, service: str, endpoint: str, version: str = "v1", params: dict = None, ignore_error_num: List = None) -> Response:
         url = "/".join([SteamUrl.API_URL, service, endpoint, version])
+        stage = LOGIN_API_STAGES.get(endpoint, "调用 Steam 身份验证接口")
         # all requests from the login page use the same "Referer" and "Origin" values
         headers = {"Referer": SteamUrl.COMMUNITY_URL + "/", "Origin": SteamUrl.COMMUNITY_URL}
-        if method.upper() == "GET":
-            resp = self.session.get(url, params=params, headers=headers, allow_redirects=False)
-            check_error(resp, ignore_error_num)
-            while resp.status_code == 302:
-                resp = self.session.get(resp.headers["Location"], allow_redirects=False)
-                check_error(resp, ignore_error_num)
-            return resp
-        else:
-            resp = self.session.post(url, data=params, headers=headers, allow_redirects=False)
-            check_error(resp, ignore_error_num)
-            while resp.status_code == 302:
-                resp = self.session.post(resp.headers["Location"], allow_redirects=False)
-                check_error(resp, ignore_error_num)
-            return resp
+        try:
+            if method.upper() == "GET":
+                resp = self.session.get(url, params=params, headers=headers, allow_redirects=False)
+                self._validate_login_response(resp, stage, ignore_error_num)
+                while resp.status_code == 302:
+                    resp = self.session.get(resp.headers["Location"], allow_redirects=False)
+                    self._validate_login_response(resp, stage, ignore_error_num)
+                return resp
+            else:
+                resp = self.session.post(url, data=params, headers=headers, allow_redirects=False)
+                self._validate_login_response(resp, stage, ignore_error_num)
+                while resp.status_code == 302:
+                    resp = self.session.post(resp.headers["Location"], allow_redirects=False)
+                    self._validate_login_response(resp, stage, ignore_error_num)
+                return resp
+        except RequestException as e:
+            e.steam_login_stage = stage
+            raise
+
+    @staticmethod
+    def _validate_login_response(response: Response, stage: str, ignore_error_num: List = None) -> None:
+        try:
+            check_error(response, ignore_error_num)
+        except SteamError as e:
+            raise SteamLoginError(stage, eresult=e.error_code, detail=e.error_msg, response=response) from e
+        except (TypeError, ValueError) as e:
+            raise SteamLoginError(stage, detail="Steam 返回了无效的 X-eresult 响应头", response=response) from e
+
+        try:
+            response.raise_for_status()
+        except HTTPError as e:
+            raise SteamLoginError(stage, http_status=response.status_code, detail=response.reason, response=response) from e
+
+    @staticmethod
+    def _parse_protobuf_response(response: Response, message_type, stage: str):
+        try:
+            return message_type.FromString(response.content)
+        except DecodeError as e:
+            raise SteamLoginError(stage, detail="Steam 返回了无法解析的 Protobuf 响应", response=response) from e
 
     def login(self) -> Session:
         self._send_login_request_protobuf()
@@ -85,7 +121,11 @@ class LoginExecutor:
                 if self.shared_secret == "" and self.func_2fa_input is not None:
                     self.one_time_code = self.func_2fa_input()
                 else:
-                    self.one_time_code = guard.generate_one_time_code(self.shared_secret)
+                    try:
+                        self.one_time_code = guard.generate_one_time_code(self.shared_secret)
+                    except Exception as e:
+                        e.steam_login_stage = "生成 Steam Guard 验证码"
+                        raise
                 if self.one_time_code == "ok":
                     self._update_auth_session_protobuf(
                         client_id=auth_session.client_id,
@@ -107,11 +147,13 @@ class LoginExecutor:
                         code_type=EAuthSessionGuardType.k_EAuthSessionGuardType_EmailCode,
                     )
                 else:
-                    raise SteamError(901, "Email auth code is required, but no email auth code provided")
+                    raise SteamLoginError("提交 Steam Guard 验证", detail="账号需要邮箱验证码，但当前登录方式未提供验证码")
         session = self._poll_auth_session_status_protobuf(
             client_id=auth_session.client_id,
             request_id=auth_session.request_id,
         )
+        if not session.refresh_token:
+            raise SteamLoginError("等待 Steam 登录确认", detail="Steam 未返回 refresh_token，登录确认可能尚未完成")
         tokens = self._finalize_login_protobuf(
             refresh_token=session.refresh_token,
             sessionid=sessionid,
@@ -155,26 +197,45 @@ class LoginExecutor:
 
     def _set_token_protobuf(self, url: str, nonce: str, auth: str, steamid: int) -> None:
         data = {"steamID": steamid, "auth": auth, "nonce": nonce}
-        resp = self.session.post(url, data=data, allow_redirects=False)
-        while resp.status_code == 302:
-            resp = self.session.post(resp.headers["Location"], allow_redirects=False)
+        try:
+            resp = self.session.post(url, data=data, allow_redirects=False)
+            while resp.status_code == 302:
+                resp = self.session.post(resp.headers["Location"], allow_redirects=False)
+        except RequestException as e:
+            e.steam_login_stage = "写入 Steam 社区登录 Cookie"
+            raise
 
     def _finalize_login_protobuf(self, refresh_token: str, sessionid: str) -> FinalizeLoginStatus:
         headers = {"Referer": SteamUrl.COMMUNITY_URL + "/", "Origin": SteamUrl.COMMUNITY_URL}
-        response = self.session.post(
-            headers=headers,
-            url="https://login.steampowered.com/jwt/finalizelogin",
-            data={"nonce": refresh_token, "sessionid": sessionid, "redir": "https://steamcommunity.com/login/home/?goto="},
-        )
+        try:
+            response = self.session.post(
+                headers=headers,
+                url="https://login.steampowered.com/jwt/finalizelogin",
+                data={"nonce": refresh_token, "sessionid": sessionid, "redir": "https://steamcommunity.com/login/home/?goto="},
+            )
+        except RequestException as e:
+            e.steam_login_stage = "完成 Steam 网页会话"
+            raise
+        self._validate_login_response(response, "完成 Steam 网页会话")
 
-        response_data = json.loads(response.content)
+        try:
+            response_data = json.loads(response.content)
+            transfer_info = response_data["transfer_info"]
+            steam_id = response_data["steamID"]
+            redir = response_data["redir"]
+            primary_domain = response_data["primary_domain"]
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            raise SteamLoginError("完成 Steam 网页会话", detail="Steam 返回的登录响应缺少必要字段或不是有效 JSON", response=response) from e
 
-        transfer_info_items = [
-            TransferInfoItem(url=item["url"], params=Params(nonce=item["params"]["nonce"], auth=item["params"]["auth"])) for item in response_data["transfer_info"]
-        ]
+        try:
+            transfer_info_items = [
+                TransferInfoItem(url=item["url"], params=Params(nonce=item["params"]["nonce"], auth=item["params"]["auth"])) for item in transfer_info
+            ]
+        except (KeyError, TypeError) as e:
+            raise SteamLoginError("完成 Steam 网页会话", detail="Steam 返回的登录令牌传递信息不完整", response=response) from e
 
         finalize_login_status = FinalizeLoginStatus(
-            steamID=response_data["steamID"], redir=response_data["redir"], transfer_info=transfer_info_items, primary_domain=response_data["primary_domain"]
+            steamID=steam_id, redir=redir, transfer_info=transfer_info_items, primary_domain=primary_domain
         )
 
         return finalize_login_status
@@ -191,7 +252,7 @@ class LoginExecutor:
         response = self._api_call(
             "POST", "IAuthenticationService", "PollAuthSessionStatus", "v1", {"input_protobuf_encoded": str(base64.b64encode(message.SerializeToString()), "utf8")}
         )
-        return CAuthentication_PollAuthSessionStatus_Response.FromString(response.content)
+        return self._parse_protobuf_response(response, CAuthentication_PollAuthSessionStatus_Response, "等待 Steam 登录确认")
 
     def _update_auth_session_protobuf(
         self,
@@ -247,10 +308,17 @@ class LoginExecutor:
         response = self._api_call(
             "POST", "IAuthenticationService", "BeginAuthSessionViaCredentials", "v1", {"input_protobuf_encoded": str(base64.b64encode(message.SerializeToString()), "utf8")}
         )
-        return CAuthentication_BeginAuthSessionViaCredentials_Response.FromString(response.content)
+        auth_session = self._parse_protobuf_response(response, CAuthentication_BeginAuthSessionViaCredentials_Response, "验证 Steam 账号和密码")
+        if not auth_session.client_id or not auth_session.request_id or not auth_session.steamid:
+            raise SteamLoginError("验证 Steam 账号和密码", detail="Steam 返回的认证会话缺少 client_id、request_id 或 steamid", response=response)
+        return auth_session
 
     def _fetch_rsa_params_protobuf(self) -> CAuthentication_GetPasswordRSAPublicKey_Response:
-        self.session.get(SteamUrl.COMMUNITY_URL)
+        try:
+            self.session.get(SteamUrl.COMMUNITY_URL)
+        except RequestException as e:
+            e.steam_login_stage = "连接 Steam 社区"
+            raise
         rsa_params = self._fetch_rsa_params_protobuf_api_call()
         return rsa_params
 
@@ -259,20 +327,27 @@ class LoginExecutor:
         response = self._api_call(
             "GET", "IAuthenticationService", "GetPasswordRSAPublicKey", "v1", {"input_protobuf_encoded": str(base64.b64encode(message.SerializeToString()), "utf8")}
         )
-        return CAuthentication_GetPasswordRSAPublicKey_Response.FromString(response.content)
+        rsa_params = self._parse_protobuf_response(response, CAuthentication_GetPasswordRSAPublicKey_Response, "获取 Steam RSA 登录密钥")
+        if not rsa_params.publickey_exp or not rsa_params.publickey_mod or not rsa_params.timestamp:
+            raise SteamLoginError("获取 Steam RSA 登录密钥", detail="Steam 返回的 RSA 公钥参数不完整", response=response)
+        return rsa_params
 
     def _encrypt_password_protobuf(self, rsa_params: CAuthentication_GetPasswordRSAPublicKey_Response) -> str:
-        publickey_exp = int(rsa_params.publickey_exp, 16)  # type:ignore
-        publickey_mod = int(rsa_params.publickey_mod, 16)  # type:ignore
-        public_key = rsa.PublicKey(
-            n=publickey_mod,
-            e=publickey_exp,
-        )
-        encrypted_password = rsa.encrypt(
-            message=self.password.encode("ascii"),
-            pub_key=public_key,
-        )
-        return str(base64.b64encode(encrypted_password), "utf8")
+        try:
+            publickey_exp = int(rsa_params.publickey_exp, 16)  # type:ignore
+            publickey_mod = int(rsa_params.publickey_mod, 16)  # type:ignore
+            public_key = rsa.PublicKey(
+                n=publickey_mod,
+                e=publickey_exp,
+            )
+            encrypted_password = rsa.encrypt(
+                message=self.password.encode("ascii"),
+                pub_key=public_key,
+            )
+            return str(base64.b64encode(encrypted_password), "utf8")
+        except Exception as e:
+            e.steam_login_stage = "加密 Steam 登录密码"
+            raise
 
     def set_sessionid_cookies(self):
         sessionid = self.session.cookies.get_dict()["sessionid"]

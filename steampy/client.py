@@ -18,6 +18,7 @@ from steampy.exceptions import (
     InvalidResponse,
     LoginRequired,
     SevenDaysHoldException,
+    SteamLoginError,
 )
 from steampy.login import InvalidCredentials, LoginExecutor
 from steampy.market import SteamMarket
@@ -177,7 +178,10 @@ class SteamClient:
         ).login()
         self.was_login_executed = True
         # 取得 steamid
-        self.steamid = self.get_steam64id_from_cookies()
+        try:
+            self.steamid = self.get_steam64id_from_cookies()
+        except ValueError as e:
+            raise SteamLoginError("读取 Steam 登录 Cookie", detail="登录响应中缺少有效的 steamLoginSecure Cookie") from e
         # 解析 refresh token
         rt_cookie = self._session.cookies.get_dict().get("steamRefresh_steam")
         if rt_cookie and "%7C%7C" in rt_cookie:
@@ -208,10 +212,19 @@ class SteamClient:
         self.steam_guard = guard.load_steam_guard(steam_guard)
         post_url = "https://api.steampowered.com/IAuthenticationService/GenerateAccessTokenForApp/v1/"
         post_data = {"steamid": steamid, "refresh_token": refresh_token}
-        response = self._session.post(post_url, data=post_data, allow_redirects=False, timeout=20)
-        while response.status_code == 302:
-            response = self._session.post(response.headers["Location"], data=post_data, allow_redirects=False, timeout=20)
-        access_token = response.json()["response"]["access_token"]
+        try:
+            response = self._session.post(post_url, data=post_data, allow_redirects=False, timeout=20)
+            LoginExecutor._validate_login_response(response, "使用 refresh_token 获取访问令牌")
+            while response.status_code == 302:
+                response = self._session.post(response.headers["Location"], data=post_data, allow_redirects=False, timeout=20)
+                LoginExecutor._validate_login_response(response, "使用 refresh_token 获取访问令牌")
+        except requests.exceptions.RequestException as e:
+            e.steam_login_stage = "使用 refresh_token 获取访问令牌"
+            raise
+        try:
+            access_token = response.json()["response"]["access_token"]
+        except (requests.exceptions.JSONDecodeError, KeyError, TypeError) as e:
+            raise SteamLoginError("使用 refresh_token 获取访问令牌", detail="Steam 返回的令牌响应缺少 access_token 或不是有效 JSON", response=response) from e
         steam_login_secure = f"{steamid}%7C%7C{access_token}"
         self._session.cookies.set("steamLoginSecure", steam_login_secure, domain="steamcommunity.com")
         self._session.cookies.set("steamLoginSecure", steam_login_secure, domain="steampowered.com")

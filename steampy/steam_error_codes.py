@@ -122,4 +122,8 @@ STEAM_ERROR_CODES = {
     121: "InvalidSignature",
     122: "ParseFailure",
     123: "NoVerifiedPhone",
+    124: "InsufficientBattery",
+    125: "ChargerRequired",
+    126: "CachedCredentialInvalid",
+    127: "PhoneNumberIsVOIP",
 }

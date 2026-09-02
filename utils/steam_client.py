@@ -1,19 +1,22 @@
 import base64
+import binascii
 import json
 import os
+import re
 import threading
 import time
 from datetime import datetime
-from ssl import SSLCertVerificationError, SSLError
+from ssl import SSLError as PythonSSLError
 from typing import Optional, Dict, Any
 
 import json5
 import requests
+from google.protobuf.message import DecodeError
 from requests.exceptions import RequestException
 
 import steampy.exceptions
 from steampy.client import STEAM_USER_AGENT, SteamClient
-from steampy.exceptions import ApiException
+from steampy.exceptions import ApiException, CaptchaRequired, EmptyResponse, InvalidCredentials, InvalidResponse, SteamError, SteamLoginError
 from steampy.models import GameOptions
 from utils import static
 from utils.logger import PluginLogger, handle_caught_exception
@@ -26,11 +29,228 @@ logger = PluginLogger("SteamClient")
 steam_client_mutex = {}  # 每个SteamClient实例对应一个互斥锁
 token_refresh_thread = []  # 后台刷新线程引用
 
+STEAM_ACCOUNT_REQUIRED_FIELDS = ("steam_username", "steam_password", "shared_secret", "identity_secret")
+STEAM_ACCOUNT_SECRET_FIELDS = ("shared_secret", "identity_secret")
+SENSITIVE_LOGIN_RESPONSE_FIELDS = {
+    "access_token",
+    "accesstoken",
+    "refresh_token",
+    "refreshtoken",
+    "nonce",
+    "auth",
+    "password",
+    "shared_secret",
+    "identity_secret",
+    "steamloginsecure",
+    "steamrefresh_steam",
+}
+SENSITIVE_LOGIN_RESPONSE_FIELD_KEYS = {re.sub(r"[^a-z0-9]", "", field.lower()) for field in SENSITIVE_LOGIN_RESPONSE_FIELDS}
+
+LOGIN_ERESULT_ADVICE = {
+    5: "请检查 steam_username 和 steam_password 是否正确",
+    18: "请检查 steam_username 是否为 Steam 登录名，而不是昵称或邮箱",
+    15: "请检查当前 IP、代理设置和 Steam 账户状态后重试",
+    17: "该 Steam 账户可能已被封禁，请先在 Steam 客户端或网页确认账户状态",
+    43: "该 Steam 账户已被禁用，请先处理账户状态",
+    63: "Steam 拒绝了本次登录，请在 Steam 客户端或邮箱中完成身份验证后重试",
+    65: "请检查邮箱验证码是否正确，然后重新发起登录",
+    66: "Steam 未发送验证邮件，请检查账户邮箱和 Steam Guard 设置",
+    71: "邮箱验证码已过期，请获取新验证码后重试",
+    72: "当前 IP 受到登录限制，请检查代理或更换网络后重试",
+    73: "该 Steam 账户已被锁定，请先通过 Steam 官方渠道解锁",
+    74: "请先完成 Steam 账户邮箱验证",
+    84: "登录请求过于频繁，请等待一段时间后再试，不要连续重启程序",
+    85: "该账户需要 Steam Guard 双因素验证，请检查令牌配置",
+    87: "Steam 正在限制登录尝试，请等待一段时间后再试",
+    88: "请检查 shared_secret 是否属于当前账号，并确认系统时间准确",
+    93: "请同步系统时间和时区后重新登录",
+    101: "请先通过 Steam 网页或客户端完成验证码验证，再重新登录",
+    105: "当前 IP 被 Steam 封禁，请停止频繁尝试并更换网络或联系 Steam 支持",
+}
+
 try:
     with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
         config = json5.loads(f.read())
 except Exception:
     pass
+
+
+class SteamAccountConfigError(ValueError):
+    def __init__(self, reason: str, field: Optional[str] = None):
+        self.reason = reason
+        self.field = field
+        super().__init__(reason)
+
+
+def _validate_steam_account_info(steam_account_info) -> dict:
+    if not isinstance(steam_account_info, dict):
+        raise SteamAccountConfigError("配置文件根节点必须是 JSON 对象")
+
+    for field in STEAM_ACCOUNT_REQUIRED_FIELDS:
+        if field not in steam_account_info:
+            raise SteamAccountConfigError("缺少必填字段", field)
+        value = steam_account_info[field]
+        if not isinstance(value, str):
+            raise SteamAccountConfigError(f"字段类型必须是字符串，当前为 {type(value).__name__}", field)
+        if value == "" or (field != "steam_password" and not value.strip()):
+            raise SteamAccountConfigError("字段不能为空", field)
+
+    for field in STEAM_ACCOUNT_SECRET_FIELDS:
+        try:
+            decoded_secret = base64.b64decode(steam_account_info[field], validate=True)
+        except (binascii.Error, ValueError) as e:
+            raise SteamAccountConfigError("字段不是有效的 Base64 编码", field) from e
+        if not decoded_secret:
+            raise SteamAccountConfigError("字段解码后为空", field)
+
+    return steam_account_info
+
+
+def _format_steam_account_config_error(error: SteamAccountConfigError) -> str:
+    lines = ["Steam账号配置格式或内容错误", f"  文件：{STEAM_ACCOUNT_INFO_FILE_PATH}"]
+    if error.field:
+        lines.append(f"  字段：{error.field}")
+    lines.append(f"  原因：{error.reason}")
+    return "\n".join(lines)
+
+
+def _get_eresult_advice(error_code: int) -> str:
+    if error_code in LOGIN_ERESULT_ADVICE:
+        return LOGIN_ERESULT_ADVICE[error_code]
+    if error_code in (3, 10, 16, 20, 35, 38, 55, 76, 79):
+        return "请检查网络连接并稍后重试；若持续出现，请确认 Steam 服务状态和代理设置"
+    if error_code in (27, 126):
+        return "登录令牌已过期或失效，请删除对应会话缓存后使用账号密码重新登录"
+    return "请根据 Steam 错误码检查账户状态；若持续出现，请查看 DEBUG 日志"
+
+
+def _get_detail_advice(detail: str) -> str:
+    if "邮箱验证码" in detail:
+        return "请使用支持邮箱验证码输入的登录方式，或先在 Steam 客户端完成验证"
+    if "refresh_token" in detail:
+        return "缓存的 refresh_token 可能已经失效，请使用账号密码重新登录"
+    if "登录确认" in detail:
+        return "请确认 Steam Guard 验证已经完成，然后重新登录"
+    if "RSA" in detail:
+        return "请检查网络和 Steam 服务状态后重试"
+    return "请检查网络和代理设置并重试；若持续出现，可能是 Steam 接口响应异常"
+
+
+def _get_http_error_details(status):
+    if status in (401, 403):
+        return "Steam 拒绝了当前登录阶段的请求", "请检查当前 IP、代理设置和 Steam 账户状态后重试"
+    if status == 429:
+        return "Steam 对登录请求进行了频率限制", "请等待一段时间后再试，不要连续重启程序或频繁切换代理"
+    if isinstance(status, int) and status >= 500:
+        return "Steam 登录服务暂时不可用", "请稍后重试，并确认 Steam 服务状态"
+    return "Steam 登录接口返回了非成功状态", "请检查网络和代理设置；若持续出现，请查看 DEBUG 日志"
+
+
+def _get_login_error_details(error: Exception, default_stage: str):
+    stage = getattr(error, "steam_login_stage", default_stage)
+    response = None
+
+    if isinstance(error, SteamLoginError):
+        stage = error.stage
+        response = error.response
+        if error.eresult is not None:
+            reason = static.STEAM_ERROR_CODES.get(error.eresult, "未知 Steam 错误")
+            return stage, f"EResult {error.eresult}（{reason}）", reason, _get_eresult_advice(error.eresult), response
+        if error.http_status is not None:
+            status = error.http_status
+            reason, advice = _get_http_error_details(status)
+            return stage, f"HTTP {status}", reason, advice, response
+
+        detail = error.detail or "Steam 返回了无效的登录响应"
+        return stage, "Steam响应异常", detail, _get_detail_advice(detail), response
+
+    if isinstance(error, SteamError):
+        reason = static.STEAM_ERROR_CODES.get(error.error_code, "未知 Steam 错误")
+        return stage, f"EResult {error.error_code}（{reason}）", reason, _get_eresult_advice(error.error_code), response
+    if isinstance(error, InvalidCredentials):
+        return stage, "登录凭据无效", "Steam 未接受当前账号、密码或令牌凭据", "请检查 steam_username、steam_password 和 shared_secret 是否属于同一账号", response
+    if isinstance(error, CaptchaRequired):
+        return stage, "需要验证码", "Steam 要求完成验证码验证", "请先通过 Steam 网页或客户端完成验证码验证，再重新登录", response
+    if isinstance(error, requests.exceptions.HTTPError):
+        response = error.response
+        status = response.status_code if response is not None else "未知"
+        reason, advice = _get_http_error_details(status)
+        return stage, f"HTTP {status}", reason, advice, response
+    if isinstance(error, requests.exceptions.ProxyError):
+        return stage, "代理连接失败", "无法通过配置的代理连接 Steam", "请检查 proxies 配置、代理端口和代理服务是否可用", response
+    if isinstance(error, (requests.exceptions.SSLError, PythonSSLError)):
+        return stage, "SSL证书验证失败", "无法验证 Steam 服务器的 SSL 证书", "请检查代理是否劫持 HTTPS；仅在确认网络安全时关闭 SSL 验证", response
+    if isinstance(error, (requests.exceptions.Timeout, TimeoutError)):
+        return stage, "连接超时", "Steam 登录请求未在规定时间内完成", "请检查网络和代理稳定性后重试", response
+    if isinstance(error, (requests.exceptions.ConnectionError, ConnectionResetError, ConnectionAbortedError, ConnectionRefusedError)):
+        return stage, "网络连接失败", "无法建立或维持与 Steam 的连接", "请检查网络、代理以及 Steam 是否可访问", response
+    if isinstance(error, EmptyResponse):
+        return stage, "Steam响应为空", "Steam 未返回可处理的登录数据", "请稍后重试；若持续出现，请检查 IP 或代理是否被 Steam 限制", response
+    if isinstance(error, (InvalidResponse, json.JSONDecodeError, DecodeError, KeyError)):
+        return stage, "Steam响应格式异常", "Steam 返回的数据缺少必要字段或无法解析", "请检查网络和代理设置；若持续出现，可能是 Steam 接口发生变化", response
+    if isinstance(error, ApiException):
+        return stage, "Steam API异常", "Steam API 未能完成当前登录步骤", "请检查网络和 Steam 服务状态，并查看 DEBUG 日志中的具体异常", response
+    if isinstance(error, (binascii.Error, UnicodeEncodeError)):
+        return stage, "账号配置编码异常", "Steam Guard 密钥或登录信息无法正确编码", "请检查账号配置字段是否完整且使用正确编码", response
+    if isinstance(error, FileNotFoundError):
+        return stage, "本地文件不存在", "登录所需的本地文件未找到", "请检查错误日志中记录的文件路径", response
+
+    return stage, f"未识别异常（{type(error).__name__}）", "登录过程中发生了未分类异常", "请查看 DEBUG 日志中的异常堆栈，不要据此修改账号配置", response
+
+
+def _redact_login_response_value(value):
+    if isinstance(value, dict):
+        return {
+            key: "***"
+            if re.sub(r"[^a-z0-9]", "", str(key).lower()) in SENSITIVE_LOGIN_RESPONSE_FIELD_KEYS
+            else _redact_login_response_value(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_login_response_value(item) for item in value]
+    return value
+
+
+def _sanitize_login_response(response) -> str:
+    try:
+        response_text = response.text
+    except Exception:
+        return "<无法读取响应内容>"
+
+    try:
+        response_json = json.loads(response_text)
+        sanitized = json.dumps(_redact_login_response_value(response_json), ensure_ascii=False)
+    except (json.JSONDecodeError, TypeError):
+        sensitive_names = "|".join(re.escape(field) for field in sorted(SENSITIVE_LOGIN_RESPONSE_FIELDS))
+        pattern = rf"(?i)\b({sensitive_names})\b(\s*[\"']?\s*[:=]\s*[\"']?)([^\"'&,\s<>]+)"
+        sanitized = re.sub(pattern, r"\1\2***", response_text)
+
+    max_length = 2000
+    if len(sanitized) > max_length:
+        return sanitized[:max_length] + "...<已截断>"
+    return sanitized
+
+
+def _log_steam_login_issue(error: Exception, default_stage: str, level: str = "error", next_action: Optional[str] = None):
+    if error.__traceback__ is not None:
+        logger.debug("Steam登录异常堆栈", exc_info=(type(error), error, error.__traceback__))
+    else:
+        logger.debug("Steam登录异常: %s", error)
+
+    stage, error_name, reason, advice, response = _get_login_error_details(error, default_stage)
+    if response is not None:
+        url = str(getattr(response, "url", "")).split("?", 1)[0]
+        logger.debug(
+            "Steam登录响应（已脱敏并截断）: HTTP %s, URL=%s, 内容=%r",
+            getattr(response, "status_code", "未知"),
+            url,
+            _sanitize_login_response(response),
+        )
+
+    lines = ["Steam登录失败", f"  阶段：{stage}", f"  错误：{error_name}", f"  原因：{reason}", f"  建议：{advice}"]
+    if next_action:
+        lines.append(f"  后续：{next_action}")
+    getattr(logger, level)("\n".join(lines))
 
 # ================= JWT 解析与缓存辅助 ===================
 
@@ -143,10 +363,9 @@ def _refresh_steam_session(client: SteamClient) -> bool:
                 _save_token_cache(username, auth_info)
                 logger.info("Steam 会话 refresh_token 刷新成功")
                 return True
-            raise Exception("loginByRefreshToken 未返回有效 auth_info")
+            raise SteamLoginError("验证 refresh_token 会话", detail="refresh_token 未能恢复有效的 Steam 会话")
         except Exception as e:
-            handle_caught_exception(e, known=True)
-            logger.warning("使用 refresh_token 刷新 Steam 会话失败: %s", e)
+            _log_steam_login_issue(e, "使用 refresh_token 刷新会话", level="warning", next_action="将尝试使用账号密码重新登录")
 
     logger.info("refresh_token 刷新失败或不可用, 尝试使用账密重新登录 Steam...")
     try:
@@ -155,10 +374,9 @@ def _refresh_steam_session(client: SteamClient) -> bool:
             _save_token_cache(username, auth_info)
             logger.info("Steam 会话账密重新登录成功")
             return True
-        raise Exception("relogin 未返回有效 auth_info")
+        raise SteamLoginError("验证重新登录会话", detail="账号密码认证完成后未返回有效会话")
     except Exception as e:
-        handle_caught_exception(e, known=True)
-        logger.error("Steam 会话刷新失败")
+        _log_steam_login_issue(e, "使用账号密码重新登录")
         return False
 
 
@@ -199,8 +417,7 @@ def _check_proxy_availability(config: dict) -> bool:
         logger.info("代理服务器可用")
         return True
     except Exception as e:
-        handle_caught_exception(e, known=True)
-        logger.error("代理服务器不可用，请检查配置文件，或者将use_proxies配置项设置为false")
+        _log_steam_login_issue(e, "检查 Steam 代理")
         return False
 
 
@@ -311,34 +528,27 @@ def login_to_steam(config: dict):
     """
     global token_refresh_thread
 
-    # 读取Steam账号信息
+    # 读取并验证 Steam 账号信息
     try:
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "r", encoding=get_encoding(STEAM_ACCOUNT_INFO_FILE_PATH)) as f:
             try:
                 steam_account_info = json5.loads(f.read())
             except Exception as e:
-                handle_caught_exception(e, known=True)
-                logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
-                pause()
-                return None
+                logger.debug("解析 Steam 账号配置失败", exc_info=True)
+                detail = str(e).replace("<string>", STEAM_ACCOUNT_INFO_FILE_PATH)
+                raise SteamAccountConfigError(f"JSON5 语法错误：{detail}") from e
+        steam_account_info = _validate_steam_account_info(steam_account_info)
     except FileNotFoundError:
         logger.error("未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加后再进行操作!")
         pause()
         return None
-
-    if not isinstance(steam_account_info, dict):
-        logger.error("配置文件格式错误，请检查配置文件")
+    except SteamAccountConfigError as e:
+        logger.error(_format_steam_account_config_error(e))
+        pause()
         return None
-    for key, value in steam_account_info.items():
-        if not value:
-            logger.error(f"Steam账号配置文件中 {key} 为空，请检查配置文件")
-            return None
 
-    username = steam_account_info.get("steam_username", "")
-    password = steam_account_info.get("steam_password", "")
-    if not username or not password:
-        logger.error("Steam用户名或密码为空，请检查配置文件")
-        return None
+    username = steam_account_info["steam_username"]
+    password = steam_account_info["steam_password"]
     if steam_client_mutex.get(username) is None:
         steam_client_mutex[username] = threading.Lock()
 
@@ -371,8 +581,7 @@ def login_to_steam(config: dict):
             else:
                 logger.warning("缓存 access_token 已失效，进入 refresh_token 流程")
         except Exception as e:
-            handle_caught_exception(e, known=True)
-            logger.warning("使用缓存 access_token 恢复失败")
+            _log_steam_login_issue(e, "使用缓存 access_token 恢复会话", level="warning", next_action="将尝试使用 refresh_token 或账号密码登录")
 
     # 2. 尝试 refresh_token 登录
     refresh_token = token_cache.get("refresh_token")
@@ -401,10 +610,14 @@ def login_to_steam(config: dict):
                     _start_token_refresh_thread(client, config)
                     return client
                 else:
-                    logger.warning("refresh_token 登录失败，将回退到账密登录")
+                    _log_steam_login_issue(
+                        SteamLoginError("验证 refresh_token 会话", detail="refresh_token 未能恢复有效的 Steam 会话"),
+                        "验证 refresh_token 会话",
+                        level="warning",
+                        next_action="将回退到账密登录",
+                    )
             except Exception as e:
-                handle_caught_exception(e, known=True)
-                logger.warning("refresh_token 登录失败，将回退到账密登录")
+                _log_steam_login_issue(e, "使用 refresh_token 登录", level="warning", next_action="将回退到账密登录")
 
     # 3. 账密登录
     logger.info("正在使用账密登录Steam...")
@@ -426,37 +639,13 @@ def login_to_steam(config: dict):
             _start_token_refresh_thread(client, config)
             return client
         else:
-            logger.error("登录失败")
+            _log_steam_login_issue(
+                SteamLoginError("验证 Steam 社区会话", detail="账号认证流程已完成，但社区会话验证未通过"),
+                "验证 Steam 社区会话",
+            )
             return None
-    except FileNotFoundError as e:
-        handle_caught_exception(e, known=True)
-        logger.error("未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加后再进行操作! ")
-        pause()
-        return None
-    except (SSLCertVerificationError, SSLError):
-        if config["steam_local_accelerate"]:
-            logger.error("登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true")
-        else:
-            logger.error("登录失败. SSL证书验证错误! 若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n")
-        pause()
-        return None
-    except (requests.exceptions.ConnectionError, TimeoutError):
-        logger.error(
-            "网络错误! \n该问题在国内网络环境下较为常见，可尝试部署至海外服务器，或尝试内置加速、代理软件等\n注意: 使用游戏加速器并不能解决问题，请使用代理软件如Clash/Proxifier等"
-        )
-        pause()
-        return None
-    except ApiException:
-        logger.error("登录失败. 请检查网络是否正常或被Steam屏蔽!")
-        pause()
-        return None
-    except (TypeError, AttributeError):
-        logger.error("登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录")
-        pause()
-        return None
     except Exception as e:
-        handle_caught_exception(e, known=True)
-        logger.error("Steam登录过程中发生异常，详情已记录至日志，请根据日志排查")
+        _log_steam_login_issue(e, "使用账号密码登录")
         pause()
         return None
 
