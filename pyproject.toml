@@ -1,0 +1,27 @@
+
+[project]
+dependencies = [
+    "requests",
+    "apprise",
+    "colorama",
+    "colorlog",
+    "json5",
+    "beautifulsoup4",
+    "chardet==5.2.0",
+    "rsa",
+    "qrcode[pil]",
+    "qrcode-terminal",
+    "PyCryptodome",
+    "protobuf",
+    "PySocks",
+    "schedule",
+    "pytz",
+    "pydantic",
+    "requests-toolbelt",
+    "tqdm",
+]
+requires-python = ">=3.12"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
