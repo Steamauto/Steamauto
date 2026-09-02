@@ -456,7 +456,7 @@ def login_to_steam(config: dict):
         return None
     except Exception as e:
         handle_caught_exception(e, known=True)
-        logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
+        logger.error("Steam登录过程中发生异常，详情已记录至日志，请根据日志排查")
         pause()
         return None
 

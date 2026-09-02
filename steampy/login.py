@@ -123,7 +123,11 @@ class LoginExecutor:
                 auth=token.params.auth,
                 steamid=auth_session.steamid,
             )
-        self._acknowledge_new_trade()
+        try:
+            self._acknowledge_new_trade()
+        except Exception:
+            # 该请求只用于确认交易提示，不应影响已经完成的登录。
+            pass
 
     def _acknowledge_new_trade(self) -> str:
         url = "https://steamcommunity.com/trade/new/acknowledge"
