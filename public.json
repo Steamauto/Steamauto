@@ -4,6 +4,18 @@
   },
   "versions": [
     {
+      "version": "5.9.2",
+      "changelog": "优化Steam登录流程",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.9.2/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "windows": "03b76e2fa4cc455a59c0193030f897b7e283a796061cbc471805de4cc6921d98"
+      }
+    },
+    {
       "version": "5.9.1",
       "changelog": "修复特定情况下无法访问steam相关服务的问题",
       "level": "stable",
