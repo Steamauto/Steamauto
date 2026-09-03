@@ -785,8 +785,9 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
                 handle_caught_exception(e, "SteamClient", known=True)
                 return True
         missing_login_cookie = isinstance(e, ApiException) and "steamLoginSecure" in str(e)
-        if isinstance(e, steampy.exceptions.InvalidCredentials) or missing_login_cookie:
-            should_refresh = missing_login_cookie or "Invalid API key" in str(e)
+        confirmation_auth_required = isinstance(e, steampy.exceptions.ConfirmationAuthRequired)
+        if isinstance(e, steampy.exceptions.InvalidCredentials) or missing_login_cookie or confirmation_auth_required:
+            should_refresh = confirmation_auth_required or missing_login_cookie or "Invalid API key" in str(e)
             if not should_refresh:
                 try:
                     should_refresh = not client.is_session_alive()
@@ -819,10 +820,23 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
             send_notification(client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(会话无效)")
             return False
 
-        if isinstance(e, steampy.exceptions.ConfirmationExpected):
-            logger.error(f"接受报价号{tradeOfferId}失败：会话或凭据无效，放弃本次处理")
+        if isinstance(e, steampy.exceptions.MobileConfirmationError):
+            logger.error(f"接受报价号{tradeOfferId}失败：Steam 移动确认未完成")
             handle_caught_exception(e, "SteamClient", known=True)
-            send_notification(client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(会话无效)")
+            if isinstance(e, steampy.exceptions.ConfirmationRateLimited):
+                title = "接受报价失败(请求受限)"
+            elif isinstance(e, (steampy.exceptions.ConfirmationNotReady, steampy.exceptions.ConfirmationNotFound)):
+                title = "接受报价失败(未找到确认)"
+            elif isinstance(e, steampy.exceptions.InvalidAuthenticatorError):
+                title = "接受报价失败(确认签名无效)"
+            else:
+                title = "接受报价失败(移动确认异常)"
+            send_notification(client, f"报价号：{tradeOfferId}\n{desc}", title=title)
+            return False
+        if isinstance(e, steampy.exceptions.ConfirmationExpected):
+            logger.error(f"接受报价号{tradeOfferId}失败：Steam 移动确认尚未出现")
+            handle_caught_exception(e, "SteamClient", known=True)
+            send_notification(client, f"报价号：{tradeOfferId}\n{desc}", title="接受报价失败(未找到确认)")
             return False
         if isinstance(e, KeyError):
             logger.error(f"接受报价号{tradeOfferId}失败！未找到报价号或报价号已过期")

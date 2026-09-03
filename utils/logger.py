@@ -11,7 +11,24 @@ import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
 import utils.static as static
-from steampy.exceptions import ApiException, ConfirmationExpected, EmptyResponse, InvalidCredentials, InvalidResponse, SteamError
+from steampy.exceptions import (
+    ApiException,
+    ConfirmationActionRejected,
+    ConfirmationAuthRequired,
+    ConfirmationExpected,
+    ConfirmationHttpError,
+    ConfirmationMalformedResponse,
+    ConfirmationNotFound,
+    ConfirmationNotReady,
+    ConfirmationRateLimited,
+    EmptyResponse,
+    InvalidAuthenticatorError,
+    InvalidConfirmationPageError,
+    InvalidCredentials,
+    InvalidResponse,
+    MobileConfirmationError,
+    SteamError,
+)
 from utils.static import BUILD_INFO, CONFIG_FILE_PATH, CURRENT_VERSION, LOGS_FOLDER, STEAM_ERROR_CODES
 
 sensitive_data = []
@@ -146,8 +163,28 @@ def handle_caught_exception(e: Exception, prefix: str = "", known: bool = False)
         else:
             plogger.error("Steam 登录凭据无效，请检查账号密码或mafile是否正确")
             plogger.error(str(e))
+    elif isinstance(e, ConfirmationAuthRequired):
+        plogger.error("Steam 移动确认登录状态已失效，需要刷新 Steam 会话")
+    elif isinstance(e, ConfirmationRateLimited):
+        retry_after = f"，Steam 建议等待 {e.retry_after}" if e.retry_after else ""
+        plogger.error(f"Steam 移动确认请求过于频繁（HTTP 429）{retry_after}")
+    elif isinstance(e, InvalidAuthenticatorError):
+        plogger.error("Steam 移动确认签名无效，请检查 identity_secret 和系统时间")
+    elif isinstance(e, (ConfirmationNotReady, ConfirmationNotFound)):
+        plogger.error("Steam 移动确认尚未出现或未找到，请稍后重试")
+    elif isinstance(e, ConfirmationActionRejected):
+        plogger.error("Steam 拒绝了移动确认操作：" + (e.detail or "未提供原因"))
+    elif isinstance(e, ConfirmationMalformedResponse):
+        plogger.error("Steam 移动确认响应格式异常：" + (e.detail or "无法解析响应"))
+    elif isinstance(e, InvalidConfirmationPageError):
+        plogger.error("Steam 未返回有效的移动确认页面：" + (e.detail or "未提供原因"))
+    elif isinstance(e, ConfirmationHttpError):
+        status = e.http_status if e.http_status is not None else "未知"
+        plogger.error(f"Steam 移动确认接口异常（HTTP {status}）：{e.detail or '未提供原因'}")
+    elif isinstance(e, MobileConfirmationError):
+        plogger.error("Steam 移动确认失败：" + (e.detail or str(e)))
     elif isinstance(e, ConfirmationExpected):
-        plogger.error("Steam Session已经过期, 请删除session文件夹并重启Steamauto")
+        plogger.error("Steam 移动确认尚未出现或未找到，请稍后重试")
     elif isinstance(e, SystemError):
         plogger.error("无法连接至Steam，请检查Steam账户状态、网络连接、或重启Steamauto")
     elif isinstance(e, SteamError):
