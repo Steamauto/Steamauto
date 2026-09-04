@@ -8,6 +8,8 @@ from utils.tools import exit_code
 
 
 class BuffAutoAcceptOffer:
+    DELIVERY_TRADE_TYPES = frozenset({3, 6, 8})
+
     def __init__(self, steam_client, steam_client_mutex, config):
         self.logger = PluginLogger(f"BuffAutoAcceptOffer-steam:{steam_client.username}")
         self.steam_client = steam_client
@@ -19,29 +21,6 @@ class BuffAutoAcceptOffer:
     def get_steam_cookies(self):
         cookies = self.steam_client._session.cookies.get_dict("steamcommunity.com")
         return "; ".join(f"{key}={value}" for key, value in cookies.items())
-
-    def send_pending_buyer_offers(self):
-        """为当前 Steam 账号的 CS2 买家订单发起报价。"""
-        self.logger.info("正在检查是否有未发起报价的买家订单...")
-        result = self.buff_account.get_buy_orders_waiting_to_send_offer()
-        if not result["success"]:
-            self.logger.error(f"获取未发起报价的买家订单失败: {result['error']}")
-            return
-
-        steam_id = str(self.steam_client.get_steam64id_from_cookies())
-        order_ids = [
-            order["id"]
-            for order in result["items"]
-            if str(order.get("buyer_steamid")) == steam_id and order.get("state_text") == "等待你发起报价"
-        ]
-        if not order_ids:
-            return
-
-        send_result = self.buff_account.buyer_send_offer(self.get_steam_cookies(), order_ids, steam_id)
-        if send_result["success"]:
-            self.logger.info(f"成功为 {len(order_ids)} 个买家订单发起报价！")
-        else:
-            self.logger.error(f"为买家订单 {order_ids} 发起报价失败: {send_result['error']}")
 
     def send_pending_seller_offer(self, trade_offer):
         """为单个 CS2 卖家待发货订单发起报价。"""
@@ -61,6 +40,14 @@ class BuffAutoAcceptOffer:
             and trade_offer.get("state") == "TO_DELIVER"
             and bool(trade_offer.get("is_seller_asked_to_send_offer"))
         )
+
+    @classmethod
+    def is_delivery_trade(cls, trade):
+        """仅处理 BUFF 前端标记为“发货”的 Steam 报价。"""
+        try:
+            return int(trade.get("type")) in cls.DELIVERY_TRADE_TYPES
+        except (AttributeError, TypeError, ValueError):
+            return False
 
     def init(self) -> bool:
         self.logger.info("BUFF自动接受报价插件已启动.请稍候...")
@@ -182,11 +169,6 @@ class BuffAutoAcceptOffer:
                         return
                     self.buff_account = BuffAccount(session, proxies=self.buff_account.session.proxies)
 
-                try:
-                    self.send_pending_buyer_offers()
-                except Exception as e:
-                    self.logger.error(f"自动发起买家报价时出错: {str(e)}", exc_info=True)
-
                 notification = self.buff_account.get_notification()
                 if "error" in notification:
                     self.logger.error(f"获取待发货订单信息失败! 错误信息: {notification['error']}，正在尝试其它方式获取...")
@@ -220,6 +202,12 @@ class BuffAutoAcceptOffer:
                         self.logger.error("获取Steam交易失败，稍后重试")
                         time.sleep(5)
                         continue
+
+                    all_trade_count = len(trades)
+                    trades = [trade for trade in trades if self.is_delivery_trade(trade)]
+                    skipped_trade_count = all_trade_count - len(trades)
+                    if skipped_trade_count:
+                        self.logger.info(f"已跳过 {skipped_trade_count} 个非发货类型的BUFF报价")
 
                     for index, game in enumerate(self.SUPPORT_GAME_TYPES):
                         response_data = self.buff_account.get_sell_order_to_deliver(game["game"], game["app_id"])

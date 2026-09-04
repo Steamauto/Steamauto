@@ -26,7 +26,7 @@
 
 | 平台 | 支持功能 | 主要配置 |
 | --- | --- | --- |
-| [网易BUFF](https://buff.163.com) | 自动发货 | `buff_auto_accept_offer` |
+| [网易BUFF](https://buff.163.com) | 自动处理发货类报价、自动发起 CS2 卖家报价 | `buff_auto_accept_offer` |
 | [悠悠有品](https://www.youpin898.com/) | 自动发货、租赁自动上架、出售自动上架、自动改价 | `uu_auto_accept_offer`、`uu_auto_lease_item`、`uu_auto_sell_item` |
 | [ECOSteam](https://www.ecosteam.cn/) | 自动发货、与 BUFF / 悠悠有品同步出售上架、与悠悠有品同步租赁上架 | `ecosteam` |
 | [C5Game](https://www.c5game.com/) | 自动发货 | `c5_auto_accept_offer` |
@@ -64,7 +64,7 @@ python Steamauto.py
 
 | 平台 | 配置详情 |
 | --- | --- |
-| 网易BUFF | 在 `config.json5` 中启用 BUFF 相关插件后，根据程序提示登录。`buff_auto_accept_offer` 会自动发起并接受 CS2 买家/卖家报价；发起报价时会将加密后的 Steam Cookie 提交给 BUFF。 |
+| 网易BUFF | 在 `config.json5` 中启用 BUFF 相关插件后，根据程序提示登录。`buff_auto_accept_offer` 只处理 BUFF 标记为发货的 `type=3/6/8` 报价，也会自动发起 CS2 卖家报价；发起报价时会将加密后的 Steam Cookie 提交给 BUFF。购买、求购收货等非发货报价不会由该插件处理。 |
 | 悠悠有品 | 在 `config.json5` 中启用悠悠有品相关插件后，根据程序提示获取 token。自动发货可配置 `uu_auto_accept_offer`。 |
 | ECOSteam | 在 `config.json5` 中配置 `ecosteam.partnerId`，并在 `config` 文件夹下创建 `rsakey.txt` 填入 RSA 私钥。 |
 | C5Game | 申请 API Key 后，在 `config.json5` 中配置 `c5_auto_accept_offer.app_key`。 |
@@ -106,7 +106,7 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 
 ##### 能否处理卖家发起报价的情况？
 
-支持。启用 `buff_auto_accept_offer` 后，程序会自动发起并接受 CS2 买家/卖家报价。该过程会将加密后的 Steam Cookie 提交给 BUFF。
+支持。启用 `buff_auto_accept_offer` 后，程序会自动发起并处理 CS2 卖家发货报价。该过程会将加密后的 Steam Cookie 提交给 BUFF。
 
 ##### 如何获取悠悠有品token?
 

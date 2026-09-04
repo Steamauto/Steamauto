@@ -153,29 +153,6 @@ class BuffAccount:
                 return data["data"]
         return {}
 
-    def get_buy_orders_waiting_to_send_offer(self, game: str = "csgo", appid: Union[str, int] = 730) -> Dict:
-        """获取等待买家发起 Steam 报价的订单。"""
-        response = self.get(
-            f"{self.BASE_URL}/api/market/buy_order/wait_send_offers",
-            params={"game": game, "appid": str(appid)},
-        )
-        return self._parse_offer_action_response(response, items_key="items")
-
-    def buyer_send_offer(self, steam_cookies: str, bill_orders: List, steamid: Union[str, int]) -> Dict:
-        """为买家订单批量发起 Steam 报价。"""
-        if not bill_orders:
-            return {"success": True, "data": {}, "error": ""}
-        response = self.post(
-            f"{self.BASE_URL}/api/market/manual_plus/buyer_send_offer",
-            json={
-                "buyer_info": BuffApiCrypt().encrypt(steam_cookies),
-                "bill_orders": bill_orders,
-                "steamid": str(steamid),
-            },
-            headers=self.CSRF_Fucker(),
-        )
-        return self._parse_offer_action_response(response)
-
     def seller_send_offer(self, steam_cookies: str, bill_orders: List) -> Dict:
         """为卖家待发货订单批量发起 Steam 报价。"""
         if not bill_orders:
