@@ -4,6 +4,18 @@
   },
   "versions": [
     {
+      "version": "5.9.3",
+      "changelog": "修复BUFF自动处理非发货报价",
+      "level": "stable",
+      "significance": "normal",
+      "download_url": {
+        "windows": "https://github.com/Steamauto/Steamauto/releases/download/5.9.3/Steamauto-windows-latest.exe"
+      },
+      "hash": {
+        "windows": "e7350d555ba9899996c2930036742f4a192dfdc7919dd29991e43e0c4c3e1fcc"
+      }
+    },
+    {
       "version": "5.9.2",
       "changelog": "优化Steam登录流程",
       "level": "stable",
