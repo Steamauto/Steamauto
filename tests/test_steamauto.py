@@ -45,9 +45,9 @@ class TestOfflineSteamClient(unittest.TestCase):
         self.assertFalse(oc.is_session_alive())
 
     def test_unknown_method_raises(self):
-        import steampy.exceptions
+        from api.Steam.steampy.exceptions import LoginRequired
         oc = self.OfflineSteamClient("u")
-        with self.assertRaises(steampy.exceptions.LoginRequired):
+        with self.assertRaises(LoginRequired):
             oc.accept_trade_offer("x")
 
 

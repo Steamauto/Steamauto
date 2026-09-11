@@ -1,7 +1,7 @@
 import bs4
 import re
-from steampy.models import Endpoints, SteamUrl
-from steampy.utils import account_id_to_steam_id
+from .models import Endpoints, SteamUrl
+from .utils import account_id_to_steam_id
 
 
 class SteamChat:

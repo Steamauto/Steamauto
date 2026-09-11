@@ -1,6 +1,6 @@
 from typing import Optional
 
-from steampy.steam_error_codes import STEAM_ERROR_CODES
+from .steam_error_codes import STEAM_ERROR_CODES
 
 
 class SevenDaysHoldException(Exception):

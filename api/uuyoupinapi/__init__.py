@@ -8,9 +8,9 @@ import uuid
 
 import requests
 
-from uuyoupinapi.UUApiCrypt import UUApiCrypt
+from .UUApiCrypt import UUApiCrypt
 from utils.logger import PluginLogger
-from uuyoupinapi import models
+from . import models
 
 logger = PluginLogger("uuyoupinapi")
 

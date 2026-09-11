@@ -1,6 +1,6 @@
 import time
 
-from PyC5Game import C5Account
+from api.PyC5Game import C5Account
 from utils import runtime
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.steam_client import accept_trade_offer, external_handler

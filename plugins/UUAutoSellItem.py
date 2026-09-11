@@ -4,7 +4,7 @@ import time
 
 import schedule
 
-import uuyoupinapi
+import api.uuyoupinapi as uuyoupinapi
 from utils import runtime
 from utils.logger import PluginLogger, handle_caught_exception, logger
 from utils.notifier import send_notification

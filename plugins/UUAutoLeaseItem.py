@@ -4,14 +4,14 @@ import time
 import json5
 import schedule
 
-import uuyoupinapi
+import api.uuyoupinapi as uuyoupinapi
 from utils import runtime
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.models import LeaseAsset
 from utils.notifier import send_notification
 from utils.tools import exit_code, is_subsequence
 from utils.uu_helper import get_valid_token_for_uu
-from uuyoupinapi import models
+from api.uuyoupinapi import models
 
 
 def _mean(values):

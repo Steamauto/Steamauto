@@ -20,8 +20,8 @@ from typing import no_type_check, Dict, List, Union
 import requests
 
 from utils.logger import PluginLogger
-from utils.BuffApiCrypt import BuffApiCrypt
-from BuffApi import models
+from .BuffApiCrypt import BuffApiCrypt
+from . import models
 
 logger = PluginLogger("BuffApi")
 

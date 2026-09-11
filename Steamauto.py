@@ -36,7 +36,7 @@ import json5
 from colorama import Fore, Style
 
 import utils.static as static
-from steampy.client import SteamClient
+from api.Steam.steampy.client import SteamClient
 from utils import config_writer, control, daemon, runtime
 from utils.code_updater import attempt_auto_update_github
 from utils.logger import echo, f_handler, handle_caught_exception, logger

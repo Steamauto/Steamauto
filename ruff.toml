@@ -1,4 +1,4 @@
 line-length = 180
-exclude = ["protobufs"]
+exclude = ["api/Steam/protobufs"]
 [lint]
 ignore = ["E712", "E722"]

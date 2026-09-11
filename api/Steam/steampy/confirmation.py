@@ -6,9 +6,9 @@ from typing import List
 import requests
 from bs4 import BeautifulSoup
 
-from steampy import guard
-from steampy.exceptions import ConfirmationExpected
-from steampy.login import InvalidCredentials
+from . import guard
+from .exceptions import ConfirmationExpected
+from .login import InvalidCredentials
 
 
 class Confirmation:

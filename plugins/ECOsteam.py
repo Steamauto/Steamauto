@@ -6,10 +6,10 @@ import time
 from threading import Thread
 from typing import Dict, List, Union
 
-from BuffApi import BuffAccount
-from BuffApi.models import BuffOnSaleAsset
-from PyECOsteam import ECOsteamClient, models
-from steampy.client import SteamClient
+from api.BuffApi import BuffAccount
+from api.BuffApi.models import BuffOnSaleAsset
+from api.PyECOsteam import ECOsteamClient, models
+from api.Steam.steampy.client import SteamClient
 from utils import runtime
 from utils import static
 from utils.buff_helper import get_valid_session_for_buff
@@ -19,7 +19,7 @@ from utils.static import ECOSTEAM_RSAKEY_FILE
 from utils.steam_client import accept_trade_offer, external_handler, get_cs2_inventory
 from utils.tools import exit_code, get_encoding
 from utils.uu_helper import get_valid_token_for_uu
-from uuyoupinapi import UUAccount
+from api.uuyoupinapi import UUAccount
 
 sync_sell_shelf_enabled = False
 sync_lease_shelf_enabled = False

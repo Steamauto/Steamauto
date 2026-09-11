@@ -11,7 +11,7 @@ import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
 import utils.static as static
-from steampy.exceptions import ApiException, ConfirmationExpected, EmptyResponse, InvalidCredentials, InvalidResponse, SteamError
+from api.Steam.steampy.exceptions import ApiException, ConfirmationExpected, EmptyResponse, InvalidCredentials, InvalidResponse, SteamError
 from utils.static import BUILD_INFO, CONFIG_FILE_PATH, CURRENT_VERSION, LOGS_FOLDER, STEAM_ERROR_CODES
 
 sensitive_data = []

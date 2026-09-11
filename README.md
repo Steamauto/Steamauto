@@ -128,7 +128,7 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 pip install urllib3==1.25.11
 ```
 
-`steampy/client.py` 44-48行注释掉的代码解除注释后若出现报错则说明是此问题
+`api/Steam/steampy/client.py` 44-48行注释掉的代码解除注释后若出现报错则说明是此问题
 
 ## 附录
 

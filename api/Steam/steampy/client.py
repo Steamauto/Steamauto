@@ -8,20 +8,20 @@ from typing import List, Union, Optional
 import bs4
 import requests
 
-from steampy import guard
-from steampy.chat import SteamChat
-from steampy.confirmation import ConfirmationExecutor
-from steampy.exceptions import (
+from . import guard
+from .chat import SteamChat
+from .confirmation import ConfirmationExecutor
+from .exceptions import (
     ApiException,
     EmptyResponse,
     InvalidResponse,
     LoginRequired,
     SevenDaysHoldException,
 )
-from steampy.login import InvalidCredentials, LoginExecutor
-from steampy.market import SteamMarket
-from steampy.models import Asset, GameOptions, SteamUrl, TradeOfferState
-from steampy.utils import (
+from .login import InvalidCredentials, LoginExecutor
+from .market import SteamMarket
+from .models import Asset, GameOptions, SteamUrl, TradeOfferState
+from .utils import (
     account_id_to_steam_id,
     get_description_key,
     get_key_value_from_url,

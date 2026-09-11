@@ -8,15 +8,15 @@ from typing import List, Dict, Any
 import rsa
 from rsa import encrypt, PublicKey
 from requests import Session, Response
-from protobufs.enums_pb2 import ESessionPersistence
-from protobufs.steammessages_auth.steamclient_pb2 import *
+from ..protobufs.enums_pb2 import ESessionPersistence
+from ..protobufs.steammessages_auth.steamclient_pb2 import *
 
-from steampy.schemas import FinalizeLoginStatus, TransferInfoItem, Params
-from steampy.utils import check_error
-from steampy import guard
-from steampy.models import SteamUrl
-from steampy.exceptions import InvalidCredentials, CaptchaRequired, ApiException, EmptyResponse, SteamError
-from steampy.steam_error_codes import STEAM_ERROR_CODES
+from .schemas import FinalizeLoginStatus, TransferInfoItem, Params
+from .utils import check_error
+from . import guard
+from .models import SteamUrl
+from .exceptions import InvalidCredentials, CaptchaRequired, ApiException, EmptyResponse, SteamError
+from .steam_error_codes import STEAM_ERROR_CODES
 
 
 class LoginExecutor:

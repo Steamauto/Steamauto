@@ -10,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
-from steampy.client import SteamClient
+from api.Steam.steampy.client import SteamClient
 from utils.logger import handle_caught_exception
 from utils.notifier import send_notification
 from utils.static import BUFF_COOKIES_FILE_PATH

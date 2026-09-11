@@ -3,10 +3,10 @@ import json
 
 from decimal import Decimal
 from requests import Session
-from steampy.confirmation import ConfirmationExecutor
-from steampy.exceptions import ApiException, TooManyRequests, LoginRequired
-from steampy.models import Currency, SteamUrl, GameOptions
-from steampy.utils import (
+from .confirmation import ConfirmationExecutor
+from .exceptions import ApiException, TooManyRequests, LoginRequired
+from .models import Currency, SteamUrl, GameOptions
+from .utils import (
     text_between,
     get_listing_id_to_assets_address_from_html,
     get_market_listings_from_html,

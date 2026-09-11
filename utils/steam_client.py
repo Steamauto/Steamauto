@@ -11,10 +11,11 @@ import json5
 import requests
 from requests.exceptions import RequestException
 
-import steampy.exceptions
-from steampy.client import STEAM_USER_AGENT, SteamClient
-from steampy.exceptions import ApiException
-from steampy.models import GameOptions
+from api.Steam import steampy
+from api.Steam.steampy import exceptions  # noqa: F401  显式加载子模块，保证 steampy.exceptions.* 可用
+from api.Steam.steampy.client import STEAM_USER_AGENT, SteamClient
+from api.Steam.steampy.exceptions import ApiException
+from api.Steam.steampy.models import GameOptions
 from utils import static
 from utils.logger import PluginLogger, echo, handle_caught_exception
 from utils.notifier import send_notification

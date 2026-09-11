@@ -11,12 +11,12 @@ print('Building on', os_name, 'with upx enabled:', upx_enabled, 'upx directory:'
 hidden_imports = [
         'utils.buff_helper',
         'utils.uu_helper',
-        'utils.ApiCrypt',
-        'utils.BuffApiCrypt',
-        'PyC5Game',
-        'PyECOsteam',
-        'uuyoupinapi',
-        'BuffApi'
+        'api.BuffApi',
+        'api.PyC5Game',
+        'api.PyECOsteam',
+        'api.uuyoupinapi',
+        'api.Steam.steampy',
+        'api.Steam.protobufs'
     ]
 if os.path.exists('requirements.txt'):
     with open('requirements.txt') as f:

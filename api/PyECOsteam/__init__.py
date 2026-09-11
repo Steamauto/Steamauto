@@ -3,8 +3,8 @@ import time
 
 import requests
 
-import PyECOsteam.models as models
-from PyECOsteam.sign import generate_rsa_signature
+from . import models
+from .sign import generate_rsa_signature
 from utils.logger import PluginLogger
 from utils.models import Asset, LeaseAsset
 from utils.static import CURRENT_VERSION

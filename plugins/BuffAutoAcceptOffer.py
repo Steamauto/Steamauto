@@ -1,6 +1,6 @@
 import time
 
-from BuffApi import BuffAccount
+from api.BuffApi import BuffAccount
 from utils import runtime
 from utils import static
 from utils.buff_helper import get_valid_session_for_buff

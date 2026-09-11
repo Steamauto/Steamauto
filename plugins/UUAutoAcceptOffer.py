@@ -1,6 +1,6 @@
 import time
 
-import uuyoupinapi
+import api.uuyoupinapi as uuyoupinapi
 from utils import runtime
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.notifier import send_notification

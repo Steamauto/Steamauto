@@ -11,9 +11,9 @@ from typing import List
 
 from bs4 import BeautifulSoup, Tag
 
-from steampy.models import GameOptions
-from steampy.exceptions import SteamError
-from steampy.steam_error_codes import STEAM_ERROR_CODES
+from .models import GameOptions
+from .exceptions import SteamError
+from .steam_error_codes import STEAM_ERROR_CODES
 
 
 def check_error(resp: Response, ignore_error_num: List = None):

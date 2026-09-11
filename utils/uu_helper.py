@@ -3,7 +3,7 @@ import time
 
 from colorama import Fore, Style
 
-import uuyoupinapi
+import api.uuyoupinapi as uuyoupinapi
 from utils.logger import PluginLogger, echo, handle_caught_exception
 from utils.static import UU_TOKEN_FILE_PATH
 from utils.tools import get_encoding
