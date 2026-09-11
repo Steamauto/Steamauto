@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from api.Steam.steampy.client import SteamClient
-from utils.logger import handle_caught_exception
+from utils.logger import echo, handle_caught_exception
 from utils.notifier import send_notification
 from utils.static import BUFF_COOKIES_FILE_PATH
 from utils.tools import get_encoding, logger
@@ -21,9 +21,19 @@ def parse_openid_params(response: str) -> Dict[str, str]:
     bs = BeautifulSoup(response, "html.parser")
     params_to_find = ["action", "openid.mode", "openidparams", "nonce"]
     input_form = bs.find("form", {"id": "openidForm"})
+    if input_form is None:
+        # 通常意味着 Steam 侧未登录（拿到的是登录页而非 OpenID 授权表单）。
+        # 给出可读错误，避免上游抛 NoneType.find 这种无信息量的 AttributeError。
+        raise ValueError(
+            "未在 Steam 返回的页面中找到 OpenID 授权表单（openidForm），"
+            "通常说明当前 Steam 会话未登录或已失效"
+        )
     params = {}
     for param in params_to_find:
-        params[param] = input_form.find("input", {"name": param}).attrs["value"]  # type: ignore
+        field = input_form.find("input", {"name": param})
+        if field is None:
+            raise ValueError("OpenID 授权表单缺少字段：%s" % param)
+        params[param] = field.attrs["value"]  # type: ignore
     return params
 
 
@@ -61,7 +71,12 @@ def login_to_buff_by_steam(steam_client: SteamClient, proxies=None):
         return ""
 
 
-def login_to_buff_by_qrcode(steam_client, proxies=None) -> str:
+def login_to_buff_by_qrcode(steam_client, proxies=None, timeout=0) -> str:
+    """扫码登录 BUFF。
+
+    :param timeout: 等待扫码的总秒数；0 表示不限（保持历史行为）。
+                    交互式调用务必传值——轮询是无限循环，没有超时会在无人扫码时挂死。
+    """
     session = requests.session()
     session.proxies = proxies
     response_json = session.get("https://buff.163.com/account/api/qr_code_login_open", params={"_": str(int(time.time() * 1000))}).json()
@@ -82,7 +97,12 @@ def login_to_buff_by_qrcode(steam_client, proxies=None) -> str:
     echo("请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描")
     status = 0
     scanned = False
+    deadline = (time.monotonic() + float(timeout)) if timeout else None
     while status != 3:
+        if deadline is not None and time.monotonic() > deadline:
+            logger.error("二维码登录超时（%s 秒内未完成扫码），已放弃" % timeout)
+            echo("二维码登录超时（%s 秒内未完成扫码）" % timeout)
+            return ""
         time.sleep(1)
         response_json = session.get("https://buff.163.com/account/api/qr_code_poll", params={"_": str(int(time.time() * 1000)), "item_id": code_id}).json()
         status = response_json["data"]["state"]
@@ -119,6 +139,19 @@ def is_session_has_enough_permission(session: str, proxies=None) -> bool:
         return False
 
 
+def _steam_session_usable(steam_client) -> bool:
+    """Steam 会话是否可用（决定能否走 Steam OpenID 登录 BUFF）。
+
+    未登录时主流程会注入 OfflineSteamClient（is_session_alive() 恒为 False），
+    此时 Steam OpenID 必然拿不到授权表单，应提前跳过。
+    任何探测异常都按「不可用」处理，宁可少试一次也不抛错。
+    """
+    try:
+        return bool(steam_client is not None and steam_client.is_session_alive())
+    except Exception:
+        return False
+
+
 def get_valid_session_for_buff(steam_client: SteamClient, logger, proxies=None) -> str:
     logger.info("[BuffLoginSolver] 正在获取与检查BUFF session...")
     if proxies:
@@ -142,18 +175,23 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger, proxies=None) 
         else:
             session = ""
     if not session:  # 尝试通过Steam
-        logger.info("[BuffLoginSolver] 正在尝试通过Steam登录至BUFF...")
-        try:
-            got_cookies = login_to_buff_by_steam(steam_client, proxies)
-            if is_session_has_enough_permission(got_cookies, proxies):
-                echo("BUFF 登录成功（通过 Steam 登录）", dual=True)
-                session = got_cookies
-            else:
-                logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
+        if not _steam_session_usable(steam_client):
+            # 未登录 Steam 时该路径**必然失败**（OpenID 需要已认证的 steamcommunity 会话），
+            # 提前跳过，避免无谓请求与「NoneType.find」这类误导性报错。
+            logger.warning("[BuffLoginSolver] 当前未登录 Steam，跳过 Steam 登录方式，改用二维码/已有 cookies")
+        else:
+            logger.info("[BuffLoginSolver] 正在尝试通过Steam登录至BUFF...")
+            try:
+                got_cookies = login_to_buff_by_steam(steam_client, proxies)
+                if is_session_has_enough_permission(got_cookies, proxies):
+                    echo("BUFF 登录成功（通过 Steam 登录）", dual=True)
+                    session = got_cookies
+                else:
+                    logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
 
-        except Exception as e:
-            handle_caught_exception(e)
-            logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
+            except Exception as e:
+                handle_caught_exception(e)
+                logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
 
     if not session:  # 尝试通过二维码
         if os.environ.get("STEAMAUTO_NO_PAUSE") == "1":

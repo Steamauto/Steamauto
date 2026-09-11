@@ -51,14 +51,25 @@ def _ok(msg):
 # ------------------------------------------------------------------ 参数解析
 
 def build_parser():
+    # add_help=False：用自定义 --help 输出分组操作列表（见 cmd_help），
+    # 比 argparse 默认输出更适合「子命令 + flag 两套写法并存」的场景。
     parser = argparse.ArgumentParser(
         prog="Steamauto",
-        description="Steamauto 命令行：运行控制、日志查看与运行时配置修改",
+        description="Steamauto 命令行：运行控制、账号管理、日志查看与运行时配置修改",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__,
+        add_help=False,
     )
+    parser.add_argument("-h", "--help", action="store_true", help="列出全部可用操作")
     parser.add_argument("-d", "--daemon", action="store_true", help="等价于 start（后台启动）")
     parser.add_argument("--port", type=int, help="覆盖控制通道端口（默认取配置 control.port）")
+
+    # ---- 账号相关（flag 形式） ----
+    parser.add_argument("--status", metavar="TOPIC", help="查看状态；目前支持 account")
+    parser.add_argument("--login", metavar="PLATFORM", help="登录平台：buff/uu/c5/eco（可逗号分隔）")
+    parser.add_argument("--logout", metavar="PLATFORM", help="登出平台：buff/uu/c5/eco（可逗号分隔）")
+    parser.add_argument("--json", action="store_true", help="以 JSON 输出（配合 --status）")
+    parser.add_argument("--no-live", action="store_true", help="只读本地凭据，不联网校验（更快）")
+
     sub = parser.add_subparsers(dest="command", metavar="<命令>")
 
     p_run = sub.add_parser("run", help="运行（默认前台）")
@@ -378,7 +389,233 @@ def cmd_ctl(args):
     return 0
 
 
+# ------------------------------------------------------------------ 账号
+
+HELP_TEXT = """\
+Steamauto 可用操作
+======================================================================
+
+运行
+  python Steamauto.py                          前台运行
+  python Steamauto.py run [-d|--daemon]        运行；-d 转后台
+  python Steamauto.py start                    后台启动
+  python Steamauto.py stop [--force]           停止（默认优雅停止）
+  python Steamauto.py restart [--force]        重启
+  python Steamauto.py status [--json]          查看运行状态
+
+账号
+  python Steamauto.py --status account         查看各平台登录 / 连接状态
+        [--json] [--no-live]                   --json 机器可读；--no-live 不联网校验
+  python Steamauto.py --login <平台>           登录（需交互终端：BUFF 扫码 / UU 短信）
+  python Steamauto.py --logout <平台>          登出（清除凭据与相关配置项）
+        平台：buff | uu | c5 | eco              可逗号分隔多个；大小写不敏感
+                                              别名：buffapi / uuyoupin / c5game / ecosteam
+
+日志
+  python Steamauto.py logs [-n N] [-f] [--console] [--file PATH]
+
+配置
+  python Steamauto.py config get <key>         读取配置值
+  python Steamauto.py config set <key> <value> [--str] [--no-apply]
+  python Steamauto.py config unset <key>       删除配置项
+  python Steamauto.py config list [--json]     列出全部配置
+  python Steamauto.py config reload            让运行中的进程重读配置
+
+调试
+  python Steamauto.py ctl <command> [k=v ...]  直接向控制通道发指令
+  python Steamauto.py --help                   显示本帮助
+
+说明
+  · 未登录 Steam 也能使用各平台的买卖 / 上架 / 改价 / 行情功能；
+    仅「自动发货」需要 Steam 会话，未登录时会转为人工确认。
+  · 登录成功后若程序正在后台运行，会自动通知它立即重试该平台，无需重启。
+======================================================================
+"""
+
+
+def cmd_help(_args=None):
+    _p(HELP_TEXT.rstrip())
+    return 0
+
+
+def _collect_status(args):
+    """收集各平台状态。优先问运行中的进程（D7），不可用时退回本地探测。
+
+    :return: (accounts_map, steam_state, source_label)
+    """
+    from utils import accounts
+
+    live = not getattr(args, "no_live", False)
+    running, state = daemon.is_running()
+
+    if running and state.get("control_ok"):
+        ok, resp = control.request(
+            "account.status", {"live": live}, port=state.get("port"), timeout=accounts.NET_TIMEOUT + 10
+        )
+        if ok and isinstance(resp, dict) and resp.get("accounts"):
+            return resp.get("accounts") or {}, resp.get("steam") or {}, "运行中的进程（实时）"
+
+    label = "本地探测"
+    if running:
+        label += "（控制通道不可达）"
+    return accounts.all_account_states(live=live), accounts.steam_state(live=live), label
+
+
+def _render_status(accounts_map, steam, source, live):
+    """把状态渲染成人可读的表格。"""
+    from utils import accounts
+
+    _p("各平台账号状态（来源：%s；联网校验：%s）" % (source, "是" if live else "否"))
+    header = "  %-22s %-8s %-8s %-8s %-16s %s" % ("平台", "已配置", "已登录", "连接可用", "账号", "说明")
+    _p(header)
+    _p("  " + "-" * (len(header) - 2))
+    for name in accounts.platforms():
+        info = accounts_map.get(name) or accounts._blank_state(name)
+        error = info.get("error") or ""
+        _p(
+            "  %-22s %-8s %-8s %-8s %-16s %s"
+            % (
+                info.get("display") or name,
+                "是" if info.get("configured") else "否",
+                "是" if info.get("logged_in") else "否",
+                "是" if info.get("connected") else "-",
+                (info.get("account") or "-")[:16],
+                error,
+            )
+        )
+    if steam:
+        error = steam.get("error") or ""
+        _p(
+            "  %-22s %-8s %-8s %-8s %-16s %s"
+            % (
+                steam.get("display") or "Steam",
+                "是" if steam.get("configured") else "否",
+                "是" if steam.get("logged_in") else "否",
+                "是" if steam.get("connected") else "-",
+                (steam.get("account") or "-")[:16],
+                error,
+            )
+        )
+    _p("")
+    _p("提示：登录用 `--login <平台>`；查看原始数据用 `--status account --json`。")
+
+
+def cmd_account_status(args):
+    from utils import accounts
+
+    topic = (getattr(args, "status", "") or "").strip().lower()
+    if topic not in ("account", "accounts", "acct", "账号"):
+        _err("暂不支持的 --status 主题：%s（目前仅支持 account）" % args.status)
+        return 2
+
+    accounts_map, steam, source = _collect_status(args)
+    if getattr(args, "json", False):
+        _p(
+            json.dumps(
+                {"source": source, "live": not getattr(args, "no_live", False), "accounts": accounts_map, "steam": steam},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0
+    _render_status(accounts_map, steam, source, not getattr(args, "no_live", False))
+    return 0
+
+
+def _resolve_targets(raw, flag):
+    from utils import accounts
+
+    names, bad = accounts.parse_platforms(raw, default_all=False)
+    if bad:
+        _err("无法识别的平台：%s（可选：%s）" % (", ".join(bad), " / ".join(accounts.platforms())))
+        return None
+    if not names:
+        _err("请指定平台，例如 %s uu" % flag)
+        return None
+    return names
+
+
+def cmd_login(args):
+    from utils import accounts
+
+    names = _resolve_targets(args.login, "--login")
+    if names is None:
+        return 2
+
+    overall = 0
+    for name in names:
+        _p("== 登录 %s ==" % accounts.DISPLAY[name])
+        ok, msg, _detail = accounts.login(name)
+        if ok:
+            _ok(msg)
+        else:
+            _err("[失败] %s" % msg)
+            overall = 1
+            continue
+
+        delivered, note = accounts.notify_runtime(name)
+        if delivered:
+            _ok("已通知运行中的进程立即重试该平台：%s" % note)
+        elif note == "程序未在运行":
+            _p("程序未在运行；凭据已保存，下次启动自动生效")
+        else:
+            _p("凭据已保存，但未能通知运行中的进程（%s）" % note)
+            _p("若程序正在运行，可执行 `restart` 或等待其下一轮轮询")
+    return overall
+
+
+def cmd_logout(args):
+    from utils import accounts
+
+    names = _resolve_targets(args.logout, "--logout")
+    if names is None:
+        return 2
+
+    overall = 0
+    for name in names:
+        _p("== 登出 %s ==" % accounts.DISPLAY[name])
+        ok, msg, cleared = accounts.logout(name)
+        if not ok:
+            _err("[失败] %s" % msg)
+            overall = 1
+            continue
+        _ok(msg)
+        if cleared:
+            for item in cleared:
+                _p("    已清除：%s" % item)
+        else:
+            _p("    没有可清除的凭据")
+
+        delivered, note = accounts.notify_runtime(name)
+        if delivered:
+            _ok("已通知运行中的进程：%s" % note)
+        elif note != "程序未在运行":
+            _p("未能通知运行中的进程（%s）" % note)
+    return overall
+
+
 # ------------------------------------------------------------------ 入口
+
+def _parse_args(parser, argv):
+    """解析参数；参数错误时给出帮助而不是直接崩溃。
+
+    argparse 遇到非法参数会 print 错误后 `sys.exit(2)`，而子命令自己的 `-h`
+    则是 `sys.exit(0)`。这里统一接住：正常退出（0）沿用其行为，出错时补一份
+    操作列表，方便用户立刻看到正确用法。
+
+    :return: Namespace，或 None 表示应当直接以失败退出。
+    """
+    try:
+        return parser.parse_args(argv)
+    except SystemExit as e:
+        code = e.code if isinstance(e.code, int) else 0
+        if code == 0:
+            raise
+        _p("")
+        _p("下面是全部可用操作：")
+        cmd_help()
+        return None
+
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -386,7 +623,22 @@ def main(argv=None):
     if not argv:
         # 无参数 = 前台运行，保持与改造前一致
         return cmd_run(argparse.Namespace(daemon=False, port=None))
-    args = parser.parse_args(argv)
+
+    args = _parse_args(parser, argv)
+    if args is None:
+        return 2
+
+    # flag 形式优先（D4b）
+    # 注意用 `is not None` 而非真值判断：`--login ""` 这种空值必须走 cmd_login
+    # 去报错，否则会被静默忽略、fall-through 成「前台运行」。
+    if getattr(args, "help", False):
+        return cmd_help(args)
+    if args.login is not None:
+        return cmd_login(args)
+    if args.logout is not None:
+        return cmd_logout(args)
+    if args.status is not None:
+        return cmd_account_status(args)
 
     if args.command is None:
         if args.daemon:
@@ -405,8 +657,9 @@ def main(argv=None):
     }
     handler = handlers.get(args.command)
     if handler is None:
-        parser.print_help()
-        return 2
+        _err("未知命令：%s" % args.command)
+        _p("")
+        return cmd_help(args)
     return handler(args)
 
 

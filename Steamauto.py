@@ -14,20 +14,18 @@ from typing import no_type_check
 # ---------------------------------------------------------------------------
 # 轻量 CLI 前置分发
 # ---------------------------------------------------------------------------
-# status / config / logs 等子命令只需要 utils.cli 那一小撮轻量模块。若走完整
-# import 链，会顺带创建日志文件、加载 Steam 客户端与插件，既慢又会在 logs/ 里
-# 留下一堆无意义的日志。因此这里在**导入重型依赖之前**就完成分发。
-# 只有 run（前台运行）才继续往下执行本模块的其余代码。
+# status / config / logs / --login / --status 等只需要 utils.cli 那一小撮轻量模块。
+# 若走完整 import 链，会顺带创建日志文件、加载 Steam 客户端与插件，既慢又会在
+# logs/ 里留下一堆无意义的日志。因此这里在**导入重型依赖之前**就完成分发。
+#
+# 判定规则：子命令名命中白名单，或首个参数以 "-" 开头（flag 形式，含 --help /
+# --status / --login / --logout / -d）。只有「run 或不带参数」才继续往下执行
+# 本模块的其余代码（前台服务）。
 if __name__ == "__main__":
     _argv = list(sys.argv[1:])
     _first = _argv[0] if _argv else ""
-    _daemon_flag = "-d" in _argv or "--daemon" in _argv
     _is_light = _first in ("start", "stop", "restart", "status", "logs", "config", "ctl")
-    _is_help = _first in ("-h", "--help")
-    _is_daemon_run = _first in ("run", "") and _daemon_flag
-    if _first == "-d" or _first == "--daemon":
-        _is_daemon_run = True
-    if _is_light or _is_help or _is_daemon_run:
+    if _is_light or _first.startswith("-"):
         from utils.cli import main as _cli_main
 
         sys.exit(_cli_main(_argv))
@@ -61,7 +59,9 @@ config = {}
 
 # 运行期状态：供控制通道的 ping/status 使用
 _RUNTIME_START = time.time()
-_ACTIVE_PLUGINS = []
+# 运行期引用（供控制通道查询真实状态）
+_STEAM_CLIENT = None
+_PLUGIN_RUNTIME = None
 # 收到停止请求后，等待插件线程自行收尾的宽限时间（秒）
 SHUTDOWN_GRACE = 15.0
 
@@ -147,14 +147,16 @@ def init_files_and_params() -> int:
             f.write(DEFAULT_CONFIG_JSON)
         logger.info("检测到首次运行, 已为您生成" + CONFIG_FILE_PATH + ", 请按照README提示填写配置文件! ")
         first_run = True
-    else:
-        with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
-            try:
-                config = json5.load(f)
-            except Exception as e:
-                handle_caught_exception(e, known=True)
-                logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确, 或尝试重新生成配置文件并重新配置! ")
-                return 0
+    # 注意：**首次运行也要加载刚生成的默认配置**。
+    # 否则 config 变量保持为空 {}，后续 get_plugins_enabled 会因为
+    # 「plugin_key 不在 config 里、又属于内置插件」而判定无插件启用并直接退出。
+    with open(CONFIG_FILE_PATH, "r", encoding=get_encoding(CONFIG_FILE_PATH)) as f:
+        try:
+            config = json5.load(f)
+        except Exception as e:
+            handle_caught_exception(e, known=True)
+            logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确, 或尝试重新生成配置文件并重新配置! ")
+            return 0
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
             f.write(DEFAULT_STEAM_ACCOUNT_JSON)
@@ -268,8 +270,13 @@ def get_plugin_classes():
 
 
 def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
+    """返回 {plugin_key: 插件实例}。
+
+    保留 plugin_key 是必须的：运行期需要按平台定位插件（登录成功后只重启对应插件），
+    按位置索引会与配置里的键对不上。
+    """
     global config
-    plugins_enabled = []
+    plugins_enabled = {}
     plugin_modules = get_plugin_classes()  # 获取所有插件类
 
     for plugin_key, plugin_module in plugin_modules.items():
@@ -309,58 +316,132 @@ def get_plugins_enabled(steam_client: SteamClient, steam_client_mutex):
                 if len(init_signature.parameters) != 1:
                     continue
                 plugin_instance = cls_obj(**init_kwargs)
-                plugins_enabled.append(plugin_instance)
+                if plugin_key in plugins_enabled:
+                    logger.warning("插件 %s 存在多个可用类，仅使用 %s" % (plugin_key, type(plugins_enabled[plugin_key]).__name__))
+                    continue
+                plugins_enabled[plugin_key] = plugin_instance
 
     return plugins_enabled
 
 
+def plugin_init_ok(instance):
+    """对单个插件跑一次 init()。
+
+    :return: (ok: bool, reason: str)。注意 Steamauto 的约定是
+             `init()` 返回 **True 表示失败**（历史语义，勿改）。
+    """
+    try:
+        if instance.init():
+            return False, "初始化失败"
+    except Exception as e:
+        handle_caught_exception(e, known=True)
+        return False, "初始化异常: %s" % (e,)
+    return True, ""
+
+
 def plugins_check(plugins_enabled):
+    """对一组插件做初始化检查，返回初始化成功的插件列表。
+
+    保留「列表进出」的原始语义（既有调用方与测试依赖它）。
+    """
     if len(plugins_enabled) == 0:
         logger.error("未启用任何插件, 请检查" + CONFIG_FILE_PATH + "是否正确! ")
         return []
     ok_plugins = []
     for plugin in plugins_enabled:
-        try:
-            if plugin.init():
-                logger.error("插件 " + type(plugin).__name__ + " 初始化失败，已跳过")
-            else:
-                ok_plugins.append(plugin)
-        except Exception as e:
-            handle_caught_exception(e, known=True)
-            logger.error("插件 " + type(plugin).__name__ + " 初始化异常，已跳过")
+        ok, reason = plugin_init_ok(plugin)
+        if ok:
+            ok_plugins.append(plugin)
+        else:
+            logger.error("插件 " + type(plugin).__name__ + " " + reason + "，已跳过")
     return ok_plugins
 
 
-def init_plugins_and_start(plugins_enabled):
-    echo("初始化完成, 开始运行插件!", dual=True)
-    time.sleep(0.1)
-    if len(plugins_enabled) == 1:
-        exit_code.set(plugins_enabled[0].exec())
-    else:
-        threads = []
-        for plugin in plugins_enabled:
-            threads.append(threading.Thread(target=plugin.exec, name="plugin-%s" % type(plugin).__name__))
-        for thread in threads:
-            random_jitter = random.randint(0, 10)
-            thread.daemon = True
+class PluginRuntime:
+    """插件运行期管理：跟踪实例/线程，支持「登录后动态启动某个平台插件」。
+
+    为什么需要它：平台登录失败的插件若在启动阶段被直接丢弃，用户之后补登录
+    （`--login uu`）就没有任何东西能接上——只能重启整个程序。因此这里把失败
+    插件**保留**下来，登录成功后由控制通道的 `plugin.retry` 重新 init 并起线程。
+    """
+
+    def __init__(self, plugins_map):
+        self.map = dict(plugins_map)   # plugin_key -> instance
+        self.threads = {}              # plugin_key -> Thread
+        self.failed = {}               # plugin_key -> reason
+        self._lock = threading.Lock()
+
+    # ---- 查询 ----
+    def started_keys(self):
+        return sorted(k for k, t in self.threads.items() if t.is_alive())
+
+    def failed_keys(self):
+        return sorted(self.failed)
+
+    def pending_keys(self):
+        """尚未成功运行的插件键（含从未启动与启动失败的）。"""
+        return sorted(set(self.map) - set(self.started_keys()))
+
+    def is_running(self, key):
+        t = self.threads.get(key)
+        return bool(t and t.is_alive())
+
+    # ---- 启动 ----
+    def start(self, key):
+        """初始化并启动某个插件线程。返回 (ok: bool, message: str)。"""
+        with self._lock:
+            instance = self.map.get(key)
+            if instance is None:
+                known = ", ".join(sorted(self.map)) or "（无）"
+                return False, "未启用插件 %s；当前已加载：%s" % (key, known)
+            if self.is_running(key):
+                return True, "%s 已在运行" % key
+
+            ok, reason = plugin_init_ok(instance)
+            if not ok:
+                self.failed[key] = reason
+                return False, "%s %s" % (key, reason)
+
+            self.failed.pop(key, None)
+            thread = threading.Thread(target=instance.exec, name="plugin-%s" % key, daemon=True)
+            self.threads[key] = thread
             thread.start()
-            logger.info(f"插件线程 {thread.name} 已启动，等待 {random_jitter} 秒后启动下一个插件线程...")
-            if not runtime.interruptible_sleep(random_jitter):
-                break
-        # 等待插件线程收尾。收到停止请求后只再宽限 SHUTDOWN_GRACE 秒，
-        # 避免某个卡在网络请求里的插件把停止流程无限拖住。
-        grace_deadline = None
-        for thread in threads:
+            return True, "已启动 %s（%s）" % (key, type(instance).__name__)
+
+    def start_all(self, keys=None, jitter=10):
+        """依次启动插件（保留随机间隔以免同时打接口，最后一个不等）。"""
+        order = list(keys if keys is not None else sorted(self.map))
+        started, skipped = [], []
+        for index, key in enumerate(order):
+            ok, msg = self.start(key)
+            if ok:
+                started.append(key)
+                logger.info("插件线程已启动：%s", msg)
+            else:
+                skipped.append(key)
+                logger.error("插件 %s 启动失败：%s", key, msg)
+            if index < len(order) - 1:
+                delay = random.randint(0, jitter)
+                if not runtime.interruptible_sleep(delay) and runtime.is_shutdown_requested():
+                    break
+        return started, skipped
+
+    def wait_all(self, grace=None):
+        """等待插件线程收尾（沿用原有关停宽限逻辑）。"""
+        grace = SHUTDOWN_GRACE if grace is None else grace
+        for key in list(self.started_keys()):
+            thread = self.threads.get(key)
+            if thread is None:
+                continue
+            deadline = None
             while thread.is_alive():
                 thread.join(timeout=0.5)
                 if runtime.is_shutdown_requested():
-                    if grace_deadline is None:
-                        grace_deadline = time.monotonic() + SHUTDOWN_GRACE
-                    elif time.monotonic() > grace_deadline:
-                        logger.warning("插件线程 %s 未在 %s 秒内收尾，放弃等待", thread.name, SHUTDOWN_GRACE)
+                    if deadline is None:
+                        deadline = time.monotonic() + grace
+                    elif time.monotonic() > deadline:
+                        logger.warning("插件线程 %s 未在 %s 秒内收尾，放弃等待", thread.name, grace)
                         break
-    if exit_code.get() != 0 and not runtime.is_shutdown_requested():
-        logger.warning("所有插件都已经退出！这不是一个正常情况，请检查配置文件！")
 
 
 tried_exit = False
@@ -459,16 +540,110 @@ def _update_config_value(key, value):
 # ---- 控制通道指令处理 ----
 
 def _ctl_ping(_args):
+    started = _PLUGIN_RUNTIME.started_keys() if _PLUGIN_RUNTIME else []
+    pending = _PLUGIN_RUNTIME.pending_keys() if _PLUGIN_RUNTIME else []
+    failed = _PLUGIN_RUNTIME.failed_keys() if _PLUGIN_RUNTIME else []
     return {
         "pid": os.getpid(),
         "version": CURRENT_VERSION,
         "uptime": round(time.time() - _RUNTIME_START, 1),
         "started_at": _RUNTIME_START,
         "mode": "daemon" if os.environ.get("STEAMAUTO_DAEMON") == "1" else "foreground",
-        "plugins": [type(p).__name__ for p in _ACTIVE_PLUGINS],
+        "plugins": started,
+        "plugins_pending": pending,
+        "plugins_failed": failed,
         "log_file": getattr(f_handler, "baseFilename", None),
         "config_file": CONFIG_FILE_PATH,
         "shutdown_requested": runtime.is_shutdown_requested(),
+    }
+
+
+def _ctl_account_status(args):
+    """返回各平台（以及 Steam）的账号状态。
+
+    运行中的进程是**最优状态源**：它持有真实会话，能直接回答「现在能不能用」，
+    而不像本地探测只能看文件在不在。
+    """
+    from utils import accounts
+
+    live = bool(args.get("live", True))
+    target = args.get("platform")
+    if target:
+        name = accounts.resolve(target)
+        if name is None:
+            if str(target).lower() == "steam":
+                return {"steam": _steam_state_live()}
+            raise ValueError("未知平台：%s" % target)
+        return {"accounts": {name: accounts.account_state(name, cfg=config, live=live)}}
+
+    return {
+        "accounts": {p: accounts.account_state(p, cfg=config, live=live) for p in accounts.platforms()},
+        "steam": _steam_state_live(),
+    }
+
+
+def _steam_state_live():
+    """用本进程持有的 steam_client 给出真实的 Steam 会话状态。"""
+    from utils import accounts
+
+    user = accounts.steam_username()
+    info = {
+        "platform": "steam",
+        "display": "Steam",
+        "configured": bool(user),
+        "logged_in": False,
+        "connected": False,
+        "account": user or None,
+        "source": "运行中的进程",
+        "error": None,
+    }
+    client = _STEAM_CLIENT
+    if user and client is not None and not isinstance(client, OfflineSteamClient):
+        try:
+            alive = bool(client.is_session_alive())
+            info["logged_in"] = alive
+            info["connected"] = alive
+            if not alive:
+                info["error"] = "会话已失效（正在自动刷新或需重新登录）"
+        except Exception as e:  # noqa: BLE001
+            info["error"] = "会话检测失败：%s" % (e,)
+    elif not user:
+        info["error"] = "未配置 Steam 用户名（可选；不影响买卖/上架等免鉴权功能）"
+    else:
+        info["error"] = "当前为离线模式（未登录 Steam）；买卖/上架等功能不受影响"
+    return info
+
+
+def _ctl_plugin_retry(args):
+    """登录成功后动态启动某个平台插件（D1b）。
+
+    同时 `request_wake()` 打断插件正在进行的 interval 等待，让它立刻进入下一轮
+    （否则最多要等一个完整 interval 才生效）。
+    """
+    from utils import accounts
+
+    platform = args.get("platform")
+    key = args.get("plugin_key")
+    if not key and platform:
+        name = accounts.resolve(platform) or platform
+        key = accounts.PLUGIN_KEY.get(name)
+    if not key:
+        raise ValueError("缺少 plugin_key 或 platform 参数")
+
+    if _PLUGIN_RUNTIME is None:
+        return {"ok": False, "message": "插件管理器未就绪"}
+
+    ok, message = _PLUGIN_RUNTIME.start(key)
+    if args.get("wake"):
+        runtime.request_wake()
+    echo("平台登录后重试插件 %s：%s" % (key, message), dual=True)
+    return {
+        "ok": ok,
+        "plugin": key,
+        "message": message,
+        "plugins": _PLUGIN_RUNTIME.started_keys(),
+        "plugins_pending": _PLUGIN_RUNTIME.pending_keys(),
+        "wake": bool(args.get("wake")),
     }
 
 
@@ -546,6 +721,8 @@ def _start_control_server():
     handlers = {
         "ping": _ctl_ping,
         "shutdown": _ctl_shutdown,
+        "account.status": _ctl_account_status,
+        "plugin.retry": _ctl_plugin_retry,
         "config.get": _ctl_config_get,
         "config.apply": _ctl_config_apply,
         "config.reload": _ctl_config_reload,
@@ -572,8 +749,103 @@ def _teardown_runtime(control_server=None):
 
 
 # 主函数
+def _is_interactive():
+    """当前是否处于「有人看着的交互终端」。
+
+    后台进程（daemon）与 GUI 子进程都没有交互终端，不能走扫码/短信这类引导。
+    终端判定统一走 accounts.stdin_is_interactive（它额外排除了 Windows 上
+    NUL 设备被误判为终端的情况），这里只再要求 stdout 也是终端。
+    """
+    from utils import accounts
+
+    if static.no_pause:
+        return False
+    if not accounts.stdin_is_interactive():
+        return False
+    try:
+        return bool(sys.stdout and sys.stdout.isatty())
+    except Exception:
+        return False
+
+
+def _onboard_first_run():
+    """首次运行引导：提示登录 BUFF / UU；两者都失败则转到后台继续运行。
+
+    :return: True 表示继续在本进程启动服务；False 表示不需要（已转后台或已提示）。
+    """
+    from utils import accounts
+
+    echo("=" * 62, dual=True)
+    echo("检测到首次运行。", dual=True)
+    echo("提示：未登录 Steam 也能使用各平台的买卖/上架/改价/行情功能；", dual=True)
+    echo("      仅「自动发货」需要 Steam 会话（未登录时转为人工确认）。", dual=True)
+    echo("=" * 62, dual=True)
+    echo("")
+
+    if not _is_interactive():
+        echo("当前无交互终端，跳过登录引导。", dual=True)
+        echo("之后可执行：python Steamauto.py --login uu   （或 buff / c5 / eco）", dual=True)
+        return True
+
+    # 配置文件已生成但默认可能没启用对应插件，这里先提示
+    results = {}
+    for platform in ("buff", "uu"):
+        plugin_key = accounts.PLUGIN_KEY[platform]
+        echo("---- 登录 %s ----" % accounts.DISPLAY[platform])
+        ok, msg, _detail = accounts.login(platform)
+        results[platform] = ok
+        if ok:
+            echo("[成功] %s" % msg, dual=True)
+            section = config.get(plugin_key)
+            if isinstance(section, dict) and not section.get("enable"):
+                echo("提示：%s 的插件当前未启用，需要执行：" % accounts.DISPLAY[platform])
+                echo("      python Steamauto.py config set %s.enable true" % plugin_key)
+        else:
+            echo("[失败] %s" % msg, dual=True)
+        echo("")
+
+    if any(results.values()):
+        echo("至少一个平台登录成功，继续启动。", dual=True)
+        return True
+
+    echo("BUFF 与 UU 均未登录成功。为避免占用终端，将转到后台继续运行。", dual=True)
+    echo("之后可随时补登录（凭据保存后会自动通知后台进程，无需重启）：", dual=True)
+    echo("    python Steamauto.py --login buff", dual=True)
+    echo("    python Steamauto.py --login uu", dual=True)
+    echo("查看各平台状态：python Steamauto.py --status account", dual=True)
+
+    ok, msg = daemon.spawn_background()
+    if ok:
+        echo("[OK] %s" % msg, dual=True)
+    else:
+        echo("转入后台失败：%s" % msg, dual=True)
+        echo("可手动执行：python Steamauto.py start", dual=True)
+    return False
+
+
+def _serve_until_shutdown(poll=1.0):
+    """主服务循环：保持进程与控制通道存活，直到收到关停请求。
+
+    三种情形：
+    - 有插件在跑 → 等它们结束（沿用带宽限的 wait_all）；
+    - 插件全退出但仍有「待登录」的平台 → 继续待命，等 `--login` 通过控制通道
+      把对应插件动态启动起来（D1b）；
+    - 没有任何待启动插件 → 返回，让调用方走正常退出流程。
+    """
+    while not runtime.is_shutdown_requested():
+        if _PLUGIN_RUNTIME.started_keys():
+            _PLUGIN_RUNTIME.wait_all()
+        if runtime.is_shutdown_requested():
+            return
+        pending = _PLUGIN_RUNTIME.pending_keys()
+        if not pending:
+            return
+        # 待命：插件实例仍在（等登录），不退出进程，只维持控制通道
+        runtime.interruptible_sleep(poll)
+
+
 def main():
-    global config
+    global config, _STEAM_CLIENT, _PLUGIN_RUNTIME
     # GUI/后台启动的子进程无交互终端：出错时不等待按键（pause 自动跳过）
     if os.environ.get("STEAMAUTO_NO_PAUSE") == "1":
         static.no_pause = True
@@ -583,10 +855,13 @@ def main():
         pause()
         return 1
     elif init_status == 1:
-        pause()
-        return 0
+        # 首次运行：先做登录引导，再决定是否在本进程继续启动服务
+        if not _onboard_first_run():
+            pause()
+            return 0
 
     runtime.clear_shutdown()
+    runtime.clear_wake()
     _setup_runtime_state()
     _register_hot_appliers()
     control_server = _start_control_server()
@@ -604,21 +879,40 @@ def main():
             steam_client = OfflineSteamClient(username)
             if steam_client_mutex.get(username) is None:
                 steam_client_mutex[username] = threading.Lock()
+        _STEAM_CLIENT = steam_client
+
         # 仅用于获取启用的插件
         import_all_plugins()
-        plugins_enabled = get_plugins_enabled(steam_client, steam_client_mutex.get(steam_client.username))
-        # 检查插件是否正确初始化：失败插件跳过，成功插件继续运行
-        plugins_enabled = plugins_check(plugins_enabled)
-        if len(plugins_enabled) == 0:
-            echo("所有插件都无法初始化, Steamauto即将退出！", dual=True)
+        plugins_map = get_plugins_enabled(steam_client, steam_client_mutex.get(steam_client.username))
+        if not plugins_map:
+            echo("未启用任何插件, 请检查配置文件是否正确！", dual=True)
             pause()
             return 1
 
-        _ACTIVE_PLUGINS[:] = plugins_enabled
-        if steam_client is not None:
-            send_notification(steam_client, "Steamauto 已经成功登录Steam并开始运行")
-            echo("Steamauto 已开始运行，插件数：%d" % len(plugins_enabled), dual=True)
-            init_plugins_and_start(plugins_enabled)
+        # 插件管理器：失败插件不再丢弃，留给「登录后动态启动」
+        _PLUGIN_RUNTIME = PluginRuntime(plugins_map)
+        echo("初始化完成, 开始运行插件!", dual=True)
+        time.sleep(0.1)
+        started, skipped = _PLUGIN_RUNTIME.start_all()
+        for key in skipped:
+            echo("插件 %s 未能启动（%s）" % (key, _PLUGIN_RUNTIME.failed.get(key, "未启用")), dual=True)
+
+        if started:
+            if steam_client is not None:
+                send_notification(steam_client, "Steamauto 已经成功登录Steam并开始运行")
+            echo("Steamauto 已开始运行，插件数：%d" % len(started), dual=True)
+        else:
+            # 关键：不再直接退出。多为「平台未登录」导致，需要留一个活着的进程
+            # 让用户之后用 --login 补登录（登录成功会通过控制通道动态启动插件）。
+            echo("所有插件都未能启动（多为平台未登录），进入待命状态。", dual=True)
+            echo("补登录后会自动启动对应插件，无需重启：", dual=True)
+            echo("    python Steamauto.py --login buff", dual=True)
+            echo("    python Steamauto.py --login uu", dual=True)
+            echo("查看状态：python Steamauto.py --status account", dual=True)
+        if skipped:
+            echo("待启动插件：%s" % ", ".join(skipped), dual=True)
+
+        _serve_until_shutdown()
 
         if runtime.is_shutdown_requested():
             echo("已按要求停止全部插件，程序退出。", dual=True)

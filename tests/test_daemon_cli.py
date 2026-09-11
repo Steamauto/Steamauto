@@ -21,6 +21,7 @@ import io
 import json
 import logging
 import os
+import shutil
 import socket
 import sys
 import tempfile
@@ -145,6 +146,7 @@ class TestConfigWriter(unittest.TestCase):
     def test_file_roundtrip_and_validation(self):
         """写盘接口：改动后仍是合法 JSON5，且注释守恒。"""
         tmp = tempfile.mkdtemp(prefix="sa-cfg-")
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
         path = os.path.join(tmp, "config.json5")
         with io.open(path, "w", encoding="utf-8", newline="") as f:
             f.write(self.orig)
@@ -369,6 +371,7 @@ class TestRuntime(unittest.TestCase):
 class TestDaemonState(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="sa-run-")
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         self._patches = {
             "RUN_FOLDER": os.path.join(self.tmp, "run"),
             "PID_FILE": os.path.join(self.tmp, "run", "steamauto.pid"),
@@ -509,6 +512,7 @@ class TestCli(unittest.TestCase):
         self.cli = cli
         self.parser = cli.build_parser()
         self.tmp = tempfile.mkdtemp(prefix="sa-cli-")
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         self.cfg_path = os.path.join(self.tmp, "config.json5")
         with io.open(self.cfg_path, "w", encoding="utf-8", newline="") as f:
             f.write('{\n  // 保留这条注释\n  "log_level": "info",\n  "no_pause": false\n}\n')
@@ -602,10 +606,36 @@ class TestCli(unittest.TestCase):
     def test_ctl_requires_key_value(self):
         self.assertEqual(self.cli.main(["ctl", "ping", "badarg"]), 2)
 
-    def test_help_exits_zero(self):
-        with self.assertRaises(SystemExit) as ctx:
-            self.cli.main(["--help"])
-        self.assertEqual(ctx.exception.code, 0)
+    def test_help_lists_operations(self):
+        """--help 走自定义实现（D4b 要求列出可用操作），返回 0 而非 SystemExit。"""
+        import contextlib
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = self.cli.main(["--help"])
+        self.assertEqual(rc, 0)
+        out = buf.getvalue()
+        for expected in ("--login", "--logout", "--status account", "start", "stop", "config"):
+            self.assertIn(expected, out, "--help 未列出 %s" % expected)
+
+    def test_short_help_flag(self):
+        import contextlib
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = self.cli.main(["-h"])
+        self.assertEqual(rc, 0)
+        self.assertIn("--login", buf.getvalue())
+
+    def test_unknown_command_shows_help(self):
+        """无效子命令：argparse 报错后应补一份操作列表，返回 2。"""
+        import contextlib
+
+        buf, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+            rc = self.cli.main(["definitely-not-a-command"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--login", buf.getvalue())
 
     def test_control_endpoint_prefers_state(self):
         daemon.write_state(pid=os.getpid(), port=49999, host="127.0.0.1")
@@ -741,18 +771,41 @@ class TestConsoleOutputHygiene(unittest.TestCase):
         self.assertEqual(is_colored, log_mod._stdout_is_tty())
 
     def test_cloud_service_threads_are_daemon(self):
-        """这两个后台轮询线程必须 daemon，否则优雅退出时解释器会被吊住。"""
-        from utils import cloud_service  # noqa: F401  导入即启动线程
+        """这两个后台轮询线程必须 daemon，否则优雅退出时解释器会被吊住。
 
-        found = [t for t in threading.enumerate() if t.name in ("adsThread", "versionThread")]
-        self.assertTrue(found, "未找到 cloud_service 后台线程")
-        for t in found:
-            self.assertTrue(t.daemon, "%s 不是 daemon 线程" % t.name)
+        断言模块**持有的线程对象**而非 `threading.enumerate()`：轮询线程一旦感知到
+        关停请求就会按设计退出且无法复活（模块已缓存），用 enumerate 会因测试顺序
+        而假失败；而 `.daemon` 属性与存活状态无关，仍是有效回归依据。
+        """
+        from utils import cloud_service
+
+        for attr in ("ad", "update"):
+            thread = getattr(cloud_service, attr, None)
+            self.assertIsNotNone(thread, "cloud_service 缺少线程对象 %s" % attr)
+            self.assertTrue(thread.daemon, "%s 不是 daemon 线程" % attr)
+            self.assertEqual(thread.name, "adsThread" if attr == "ad" else "versionThread")
 
     def test_cloud_service_loops_respect_shutdown(self):
         src = self._read("utils/cloud_service.py")
         self.assertNotIn("while True:", src)
         self.assertIn("daemon=True", src)
+
+    def test_test_run_is_sandboxed(self):
+        """守卫：测试期间数据目录必须在临时目录，不能写进项目真实目录。
+
+        没有 conftest 的 STEAMAUTO_BASE_DIR 隔离时，`utils.logger` 会在 import 阶段
+        就把 FileHandler 建到真实 `logs/` —— 每跑一次 pytest 就丢一个垃圾日志文件。
+        断言 `_BASE_DIR`（没有任何测试会去改它）而非 `LOGS_FOLDER`（会被个别测试
+        临时 patch），这样守卫本身不受测试顺序影响。
+        """
+        import utils.static as st
+
+        base = os.path.abspath(st._BASE_DIR)
+        self.assertNotEqual(base, os.path.abspath(SRC), "测试把数据目录指向了项目根，会污染 logs/config")
+        self.assertTrue(
+            base.lower().startswith(tempfile.gettempdir().lower()),
+            "数据目录未落在临时目录：%s" % base,
+        )
 
 
 if __name__ == "__main__":

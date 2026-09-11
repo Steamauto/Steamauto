@@ -246,16 +246,17 @@ def checkVersion():
 
 
 def adsThread():
-    # 必须 respect 关停信号：否则优雅退出时解释器会被这个非 daemon 线程吊住
+    # 必须 respect 关停信号：否则优雅退出时解释器会被这个非 daemon 线程吊住。
+    # 注意「唤醒」不算退出理由（它只表示有进展需立刻重试），故用 is_shutdown_requested 判断。
     while not runtime.shutdown_event.is_set():
-        if not runtime.interruptible_sleep(600):
+        if not runtime.interruptible_sleep(600) and runtime.is_shutdown_requested():
             break
         getAds()
 
 
 def versionThread():
     while not runtime.shutdown_event.is_set():
-        if not runtime.interruptible_sleep(43200):
+        if not runtime.interruptible_sleep(43200) and runtime.is_shutdown_requested():
             break
         checkVersion()
 

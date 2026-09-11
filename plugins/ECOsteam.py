@@ -13,7 +13,7 @@ from api.Steam.steampy.client import SteamClient
 from utils import runtime
 from utils import static
 from utils.buff_helper import get_valid_session_for_buff
-from utils.logger import LogFilter, PluginLogger, handle_caught_exception
+from utils.logger import LogFilter, PluginLogger, echo, handle_caught_exception
 from utils.models import Asset, LeaseAsset, ModelEncoder
 from utils.static import ECOSTEAM_RSAKEY_FILE
 from utils.steam_client import accept_trade_offer, external_handler, get_cs2_inventory
