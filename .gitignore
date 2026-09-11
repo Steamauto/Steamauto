@@ -2,6 +2,7 @@ config/*
 dev/*
 logs
 session
+run
 **/__pycache__
 .idea
 bin
@@ -10,6 +11,10 @@ pyvenv.cfg
 qrcode.png
 env
 test*
+# 例外：tests/ 目录与 tests/test_*.py 回归测试需要纳入版本控制
+# （上面的 test* 规则会误伤 tests 目录名与 test_ 前缀文件，且父目录被忽略时无法再放行子文件）
+!tests/
+!tests/*.py
 build/*
 dist/*
 *bak

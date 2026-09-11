@@ -5,6 +5,7 @@ import time
 import schedule
 
 import uuyoupinapi
+from utils import runtime
 from utils.logger import PluginLogger, handle_caught_exception, logger
 from utils.notifier import send_notification
 from utils.tools import exit_code
@@ -352,16 +353,16 @@ class UUAutoSellItem:
         schedule.every().day.at(f"{run_time}").do(self.auto_sell)
         schedule.every(interval).minutes.do(self.auto_change_price)
 
-        while True:
+        while not runtime.shutdown_event.is_set():
             schedule.run_pending()
-            time.sleep(1)
+            runtime.interruptible_sleep(1)
 
     def operate_sleep(self, sleep=None):
         if sleep is None:
             random.seed()
             sleep = random.randint(5, 15)
         self.logger.info(f"为了避免频繁访问接口，操作间隔 {sleep} 秒")
-        time.sleep(sleep)
+        runtime.interruptible_sleep(sleep)
 
     def get_take_profile_price(self, buy_price):
         take_profile_ratio = self.config["uu_auto_sell_item"]["take_profile_ratio"]

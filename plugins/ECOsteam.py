@@ -10,6 +10,7 @@ from BuffApi import BuffAccount
 from BuffApi.models import BuffOnSaleAsset
 from PyECOsteam import ECOsteamClient, models
 from steampy.client import SteamClient
+from utils import runtime
 from utils import static
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import LogFilter, PluginLogger, handle_caught_exception
@@ -342,13 +343,13 @@ class ECOsteamPlugin:
 
     # 自动发货线程
     def auto_accept_offer(self):
-        while True:
+        while not runtime.shutdown_event.is_set():
             try:
                 self.__auto_accept_offer()
             except Exception as e:
                 handle_caught_exception(e, "ECOsteam.cn")
                 accept_offer_logger.error("发生未知错误，请稍候再试！")
-                time.sleep(self.config["ecosteam"]["auto_accept_offer"]["interval"])
+                runtime.interruptible_sleep(self.config["ecosteam"]["auto_accept_offer"]["interval"])
 
     # 自动发货实现
     def __auto_accept_offer(self):
@@ -359,7 +360,7 @@ class ECOsteamPlugin:
         tomorrow = tomorrow.strftime("%Y-%m-%d")
         last_month = last_month.strftime("%Y-%m-%d")
         wait_deliver_orders = self.client.getFullSellerOrderList(last_month, tomorrow, DetailsState=8, SteamId=self.steam_id)
-        accept_offer_logger.info(f"检测到{len(wait_deliver_orders)}个待发货订单！")
+        echo(f"ECOsteam 检测到 {len(wait_deliver_orders)} 个待发货订单，请前往平台处理", dual=True)
         if len(wait_deliver_orders) > 0:
             for order in wait_deliver_orders:
                 if order["OrderStateCode"] == 1:
@@ -376,7 +377,7 @@ class ECOsteamPlugin:
                         continue
                 accept_offer_logger.debug(f"正在获取订单号{order['OrderNum']}的详情！")
                 detail = self.client.GetSellerOrderDetail(OrderNum=order["OrderNum"]).json()["ResultData"]
-                time.sleep(0.3)
+                runtime.interruptible_sleep(0.3)
                 tradeOfferId = detail["TradeOfferId"]
                 goodsName = detail["GoodsName"]
                 sellingPrice = detail["TotalMoney"]
@@ -399,7 +400,7 @@ class ECOsteamPlugin:
                     accept_offer_logger.info(f"已经自动忽略报价号{tradeOfferId}，商品名{goodsName}，因为它已经被程序处理过！")
         interval = self.config["ecosteam"]["auto_accept_offer"]["interval"]
         accept_offer_logger.info(f"等待{interval}秒后继续检查待发货列表...")
-        time.sleep(interval)
+        runtime.interruptible_sleep(interval)
 
     # 自动同步上架启动线程
     def auto_sync_shelves(self):
@@ -476,7 +477,7 @@ class ECOsteamPlugin:
             uu_queue = tasks(self.uu_client, self.steam_id)
         eco_queue = tasks(self.client, self.steam_id)
 
-        while True:
+        while not runtime.shutdown_event.is_set():
             if sync_sell_shelf_enabled:
                 self.sync_sell_shelves()
             if sync_lease_shelf_enabled:
@@ -485,7 +486,7 @@ class ECOsteamPlugin:
             if isinstance(uu_queue, tasks):
                 uu_queue.process()
             logger.info(f"等待 {self.config['ecosteam']['sync_interval']} 秒后重新检查多平台上架物品")
-            time.sleep(self.config["ecosteam"]["sync_interval"])
+            runtime.interruptible_sleep(self.config["ecosteam"]["sync_interval"])
 
     # 自动同步租赁货架实现
     def sync_lease_shelves(self):
@@ -687,7 +688,7 @@ class ECOsteamPlugin:
                         total_success += success
                         total_failure += failure
                         if batch == 200:
-                            time.sleep(3)
+                            runtime.interruptible_sleep(3)
                     for asset in assets:
                         if asset.assetid in failure:
                             sell_logger.error(f"上架 {asset.market_hash_name}(ID:{asset.assetid}) 失败！错误信息: {failure[asset.assetid]}")

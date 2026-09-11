@@ -11,7 +11,8 @@ import requests
 from colorama import Fore, Style
 
 import utils.static as static
-from utils.logger import PluginLogger, handle_caught_exception
+from utils import runtime
+from utils.logger import PluginLogger, echo, handle_caught_exception
 from utils.notifier import send_notification
 from utils.tools import calculate_sha256, pause
 
@@ -160,17 +161,19 @@ def getAds():
         )
         response.raise_for_status()
         ads = response.json()
-        if len(ads) > 0:
-            print("")
         for ad in ads:
+            message = parseBroadcastMessage(ad["message"])
             if ad.get("stop", 0):
-                print(f"{parseBroadcastMessage(ad['message'])}\n(滞留 {ad['stop']} 秒)\n")
-                if not hasattr(sys, "_MEIPASS"):
-                    print("源码模式运行, 不进行暂停")
+                # 官方公告属于「必要回显」：只上控制台，不写入日志文件
+                echo(f"{message}\n(滞留 {ad['stop']} 秒)\n")
+                if hasattr(sys, "_MEIPASS"):
+                    # 独立打包运行时按公告要求滞留；用可中断 sleep，
+                    # 免得后台运行时被一条公告拖住关停
+                    runtime.interruptible_sleep(ad["stop"])
                 else:
-                    time.sleep(ad["stop"])
+                    logger.info("源码模式运行, 不进行暂停")
             else:
-                print(f"{parseBroadcastMessage(ad['message'])}\n")
+                echo(f"{message}\n")
 
     except Exception as e:
         logger.warning("云服务无法连接，建议检查网络连接")
@@ -199,10 +202,10 @@ def checkVersion():
             logger.info("当前版本为最新版本")
 
         if response["broadcast"]:
-            print("=" * 50 + "\n")
-            print("Steamauto 官方公告：")
-            print(parseBroadcastMessage(response["broadcast"]["message"]))
-            print("\n" + "=" * 50)
+            echo("=" * 50 + "\n")
+            echo("Steamauto 官方公告：")
+            echo(parseBroadcastMessage(response["broadcast"]["message"]))
+            echo("\n" + "=" * 50)
 
         if response["latest"]:
             return True
@@ -243,18 +246,23 @@ def checkVersion():
 
 
 def adsThread():
-    while True:
-        time.sleep(600)
+    # 必须 respect 关停信号：否则优雅退出时解释器会被这个非 daemon 线程吊住
+    while not runtime.shutdown_event.is_set():
+        if not runtime.interruptible_sleep(600):
+            break
         getAds()
 
 
 def versionThread():
-    while True:
-        time.sleep(43200)
+    while not runtime.shutdown_event.is_set():
+        if not runtime.interruptible_sleep(43200):
+            break
         checkVersion()
 
 
-ad = threading.Thread(target=adsThread)
-update = threading.Thread(target=versionThread)
+# daemon=True：这两个后台轮询线程不应阻止进程退出（历史上用 os._exit 掩盖了这个问题，
+# 改成优雅退出后暴露出来）。同时它们也会响应 runtime.shutdown_event 主动收尾。
+ad = threading.Thread(target=adsThread, name="adsThread", daemon=True)
+update = threading.Thread(target=versionThread, name="versionThread", daemon=True)
 ad.start()
 update.start()

@@ -5,19 +5,50 @@ from utils.build_info import info
 
 is_latest_version = False
 no_pause = False
+manual_confirm_delivery = True
 
 CURRENT_VERSION = "5.9.1"
 
 VERSION_FILE = "version.json"
-LOGS_FOLDER = "logs"
-CONFIG_FOLDER = "config"
+# 项目根目录：源码运行时为 utils/ 的上一级；PyInstaller 打包（存在 sys._MEIPASS）时为 exe 所在目录。
+# 用绝对路径替代相对路径，避免「当前工作目录 ≠ 项目根」时 config/logs/session 定位错位
+# （例如从别的目录启动、systemd 未设 WorkingDirectory、GUI 子进程等场景）。
+if hasattr(sys, "_MEIPASS"):
+    PROJECT_ROOT = os.path.dirname(sys.executable)
+else:
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 数据目录（config/logs/session/run 都在其下）。默认等于 PROJECT_ROOT，
+# 但可用 STEAMAUTO_BASE_DIR 覆盖 —— 用于多实例并行、隔离测试等场景。
+# 注意：定位**代码**（如启动 Steamauto.py）必须用 PROJECT_ROOT，不可用 _BASE_DIR。
+_ENV_BASE_DIR = os.environ.get("STEAMAUTO_BASE_DIR")
+if _ENV_BASE_DIR:
+    _BASE_DIR = os.path.abspath(_ENV_BASE_DIR)
+else:
+    _BASE_DIR = PROJECT_ROOT
+
+LOGS_FOLDER = os.path.join(_BASE_DIR, "logs")
+CONFIG_FOLDER = os.path.join(_BASE_DIR, "config")
+# 后台运行时的运行时目录：PID 文件、控制通道 token 等
+RUN_FOLDER = os.path.join(_BASE_DIR, "run")
+PID_FILE = os.path.join(RUN_FOLDER, "steamauto.pid")
+# 控制通道 token 文件（仅本机回环可达，token 用于防止本机其它程序误操作）
+CONTROL_TOKEN_FILE = os.path.join(RUN_FOLDER, "control_token.txt")
+# 运行时状态文件：pid / 控制端口 / 启动时间 / 日志路径，供 CLI 读取
+STATE_FILE = os.path.join(RUN_FOLDER, "steamauto.state.json")
+# PLUGIN_FOLDER 保持相对目录名：在 Steamauto.py 中被拼接到绝对路径（os.path.join(base_path, PLUGIN_FOLDER)）
+# 并用作动态导入的模块名前缀（f"{PLUGIN_FOLDER}.xxx"），改成绝对路径会破坏这两处。
 PLUGIN_FOLDER = "plugins"
 CONFIG_FILE_PATH = os.path.join(CONFIG_FOLDER, "config.json5")
 BUFF_COOKIES_FILE_PATH = os.path.join(CONFIG_FOLDER, "buff_cookies_{steam_username}.txt")
 UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token_{steam_username}.txt")
 STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
-SESSION_FOLDER = "session"
+SESSION_FOLDER = os.path.join(_BASE_DIR, "session")
+# import 时确保目录存在，避免后续 open(..., "w") 因父目录缺失抛 FileNotFoundError
+os.makedirs(CONFIG_FOLDER, exist_ok=True)
+os.makedirs(LOGS_FOLDER, exist_ok=True)
 os.makedirs(SESSION_FOLDER, exist_ok=True)
+os.makedirs(RUN_FOLDER, exist_ok=True)
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
 BUILD_INFO = info
@@ -199,12 +230,30 @@ DEFAULT_CONFIG_JSON = r"""
     "interval": 30, // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
     "app_key": "" // C5Game的AppKey 在 https://www.c5game.com/user/user/open-api 申请
   },
-  // 存储在硬盘的日志等级，可选值为"debug"/"info"/"warning"/"error"
-  "log_level": "debug",
+  // 存储在硬盘的日志等级（只影响日志文件），可选值为"debug"/"info"/"warning"/"error"
+  "log_level": "info",
   // 本地日志保留天数
   "log_retention_days": 7,
   // 填写为true后，程序在出现错误后就会直接停止运行。如果你不知道你在做什么，请不要将它设置为true
   "no_pause": false,
+  // 发货人工确认：检测到待发货报价时仅发送通知、不自动接受，由人工在平台上确认发货
+  "manual_confirm_delivery": true,
+  // 控制台回显通道：与日志文件分离，控制台只显示必要回显与告警/错误
+  "console_echo": {
+    // 是否启用控制台回显（关闭后控制台几乎无输出，适合完全静默的后台运行）
+    "enable": true,
+    // 非回显记录至少达到该等级才上控制台，可选值为"debug"/"info"/"warning"/"error"/"critical"
+    "min_level": "warning",
+    // 关键业务事件（启动/登录/发货/退出等）是否同时写入日志文件，便于事后排查
+    "dual_write_events": true
+  },
+  // 控制通道：仅供本机 CLI（steamauto config/status/stop）与运行中的进程通信
+  "control": {
+    // 是否启用控制通道。关闭后无法使用 stop/status/config 等运行时命令
+    "enable": true,
+    // 监听端口（只绑定 127.0.0.1，局域网不可访问）
+    "port": 45917
+  },
   // 本地插件白名单 当以下本地插件与程序附带不一样时，将不会被覆盖
   "plugin_whitelist": [],
   // 源码运行时自动更新程序

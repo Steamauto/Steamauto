@@ -5,6 +5,7 @@ import json5
 import schedule
 
 import uuyoupinapi
+from utils import runtime
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.models import LeaseAsset
 from utils.notifier import send_notification
@@ -293,15 +294,15 @@ class UUAutoLeaseItem:
         schedule.every(interval).minutes.do(self.auto_change_price)
         schedule.every().day.at(f"{zero_cd_run_time}").do(self.auto_set_zero_cd)
 
-        while True:
+        while not runtime.shutdown_event.is_set():
             schedule.run_pending()
-            time.sleep(1)
+            runtime.interruptible_sleep(1)
 
     def operate_sleep(self, sleep=None):
         if sleep is None:
-            time.sleep(self.timeSleep)
+            runtime.interruptible_sleep(self.timeSleep)
         else:
-            time.sleep(sleep)
+            runtime.interruptible_sleep(sleep)
 
     def pre_check_price(self):
         self.get_lease_price(44444, 1000)

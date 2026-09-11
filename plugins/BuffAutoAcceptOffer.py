@@ -1,8 +1,10 @@
 import time
 
 from BuffApi import BuffAccount
+from utils import runtime
+from utils import static
 from utils.buff_helper import get_valid_session_for_buff
-from utils.logger import PluginLogger, handle_caught_exception
+from utils.logger import PluginLogger, echo, handle_caught_exception
 from utils.steam_client import accept_trade_offer
 from utils.tools import exit_code
 
@@ -82,7 +84,7 @@ class BuffAutoAcceptOffer:
             user_info = self.buff_account.get_user_info()
             steamid_buff = user_info["steamid"]
             self.logger.info("为了避免访问接口过于频繁，休眠5秒...")
-            time.sleep(5)
+            runtime.interruptible_sleep(5)
             steam_info = self.buff_account.get_steam_info()
         except Exception as e:
             self.logger.error("获取BUFF用户信息失败！")
@@ -91,7 +93,10 @@ class BuffAutoAcceptOffer:
             return True
 
         to_exit = True
-        if steam_info["max_bind_count"] == 1:
+        if static.manual_confirm_delivery:
+            # 人工确认发货模式：不自动接受报价，无需校验 Steam 账号与 BUFF 的绑定关系
+            to_exit = False
+        elif steam_info["max_bind_count"] == 1:
             if str(self.steam_client.get_steam64id_from_cookies()) == steamid_buff:
                 to_exit = False
         else:
@@ -161,7 +166,6 @@ class BuffAutoAcceptOffer:
 
         ignored_offer = {}  # 使用字典记录忽略次数
         REPROCESS_THRESHOLD = 10  # 定义重新处理的阈值
-        interval = self.config["buff_auto_accept_offer"]["interval"]
         dota2_support = self.config["buff_auto_accept_offer"].get("dota2_support", False)
 
         if "sell_protection" in self.config["buff_auto_accept_offer"]:
@@ -170,7 +174,7 @@ class BuffAutoAcceptOffer:
         if dota2_support:
             self.SUPPORT_GAME_TYPES.append({"game": "dota2", "app_id": 570})
 
-        while True:
+        while not runtime.shutdown_event.is_set():
             try:
                 self.logger.info("正在进行BUFF待发货/待收货饰品检查...")
                 username = self.check_buff_account_state()
@@ -201,7 +205,7 @@ class BuffAutoAcceptOffer:
                             total_count = csgo_count + dota2_count
 
                             if csgo_count != 0 or dota2_count != 0:
-                                self.logger.info(f"检测到{total_count}个待发货请求!")
+                                echo(f"BUFF 检测到 {total_count} 个待发货请求，请前往平台处理", dual=True)
                                 self.logger.info(f"CSGO待发货: {csgo_count}个")
                                 if dota2_support:
                                     self.logger.info(f"DOTA2待发货: {dota2_count}个")
@@ -213,12 +217,12 @@ class BuffAutoAcceptOffer:
                     # 获取待处理交易
                     trades = self.buff_account.get_steam_trade()
                     self.logger.info("为了避免访问接口过于频繁，休眠5秒...")
-                    time.sleep(5)
+                    runtime.interruptible_sleep(5)
 
                     # 处理响应检查是否有错误
                     if trades is None:
                         self.logger.error("获取Steam交易失败，稍后重试")
-                        time.sleep(5)
+                        runtime.interruptible_sleep(5)
                         continue
 
                     for index, game in enumerate(self.SUPPORT_GAME_TYPES):
@@ -247,7 +251,7 @@ class BuffAutoAcceptOffer:
 
                         if index != len(self.SUPPORT_GAME_TYPES) - 1:
                             self.logger.info("为了避免访问接口过于频繁，休眠5秒...")
-                            time.sleep(5)
+                            runtime.interruptible_sleep(5)
 
                     unprocessed_count = len(trades)
 
@@ -286,7 +290,7 @@ class BuffAutoAcceptOffer:
 
                                         if trades.index(trade) != len(trades) - 1:
                                             self.logger.info("为了避免频繁访问Steam接口, 等待5秒后继续...")
-                                            time.sleep(5)
+                                            runtime.interruptible_sleep(5)
                                     except Exception as e:
                                         self.logger.error(f"处理交易报价时出错: {str(e)}", exc_info=True)
                                         self.logger.info("出现错误, 稍后再试!")
@@ -300,5 +304,6 @@ class BuffAutoAcceptOffer:
                 handle_caught_exception(e, "BuffAutoAcceptOffer")
                 self.logger.info("出现未知错误, 稍后再试!")
 
+            interval = self.config["buff_auto_accept_offer"]["interval"]
             self.logger.info(f"将在{interval}秒后再次检查待发货订单信息!")
-            time.sleep(interval)
+            runtime.interruptible_sleep(interval)

@@ -4,7 +4,7 @@ import re
 
 import chardet
 
-from utils.logger import logger
+from utils.logger import echo, logger
 import utils.static as static
 
 current_exit_code = 0
@@ -32,9 +32,16 @@ def get_encoding(file_path):
 
 
 def pause():
+    """等待用户按键。no_pause 为真、或没有交互终端时直接返回。
+
+    后台运行（无 stdin）时 input() 会抛 EOFError，这里吞掉，避免进程卡死或崩溃。
+    """
     if not static.no_pause:
-        logger.info("点击回车键继续...")
-        input()
+        echo("点击回车键继续...")
+        try:
+            input()
+        except (EOFError, KeyboardInterrupt):
+            logger.info("无交互终端，跳过等待按键")
 
 
 def calculate_sha256(file_path: str) -> str:

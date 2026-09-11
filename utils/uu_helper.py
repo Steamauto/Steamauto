@@ -4,7 +4,7 @@ import time
 from colorama import Fore, Style
 
 import uuyoupinapi
-from utils.logger import PluginLogger, handle_caught_exception
+from utils.logger import PluginLogger, echo, handle_caught_exception
 from utils.static import UU_TOKEN_FILE_PATH
 from utils.tools import get_encoding
 
@@ -20,20 +20,23 @@ def get_valid_token_for_uu(steam_client, proxies=None):
             try:
                 token = f.read().strip()
                 uuyoupin = uuyoupinapi.UUAccount(token, proxy=proxies)
-                logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
+                echo("悠悠有品登录成功，用户名: " + uuyoupin.get_user_nickname(), dual=True)
                 return token
             except Exception:
                 logger.warning("缓存的悠悠有品Token无效")
     else:
         logger.info("未检测到存储的悠悠token")
-    logger.info("即将重新登录悠悠有品！")
+    echo("即将重新登录悠悠有品！")
+    if os.environ.get("STEAMAUTO_NO_PAUSE") == "1":
+        logger.warning("GUI 子进程无终端，跳过悠悠有品手机号登录，请在 GUI 平台登录页完成登录")
+        return False
     token = str(get_token_automatically(proxies))
     try:
         uuyoupin = uuyoupinapi.UUAccount(token, proxy=proxies)
-        logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
+        echo("悠悠有品登录成功，用户名: " + uuyoupin.get_user_nickname(), dual=True)
         with open(UU_TOKEN_FILE_PATH.format(steam_username=steam_client.username), "w", encoding="utf-8") as f:
             f.write(token)
-        logger.info("悠悠有品Token已自动缓存到本地")
+        echo("悠悠有品 Token 已自动缓存到本地", dual=True)
         return token
     except TypeError:
         logger.error("获取Token失败！可能是验证码填写错误或者未发送验证短信！")
@@ -71,7 +74,7 @@ def get_token_automatically(proxies=None):
             logger.info(
                 f"{Style.BRIGHT + Fore.RED}请编辑发送短信 {Fore.YELLOW + result['Data']['SmsUpContent']} {Fore.RED}到号码 {Fore.YELLOW + result['Data']['SmsUpNumber']} {Fore.RED}！(如果此时有其它插件输出请忽略)发送完成后请按下回车{Style.RESET_ALL}",
             )
-            input()
+            input("请编辑发送短信 " + result['Data']['SmsUpContent'] + " 到号码 " + result['Data']['SmsUpNumber'] + "！发送完成后请按回车")
             logger.info("请稍候...")
             time.sleep(3)  # 防止短信发送延迟
             response = uuyoupinapi.UUAccount.sms_sign_in(phone_number, "", token_id, headers=headers, proxies=proxies)

@@ -79,7 +79,7 @@ def login_to_buff_by_qrcode(steam_client, proxies=None) -> str:
     img.save("qrcode.png")  # type: ignore
     url = "https://api.cl2wm.cn/api/qrcode/code?text=" + qr_code_url
     send_notification(steam_client, f"BUFF登录已失效！请使用手机打开以下链接获取二维码，并使用BUFF扫描该二维码以登录: {url}", "BUFF登录二维码")
-    logger.info("请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描")
+    echo("请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描")
     status = 0
     scanned = False
     while status != 3:
@@ -91,7 +91,7 @@ def login_to_buff_by_qrcode(steam_client, proxies=None) -> str:
             return ""
         if status == 2 and not scanned:
             scanned = True
-            logger.info("扫描成功，请在手机上确认登录(建议勾选10天内免登录)")
+            echo("扫描成功，请在手机上确认登录(建议勾选10天内免登录)")
     response = session.post(
         "https://buff.163.com/account/api/qr_code_login",
         json={"item_id": code_id},
@@ -146,7 +146,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger, proxies=None) 
         try:
             got_cookies = login_to_buff_by_steam(steam_client, proxies)
             if is_session_has_enough_permission(got_cookies, proxies):
-                logger.info("[BuffLoginSolver] 使用Steam登录至BUFF成功")
+                echo("BUFF 登录成功（通过 Steam 登录）", dual=True)
                 session = got_cookies
             else:
                 logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
@@ -156,16 +156,20 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger, proxies=None) 
             logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
 
     if not session:  # 尝试通过二维码
-        logger.info("[BuffLoginSolver] 正在尝试通过二维码登录至BUFF...")
-        try:
-            session = login_to_buff_by_qrcode(steam_client, proxies)
-            if (not session) or (not is_session_has_enough_permission(session, proxies)):
-                logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
-            else:
-                logger.info("[BuffLoginSolver] 使用二维码登录至BUFF成功")
-        except JSONDecodeError:
-            logger.error("[BuffLoginSolver] 你的服务器IP被BUFF封禁。请尝试更换服务器！")
+        if os.environ.get("STEAMAUTO_NO_PAUSE") == "1":
+            logger.warning("[BuffLoginSolver] GUI 子进程无终端，跳过二维码登录，请在 GUI 平台登录页完成 BUFF 登录")
             session = ""
+        else:
+            logger.info("[BuffLoginSolver] 正在尝试通过二维码登录至BUFF...")
+            try:
+                session = login_to_buff_by_qrcode(steam_client, proxies)
+                if (not session) or (not is_session_has_enough_permission(session, proxies)):
+                    logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
+                else:
+                    echo("BUFF 登录成功（二维码扫码）", dual=True)
+            except JSONDecodeError:
+                logger.error("[BuffLoginSolver] 你的服务器IP被BUFF封禁。请尝试更换服务器！")
+                session = ""
     if not session:  # 无法登录至BUFF
         logger.error("[BuffLoginSolver] 无法登录至BUFF, 请手动更新BUFF cookies! ")
         send_notification(steam_client, "无法登录至BUFF，请手动更新BUFF cookies!", "BUFF登录失败")

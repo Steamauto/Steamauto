@@ -1,6 +1,7 @@
 import time
 
 from PyC5Game import C5Account
+from utils import runtime
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.steam_client import accept_trade_offer, external_handler
 
@@ -21,7 +22,8 @@ class C5AutoAcceptOffer:
     def exec(self):
         ignored_list = []
         try:
-            self.interval = self.config.get("c5_auto_accept_offer").get("interval")
+            # 仅校验配置项可读取，实际 interval 在每轮循环内重新读取以支持运行时热改
+            self.config.get("c5_auto_accept_offer").get("interval")
         except Exception as e:
             logger.error("读取配置文件出错！请检查配置文件内的interval是否正确")
             return True
@@ -34,12 +36,12 @@ class C5AutoAcceptOffer:
             logger.error("C5账号登录失败！请检查配置文件内的app_key是否正确")
             return True
 
-        while True:
+        while not runtime.shutdown_event.is_set():
             try:
                 logger.info("正在检索是否有待发货订单...")
                 notDeliveredOrders = []
                 page = 0
-                while True:
+                while not runtime.shutdown_event.is_set():
                     page += 1
                     resp = self.client.orderList(status=1, page=page, steamId=self.steam_id)
                     if resp.get("errorCode", "") == 400001:
@@ -59,10 +61,10 @@ class C5AutoAcceptOffer:
                         logger.info(f"正在发送 {len(toSendOrderIds)} 个报价...")
                         self.client.deliver(toSendOrderIds)
                         logger.info("已请求C5服务器发送报价，30秒后获取报价ID")
-                        time.sleep(30)
+                        runtime.interruptible_sleep(30)
                 deliveringOrders = []
                 page = 0
-                while True:
+                while not runtime.shutdown_event.is_set():
                     page += 1
                     resp = self.client.orderList(status=2, page=page, steamId=self.steam_id)
                     deliveringOrders = resp.get("data").get("list", [])
@@ -86,10 +88,11 @@ class C5AutoAcceptOffer:
                         ignored_list.append(offerId)
                         if deliveringOrders.index(deliveringOrder) != len(deliveringOrders) - 1:
                             logger.info("为避免频繁访问Steam接口，等待3秒后处理下一个订单")
-                            time.sleep(3)
+                            runtime.interruptible_sleep(3)
                     else:
                         logger.error(f"订单 {deliveringOrder['name']} 发货失败，请检查网络或者Steam账号！")
             except Exception as e:
                 handle_caught_exception(e, prefix="C5AutoAcceptOffer")
+            self.interval = self.config.get("c5_auto_accept_offer").get("interval")
             logger.info(f"等待{self.interval}秒后重新检索是否有待发货订单")
-            time.sleep(self.interval)
+            runtime.interruptible_sleep(self.interval)

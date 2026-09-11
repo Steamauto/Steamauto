@@ -16,7 +16,7 @@ from steampy.client import STEAM_USER_AGENT, SteamClient
 from steampy.exceptions import ApiException
 from steampy.models import GameOptions
 from utils import static
-from utils.logger import PluginLogger, handle_caught_exception
+from utils.logger import PluginLogger, echo, handle_caught_exception
 from utils.notifier import send_notification
 from utils.static import SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH, CONFIG_FILE_PATH
 from utils.tools import accelerator, get_encoding, pause
@@ -321,11 +321,9 @@ def login_to_steam(config: dict):
     if not isinstance(steam_account_info, dict):
         logger.error("配置文件格式错误，请检查配置文件")
         return None
-    for key, value in steam_account_info.items():
-        if not value:
-            logger.error(f"Steam账号配置文件中 {key} 为空，请检查配置文件")
-            return None
-
+    # 登录仅要求账号密码；shared_secret/identity_secret 为可选项：
+    # - shared_secret 仅「开启手机令牌的账号」登录时生成 2FA 码才需要
+    # - identity_secret 仅「发货/市场交易」生成确认码才需要，登录用不到
     username = steam_account_info.get("steam_username", "")
     password = steam_account_info.get("steam_password", "")
     if not username or not password:
@@ -355,7 +353,7 @@ def login_to_steam(config: dict):
                 client = SteamClient(api_key="")
             _setup_client_session(client, config)
             if client.set_and_verify_access_token(steamid_cache, access_token, steam_account_info):
-                logger.info("使用缓存 access_token 登录成功")
+                echo("Steam 登录成功（使用缓存的 access_token）", dual=True)
                 _bind_client_credentials(client, username, password)
                 # 启动刷新线程
                 _start_token_refresh_thread(client, config)
@@ -387,7 +385,7 @@ def login_to_steam(config: dict):
                 _setup_client_session(client, config)
                 auth_info = client.loginByRefreshToken(refresh_token, steamid_cache, steam_account_info)
                 if auth_info and client.is_session_alive():
-                    logger.info("使用 refresh_token 登录成功")
+                    echo("Steam 登录成功（使用 refresh_token 刷新）", dual=True)
                     _save_token_cache(username, auth_info)
                     _bind_client_credentials(client, username, password)
                     _start_token_refresh_thread(client, config)
@@ -411,7 +409,7 @@ def login_to_steam(config: dict):
         logger.info("正在登录...")
         auth_info = client.login(username, password, steam_account_info)
         if client.is_session_alive():
-            logger.info("账密登录成功")
+            echo("Steam 登录成功（账号密码）", dual=True)
             _bind_client_credentials(client, username, password)
             if auth_info and isinstance(auth_info, dict):
                 _save_token_cache(username, auth_info)
@@ -546,6 +544,16 @@ def accept_trade_offer(client: SteamClient, mutex, tradeOfferId, retry=False, de
     max_network_retries = 3
     network_retry_delay = 5
 
+    # 发货人工确认模式：不自动接受报价，仅发送通知由人工在平台上处理
+    if static.manual_confirm_delivery:
+        send_notification(
+            client,
+            "检测到待发货报价：%s\n%s\n\n请在交易平台上手动确认发货" % (tradeOfferId, desc),
+            title="待人工确认发货",
+        )
+        echo("人工确认模式：报价号 %s 待人工发货，已发送通知" % tradeOfferId, dual=True)
+        return True
+
     if reportToExternal:
         if not external_handler(tradeOfferId, desc):
             return True
@@ -651,3 +659,29 @@ def get_cs2_inventory(client: SteamClient, mutex):
         handle_caught_exception(e, "SteamClient", known=True)
         send_notification(client, "获取库存失败，请检查服务器网络", title="获取库存失败")
     return inventory
+
+
+class OfflineSteamClient:
+    """未登录 Steam 时的离线占位客户端。
+
+    仅提供 username 等标识信息，用于无需 Steam session 的功能（如悠悠有品上架/改价）。
+    任何需要真实 Steam session 的方法调用都会抛出 LoginRequired，由调用方捕获降级。
+    """
+
+    def __init__(self, username: str):
+        self.username = username
+        self._session = requests.Session()
+        self.was_login_executed = False
+        self.steamid = None
+
+    def get_steam64id_from_cookies(self):
+        return None
+
+    def is_session_alive(self) -> bool:
+        return False
+
+    def __getattr__(self, name):
+        def _raise(*args, **kwargs):
+            raise steampy.exceptions.LoginRequired("未登录 Steam，不支持操作: " + name)
+
+        return _raise

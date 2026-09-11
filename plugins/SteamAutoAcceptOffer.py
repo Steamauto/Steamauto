@@ -3,7 +3,8 @@ import os
 import pickle
 import time
 
-from utils.logger import PluginLogger, handle_caught_exception
+from utils import runtime
+from utils.logger import PluginLogger, echo, handle_caught_exception
 from utils.static import SESSION_FOLDER
 
 
@@ -19,7 +20,7 @@ class SteamAutoAcceptOffer:
         return False
 
     def exec(self):
-        while True:
+        while not runtime.shutdown_event.is_set():
             try:
                 with self.steam_client_mutex:
                     if not self.steam_client.is_session_alive():
@@ -44,7 +45,7 @@ class SteamAutoAcceptOffer:
                         filtered_count = original_count - len(filtered_offers)
                         if filtered_count > 0:
                             self.logger.debug(f"已过滤掉 {filtered_count} 个被忽略的交易报价")
-                self.logger.info(f"检测到有{len(trade_summary['trade_offers_received'])}个待处理的交易报价")
+                echo(f"Steam 检测到 {len(trade_summary['trade_offers_received'])} 个待处理的交易报价", dual=True)
                 self.logger.debug(f"待处理的交易报价简介: {json.dumps(trade_summary, ensure_ascii=False)}")
 
                 if len(trade_summary["trade_offers_received"]) > 0:
@@ -77,4 +78,4 @@ class SteamAutoAcceptOffer:
             except Exception as e:
                 handle_caught_exception(e, "SteamAutoAcceptOffer")
                 self.logger.error("发生未知错误！稍后再试...")
-            time.sleep(self.config["steam_auto_accept_offer"]["interval"])
+            runtime.interruptible_sleep(self.config["steam_auto_accept_offer"]["interval"])

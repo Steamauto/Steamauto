@@ -1,6 +1,7 @@
 import time
 
 import uuyoupinapi
+from utils import runtime
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.notifier import send_notification
 from utils.steam_client import accept_trade_offer
@@ -30,9 +31,8 @@ class UUAutoAcceptOffer:
 
     def exec(self):
         ignored_offer = {}
-        interval = self.config["uu_auto_accept_offer"]["interval"]
         if self.uuyoupin is not None:
-            while True:
+            while not runtime.shutdown_event.is_set():
                 try:
                     self.uuyoupin.send_device_info()
                     self.logger.info("正在检查悠悠有品待发货信息...")
@@ -55,7 +55,7 @@ class UUAutoAcceptOffer:
                                     accepted = True
                             if (uu_wait_deliver_list.index(item) != len_uu_wait_deliver_list - 1) and accepted:
                                 self.logger.info("为了避免频繁访问Steam接口, 等待5秒后继续...")
-                                time.sleep(5)
+                                runtime.interruptible_sleep(5)
                 except Exception as e:
                     if "登录状态失效，请重新登录" in str(e):
                         handle_caught_exception(e, "UUAutoAcceptOffer", known=True)
@@ -67,5 +67,6 @@ class UUAutoAcceptOffer:
                     else:
                         handle_caught_exception(e, "UUAutoAcceptOffer", known=False)
                         self.logger.error("出现未知错误, 稍后再试! ")
+                interval = self.config["uu_auto_accept_offer"]["interval"]
                 self.logger.info("将在{0}秒后再次检查待发货订单信息!".format(str(interval)))
-                time.sleep(interval)
+                runtime.interruptible_sleep(interval)
