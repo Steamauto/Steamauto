@@ -63,6 +63,19 @@ class _FakeBuff:
     def get_sell_min(self, goods_id, game="csgo"):
         return "182"
 
+    # ---- 写操作（mock）----
+    def change_price(self, sell_orders):
+        return {"success": len(sell_orders)}
+
+    def on_sale(self, assets):
+        return [a.assetid for a in assets], {}
+
+    def cancel_sale(self, sell_orders, exclude_sell_orders=[]):
+        return len(sell_orders), {}
+
+    def buy_goods(self, **kwargs):
+        return {"success": True}
+
 
 class _FakeC5:
     def balance(self):
@@ -84,7 +97,8 @@ class TestHelpAndDispatch(unittest.TestCase):
         rc, out, _ = _run("buff", ["--help"])
         self.assertEqual(rc, 0)
         for op in ("balance", "nickname", "search", "search-market", "inventory",
-                   "on-sale", "sell-history", "buy-order", "highest-buy", "lowest-sell", "waiting-offer"):
+                   "on-sale", "sell-history", "buy-order", "highest-buy", "lowest-sell",
+                   "waiting-offer", "list", "sell-bidder", "off-shelf", "change-price", "buy"):
             self.assertIn(op, out, "--buff --help 缺 %s" % op)
 
     def test_no_args_shows_help(self):
@@ -301,6 +315,43 @@ class TestResponseReturningSdk(unittest.TestCase):
             api_cli.accounts.load_config = orig_load
         self.assertEqual(rc, 0)
         self.assertIn('"total_count"', out)
+
+
+class TestWriteOps(unittest.TestCase):
+    """写操作命令的二次确认机制（--yes / --dry-run / 非交互式拦截）。"""
+
+    def setUp(self):
+        self._restore = _inject("buff", _FakeBuff())
+        self._orig_load = api_cli.accounts.load_config
+        api_cli.accounts.load_config = lambda: {}
+
+    def tearDown(self):
+        self._restore()
+        api_cli.accounts.load_config = self._orig_load
+
+    def test_dry_run_does_not_execute(self):
+        """--dry-run 只预览，不调用 SDK。"""
+        rc, out, _ = _run("buff", ["off-shelf", "12345", "--dry-run"])
+        self.assertEqual(rc, 0)
+        self.assertIn("dry-run", out)
+        self.assertIn("off-shelf", out)
+
+    def test_non_interactive_requires_yes(self):
+        """非交互式终端（如 Hermes terminal）无 --yes 应拦截，返回 2。"""
+        rc, out, err = _run("buff", ["off-shelf", "12345"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--yes", err)
+
+    def test_yes_bypasses_confirmation(self):
+        """--yes 跳过确认，直接执行（mock client 返回结果）。"""
+        rc, out, _ = _run("buff", ["change-price", "S1", "5.5", "--yes"])
+        self.assertEqual(rc, 0)
+
+    def test_read_op_needs_no_confirmation(self):
+        """只读命令不需要确认，直接执行。"""
+        rc, out, _ = _run("buff", ["balance"])
+        self.assertEqual(rc, 0)
+        self.assertIn("available", out)
 
 
 if __name__ == "__main__":

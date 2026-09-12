@@ -192,6 +192,68 @@ def _buff_ops():
     def waiting_offer(client, args):
         return client.get_buy_orders_waiting_to_send_offer()
 
+    # ---- 写操作（上架/塞求购/下架/改价/购买；默认需二次确认）----
+
+    def _find_item(client, assetid):
+        for it in client.get_inventory_all():
+            if str(it.get("assetid")) == str(assetid):
+                return it
+        return None
+
+    def _make_asset(client, assetid, price):
+        it = _find_item(client, assetid)
+        if it is None:
+            raise ValueError("库存中未找到 assetid=%s，请先确认该饰品在库存中" % assetid)
+        from api.BuffApi import models
+
+        return models.BuffOnSaleAsset(
+            assetid=str(assetid),
+            classid=int(it["classid"]),
+            instanceid=int(it["instanceid"]),
+            market_hash_name=it.get("market_hash_name") or "",
+            price=price,
+        )
+
+    def list_item(client, args):
+        if len(args) < 2:
+            raise ValueError("list 需要 assetid 和 price，如：--buff list <assetid> <price>")
+        assetid, price = args[0], float(args[1])
+        return client.on_sale([_make_asset(client, assetid, price)])
+
+    def sell_bidder(client, args):
+        if len(args) < 2:
+            raise ValueError("sell-bidder 需要 assetid 和 goods_id，如：--buff sell-bidder <assetid> <goods_id>")
+        assetid, goods_id = args[0], args[1]
+        buy_max = client.get_buy_order_max(goods_id)
+        if buy_max is None:
+            raise ValueError("该饰品（goods_id=%s）暂无求购单，无法塞求购" % goods_id)
+        price = round(float(buy_max) - 0.01, 2)
+        return client.on_sale([_make_asset(client, assetid, price)])
+
+    def off_shelf(client, args):
+        if not args:
+            raise ValueError("off-shelf 需要至少一个 sell_order_id，如：--buff off-shelf <sell_order_id>...")
+        return client.cancel_sale(list(args))
+
+    def change_price(client, args):
+        if len(args) < 2:
+            raise ValueError("change-price 需要 sell_order_id 和 price，如：--buff change-price <sell_order_id> <price>")
+        sell_order_id, price = args[0], args[1]
+        return client.change_price([{"sell_order_id": sell_order_id, "price": float(price)}])
+
+    def buy(client, args):
+        if len(args) < 3:
+            raise ValueError("buy 需要 goods_id、sell_order_id、price，如：--buff buy <goods_id> <sell_order_id> <price> [pay_method]")
+        goods_id, sell_order_id, price = args[0], args[1], args[2]
+        pay_method = args[3] if len(args) > 3 else "buff-bankcard"
+        return client.buy_goods(
+            sell_order_id=sell_order_id,
+            goods_id=goods_id,
+            price=price,
+            pay_method=pay_method,
+            ask_seller_send_offer=False,
+        )
+
     def search_market(client, args):
         if not args:
             raise ValueError("search-market 需要关键词，如：--buff search-market \"AK-47\"")
@@ -218,7 +280,7 @@ def _buff_ops():
         return client.get_sell_min(args[0])
 
     return {
-        "balance": (balance, "余额与资产概览"),
+        "balance": (balance, "余额（可用/仅交易/冻结/总）"),
         "nickname": (nickname, "当前 BUFF 昵称"),
         "search": (search, "搜索建议：--buff search <关键词> [game]（仅 10 条）"),
         "search-market": (search_market, "搜索市场（完整结果）：--buff search-market <关键词> [页码]"),
@@ -229,6 +291,11 @@ def _buff_ops():
         "highest-buy": (highest_buy, "求购最高价（市场最高求购单）：--buff highest-buy <goods_id>"),
         "lowest-sell": (lowest_sell, "在售最低价（市场最低卖单）：--buff lowest-sell <goods_id>"),
         "waiting-offer": (waiting_offer, "求购待发报价"),
+        "list": (list_item, "上架：--buff list <assetid> <price>【写】"),
+        "sell-bidder": (sell_bidder, "塞求购：--buff sell-bidder <assetid> <goods_id>【写】"),
+        "off-shelf": (off_shelf, "下架：--buff off-shelf <sell_order_id>...【写】"),
+        "change-price": (change_price, "改价：--buff change-price <sell_order_id> <price>【写】"),
+        "buy": (buy, "购买：--buff buy <goods_id> <sell_order_id> <price> [pay_method]【写】"),
     }
 
 
@@ -270,6 +337,50 @@ def _uu_ops():
             raise ValueError("lowest-sell 需要 template_id（可从 --uu search 结果里拿），如：--uu lowest-sell 45796")
         return client.get_sell_min(int(args[0]))
 
+    # ---- 写操作（上架/塞求购/下架/改价；默认需二次确认）----
+
+    def sell(client, args):
+        if len(args) < 2:
+            raise ValueError("sell 需要 assetid 和 price，如：--uu sell <assetid> <price>")
+        assetid, price = args[0], float(args[1])
+        return client.sell_items({str(assetid): price})
+
+    def off_shelf(client, args):
+        if not args:
+            raise ValueError("off-shelf 需要至少一个 commodity_id，如：--uu off-shelf <commodity_id>...")
+        return client.off_shelf([str(x) for x in args])
+
+    def change_price(client, args):
+        if len(args) < 2:
+            raise ValueError("change-price 需要 commodity_id 和 price，如：--uu change-price <commodity_id> <price>")
+        commodity_id, price = args[0], float(args[1])
+        return client.change_price({str(commodity_id): price})
+
+    def buy(client, args):
+        if len(args) < 2:
+            raise ValueError("buy 需要 template_id 和 price，如：--uu buy <template_id> <price> [num]")
+        template_id = int(args[0])
+        price = float(args[1])
+        num = int(args[2]) if len(args) > 2 else 1
+        # 从库存查 template_id 对应的 hash_name + name（发求购单必需）
+        hash_name = ""
+        name = ""
+        for it in client.get_inventory():
+            ti = it.get("TemplateInfo") or {}
+            if str(ti.get("Id")) == str(template_id):
+                hash_name = it.get("MarketHashName") or ti.get("CommodityHashName") or ""
+                name = ti.get("CommodityName") or ""
+                break
+        if not hash_name or not name:
+            raise ValueError("库存中未找到 template_id=%s 的饰品，无法确定 hash_name/name，请先确认库存里有该饰品" % template_id)
+        return client.publish_purchase_order(
+            templateId=template_id,
+            templateHashName=hash_name,
+            commodityName=name,
+            purchasePrice=price,
+            purchaseNum=num,
+        )
+
     return {
         "balance": (balance, "余额（可用/仅交易/冻结/总）"),
         "nickname": (nickname, "当前 UU 昵称"),
@@ -281,6 +392,10 @@ def _uu_ops():
         "search": (search, "搜索市场：--uu search <关键词>"),
         "highest-buy": (highest_buy, "求购最高价（市场最高求购单）：--uu highest-buy <template_id>"),
         "lowest-sell": (lowest_sell, "在售最低价（市场最低卖单）：--uu lowest-sell <template_id>"),
+        "sell": (sell, "上架：--uu sell <assetid> <price>【写】"),
+        "off-shelf": (off_shelf, "下架：--uu off-shelf <commodity_id>...【写】"),
+        "buy": (buy, "发求购单（塞求购）：--uu buy <template_id> <price> [num]【写】"),
+        "change-price": (change_price, "改价：--uu change-price <commodity_id> <price>【写】"),
     }
 
 
@@ -327,6 +442,12 @@ _COMMANDS = {
     "eco": _eco_ops,
 }
 
+#: 写操作命令（默认需二次确认；加 --yes 跳过，--dry-run 只预览不执行）
+_WRITE_OPS = {
+    "buff": {"list", "sell-bidder", "off-shelf", "change-price", "buy"},
+    "uu": {"sell", "off-shelf", "buy", "change-price"},
+}
+
 
 # ------------------------------------------------------------------ 帮助与入口
 
@@ -351,12 +472,18 @@ def main(platform, argv):
         return 2
 
     as_table = False
+    as_yes = False
+    dry_run = False
     positional = []
     for a in argv:
         if a in ("--table", "-t"):
             as_table = True
         elif a in ("--json", "-j"):
             as_table = False
+        elif a in ("--yes", "-y"):
+            as_yes = True
+        elif a == "--dry-run":
+            dry_run = True
         elif a in ("--help", "-h"):
             return _help(platform)
         else:
@@ -374,6 +501,27 @@ def main(platform, argv):
         return 2
 
     fn, _desc = ops[op]
+
+    # 写操作：二次确认（指令式安全；未来全自动交易用 --yes 跳过）
+    if op in _WRITE_OPS.get(platform, set()):
+        summary = "--%s %s %s" % (platform, op, " ".join(args))
+        if dry_run:
+            _out("（dry-run）将执行：%s" % summary)
+            _out("已跳过真实请求。加 --yes 才会真实执行。")
+            return 0
+        if not as_yes:
+            if accounts.stdin_is_interactive():
+                _out("即将执行写操作：%s" % summary)
+                _out("这是实盘操作，会真实改变挂单/资金状态！")
+                resp = input("确认执行？输入 yes 继续，其他任意键取消：")
+                if resp.strip().lower() != "yes":
+                    _out("已取消")
+                    return 0
+            else:
+                _err("写操作需要确认：%s" % summary)
+                _err("非交互式终端请加 --yes 明确确认（或 --dry-run 预览）。")
+                return 2
+
     try:
         cfg = accounts.load_config()
         client = _CLIENT_FACTORIES[platform](cfg)
