@@ -300,6 +300,44 @@ class BuffAccount:
         items = (data.get("data") or {}).get("items", [])
         return items[0].get("price") if items else None
 
+    def get_steamid(self, game="csgo"):
+        """获取当前 Steam ID（从在售列表 user_steamid）。"""
+        try:
+            resp = self.get_on_sale(page_num=1, page_size=1)
+            if hasattr(resp, "json"):
+                resp = resp.json()
+            items = (resp.get("data") or {}).get("items", [])
+            if items:
+                return str(items[0].get("user_steamid"))
+        except Exception:
+            pass
+        return None
+
+    def supply_to_buyer(self, buy_order_id, assetids, price, game="csgo", steamid=None):
+        """卖给求购者（塞求购）：直接把饰品供应给求购单，即时成交。
+
+        端点 /api/market/goods/supply（与「上架」sell_order/create 是两条路）。
+        返回 BUFF 的完整响应 dict（code=OK 表示成功）。
+        """
+        assets = [{"assetid": str(a), "cdkey_id": ""} for a in assetids]
+        data = {
+            "game": game,
+            "assets": assets,
+            "price": price,
+            "buy_order_id": buy_order_id,
+            "buyer_auto_accept": False,
+            "steamid": steamid,
+        }
+        response = self.post(
+            f"{self.BASE_URL}/api/market/goods/supply",
+            json=data,
+            headers=self.CSRF_Fucker(),
+        )
+        try:
+            return response.json()
+        except (ValueError, TypeError):
+            return {"code": "ERROR", "error": "BUFF 返回无效响应"}
+
     def get_sell_min(self, goods_id, game="csgo"):
         """指定饰品的在售最低价（sell_order 第一个 item 的 price）。"""
         data = self.get_sell_order(goods_id, game_name=game)

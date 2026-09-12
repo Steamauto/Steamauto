@@ -103,7 +103,7 @@ python Steamauto.py
 | 平台 | 命令 | 说明 |
 | --- | --- | --- |
 | BUFF | `--buff list <assetid> <price>` | 上架（自动从库存补 classid/instanceid/名称） |
-| BUFF | `--buff sell-bidder <assetid> <goods_id>` | 塞求购（以最高求购价 -0.01 上架卖给求购者） |
+| BUFF | `--buff sell-bidder <assetid> <goods_id>` | 塞求购（直接供应给最高求购单，即时成交资金立刻到账） |
 | BUFF | `--buff off-shelf <sell_order_id>...` | 下架 |
 | BUFF | `--buff change-price <sell_order_id> <price>` | 改价 |
 | BUFF | `--buff buy <goods_id> <sell_order_id> <price>` | 购买 |

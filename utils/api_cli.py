@@ -287,14 +287,24 @@ def _buff_ops():
         return _sale_result(client.on_sale([_make_asset(client, assetid, price)]))
 
     def sell_bidder(client, args):
+        """塞求购 = 卖给求购者：直接把饰品供应给最高求购单（goods/supply），即时成交。"""
         if len(args) < 2:
             raise ValueError("sell-bidder 需要 assetid 和 goods_id，如：--buff sell-bidder <assetid> <goods_id>")
         assetid, goods_id = args[0], args[1]
-        buy_max = client.get_buy_order_max(goods_id)
-        if buy_max is None:
+        data = client.get_buy_order(goods_id)
+        items = (data.get("data") or {}).get("items", []) if isinstance(data, dict) else []
+        if not items:
             raise ValueError("该饰品（goods_id=%s）暂无求购单，无法塞求购" % goods_id)
-        price = round(float(buy_max) - 0.01, 2)
-        return _sale_result(client.on_sale([_make_asset(client, assetid, price)]))
+        bid = items[0]  # 列表按价格降序，首个即最高求购单
+        buy_order_id = bid.get("id")
+        price = bid.get("price")
+        if not buy_order_id or price is None:
+            raise ValueError("求购单信息不完整，无法塞求购")
+        steamid = client.get_steamid()
+        result = client.supply_to_buyer(buy_order_id, [assetid], price, steamid=steamid)
+        if isinstance(result, dict) and result.get("code") != "OK":
+            raise ValueError("塞求购失败：%s" % (result.get("error") or result.get("msg") or result.get("code")))
+        return result
 
     def off_shelf(client, args):
         if not args:

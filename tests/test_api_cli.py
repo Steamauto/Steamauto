@@ -60,10 +60,16 @@ class _FakeBuff:
         return {"code": "OK", "data": {"total_count": 714, "items": [{"goods_id": 33960}]}}
 
     def get_buy_order(self, goods_id, game="csgo", page_num=1, page_size=10):
-        return {"code": "OK", "data": {"items": [{"price": "378"}]}}
+        return {"code": "OK", "data": {"items": [{"id": "BO-1", "price": "3.7"}]}}
 
     def get_buy_order_max(self, goods_id, game="csgo"):
-        return "378"
+        return "3.7"
+
+    def get_steamid(self, game="csgo"):
+        return "76561198327946298"
+
+    def supply_to_buyer(self, buy_order_id, assetids, price, game="csgo", steamid=None):
+        return {"code": "OK", "data": {"buy_order_id": buy_order_id, "assetids": assetids, "price": price}}
 
     def get_sell_min(self, goods_id, game="csgo"):
         return "182"
@@ -212,7 +218,7 @@ class TestDispatchAndOutput(unittest.TestCase):
     def test_highest_buy_passes_goods_id(self):
         rc, out, _ = _run("buff", ["highest-buy", "33960"])
         self.assertEqual(rc, 0)
-        self.assertIn("378", out)
+        self.assertIn("3.7", out)
 
     def test_lowest_sell_passes_goods_id(self):
         rc, out, _ = _run("buff", ["lowest-sell", "33960"])
@@ -228,6 +234,12 @@ class TestDispatchAndOutput(unittest.TestCase):
         rc, out, _ = _run("buff", ["inventory", "--table"])
         self.assertEqual(rc, 0)
         self.assertIn("印花胶囊", out)
+
+    def test_sell_bidder_supplies_to_buyer(self):
+        """塞求购 = 卖给求购者：调 supply_to_buyer（goods/supply），即时成交，而非上架。"""
+        rc, out, _ = _run("buff", ["sell-bidder", "53469172739", "34250", "--yes"])
+        self.assertEqual(rc, 0)
+        self.assertIn("BO-1", out, "应返回求购单 ID（走 supply 而非上架）")
 
 
 class TestTableRenderer(unittest.TestCase):
