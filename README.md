@@ -68,7 +68,7 @@ python Steamauto.py
 
 | 平台 | 命令 | 说明 |
 | --- | --- | --- |
-| BUFF | `--buff balance` | 余额与资产概览 |
+| BUFF | `--buff balance` | 余额（可用/仅交易/冻结/总） |
 | BUFF | `--buff inventory` | 我的库存 |
 | BUFF | `--buff search "<关键词>"` | 搜索建议（仅 10 条） |
 | BUFF | `--buff search-market "<关键词>"` | 搜索市场（完整结果） |
@@ -78,6 +78,7 @@ python Steamauto.py
 | BUFF | `--buff highest-buy <goods_id>` | 求购最高价（市场最高求购单） |
 | BUFF | `--buff lowest-sell <goods_id>` | 在售最低价（市场最低卖单） |
 | BUFF | `--buff waiting-offer` | 求购待发报价 |
+| UU | `--uu balance` | 余额（可用/仅交易/冻结/总） |
 | UU | `--uu inventory` | 我的库存 |
 | UU | `--uu on-sale` | 我的在售 |
 | UU | `--uu leased-out` | 已租出 |
