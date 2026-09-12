@@ -215,5 +215,50 @@ class TestCliPlatformRouting(unittest.TestCase):
         self.assertIn("平台 API", out.getvalue())
 
 
+class _FakeResponse:
+    """模拟 requests.Response：带 .json() 方法。"""
+
+    def __init__(self, payload):
+        self._payload = payload
+
+    def json(self):
+        return self._payload
+
+
+class TestNormalize(unittest.TestCase):
+    def test_response_gets_jsonified(self):
+        """SDK 返回 Response（如 BUFF get_on_sale / UU get_template_purchase_order）应转 dict。"""
+        self.assertEqual(api_cli._normalize(_FakeResponse({"code": "OK"})), {"code": "OK"})
+
+    def test_dict_passes_through(self):
+        self.assertEqual(api_cli._normalize({"a": 1}), {"a": 1})
+
+    def test_list_passes_through(self):
+        self.assertEqual(api_cli._normalize([1, 2]), [1, 2])
+
+    def test_scalar_passes_through(self):
+        self.assertEqual(api_cli._normalize("洛北辰"), "洛北辰")
+
+
+class TestResponseReturningSdk(unittest.TestCase):
+    """端到端：命令处理函数返回 Response 时，输出应为 JSON 而非报错。"""
+
+    def test_on_sale_response_serializes(self):
+        class _Client:
+            def get_on_sale(self, page_num=1):
+                return _FakeResponse({"code": "OK", "data": {"total_count": 64}})
+
+        restore = _inject("buff", _Client())
+        orig_load = api_cli.accounts.load_config
+        api_cli.accounts.load_config = lambda: {}
+        try:
+            rc, out, _ = _run("buff", ["on-sale"])
+        finally:
+            restore()
+            api_cli.accounts.load_config = orig_load
+        self.assertEqual(rc, 0)
+        self.assertIn('"total_count"', out)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -35,6 +35,18 @@ def _pad(text, cols):
 
 # ------------------------------------------------------------------ 输出
 
+def _normalize(data):
+    """把 SDK 返回统一成 JSON 可序列化的 dict/list/标量。
+
+    各平台 SDK 返回类型不一致：BUFF 的 ``get_on_sale`` 返回 ``requests.Response``
+    （未 .json()），而 ``get_user_brief_assest``/``search_goods`` 已返回 dict/list。
+    这里对带 ``.json()`` 的对象（Response）统一转成 dict，其余原样返回。
+    """
+    if hasattr(data, "json"):
+        return data.json()
+    return data
+
+
 def _emit(data, as_table=False):
     """按 JSON 或表格输出。表格仅对 list[dict] 有效，其余形态回落到 JSON。"""
     if not as_table:
@@ -307,7 +319,7 @@ def main(platform, argv):
     try:
         cfg = accounts.load_config()
         client = _CLIENT_FACTORIES[platform](cfg)
-        data = fn(client, args)
+        data = _normalize(fn(client, args))
     except Exception as e:  # noqa: BLE001 - 网络/凭据错误统一转为可读报错
         _err("错误：%s" % (e,))
         return 1
