@@ -107,13 +107,13 @@ def build_parser():
     parser.add_argument("--timeout", type=float, default=daemon.STOP_TIMEOUT, help="等待优雅退出的秒数")
 
     # ---- 状态 ----
-    # 不带值（或 process）= 进程运行状态；account = 各平台账号状态
+    # 不带值（或 all）= 所有实例状态；<实例名> = 指定实例进程状态；account = 账号状态
     parser.add_argument(
         "--status",
         nargs="?",
-        const="process",
-        metavar="[process|account]",
-        help="查看状态：不带值或 process = 进程运行状态，account = 账号状态",
+        const="all",
+        metavar="[<实例名>|all|account]",
+        help="查看状态：默认 all（所有实例）；<实例名> = 指定实例进程状态；account = 账号状态",
     )
     parser.add_argument("--json", action="store_true", help="以 JSON 输出（配合 --status）")
     parser.add_argument("--no-live", action="store_true", help="只读本地凭据，不联网校验（更快）")
@@ -266,6 +266,46 @@ def cmd_status(args):
     for line in lines:
         _p(line)
     return 0 if data.get("running") else 3
+
+
+def cmd_status_for_instance(name, args):
+    """查看指定实例的进程状态（读该实例的 state 文件，不切换当前实例）。"""
+    from utils import instance
+
+    bd = instance.base_dir(name)
+    state_file = os.path.join(bd, "run", "steamauto.state.json")
+    state = {}
+    try:
+        with open(state_file, encoding="utf-8") as f:
+            state = json.load(f)
+    except (OSError, ValueError):
+        pass
+
+    pid = state.get("pid")
+    try:
+        running = bool(pid) and daemon.pid_alive(int(pid))
+    except (TypeError, ValueError):
+        running = False
+
+    if getattr(args, "json", False):
+        data = dict(state)
+        data.update({"instance": name, "running": running})
+        _p(json.dumps(data, ensure_ascii=False, indent=2))
+        return 0 if running else 3
+
+    _p("实例：%s" % name)
+    _p("数据目录：%s" % bd)
+    if running:
+        _p("状态：运行中（PID %s）" % pid)
+        if state.get("version"):
+            _p("版本：%s" % state["version"])
+        if state.get("port"):
+            _p("控制端口：%s" % state["port"])
+        if state.get("log_file"):
+            _p("日志文件：%s" % state["log_file"])
+    else:
+        _p("状态：未运行")
+    return 0 if running else 3
 
 
 def _show_log(kind="any", lines=50, follow=False, file=None):
@@ -518,7 +558,7 @@ _HELP_SECTIONS = [
         ("python Steamauto.py --start", "后台启动"),
         ("python Steamauto.py --stop [--force]", "停止（默认优雅停止）"),
         ("python Steamauto.py --restart [--force]", "重启"),
-        ("python Steamauto.py --status [process]", "查看进程运行状态"),
+        ("python Steamauto.py --status [<实例名>|all|account]", "查看实例状态（默认 all 所有实例；account 账号状态）"),
     ]),
     ("实例", [
         ("python Steamauto.py --instances", "列出所有实例及运行状态"),
@@ -954,14 +994,25 @@ def _dispatch(args):
 
 
 def _dispatch_status(args):
-    """`--status [process|account]`：不带值或 process = 进程状态；account = 账号状态。"""
-    topic = (args.status or "process").strip().lower()
-    if topic in ("process", "proc", "进程"):
-        return cmd_status(args)
+    """`--status [<实例名>|all|account]`：默认 all（所有实例）；实例名 = 指定实例进程状态；account = 账号状态。"""
+    topic = (args.status or "all").strip().lower()
     if topic in ("account", "accounts", "acct", "账号"):
         return cmd_account_status(args)
-    _err("不支持的 --status 主题：%s（可选：process / account）" % args.status)
-    return 2
+    if topic in ("all", "全部"):
+        return cmd_instances()
+    if topic in ("process", "proc", "进程"):
+        # 兼容旧写法：process = 当前实例的进程状态
+        from utils import instance
+
+        topic = instance.current_name()
+    from utils import instance
+
+    try:
+        name = instance.normalize(topic)
+    except ValueError as e:
+        _err(str(e))
+        return 2
+    return cmd_status_for_instance(name, args)
 
 
 def _dispatch_config(args):

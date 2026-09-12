@@ -460,10 +460,11 @@ class TestFlagCli(_IsolatedPaths):
         self.assertEqual(rc, 1)
         self.assertIn("程序未运行", err)
 
-    def test_status_unsupported_topic(self):
-        rc, _out, err = _run_cli(["--status", "positions"])
-        self.assertEqual(rc, 2)
-        self.assertIn("account", err)
+    def test_status_unknown_instance_not_running(self):
+        """`--status <任意实例名>`：未运行的实例返回 3（不再有「不支持主题」）。"""
+        rc, out, _ = _run_cli(["--status", "positions"])
+        self.assertEqual(rc, 3)
+        self.assertIn("positions", out)
 
     def test_logout_buff_via_flag(self):
         self.write_config()
@@ -504,14 +505,18 @@ class TestFlagCli(_IsolatedPaths):
         self.assertIn("请指定平台", err)
 
     def test_status_without_topic_value(self):
-        """空值应视为 process（等价于不带值），而非报错。"""
-        rc, out, err = _run_cli(["--status", ""])
-        self.assertEqual(rc, 3, "空主题应回落到 process（3 = 未运行）")
-        self.assertIn("状态", out)
+        """空值 = all，显示所有实例列表。"""
+        rc, out, _ = _run_cli(["--status", ""])
+        self.assertEqual(rc, 0)
+        self.assertIn("实例列表", out)
 
     def test_status_process_topic(self):
-        rc, out, _ = _run_cli(["--status", "process"])
-        self.assertEqual(rc, 3)  # 3 = 未运行
+        """process = 当前实例（default）的进程状态。"""
+        from unittest import mock
+
+        with mock.patch("utils.daemon.pid_alive", return_value=False):
+            rc, out, _ = _run_cli(["--status", "process"])
+        self.assertEqual(rc, 3)  # 当前实例未运行
         self.assertIn("状态", out)
 
     def test_legacy_subcommands_removed(self):

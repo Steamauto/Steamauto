@@ -595,10 +595,10 @@ class TestCli(unittest.TestCase):
     def test_config_reload_when_not_running(self):
         self.assertEqual(self.cli.main(["--config", "--reload"]), 0)
 
-    def test_status_not_running_exit_code(self):
-        # 3 = 未运行（便于脚本区分）
-        self.assertEqual(self.cli.main(["--status"]), 3)
-        self.assertEqual(self.cli.main(["--status", "--json"]), 3)
+    def test_status_defaults_to_all(self):
+        # --status 默认 all → 实例列表，rc=0
+        self.assertEqual(self.cli.main(["--status"]), 0)
+        self.assertEqual(self.cli.main(["--status", "--json"]), 0)
 
     def test_stop_when_not_running(self):
         self.assertEqual(self.cli.main(["--stop"]), 0)

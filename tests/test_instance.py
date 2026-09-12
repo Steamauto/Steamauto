@@ -182,20 +182,20 @@ class TestCliInstances(_TmpInstances):
         self.assertIn("实例列表", out)
 
     def test_instance_flag_creates_and_routes(self):
-        """`--instance alice --status` 应创建实例目录并读取 alice 的 state。"""
+        """`--instance alice --status alice`：--instance 激活 alice（建目录），--status alice 读其 state。"""
         from unittest import mock
 
         with mock.patch.object(instance, "allocate_port", return_value=46001):
-            rc, out, err = self._run(["--instance", "alice", "--status"])
-        self.assertIn(rc, (3,), "新实例未运行，--status 应返回 3")
+            rc, out, err = self._run(["--instance", "alice", "--status", "alice"])
+        self.assertEqual(rc, 3, "alice 未运行，--status alice 应返回 3")
         self.assertTrue(os.path.exists(os.path.join(static.INSTANCES_DIR, "alice", "config", "config.json5")))
 
     def test_instance_eq_form(self):
-        """`--instance=alice` 等号形式同样生效。"""
+        """`--instance=bob --status bob` 等号形式同样生效。"""
         from unittest import mock
 
         with mock.patch.object(instance, "allocate_port", return_value=46002):
-            rc, _out, _err = self._run(["--instance=bob", "--status"])
+            rc, _out, _err = self._run(["--instance=bob", "--status", "bob"])
         self.assertEqual(rc, 3)
         self.assertTrue(os.path.exists(os.path.join(static.INSTANCES_DIR, "bob", "config", "config.json5")))
 
