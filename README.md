@@ -69,6 +69,7 @@ python Steamauto.py
 | 平台 | 命令 | 说明 |
 | --- | --- | --- |
 | BUFF | `--buff balance` | 余额（可用/仅交易/冻结/总） |
+| BUFF | `--buff nickname` | 当前昵称 |
 | BUFF | `--buff inventory` | 我的库存 |
 | BUFF | `--buff search "<关键词>"` | 搜索建议（仅 10 条） |
 | BUFF | `--buff search-market "<关键词>"` | 搜索市场（完整结果） |
@@ -79,27 +80,48 @@ python Steamauto.py
 | BUFF | `--buff lowest-sell <goods_id>` | 在售最低价（市场最低卖单） |
 | BUFF | `--buff waiting-offer` | 求购待发报价 |
 | UU | `--uu balance` | 余额（可用/仅交易/冻结/总） |
+| UU | `--uu nickname` | 当前昵称/账号 |
 | UU | `--uu inventory` | 我的库存 |
 | UU | `--uu on-sale` | 我的在售 |
 | UU | `--uu leased-out` | 已租出 |
 | UU | `--uu wait-deliver` | 待发货 |
+| UU | `--uu buy-order [页码]` | 求购单 |
 | UU | `--uu search "<关键词>"` | 搜索市场 |
 | UU | `--uu highest-buy <template_id>` | 求购最高价（市场最高求购单） |
 | UU | `--uu lowest-sell <template_id>` | 在售最低价（市场最低卖单） |
 | C5 | `--c5 balance` | 余额 |
 | C5 | `--c5 orders [status] [page]` | 订单 |
+| C5 | `--c5 check-key` | 校验 AppKey |
 | ECO | `--eco balance` | 余额 |
 | ECO | `--eco inventory` | 库存 |
 | ECO | `--eco on-sale` | 在售 |
 
 > 查某饰品的价格，先搜到它的 id 再查：例如先 `--buff search-market "AK-47"` 拿到 `goods_id`，再 `--buff lowest-sell <goods_id>` / `--buff highest-buy <goods_id>`。
 
-#### 多开实例
+#### 平台 API 写操作（实盘；默认二次确认，`--yes` 跳过、`--dry-run` 只预览）
+
+| 平台 | 命令 | 说明 |
+| --- | --- | --- |
+| BUFF | `--buff list <assetid> <price>` | 上架（自动从库存补 classid/instanceid/名称） |
+| BUFF | `--buff sell-bidder <assetid> <goods_id>` | 塞求购（以最高求购价 -0.01 上架卖给求购者） |
+| BUFF | `--buff off-shelf <sell_order_id>...` | 下架 |
+| BUFF | `--buff change-price <sell_order_id> <price>` | 改价 |
+| BUFF | `--buff buy <goods_id> <sell_order_id> <price>` | 购买 |
+| UU | `--uu sell <assetid> <price>` | 上架 |
+| UU | `--uu off-shelf <commodity_id>...` | 下架 |
+| UU | `--uu buy <template_id> <price>` | 发求购单（塞求购） |
+| UU | `--uu change-price <commodity_id> <price>` | 改价 |
+
+> 写操作涉及真实资金/挂单，默认需二次确认；非交互式终端须加 `--yes` 才执行，`--dry-run` 只预览参数不执行。
+
+#### 实例（多开，数据目录隔离）
 
 | 命令 | 说明 |
 | --- | --- |
 | `--instances` | 列出所有实例及运行状态 |
-| `--instance <name> <命令>` | 操作指定实例（独立数据目录 `instances/<name>/`，不同账号 / 平台组合互不影响） |
+| `--instance <name> <命令>` | 操作指定实例（独立数据目录 `instances/<name>/`，不同账号/平台组合互不影响） |
+| `--instance <name> --remove` / `--rm` | 删除实例（运行中拒绝；彻底删除不可恢复） |
+| `--instance <name> --rename <新名>` | 重命名实例（运行中拒绝；目录改名，凭据/配置原样跟随） |
 
 首次用 `--instance <name>` 会自动创建目录、默认配置并分配端口；`default` 实例 = 不带 `--instance`。
 
@@ -109,11 +131,12 @@ python Steamauto.py
 | --- | --- |
 | `--login buff\|uu\|c5\|eco` | 登录（BUFF 扫码 / UU 短信） |
 | `--logout buff\|uu\|c5\|eco` | 登出 |
-| `--status account` | 查看各平台登录 / 连接状态 |
-| `--run` / `--start` / `--stop [--force]` / `--restart` | 前台运行 / 后台启动 / 停止 / 重启 |
-| `--status` | 进程运行状态 |
-| `--config --get/--set/--unset/--list/--reload` | 配置读写 |
-| `--log [N\|console\|app]` | 翻阅日志 |
+| `--status account [--json]` | 查看各平台登录/连接状态 + 可用余额 |
+| `--run` / `--start` | 启动（都拉子进程；`--run` 跟随日志到前台） |
+| `--stop [--force]` / `--restart` | 停止 / 重启 |
+| `--status` | 查看实例状态：默认 `all`（所有实例）；`--status <实例名>` 指定实例 |
+| `--config --get/--set/--unset/--list/--reload` | 配置读写（`--set key A B` 多值成数组） |
+| `--log [N\|console\|app\|error\|warning\|info\|debug]` | 翻阅日志：行数 / 来源 / 级别过滤（error 只错误，debug 全显） |
 
 ### 平台配置速查
 
