@@ -129,8 +129,8 @@ def build_parser():
         "--log",
         nargs="?",
         const="",
-        metavar="[N|console|app]",
-        help="翻阅日志：可给行数（--log 200），或 console/app 指定来源；默认取最新日志",
+        metavar="[N|console|app|debug|info|warning|error]",
+        help="翻阅日志：行数 / 来源（console|app）/ 级别（debug|info|warning|error）；默认取最新日志",
     )
     parser.add_argument("-n", "--lines", type=int, default=50, help="配合 --log：显示末尾行数（默认 50）")
     parser.add_argument("-f", "--follow", action="store_true", help="配合 --log：持续跟随输出（Ctrl+C 退出）")
@@ -366,7 +366,27 @@ def cmd_rename(args):
     return 1
 
 
-def _show_log(kind="any", lines=50, follow=False, file=None):
+#: 日志级别数值（标准 Python logging 语义；数值越大越严重）
+_LOG_LEVELS = {"debug": 10, "info": 20, "warning": 30, "warn": 30, "error": 40}
+
+
+def _line_level(line):
+    """解析日志行的级别数值；无法识别返回 0（视为 debug，总是显示）。"""
+    import re
+
+    m = re.search(r"\]\s*-\s*(\w+):", line)
+    if not m:
+        return 0
+    return _LOG_LEVELS.get(m.group(1).lower(), 0)
+
+
+def _filter_by_level(lines, level_name):
+    """按级别过滤日志行：只保留级别 >= 阈值的行（标准语义：debug 全显，error 只错误）。"""
+    threshold = _LOG_LEVELS.get(level_name, 0)
+    return [l for l in lines if _line_level(l) >= threshold]
+
+
+def _show_log(kind="any", lines=50, follow=False, file=None, level=None):
     """展示日志。返回退出码。
 
     :param kind: "app" 应用日志 / "console" 后台控制台日志 / "any" 最新任意日志
@@ -384,7 +404,11 @@ def _show_log(kind="any", lines=50, follow=False, file=None):
         daemon.follow(path)
         return 0
     tail_lines = daemon.tail(path, lines)
-    _p("== %s（末尾 %d 行）==" % (path, len(tail_lines)))
+    if level:
+        tail_lines = _filter_by_level(tail_lines, level)
+        _p("== %s（级别 %s，过滤后 %d 行）==" % (path, level, len(tail_lines)))
+    else:
+        _p("== %s（末尾 %d 行）==" % (path, len(tail_lines)))
     for line in tail_lines:
         _p(line)
     return 0
@@ -400,7 +424,7 @@ def cmd_log_flag(args):
     因为转后台后用户最常问的是「刚才到底发生了什么」。
     """
     raw = (getattr(args, "log", "") or "").strip().lower()
-    kind, lines = "any", getattr(args, "lines", 50)
+    kind, lines, level = "any", getattr(args, "lines", 50), None
 
     if raw:
         if raw.isdigit():
@@ -409,8 +433,10 @@ def cmd_log_flag(args):
             kind = "console"
         elif raw in ("app", "a"):
             kind = "app"
+        elif raw in _LOG_LEVELS:
+            level = "warning" if raw == "warn" else raw  # warn 归一为 warning
         else:
-            _err("无法识别的 --log 参数：%s（可用：行数 / console / app）" % raw)
+            _err("无法识别的 --log 参数：%s（可用：行数 / console / app / debug / info / warning / error）" % raw)
             return 2
 
     # --console 仅在 --log 未指定来源时生效
@@ -422,6 +448,7 @@ def cmd_log_flag(args):
         lines=lines,
         follow=getattr(args, "follow", False),
         file=getattr(args, "file", None),
+        level=level,
     )
 
 
@@ -630,6 +657,7 @@ _HELP_SECTIONS = [
         ("python Steamauto.py --log 200", "翻阅末尾 200 行"),
         ("python Steamauto.py --log console", "看后台运行的控制台日志"),
         ("python Steamauto.py --log app", "看应用（技术）日志"),
+        ("python Steamauto.py --log error|warning|info|debug", "按级别过滤（error 只错误 / debug 全显）"),
         ("python Steamauto.py --log [-f|--follow]", "持续跟随输出（Ctrl+C 退出）"),
         ("python Steamauto.py --log -n 200", "等价写法：用 -n 指定行数"),
         ("python Steamauto.py --log --console", "等价写法：看后台控制台日志"),
