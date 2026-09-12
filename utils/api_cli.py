@@ -358,7 +358,7 @@ def _buff_ops():
         "lowest-sell": (lowest_sell, "在售最低价（市场最低卖单）：--buff lowest-sell <goods_id>"),
         "waiting-offer": (waiting_offer, "求购待发报价"),
         "list": (list_item, "上架：--buff list <assetid> <price>【写】"),
-        "sell-bidder": (sell_bidder, "塞求购：--buff sell-bidder <assetid> <goods_id>【写】"),
+        "sell-bidder": (sell_bidder, "塞求购（卖给求购者）：--buff sell-bidder <assetid> <goods_id>【写】"),
         "off-shelf": (off_shelf, "下架：--buff off-shelf <sell_order_id>...【写】"),
         "change-price": (change_price, "改价：--buff change-price <sell_order_id> <price>【写】"),
         "buy": (buy, "购买：--buff buy <goods_id> <sell_order_id> <price> [pay_method]【写】"),
@@ -411,6 +411,26 @@ def _uu_ops():
         assetid, price = args[0], float(args[1])
         return client.sell_items({str(assetid): price})
 
+    def sell_bidder(client, args):
+        """塞求购 = 卖给求购者：以略低于最高求购价的价格上架，让求购者自动成交。"""
+        if not args:
+            raise ValueError("sell-bidder 需要 assetid，如：--uu sell-bidder <assetid>")
+        assetid = args[0]
+        # 从库存查 assetid 对应的 template_id
+        template_id = None
+        for it in client.get_inventory():
+            if str(it.get("SteamAssetId")) == str(assetid):
+                ti = it.get("TemplateInfo") or {}
+                template_id = ti.get("Id")
+                break
+        if template_id is None:
+            raise ValueError("库存中未找到 assetid=%s，无法确定 template_id" % assetid)
+        buy_max = client.get_buy_max(int(template_id))
+        if buy_max is None:
+            raise ValueError("该饰品（template_id=%s）暂无求购单，无法塞求购" % template_id)
+        price = round(float(buy_max) - 0.01, 2)
+        return client.sell_items({str(assetid): price})
+
     def off_shelf(client, args):
         if not args:
             raise ValueError("off-shelf 需要至少一个 commodity_id，如：--uu off-shelf <commodity_id>...")
@@ -459,8 +479,9 @@ def _uu_ops():
         "highest-buy": (highest_buy, "求购最高价（市场最高求购单）：--uu highest-buy <template_id>"),
         "lowest-sell": (lowest_sell, "在售最低价（市场最低卖单）：--uu lowest-sell <template_id>"),
         "sell": (sell, "上架：--uu sell <assetid> <price>【写】"),
+        "sell-bidder": (sell_bidder, "塞求购（卖给求购者）：--uu sell-bidder <assetid>【写】"),
         "off-shelf": (off_shelf, "下架：--uu off-shelf <commodity_id>...【写】"),
-        "buy": (buy, "发求购单（塞求购）：--uu buy <template_id> <price> [num]【写】"),
+        "buy": (buy, "发求购单（买入）：--uu buy <template_id> <price> [num]【写】"),
         "change-price": (change_price, "改价：--uu change-price <commodity_id> <price>【写】"),
     }
 

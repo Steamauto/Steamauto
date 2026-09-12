@@ -108,8 +108,9 @@ python Steamauto.py
 | BUFF | `--buff change-price <sell_order_id> <price>` | 改价 |
 | BUFF | `--buff buy <goods_id> <sell_order_id> <price>` | 购买 |
 | UU | `--uu sell <assetid> <price>` | 上架 |
+| UU | `--uu sell-bidder <assetid>` | 塞求购（以最高求购价 -0.01 上架卖给求购者） |
 | UU | `--uu off-shelf <commodity_id>...` | 下架 |
-| UU | `--uu buy <template_id> <price>` | 发求购单（塞求购） |
+| UU | `--uu buy <template_id> <price>` | 发求购单（买入） |
 | UU | `--uu change-price <commodity_id> <price>` | 改价 |
 
 > 写操作涉及真实资金/挂单，默认需二次确认；非交互式终端须加 `--yes` 才执行，`--dry-run` 只预览参数不执行。
