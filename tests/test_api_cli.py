@@ -43,6 +43,21 @@ class _FakeBuff:
     def get_sell_order_history(self, appid):
         return [{"assetid": "1", "price": "3.5"}]
 
+    def get_inventory_all(self):
+        return [{"assetid": "1", "goods_id": 773534, "name": "印花胶囊"}]
+
+    def search_market(self, keyword, game="csgo", page_num=1, page_size=100):
+        return {"code": "OK", "data": {"total_count": 714, "items": [{"goods_id": 33960}]}}
+
+    def get_buy_order(self, goods_id, game="csgo", page_num=1, page_size=10):
+        return {"code": "OK", "data": {"items": [{"price": "378"}]}}
+
+    def get_buy_order_max(self, goods_id, game="csgo"):
+        return "378"
+
+    def get_sell_min(self, goods_id, game="csgo"):
+        return "182"
+
 
 class _FakeC5:
     def balance(self):
@@ -63,7 +78,8 @@ class TestHelpAndDispatch(unittest.TestCase):
     def test_help_lists_ops(self):
         rc, out, _ = _run("buff", ["--help"])
         self.assertEqual(rc, 0)
-        for op in ("balance", "nickname", "search", "on-sale", "sell-history", "waiting-offer"):
+        for op in ("balance", "nickname", "search", "search-market", "inventory",
+                   "on-sale", "sell-history", "buy-order", "buy-max", "sell-min", "waiting-offer"):
             self.assertIn(op, out, "--buff --help 缺 %s" % op)
 
     def test_no_args_shows_help(self):
@@ -166,6 +182,26 @@ class TestDispatchAndOutput(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertIn("balance", out)
         self.assertIn("on-sale", out)
+
+    def test_buy_max_passes_goods_id(self):
+        rc, out, _ = _run("buff", ["buy-max", "33960"])
+        self.assertEqual(rc, 0)
+        self.assertIn("378", out)
+
+    def test_sell_min_passes_goods_id(self):
+        rc, out, _ = _run("buff", ["sell-min", "33960"])
+        self.assertEqual(rc, 0)
+        self.assertIn("182", out)
+
+    def test_search_market_passes_keyword(self):
+        rc, out, _ = _run("buff", ["search-market", "AK-47"])
+        self.assertEqual(rc, 0)
+        self.assertIn("714", out)
+
+    def test_inventory_returns_list(self):
+        rc, out, _ = _run("buff", ["inventory", "--table"])
+        self.assertEqual(rc, 0)
+        self.assertIn("印花胶囊", out)
 
 
 class TestTableRenderer(unittest.TestCase):

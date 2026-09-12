@@ -186,12 +186,42 @@ def _buff_ops():
     def waiting_offer(client, args):
         return client.get_buy_orders_waiting_to_send_offer()
 
+    def search_market(client, args):
+        if not args:
+            raise ValueError("search-market 需要关键词，如：--buff search-market \"AK-47\"")
+        key = args[0]
+        page = int(args[1]) if len(args) > 1 else 1
+        return client.search_market(key, page_num=page)
+
+    def inventory(client, args):
+        return client.get_inventory_all()
+
+    def buy_order(client, args):
+        if not args:
+            raise ValueError("buy-order 需要 goods_id，如：--buff buy-order 33960")
+        return client.get_buy_order(args[0])
+
+    def buy_max(client, args):
+        if not args:
+            raise ValueError("buy-max 需要 goods_id")
+        return client.get_buy_order_max(args[0])
+
+    def sell_min(client, args):
+        if not args:
+            raise ValueError("sell-min 需要 goods_id")
+        return client.get_sell_min(args[0])
+
     return {
         "balance": (balance, "余额与资产概览"),
         "nickname": (nickname, "当前 BUFF 昵称"),
-        "search": (search, "搜索饰品：--buff search <关键词> [game]"),
+        "search": (search, "搜索建议：--buff search <关键词> [game]（仅 10 条）"),
+        "search-market": (search_market, "搜索市场（完整结果）：--buff search-market <关键词> [页码]"),
+        "inventory": (inventory, "库存：--buff inventory"),
         "on-sale": (on_sale, "我的在售：--buff on-sale [页码]"),
         "sell-history": (sell_history, "成交历史：--buff sell-history [appid]"),
+        "buy-order": (buy_order, "求购单列表：--buff buy-order <goods_id>"),
+        "buy-max": (buy_max, "求购最高价：--buff buy-max <goods_id>"),
+        "sell-min": (sell_min, "在售最低价：--buff sell-min <goods_id>"),
         "waiting-offer": (waiting_offer, "求购待发报价"),
     }
 
@@ -216,6 +246,21 @@ def _uu_ops():
         page = int(args[0]) if args else 1
         return client.get_buy_order(pageIndex=page)
 
+    def search(client, args):
+        if not args:
+            raise ValueError("search 需要关键词，如：--uu search \"印花胶囊\"")
+        return client.search_market(args[0])
+
+    def buy_max(client, args):
+        if not args:
+            raise ValueError("buy-max 需要 template_id，如：--uu buy-max 45796")
+        return client.get_buy_max(int(args[0]))
+
+    def sell_min(client, args):
+        if not args:
+            raise ValueError("sell-min 需要 template_id，如：--uu sell-min 45796")
+        return client.get_sell_min(int(args[0]))
+
     return {
         "nickname": (nickname, "当前 UU 昵称"),
         "inventory": (inventory, "库存：--uu inventory"),
@@ -223,6 +268,9 @@ def _uu_ops():
         "leased-out": (leased_out, "已租出：--uu leased-out"),
         "wait-deliver": (wait_deliver, "待发货：--uu wait-deliver"),
         "buy-order": (buy_order, "求购单：--uu buy-order [页码]"),
+        "search": (search, "搜索市场：--uu search <关键词>"),
+        "buy-max": (buy_max, "求购最高价：--uu buy-max <template_id>"),
+        "sell-min": (sell_min, "在售最低价：--uu sell-min <template_id>"),
     }
 
 

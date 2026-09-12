@@ -974,6 +974,41 @@ class UUAccount:
         except:
             return 0
 
+    def search_market(self, keyword, page_index=1, page_size=50):
+        """搜索市场商品（lenovoSearch）。返回精简项 [{commodityName, templateId}]。
+
+        注意：querySaleTemplate 只是「市场默认列表」，不带关键词，不能用于搜索。
+        """
+        data = {"keyWords": keyword, "listType": "10"}
+        return self.call_api(
+            "POST", "/api/homepage/pc/goods/market/lenovoSearch",
+            data=data, uk_verify=True, pc_platform=True,
+        ).json()
+
+    def get_buy_max(self, template_id):
+        """市场最高求购价（getTemplatePurchaseOrderListPC → purchasePrice 最大值）。
+
+        注意：该接口顶层 code/data 为小写（与其它接口大写混用），Data 为 dict。
+        """
+        j = self.get_template_purchase_order_pc(template_id, pageSize=30).json()
+        if str(j.get("Code", j.get("code", -1))) != "0":
+            return None
+        d = j.get("Data") or j.get("data") or {}
+        if not isinstance(d, dict):
+            return None
+        items = d.get("purchaseOrderResponseList") or d.get("list") or []
+        prices = [float(x["purchasePrice"]) for x in items if x.get("purchasePrice")]
+        return max(prices) if prices else None
+
+    def get_sell_min(self, template_id):
+        """在售最低价（queryOnSaleCommodityList → Data 列表 price 最小值）。"""
+        j = self.get_market_sale_list_with_abrade(template_id, pageSize=100).json()
+        if str(j.get("Code", j.get("code", -1))) != "0":
+            return None
+        items = j.get("Data") or []
+        prices = [float(x["price"]) for x in items if x.get("price")]
+        return min(prices) if prices else None
+
     def get_trend_inventory(self):
         inventory_list_rsp = self.call_api(
             "POST",

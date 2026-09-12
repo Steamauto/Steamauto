@@ -240,6 +240,81 @@ class BuffAccount:
             .get("suggestions")
         )
 
+    def get_inventory(self, game="csgo", page_num=1, page_size=100) -> dict:
+        """库存（我的饰品）。端点 /api/market/steam_inventory。"""
+        return self.get(
+            f"{self.BASE_URL}/api/market/steam_inventory",
+            params={"game": game, "page_num": page_num, "page_size": page_size},
+        ).json()
+
+    def get_inventory_all(self, game="csgo") -> list:
+        """分页拉取全部库存，返回 items 列表。"""
+        items = []
+        page = 1
+        while True:
+            data = self.get_inventory(game, page, 100)
+            if data.get("code") != "OK":
+                break
+            items.extend((data.get("data") or {}).get("items", []))
+            if page >= (data.get("data") or {}).get("total_page", 1):
+                break
+            page += 1
+        return items
+
+    def search_market(self, keyword, game="csgo", page_num=1, page_size=100) -> dict:
+        """搜索市场商品（完整结果，分页）。端点 /api/market/goods?search=。"""
+        return self.get(
+            f"{self.BASE_URL}/api/market/goods",
+            params={
+                "game": game, "page_num": page_num, "page_size": page_size,
+                "search": keyword, "use_suggestion": 0,
+            },
+        ).json()
+
+    def search_market_all(self, keyword, game="csgo", max_items=500) -> list:
+        """分页拉取全部搜索结果，返回 items 列表。"""
+        items = []
+        page = 1
+        while len(items) < max_items:
+            data = self.search_market(keyword, game, page, 100)
+            if data.get("code") != "OK":
+                break
+            items.extend((data.get("data") or {}).get("items", []))
+            if page >= (data.get("data") or {}).get("total_page", 1):
+                break
+            page += 1
+        return items
+
+    def get_buy_order(self, goods_id, game="csgo", page_num=1, page_size=10) -> dict:
+        """指定饰品的求购单列表。端点 /api/market/goods/buy_order。"""
+        return self.get(
+            f"{self.BASE_URL}/api/market/goods/buy_order",
+            params={"game": game, "goods_id": goods_id, "page_num": page_num, "page_size": page_size},
+        ).json()
+
+    def get_buy_order_max(self, goods_id, game="csgo"):
+        """指定饰品的最高求购价（buy_order 第一个 item 的 price）。"""
+        data = self.get_buy_order(goods_id, game, 1, 1)
+        if data.get("code") != "OK":
+            return None
+        items = (data.get("data") or {}).get("items", [])
+        return items[0].get("price") if items else None
+
+    def get_sell_min(self, goods_id, game="csgo"):
+        """指定饰品的在售最低价（sell_order 第一个 item 的 price）。"""
+        data = self.get_sell_order(goods_id, game_name=game)
+        if not isinstance(data, dict):
+            return None
+        items = data.get("items", [])
+        return items[0].get("price") if items else None
+
+    def set_remark(self, assetid, remark, game="csgo") -> dict:
+        """修改库存饰品备注（按 assetid，最长 40 字）。端点 steam_asset_remark/change。"""
+        return self.post(
+            f"{self.BASE_URL}/api/market/steam_asset_remark/change",
+            json={"game": game, "assets": [{"remark": remark, "assetid": assetid}]},
+        ).json()
+
     def get_sell_order(self, goods_id, page_num=1, game_name="csgo", sort_by="default", proxy=None, min_paintseed=None, max_paintseed=None) -> dict:
         """
         获取指定饰品的在售商品
