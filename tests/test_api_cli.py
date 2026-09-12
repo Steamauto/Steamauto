@@ -79,7 +79,7 @@ class TestHelpAndDispatch(unittest.TestCase):
         rc, out, _ = _run("buff", ["--help"])
         self.assertEqual(rc, 0)
         for op in ("balance", "nickname", "search", "search-market", "inventory",
-                   "on-sale", "sell-history", "buy-order", "buy-max", "sell-min", "waiting-offer"):
+                   "on-sale", "sell-history", "buy-order", "highest-buy", "lowest-sell", "waiting-offer"):
             self.assertIn(op, out, "--buff --help 缺 %s" % op)
 
     def test_no_args_shows_help(self):
@@ -183,13 +183,13 @@ class TestDispatchAndOutput(unittest.TestCase):
         self.assertIn("balance", out)
         self.assertIn("on-sale", out)
 
-    def test_buy_max_passes_goods_id(self):
-        rc, out, _ = _run("buff", ["buy-max", "33960"])
+    def test_highest_buy_passes_goods_id(self):
+        rc, out, _ = _run("buff", ["highest-buy", "33960"])
         self.assertEqual(rc, 0)
         self.assertIn("378", out)
 
-    def test_sell_min_passes_goods_id(self):
-        rc, out, _ = _run("buff", ["sell-min", "33960"])
+    def test_lowest_sell_passes_goods_id(self):
+        rc, out, _ = _run("buff", ["lowest-sell", "33960"])
         self.assertEqual(rc, 0)
         self.assertIn("182", out)
 

@@ -201,14 +201,14 @@ def _buff_ops():
             raise ValueError("buy-order 需要 goods_id，如：--buff buy-order 33960")
         return client.get_buy_order(args[0])
 
-    def buy_max(client, args):
+    def highest_buy(client, args):
         if not args:
-            raise ValueError("buy-max 需要 goods_id")
+            raise ValueError("highest-buy 需要 goods_id（可从 --buff search-market 结果里拿），如：--buff highest-buy 33960")
         return client.get_buy_order_max(args[0])
 
-    def sell_min(client, args):
+    def lowest_sell(client, args):
         if not args:
-            raise ValueError("sell-min 需要 goods_id")
+            raise ValueError("lowest-sell 需要 goods_id（可从 --buff search-market 结果里拿），如：--buff lowest-sell 33960")
         return client.get_sell_min(args[0])
 
     return {
@@ -220,8 +220,8 @@ def _buff_ops():
         "on-sale": (on_sale, "我的在售：--buff on-sale [页码]"),
         "sell-history": (sell_history, "成交历史：--buff sell-history [appid]"),
         "buy-order": (buy_order, "求购单列表：--buff buy-order <goods_id>"),
-        "buy-max": (buy_max, "求购最高价：--buff buy-max <goods_id>"),
-        "sell-min": (sell_min, "在售最低价：--buff sell-min <goods_id>"),
+        "highest-buy": (highest_buy, "求购最高价（市场最高求购单）：--buff highest-buy <goods_id>"),
+        "lowest-sell": (lowest_sell, "在售最低价（市场最低卖单）：--buff lowest-sell <goods_id>"),
         "waiting-offer": (waiting_offer, "求购待发报价"),
     }
 
@@ -251,14 +251,14 @@ def _uu_ops():
             raise ValueError("search 需要关键词，如：--uu search \"印花胶囊\"")
         return client.search_market(args[0])
 
-    def buy_max(client, args):
+    def highest_buy(client, args):
         if not args:
-            raise ValueError("buy-max 需要 template_id，如：--uu buy-max 45796")
+            raise ValueError("highest-buy 需要 template_id（可从 --uu search 结果里拿），如：--uu highest-buy 45796")
         return client.get_buy_max(int(args[0]))
 
-    def sell_min(client, args):
+    def lowest_sell(client, args):
         if not args:
-            raise ValueError("sell-min 需要 template_id，如：--uu sell-min 45796")
+            raise ValueError("lowest-sell 需要 template_id（可从 --uu search 结果里拿），如：--uu lowest-sell 45796")
         return client.get_sell_min(int(args[0]))
 
     return {
@@ -269,8 +269,8 @@ def _uu_ops():
         "wait-deliver": (wait_deliver, "待发货：--uu wait-deliver"),
         "buy-order": (buy_order, "求购单：--uu buy-order [页码]"),
         "search": (search, "搜索市场：--uu search <关键词>"),
-        "buy-max": (buy_max, "求购最高价：--uu buy-max <template_id>"),
-        "sell-min": (sell_min, "在售最低价：--uu sell-min <template_id>"),
+        "highest-buy": (highest_buy, "求购最高价（市场最高求购单）：--uu highest-buy <template_id>"),
+        "lowest-sell": (lowest_sell, "在售最低价（市场最低卖单）：--uu lowest-sell <template_id>"),
     }
 
 

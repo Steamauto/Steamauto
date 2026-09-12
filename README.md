@@ -60,6 +60,60 @@ python Steamauto.py
 
 3. 按 Release 版本的第 3-5 步填写配置并重新运行。
 
+### 命令行（CLI）模式
+
+本 fork 新增了完整的命令行操作能力，无需 GUI 即可查询和操作各交易平台。所有命令均可加 `--instance <name>` 前缀操作指定实例（多开）。
+
+#### 平台 API 查询（只读；默认 JSON 输出，加 `--table` 转表格）
+
+| 平台 | 命令 | 说明 |
+| --- | --- | --- |
+| BUFF | `--buff balance` | 余额与资产概览 |
+| BUFF | `--buff inventory` | 我的库存 |
+| BUFF | `--buff search "<关键词>"` | 搜索建议（仅 10 条） |
+| BUFF | `--buff search-market "<关键词>"` | 搜索市场（完整结果） |
+| BUFF | `--buff on-sale [页码]` | 我的在售 |
+| BUFF | `--buff sell-history [appid]` | 成交历史 |
+| BUFF | `--buff buy-order <goods_id>` | 指定饰品的求购单列表 |
+| BUFF | `--buff highest-buy <goods_id>` | 求购最高价（市场最高求购单） |
+| BUFF | `--buff lowest-sell <goods_id>` | 在售最低价（市场最低卖单） |
+| BUFF | `--buff waiting-offer` | 求购待发报价 |
+| UU | `--uu inventory` | 我的库存 |
+| UU | `--uu on-sale` | 我的在售 |
+| UU | `--uu leased-out` | 已租出 |
+| UU | `--uu wait-deliver` | 待发货 |
+| UU | `--uu search "<关键词>"` | 搜索市场 |
+| UU | `--uu highest-buy <template_id>` | 求购最高价（市场最高求购单） |
+| UU | `--uu lowest-sell <template_id>` | 在售最低价（市场最低卖单） |
+| C5 | `--c5 balance` | 余额 |
+| C5 | `--c5 orders [status] [page]` | 订单 |
+| ECO | `--eco balance` | 余额 |
+| ECO | `--eco inventory` | 库存 |
+| ECO | `--eco on-sale` | 在售 |
+
+> 查某饰品的价格，先搜到它的 id 再查：例如先 `--buff search-market "AK-47"` 拿到 `goods_id`，再 `--buff lowest-sell <goods_id>` / `--buff highest-buy <goods_id>`。
+
+#### 多开实例
+
+| 命令 | 说明 |
+| --- | --- |
+| `--instances` | 列出所有实例及运行状态 |
+| `--instance <name> <命令>` | 操作指定实例（独立数据目录 `instances/<name>/`，不同账号 / 平台组合互不影响） |
+
+首次用 `--instance <name>` 会自动创建目录、默认配置并分配端口；`default` 实例 = 不带 `--instance`。
+
+#### 账号 / 服务 / 配置 / 日志
+
+| 命令 | 说明 |
+| --- | --- |
+| `--login buff\|uu\|c5\|eco` | 登录（BUFF 扫码 / UU 短信） |
+| `--logout buff\|uu\|c5\|eco` | 登出 |
+| `--status account` | 查看各平台登录 / 连接状态 |
+| `--run` / `--start` / `--stop [--force]` / `--restart` | 前台运行 / 后台启动 / 停止 / 重启 |
+| `--status` | 进程运行状态 |
+| `--config --get/--set/--unset/--list/--reload` | 配置读写 |
+| `--log [N\|console\|app]` | 翻阅日志 |
+
 ### 平台配置速查
 
 | 平台 | 配置详情 |
@@ -114,7 +168,7 @@ Steamauto的所有源代码均开放在GitHub，可供所有人自行查看代�
 
 ##### 是否支持多开？
 
-支持。但是需要复制多份程序，分别在不同的文件夹内运行
+支持。用 `--instance <name>` 在同一份程序上开多个实例，每个实例有独立的数据目录（`instances/<name>/`）、账号凭据和平台组合，实例间互不影响；用 `--instances` 查看所有实例状态
 
 ##### 可否关闭Buff自动发货？
 
