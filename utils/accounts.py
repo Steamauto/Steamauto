@@ -227,6 +227,13 @@ def _buff_state(cfg, live):
         info["logged_in"] = True
         info["connected"] = True
         info["account"] = buff_helper.get_buff_username("session=" + session) or None
+        # 可用余额（可提现）
+        try:
+            from api.BuffApi import BuffAccount
+
+            info["balance"] = (BuffAccount("session=" + session, proxies=proxies).get_user_brief_assest() or {}).get("total_able_withdraw_amount")
+        except Exception:
+            pass
     except Exception as e:  # noqa: BLE001 - 探测失败不抛出
         info["error"] = "校验失败：%s" % (e,)
     return info
@@ -263,6 +270,11 @@ def _uu_state(cfg, live):
         info["logged_in"] = True
         info["connected"] = True
         info["account"] = nickname
+        # 可用余额
+        try:
+            info["balance"] = account.get_balance().get("available")
+        except Exception:
+            pass
     except Exception as e:  # noqa: BLE001
         info["error"] = "校验失败：%s" % (e,)
     return info

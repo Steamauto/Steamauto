@@ -346,6 +346,20 @@ class TestStatusTreeRendering(unittest.TestCase):
         self.assertTrue(any("--login" in l for l in self.lines))
         self.assertTrue(any("--status account --json" in l for l in self.lines))
 
+    def test_balance_shown_when_present(self):
+        """状态里有 balance 时，应显示「可用余额：¥xxx」。"""
+        accts = _sample_accounts()
+        accts["buff"]["balance"] = "156.18"
+        accts["uu"]["balance"] = 6.53
+        lines = _render(accts, _sample_steam())
+        self.assertTrue(any("可用余额：¥156.18" in l for l in lines))
+        self.assertTrue(any("可用余额：¥6.53" in l for l in lines))
+
+    def test_balance_absent_when_missing(self):
+        """无 balance 字段时（如旧进程），不显示余额。"""
+        lines = _render(_sample_accounts(), _sample_steam())
+        self.assertFalse(any("可用余额" in l for l in lines))
+
     def test_handles_missing_platform(self):
         """缺失的平台用空白状态补齐，不应崩溃。"""
         lines = _render({"buff": _sample_accounts()["buff"]}, None)

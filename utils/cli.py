@@ -683,6 +683,8 @@ def _render_status(accounts_map, steam, source, live):
         detail = []
         if info.get("account"):
             detail.append("账号：%s" % _clip(info["account"], 40))
+        if info.get("balance") is not None:
+            detail.append("可用余额：¥%s" % info["balance"])
         if info.get("error"):
             detail.append(str(info["error"]))
         if detail:
