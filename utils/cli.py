@@ -701,6 +701,12 @@ def cmd_account_status(args):
     """
     from utils import accounts
 
+    running, _state = daemon.is_running()
+    if not running:
+        _err("程序未运行，无法查询账号状态（余额/登录态等运行时数据需程序在运行）。")
+        _err("请先启动：python Steamauto.py --start 或 --run")
+        return 1
+
     accounts_map, steam, source = _collect_status(args)
     if getattr(args, "json", False):
         _p(

@@ -500,6 +500,13 @@ def main(platform, argv):
         _help(platform)
         return 2
 
+    # 平台 API 查询/交易需要程序在运行（运行时状态源）
+    running, _state = accounts.daemon.is_running()
+    if not running:
+        _err("程序未运行，无法执行平台 API 操作（查询/交易需程序在运行）。")
+        _err("请先启动：python Steamauto.py --start 或 --run")
+        return 1
+
     fn, _desc = ops[op]
 
     # 写操作：二次确认（指令式安全；未来全自动交易用 --yes 跳过）

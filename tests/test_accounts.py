@@ -414,7 +414,12 @@ class TestFlagCli(_IsolatedPaths):
     def test_status_account_table(self):
         self.write_config()
         self.write_steam_account()
-        rc, out, _ = _run_cli(["--status", "account", "--no-live"])
+        orig = daemon.is_running
+        daemon.is_running = lambda: (True, {})  # 模拟程序运行中
+        try:
+            rc, out, _ = _run_cli(["--status", "account", "--no-live"])
+        finally:
+            daemon.is_running = orig
         self.assertEqual(rc, 0)
         self.assertIn("各平台账号状态", out)
         for label in ("BUFF", "UU", "C5", "ECO", "Steam"):
@@ -423,13 +428,29 @@ class TestFlagCli(_IsolatedPaths):
     def test_status_account_json(self):
         self.write_config()
         self.write_steam_account()
-        rc, out, _ = _run_cli(["--status", "account", "--no-live", "--json"])
+        orig = daemon.is_running
+        daemon.is_running = lambda: (True, {})
+        try:
+            rc, out, _ = _run_cli(["--status", "account", "--no-live", "--json"])
+        finally:
+            daemon.is_running = orig
         self.assertEqual(rc, 0)
         data = json.loads(out)
         self.assertIn("accounts", data)
         self.assertEqual(sorted(data["accounts"]), ["buff", "c5", "eco", "uu"])
         self.assertIn("steam", data)
         self.assertIn("source", data)
+
+    def test_status_account_requires_running(self):
+        """程序未运行时，--status account 应被拒绝（runtime 数据无效）。"""
+        orig = daemon.is_running
+        daemon.is_running = lambda: (False, {})  # 模拟程序未运行
+        try:
+            rc, _out, err = _run_cli(["--status", "account"])
+        finally:
+            daemon.is_running = orig
+        self.assertEqual(rc, 1)
+        self.assertIn("程序未运行", err)
 
     def test_status_unsupported_topic(self):
         rc, _out, err = _run_cli(["--status", "positions"])

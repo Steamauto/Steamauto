@@ -22,8 +22,13 @@ from utils import api_cli, cli  # noqa: E402
 
 def _run(platform, argv):
     out, err = io.StringIO(), io.StringIO()
-    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-        rc = api_cli.main(platform, argv)
+    orig = api_cli.accounts.daemon.is_running
+    api_cli.accounts.daemon.is_running = lambda: (True, {})  # 模拟程序运行中
+    try:
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = api_cli.main(platform, argv)
+    finally:
+        api_cli.accounts.daemon.is_running = orig
     return rc, out.getvalue(), err.getvalue()
 
 
@@ -352,6 +357,22 @@ class TestWriteOps(unittest.TestCase):
         rc, out, _ = _run("buff", ["balance"])
         self.assertEqual(rc, 0)
         self.assertIn("available", out)
+
+
+class TestNotRunningGate(unittest.TestCase):
+    """程序未运行时，平台 API 查询/交易应被拒绝（只允许看配置/进程状态）。"""
+
+    def test_platform_api_requires_running(self):
+        orig = api_cli.accounts.daemon.is_running
+        api_cli.accounts.daemon.is_running = lambda: (False, {})  # 模拟程序未运行
+        try:
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = api_cli.main("buff", ["balance"])
+        finally:
+            api_cli.accounts.daemon.is_running = orig
+        self.assertEqual(rc, 1)
+        self.assertIn("程序未运行", err.getvalue())
 
 
 if __name__ == "__main__":
