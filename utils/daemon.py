@@ -288,7 +288,7 @@ def spawn_background(port=None, extra_args=None, control_enable=True):
             _out("  日志文件：%s" % (read_state().get("log_file") or latest_log_file("any") or "启动中…"))
             _out("  控制台输出：%s" % console_log)
             if control_enable:
-                _out("  可用命令：python Steamauto.py status / stop / config list")
+                _out("  可用命令：python Steamauto.py --status / --stop / --config --list")
             return True, ""
         time.sleep(0.25)
 

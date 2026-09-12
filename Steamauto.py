@@ -459,7 +459,7 @@ def exit_app(signal_, frame):
     if not tried_exit:
         tried_exit = True
         runtime.request_shutdown()
-        echo("正在退出...若无响应，请再按一次 Ctrl+C，或使用 python Steamauto.py stop --force", dual=True)
+        echo("正在退出...若无响应，请再按一次 Ctrl+C，或使用 python Steamauto.py --stop --force", dual=True)
         return
     logger.warning("程序已经强制退出")
     flush_logging()
@@ -801,7 +801,7 @@ def _onboard_first_run():
             section = config.get(plugin_key)
             if isinstance(section, dict) and not section.get("enable"):
                 echo("提示：%s 的插件当前未启用，需要执行：" % accounts.DISPLAY[platform])
-                echo("      python Steamauto.py config set %s.enable true" % plugin_key)
+                echo("      python Steamauto.py --config --set %s.enable true" % plugin_key)
         else:
             echo("[失败] %s" % msg, dual=True)
         echo("")
@@ -821,7 +821,7 @@ def _onboard_first_run():
         echo("[OK] %s" % msg, dual=True)
     else:
         echo("转入后台失败：%s" % msg, dual=True)
-        echo("可手动执行：python Steamauto.py start", dual=True)
+        echo("可手动执行：python Steamauto.py --start", dual=True)
     return False
 
 
@@ -898,15 +898,15 @@ def _handoff_to_background(plugin_count, control_server=None):
     if not ok:
         logger.error("转入后台失败：%s", msg)
         echo("转入后台失败：%s" % msg, dual=True)
-        echo("可手动执行：python Steamauto.py start", dual=True)
+        echo("可手动执行：python Steamauto.py --start", dual=True)
         return True  # 仍然结束前台，避免用户以为已经后台运行却有两个实例
 
     echo("=" * 62, dual=True)
     echo("已转入后台运行（插件数：%d），控制台交还。" % plugin_count, dual=True)
     echo("  翻阅日志：python Steamauto.py --log")
-    echo("  运行状态：python Steamauto.py status")
-    echo("  停止运行：python Steamauto.py stop")
-    echo("  前台运行：python Steamauto.py run    （需盯日志时用）")
+    echo("  运行状态：python Steamauto.py --status")
+    echo("  停止运行：python Steamauto.py --stop")
+    echo("  前台运行：python Steamauto.py --run    （需盯日志时用）")
     echo("=" * 62, dual=True)
     return True
 
@@ -936,8 +936,8 @@ def main():
     other_pid = _other_instance_pid()
     if other_pid is not None:
         echo("检测到 Steamauto 已在运行（PID %s），本次启动取消。" % other_pid, dual=True)
-        echo("  查看状态：python Steamauto.py status")
-        echo("  重启服务：python Steamauto.py restart")
+        echo("  查看状态：python Steamauto.py --status")
+        echo("  重启服务：python Steamauto.py --restart")
         return 0
 
     _setup_runtime_state()
