@@ -66,8 +66,8 @@ class TestNormalize(unittest.TestCase):
 
 
 class TestBaseDir(_TmpInstances):
-    def test_default_is_base_dir(self):
-        self.assertEqual(instance.base_dir("default"), static._BASE_DIR)
+    def test_default_under_instances_dir(self):
+        self.assertEqual(instance.base_dir("default"), os.path.join(static.INSTANCES_DIR, "default"))
 
     def test_named_under_instances_dir(self):
         self.assertEqual(
@@ -138,10 +138,15 @@ class TestEnsureInstance(_TmpInstances):
             text = f.read()
         self.assertIn('"port": 45999', text, "分配的端口应写入实例 config")
 
-    def test_default_is_noop(self):
-        bd, created = instance.ensure_instance("default")
-        self.assertFalse(created)
-        self.assertEqual(bd, static._BASE_DIR)
+    def test_default_creates_instance(self):
+        """default 实例也创建目录（instances/default）+ 生成配置。"""
+        from unittest import mock
+
+        with mock.patch.object(instance, "_migrate_legacy_default"), mock.patch.object(instance, "allocate_port", return_value=45917):
+            bd, created = instance.ensure_instance("default")
+        self.assertTrue(created)
+        self.assertEqual(bd, os.path.join(static.INSTANCES_DIR, "default"))
+        self.assertTrue(os.path.exists(os.path.join(bd, "config", "config.json5")))
 
 
 class TestListInstances(_TmpInstances):
@@ -150,10 +155,12 @@ class TestListInstances(_TmpInstances):
 
         os.makedirs(os.path.join(static.INSTANCES_DIR, "alice"), exist_ok=True)
         os.makedirs(os.path.join(static.INSTANCES_DIR, "bob"), exist_ok=True)
+        os.makedirs(os.path.join(static.INSTANCES_DIR, "default"), exist_ok=True)
         with mock.patch("utils.daemon.pid_alive", return_value=True):
             entries = instance.list_instances()
         names = [e["name"] for e in entries]
-        self.assertEqual(names[0], "default", "default 应排最前")
+        self.assertEqual(names, sorted(names), "实例应按名称排序")
+        self.assertIn("default", names)
         self.assertIn("alice", names)
         self.assertIn("bob", names)
 

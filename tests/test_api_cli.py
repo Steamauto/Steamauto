@@ -255,6 +255,17 @@ class TestTableRenderer(unittest.TestCase):
 
 
 class TestCliPlatformRouting(unittest.TestCase):
+    def setUp(self):
+        import utils.instance as instance_mod
+
+        self._orig_activate = instance_mod.activate
+        instance_mod.activate = lambda name, create=True: (name, None)
+
+    def tearDown(self):
+        import utils.instance as instance_mod
+
+        instance_mod.activate = self._orig_activate
+
     def test_platform_flag_routes_to_api_cli(self):
         """`python Steamauto.py --buff --help` 走 api_cli 而非主 parser。"""
         out, err = io.StringIO(), io.StringIO()

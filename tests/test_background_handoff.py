@@ -64,10 +64,18 @@ class _TempLogs(unittest.TestCase):
             for key, value in self._paths.items():
                 if hasattr(mod, key):
                     setattr(mod, key, value)
+        # main 开头 activate("default") 会 set_base_dir 覆盖路径 mock；mock 掉它
+        import utils.instance as instance_mod
+
+        self._orig_activate = instance_mod.activate
+        instance_mod.activate = lambda name, create=True: (name, self.tmp)
 
     def tearDown(self):
         for mod, key, value in self._orig:
             setattr(mod, key, value)
+        import utils.instance as instance_mod
+
+        instance_mod.activate = self._orig_activate
 
     def write_log(self, name, content):
         path = os.path.join(self.logs_dir, name)
@@ -278,35 +286,55 @@ class TestLatestLogFileKinds(_TempLogs):
 # ============================================================ 启动模式
 
 class TestRunModeSelection(unittest.TestCase):
-    """无参数启动 → 转后台；`run` → 前台常驻。"""
+    """无参数启动 / --run 都 spawn 子进程；--run 额外跟随日志。"""
 
     def setUp(self):
         self._orig_main = Steamauto.main
         self._env_backup = os.environ.get("STEAMAUTO_BG_HANDOFF")
+        self._orig_spawn = cli.daemon.spawn_background
+        self._orig_follow = cli.daemon.follow
+        self._orig_latest = cli.daemon.latest_log_file
+        # main 开头 activate("default") 会 set_base_dir 污染真实目录；mock 掉它
+        import utils.instance as instance_mod
+
+        self._orig_activate = instance_mod.activate
+        instance_mod.activate = lambda name, create=True: (name, None)
 
     def tearDown(self):
         Steamauto.main = self._orig_main
+        cli.daemon.spawn_background = self._orig_spawn
+        cli.daemon.follow = self._orig_follow
+        cli.daemon.latest_log_file = self._orig_latest
+        import utils.instance as instance_mod
+
+        instance_mod.activate = self._orig_activate
         if self._env_backup is None:
             os.environ.pop("STEAMAUTO_BG_HANDOFF", None)
         else:
             os.environ["STEAMAUTO_BG_HANDOFF"] = self._env_backup
 
-    def test_no_args_sets_handoff_env(self):
-        called = []
-        Steamauto.main = lambda: (called.append(True), 0)[1]
+    def test_no_args_spawns_background(self):
+        """无参数启动：spawn 子进程（主进程不 import Steamauto）。"""
+        spawns = []
+        cli.daemon.spawn_background = lambda **kw: (spawns.append(kw), (True, "ok"))[1]
         rc = _run_cli([])[0]
         self.assertEqual(rc, 0)
-        self.assertEqual(called, [True], "无参数启动应真的跑到 Steamauto.main")
-        self.assertEqual(os.environ.get("STEAMAUTO_BG_HANDOFF"), "1")
+        self.assertEqual(len(spawns), 1, "无参数启动应 spawn 子进程")
 
-    def test_run_flag_does_not_set_handoff(self):
-        """`--run` 应保持前台常驻（不设置转后台标记）。"""
-        called = []
-        Steamauto.main = lambda: (called.append(True), 0)[1]
+    def test_run_flag_spawns_and_follows(self):
+        """--run：spawn 子进程 + 跟随日志到前台。"""
+        spawns = []
+        follows = []
+        logfile = os.path.join(tempfile.mkdtemp(), "console.log")
+        with open(logfile, "w", encoding="utf-8") as f:
+            f.write("log\n")
+        cli.daemon.spawn_background = lambda **kw: (spawns.append(kw), (True, "ok"))[1]
+        cli.daemon.follow = lambda path: follows.append(path)
+        cli.daemon.latest_log_file = lambda kind: logfile
         rc = _run_cli(["--run"])[0]
         self.assertEqual(rc, 0)
-        self.assertEqual(called, [True])
-        self.assertNotIn("STEAMAUTO_BG_HANDOFF", os.environ, "--run 应保持前台常驻")
+        self.assertEqual(len(spawns), 1, "--run 应 spawn 子进程")
+        self.assertEqual(len(follows), 1, "--run 应跟随日志")
 
     def test_run_daemon_goes_to_background_without_foreground_init(self):
         """`--run -d` 应直接后台启动（不做前台初始化，不调用 main）。"""

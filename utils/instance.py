@@ -2,9 +2,10 @@
 
 设计（与 ``utils.static.set_base_dir`` 配合）：
 
-- ``default`` 实例 = 现状数据目录（PROJECT_ROOT 或 STEAMAUTO_BASE_DIR），零迁移。
-- 具名实例 ``<name>`` = ``PROJECT_ROOT/instances/<name>/``，config/run/logs/session
-  全部落在该目录下，实例间零共享。
+- 所有实例（含默认实例 ``default``）的数据目录都在 ``PROJECT_ROOT/instances/<name>/`` 下，
+  config/run/logs/session 全部落在该目录下，实例间零共享。
+- 默认实例名 = ``default``（不带 ``--instance`` 时使用），目录 ``instances/default/``。
+- 首次创建 ``default`` 实例时，自动迁移旧 PROJECT_ROOT/config 下的凭据/配置。
 - CLI 短命命令（status/config/login/--buff 等）在 ``cli.main`` 里 ``activate()``
   热切换 ``static`` 路径；后台服务进程由 ``daemon.spawn_background`` 继承
   ``STEAMAUTO_BASE_DIR`` 环境变量，import 时自然走对目录。
@@ -12,16 +13,19 @@
 
 import json
 import os
+import shutil
 import socket
 
 from utils import static
+
+DEFAULT_NAME = "default"
 
 
 def normalize(name):
     """规范化实例名；空 / default 归一到 "default"。"""
     name = (name or "").strip()
-    if not name or name.lower() == "default":
-        return "default"
+    if not name or name.lower() == DEFAULT_NAME:
+        return DEFAULT_NAME
     if any(c in name for c in "/\\:") or name in (".", ".."):
         raise ValueError("非法实例名：%s（不能含路径分隔符）" % name)
     return name
@@ -29,10 +33,7 @@ def normalize(name):
 
 def base_dir(name):
     """返回实例的数据根目录（不创建）。"""
-    name = normalize(name)
-    if name == "default":
-        return getattr(static, "_BASE_DIR", static.PROJECT_ROOT)
-    return os.path.join(static.INSTANCES_DIR, name)
+    return os.path.join(static.INSTANCES_DIR, normalize(name))
 
 
 def _configured_ports():
@@ -83,12 +84,40 @@ def _config_text_with_port(port):
     return static.DEFAULT_CONFIG_JSON.replace('"port": 45917', '"port": %d' % port)
 
 
+def _read_text(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read().strip()
+    except (OSError, UnicodeDecodeError):
+        return ""
+
+
+def _migrate_legacy_default(bd):
+    """把旧 default 实例（PROJECT_ROOT/config）的凭据/配置迁移到新的 default 目录。
+
+    规则：源内容有效（非空且非占位 "session="）时，若目标不存在或内容为空/占位，
+    则复制覆盖；目标已有有效内容（用户已在实例里重新登录）则保留。
+    """
+    legacy_cfg = os.path.join(static.PROJECT_ROOT, "config")
+    new_cfg = os.path.join(bd, "config")
+    if not os.path.isdir(legacy_cfg):
+        return
+    for fn in os.listdir(legacy_cfg):
+        src = os.path.join(legacy_cfg, fn)
+        dst = os.path.join(new_cfg, fn)
+        if not os.path.isfile(src):
+            continue
+        src_content = _read_text(src)
+        if not src_content or src_content == "session=":
+            continue  # 源空/无效，不复制
+        if not os.path.exists(dst) or _read_text(dst) in ("", "session="):
+            shutil.copy2(src, dst)  # 目标不存在或空/无效 → 复制覆盖
+
+
 def ensure_instance(name):
-    """确保具名实例的目录与初始配置就绪。返回 (base_dir, created: bool)。"""
+    """确保实例的目录与初始配置就绪。返回 (base_dir, created: bool)。"""
     name = normalize(name)
     bd = base_dir(name)
-    if name == "default":
-        return bd, False
 
     cfg_dir = os.path.join(bd, "config")
     cfg_path = os.path.join(cfg_dir, "config.json5")
@@ -96,6 +125,9 @@ def ensure_instance(name):
 
     created = False
     os.makedirs(cfg_dir, exist_ok=True)
+    # default 实例：迁移/修复旧 PROJECT_ROOT/config 的凭据（幂等，多次调用安全）
+    if name == DEFAULT_NAME:
+        _migrate_legacy_default(bd)
     if not os.path.exists(cfg_path):
         port = allocate_port()
         with open(cfg_path, "w", encoding="utf-8") as f:
@@ -112,7 +144,7 @@ def activate(name, create=True):
     """激活实例：切换 static 路径 + 设置环境变量。返回 (name, base_dir)。"""
     name = normalize(name)
     bd = base_dir(name)
-    if create and name != "default":
+    if create:
         ensure_instance(name)
     os.environ["STEAMAUTO_BASE_DIR"] = bd
     static.set_base_dir(bd)
@@ -120,21 +152,21 @@ def activate(name, create=True):
 
 
 def current_name():
-    """当前实例名：从 STEAMAUTO_BASE_DIR 反推；default 返回 "default"。"""
+    """当前实例名：从 STEAMAUTO_BASE_DIR 反推；未设置返回 "default"。"""
     env = os.environ.get("STEAMAUTO_BASE_DIR")
     if env:
         env_abs = os.path.abspath(env)
         root = static.INSTANCES_DIR
         if env_abs.startswith(root + os.sep):
             return os.path.relpath(env_abs, root)
-    return "default"
+    return DEFAULT_NAME
 
 
 def list_instances():
     """列出所有实例及其运行状态。返回 [{"name","base_dir","running","pid"}]。"""
     from utils import daemon
 
-    entries = [("default", getattr(static, "_BASE_DIR", static.PROJECT_ROOT))]
+    entries = []
     if os.path.isdir(static.INSTANCES_DIR):
         for n in sorted(os.listdir(static.INSTANCES_DIR)):
             d = os.path.join(static.INSTANCES_DIR, n)

@@ -73,10 +73,18 @@ class _IsolatedPaths(unittest.TestCase):
             for key, value in self._paths.items():
                 if hasattr(mod, key):
                     setattr(mod, key, value)
+        # main 开头 activate("default") 会 set_base_dir 覆盖路径 mock；mock 掉它
+        import utils.instance as instance_mod
+
+        self._orig_activate = instance_mod.activate
+        instance_mod.activate = lambda name, create=True: (name, self.tmp)
 
     def tearDown(self):
         for mod, key, value in self._orig:
             setattr(mod, key, value)
+        import utils.instance as instance_mod
+
+        instance_mod.activate = self._orig_activate
 
     # ---- 辅助 ----
     def write_config(self, text=None):

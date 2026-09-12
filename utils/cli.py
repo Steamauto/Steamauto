@@ -184,28 +184,43 @@ def _request(command, args=None, port=None):
 def cmd_run(args):
     """运行服务。
 
-    默认（无参数启动）：完整初始化后自动转入后台，把控制台还给用户。
-    `run` 子命令：保持传统前台常驻，便于盯日志调试。
+    - 子进程（STEAMAUTO_DAEMON=1，由 spawn_background 拉起）：前台常驻跑服务。
+    - 主进程：spawn 子进程；--run 跟随日志到前台（便于盯日志）。
     """
     if getattr(args, "daemon", False):
-        return cmd_start(args)
-    # foreground=False 表示「无参数启动」→ 初始化完成后转后台。
-    # 用环境变量传给 Steamauto.main（它是被调用的服务模块，不关心 CLI 细节）。
-    if getattr(args, "foreground", True) is False:
-        os.environ["STEAMAUTO_BG_HANDOFF"] = "1"
-    else:
-        os.environ.pop("STEAMAUTO_BG_HANDOFF", None)
-    if getattr(args, "port", None):
-        os.environ["STEAMAUTO_CONTROL_PORT"] = str(args.port)
-    import Steamauto  # 惰性导入：仅 run 时才加载网络/插件/日志等重型依赖
+        return cmd_start(args)  # --run -d = 直接后台，不 follow
 
-    try:
-        return Steamauto.main() or 0
-    except KeyboardInterrupt:
-        return 0
-    except Exception as e:  # noqa: BLE001
-        _err("运行失败：%s" % (e,))
+    # 子进程：前台常驻跑服务（不再 spawn，避免无限套娃）
+    if os.environ.get("STEAMAUTO_DAEMON") == "1":
+        import Steamauto  # 惰性导入：仅真正跑服务时才加载网络/插件/日志等重型依赖
+
+        try:
+            return Steamauto.main() or 0
+        except KeyboardInterrupt:
+            return 0
+        except Exception as e:  # noqa: BLE001
+            _err("运行失败：%s" % (e,))
+            return 1
+
+    # 主进程：spawn 子进程
+    ok, msg = daemon.spawn_background(port=getattr(args, "port", None))
+    if not ok:
+        _err(msg)
         return 1
+    _ok(msg)
+
+    # --run（前台常驻语义）：跟随子进程日志到前台
+    if getattr(args, "foreground", True):
+        _follow_console_log()
+    return 0
+
+
+def _follow_console_log():
+    """跟随后台子进程的控制台日志（Ctrl+C 退出）。"""
+    path = daemon.latest_log_file("console") or daemon.latest_log_file("any")
+    if path and os.path.exists(path):
+        _p("正在跟随日志（Ctrl+C 退出）：%s" % path)
+        daemon.follow(path)
 
 
 def cmd_start(args):
@@ -846,16 +861,15 @@ def _extract_instance(argv):
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
-    # 1. 提取并激活 --instance <name>（全局：影响所有命令的数据目录，含平台 API 命令）
+    # 1. 提取并激活 --instance <name>（不带则默认 default；影响所有命令的数据目录）
     argv, instance_name = _extract_instance(argv)
-    if instance_name:
-        from utils import instance
+    from utils import instance
 
-        try:
-            instance.activate(instance_name)
-        except ValueError as e:
-            _err(str(e))
-            return 2
+    try:
+        instance.activate(instance_name or instance.DEFAULT_NAME)
+    except ValueError as e:
+        _err(str(e))
+        return 2
     # 2. 平台 API 命令（--buff/--uu/--c5/--eco）有独立的子命令树与参数约定，
     #    不走主 parser（避免 REMAINDER 吞掉全局 flag），直接交给 api_cli。
     if argv and argv[0] in ("--buff", "--uu", "--c5", "--eco"):

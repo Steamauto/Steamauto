@@ -508,6 +508,7 @@ class TestControlChannel(unittest.TestCase):
 class TestCli(unittest.TestCase):
     def setUp(self):
         from utils import cli
+        import utils.instance as instance_mod
 
         self.cli = cli
         self.parser = cli.build_parser()
@@ -522,11 +523,18 @@ class TestCli(unittest.TestCase):
         cli.static.CONFIG_FILE_PATH = self.cfg_path
         daemon.static.STATE_FILE = os.path.join(self.tmp, "state.json")
         daemon.static.PID_FILE = os.path.join(self.tmp, "steamauto.pid")
+        # main 开头会 activate("default") 并 set_base_dir，覆盖上面的路径 mock；
+        # 测试只验证命令逻辑，mock 掉 activate 避免路径被覆盖。
+        self._orig_activate = instance_mod.activate
+        instance_mod.activate = lambda name, create=True: (name, self.tmp)
 
     def tearDown(self):
+        import utils.instance as instance_mod
+
         self.cli.static.CONFIG_FILE_PATH = self._orig_cfg
         daemon.static.STATE_FILE = self._orig_state
         daemon.static.PID_FILE = self._orig_pid
+        instance_mod.activate = self._orig_activate
 
     def test_parse_subcommands(self):
         self.assertTrue(self.parser.parse_args(["--start"]).start)
