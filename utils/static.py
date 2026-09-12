@@ -109,6 +109,7 @@ INTERNAL_PLUGINS = [
     "steam_auto_accept_offer",
     "ecosteam",
     "c5_auto_accept_offer",
+    "sold_auto_off_shelf",
 ]
 
 DEFAULT_STEAM_ACCOUNT_JSON = """
@@ -275,6 +276,17 @@ DEFAULT_CONFIG_JSON = r"""
     "enable": false, // 是否启用C5自动发货功能
     "interval": 30, // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
     "app_key": "" // C5Game的AppKey 在 https://www.c5game.com/user/user/open-api 申请
+  },
+  // 跨平台售出自动下架：同一饰品同时挂在多个平台出售时，在任一平台售出后自动在其余平台下架，避免一单多卖
+  "sold_auto_off_shelf": {
+    // 是否启用跨平台售出自动下架
+    "enable": false,
+    // 轮询间隔（秒），不建议设置太长，否则下架不及时可能一单多卖
+    "interval": 60,
+    // 参与的平台，可选值 "buff"/"uu"/"eco"，至少 2 个
+    "platforms": ["buff", "uu", "eco"],
+    // 兜底：在售饰品若已不在Steam库存中（如已发货完成）则自动下架
+    "inventory_check": true
   },
   // 存储在硬盘的日志等级（只影响日志文件），可选值为"debug"/"info"/"warning"/"error"
   "log_level": "info",
