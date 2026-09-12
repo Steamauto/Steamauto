@@ -163,7 +163,13 @@ _CLIENT_FACTORIES = {
 
 def _buff_ops():
     def balance(client, args):
-        return client.get_user_brief_assest()
+        d = client.get_user_brief_assest() or {}
+        return {
+            "available": d.get("total_able_withdraw_amount"),
+            "trading_only": d.get("total_unable_withdraw_amount"),
+            "frozen": d.get("frozen_amount"),
+            "total": d.get("cash_amount"),
+        }
 
     def nickname(client, args):
         return client.get_user_nickname()
@@ -227,6 +233,9 @@ def _buff_ops():
 
 
 def _uu_ops():
+    def balance(client, args):
+        return client.get_balance()
+
     def nickname(client, args):
         return client.get_user_nickname()
 
@@ -262,6 +271,7 @@ def _uu_ops():
         return client.get_sell_min(int(args[0]))
 
     return {
+        "balance": (balance, "余额（可用/仅交易/冻结/总）"),
         "nickname": (nickname, "当前 UU 昵称"),
         "inventory": (inventory, "库存：--uu inventory"),
         "on-sale": (on_sale, "我的在售：--uu on-sale"),

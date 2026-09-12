@@ -162,6 +162,24 @@ class UUAccount:
     def get_user_nickname(self):
         return self.nickname
 
+    def get_balance(self):
+        """余额（getUserInfo）：可用余额 / 冻结 / 求购占用 / 总金额。
+
+        字段映射（悠悠钱包页「可用余额 / 仅交易余额 / 冻结余额」）：
+        - available   可用余额 = Balance
+        - trading_only 仅交易余额 = PurchaseMoney（求购单占用的资金，只能用于交易）
+        - frozen      冻结余额 = BlockMoney
+        - total       总金额 = TotalMoney
+        """
+        info = self.call_api("GET", "/api/user/Account/getUserInfo").json()
+        data = info.get("Data") or {}
+        return {
+            "available": data.get("Balance"),
+            "trading_only": data.get("PurchaseMoney"),
+            "frozen": data.get("BlockMoney"),
+            "total": data.get("TotalMoney"),
+        }
+
     def send_device_info(self):
         return self.call_api(
             "GET",
@@ -1059,7 +1077,7 @@ class UUAccount:
         ).json()
         buy_price = []
         if buy_order_rsp["code"] == 0:
-            order_list = buy_order_rsp["data"]["orderList"]
+            order_list = (buy_order_rsp.get("data") or {}).get("orderList") or []
             for order in order_list:
                 if not order["orderStatusName"] == "已完成":
                     continue
@@ -1069,7 +1087,7 @@ class UUAccount:
                         buy_price.append(
                             {
                                 "order_id": order["orderId"],
-                                "abrade": product["abrade"][:11],
+                                "abrade": (product.get("abrade") or "")[:11],
                                 "buy_asset_id": product["assertId"] if product["assertId"] is not None else product["commodityId"],
                                 "buy_price": product["price"] / 100,
                                 "name": product["commodityName"],
@@ -1099,16 +1117,18 @@ class UUAccount:
         ).json()
         buy_price = []
         if buy_batch_order_rsp["code"] == 0:
-            data = buy_batch_order_rsp["data"]
-            for commodity in data["userCommodityVOList"][0]["commodityVOList"]:
+            data = buy_batch_order_rsp.get("data") or {}
+            first_vo = (data.get("userCommodityVOList") or [{}])[0] or {}
+            vo_list = first_vo.get("commodityVOList") or []
+            for commodity in vo_list:
                 buy_price.append(
                     {
                         "order_id": orderNo,
-                        "abrade": commodity["abrade"][:11],
-                        "buy_asset_id": commodity["id"],
-                        "buy_price": float(commodity["price"]),
-                        "name": commodity["name"],
-                        "order_time": int(data["orderCanceledTime"]),
+                        "abrade": (commodity.get("abrade") or "")[:11],
+                        "buy_asset_id": commodity.get("id"),
+                        "buy_price": float(commodity.get("price") or 0),
+                        "name": commodity.get("name"),
+                        "order_time": int(data.get("orderCanceledTime") or 0),
                         "buy_from": "uu",
                     }
                 )

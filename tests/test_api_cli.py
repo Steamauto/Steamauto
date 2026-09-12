@@ -29,7 +29,12 @@ def _run(platform, argv):
 
 class _FakeBuff:
     def get_user_brief_assest(self):
-        return {"cash_amount": "156.18", "alipay_amount": "0"}
+        return {
+            "cash_amount": "156.18",
+            "total_able_withdraw_amount": "156.18",
+            "total_unable_withdraw_amount": "0",
+            "frozen_amount": "0",
+        }
 
     def get_user_nickname(self):
         return "洛北辰"
@@ -156,7 +161,9 @@ class TestDispatchAndOutput(unittest.TestCase):
     def test_json_is_default(self):
         rc, out, _ = _run("buff", ["balance"])
         self.assertEqual(rc, 0)
-        self.assertIn('"cash_amount"', out)
+        self.assertIn('"available"', out)
+        self.assertIn('"trading_only"', out)
+        self.assertIn('"frozen"', out)
 
     def test_positional_args_passed_to_handler(self):
         # search 接收 key + 可选 game
@@ -175,7 +182,7 @@ class TestDispatchAndOutput(unittest.TestCase):
         # 后出现的 --json 覆盖前面的 --table
         rc, out, _ = _run("buff", ["balance", "--table", "--json"])
         self.assertEqual(rc, 0)
-        self.assertIn('"cash_amount"', out)
+        self.assertIn('"available"', out)
 
     def test_help_flag_wins_over_positional(self):
         rc, out, _ = _run("buff", ["balance", "--help"])
