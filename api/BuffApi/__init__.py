@@ -475,9 +475,7 @@ class BuffAccount:
         return []
 
     def on_sale(self, assets: list[models.BuffOnSaleAsset]):
-        """
-        仅支持CSGO 返回上架成功商品的id
-        """
+        """上架饰品。返回 (成功列表, 失败 dict)；业务错误时失败 dict 含 "error" 键。"""
         response = self.post(
             f"{self.BASE_URL}/api/market/sell_order/create/manual_plus",
             json={
@@ -487,13 +485,23 @@ class BuffAccount:
             },
             headers=self.CSRF_Fucker(),
         )
+        try:
+            payload = response.json()
+        except (ValueError, TypeError):
+            return [], {"error": "BUFF 返回无效响应"}
+        if payload.get("code") != "OK":
+            # 业务错误：Epay 迁移要求、参数错误等
+            confirm = payload.get("confirm_entry") or {}
+            msg = confirm.get("message") or payload.get("msg") or payload.get("code") or "上架失败"
+            return [], {"error": msg}
+        data = payload.get("data") or {}
         success = []
         problem_assets = {}
-        for good in response.json()["data"].keys():
-            if response.json()["data"][good] == "OK":
+        for good, status in data.items():
+            if status == "OK":
                 success.append(good)
             else:
-                problem_assets[good] = response.json()["data"][good]
+                problem_assets[good] = status
         return success, problem_assets
 
     def cancel_sale(self, sell_orders: list, exclude_sell_orders: list = []):

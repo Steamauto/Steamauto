@@ -273,11 +273,18 @@ def _buff_ops():
             price=price,
         )
 
+    def _sale_result(result):
+        """处理 on_sale 返回 (success, problems)：有 error 则抛 ValueError，否则返回结构化结果。"""
+        success, problems = result
+        if isinstance(problems, dict) and "error" in problems:
+            raise ValueError("上架失败：%s" % problems["error"])
+        return {"success": success, "problems": problems}
+
     def list_item(client, args):
         if len(args) < 2:
             raise ValueError("list 需要 assetid 和 price，如：--buff list <assetid> <price>")
         assetid, price = args[0], float(args[1])
-        return client.on_sale([_make_asset(client, assetid, price)])
+        return _sale_result(client.on_sale([_make_asset(client, assetid, price)]))
 
     def sell_bidder(client, args):
         if len(args) < 2:
@@ -287,7 +294,7 @@ def _buff_ops():
         if buy_max is None:
             raise ValueError("该饰品（goods_id=%s）暂无求购单，无法塞求购" % goods_id)
         price = round(float(buy_max) - 0.01, 2)
-        return client.on_sale([_make_asset(client, assetid, price)])
+        return _sale_result(client.on_sale([_make_asset(client, assetid, price)]))
 
     def off_shelf(client, args):
         if not args:
