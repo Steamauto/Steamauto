@@ -96,6 +96,8 @@ def build_parser():
     parser.add_argument("--port", type=int, help="覆盖控制通道端口（默认取配置 control.port）")
     parser.add_argument("--instance", metavar="NAME", help="指定实例（数据目录 instances/<name>；default 为默认实例）")
     parser.add_argument("--instances", action="store_true", help="列出所有实例及运行状态")
+    parser.add_argument("--remove", "--rm", action="store_true", dest="remove", help="删除当前实例（--instance 指定的或 default；运行中拒绝）")
+    parser.add_argument("--rename", metavar="NEW_NAME", help="重命名当前实例（--instance 指定的或 default）")
 
     # ---- 运行控制 ----
     parser.add_argument("--run", action="store_true", help="前台运行（初始化后转后台；需常驻前台时用）")
@@ -107,13 +109,13 @@ def build_parser():
     parser.add_argument("--timeout", type=float, default=daemon.STOP_TIMEOUT, help="等待优雅退出的秒数")
 
     # ---- 状态 ----
-    # 不带值（或 all）= 所有实例状态；<实例名> = 指定实例进程状态；account = 账号状态
+    # 不带值（""）：不带 --instance 默认 all（所有实例），带 --instance 默认当前实例；account = 账号状态
     parser.add_argument(
         "--status",
         nargs="?",
-        const="all",
+        const="",
         metavar="[<实例名>|all|account]",
-        help="查看状态：默认 all（所有实例）；<实例名> = 指定实例进程状态；account = 账号状态",
+        help="查看状态：不带 --instance 默认 all；带 --instance 默认当前实例；account = 账号状态",
     )
     parser.add_argument("--json", action="store_true", help="以 JSON 输出（配合 --status）")
     parser.add_argument("--no-live", action="store_true", help="只读本地凭据，不联网校验（更快）")
@@ -306,6 +308,62 @@ def cmd_status_for_instance(name, args):
     else:
         _p("状态：未运行")
     return 0 if running else 3
+
+
+def _instance_is_running(name):
+    """指定实例是否在运行。"""
+    from utils import instance
+
+    bd = instance.base_dir(name)
+    state_file = os.path.join(bd, "run", "steamauto.state.json")
+    try:
+        with open(state_file, encoding="utf-8") as f:
+            state = json.load(f)
+        pid = state.get("pid")
+        return bool(pid) and daemon.pid_alive(int(pid))
+    except (OSError, ValueError, TypeError):
+        return False
+
+
+def cmd_remove(args):
+    """`--remove/--rm`：删除当前实例（--instance 指定的或 default）。"""
+    from utils import instance
+
+    name = instance.normalize(getattr(args, "instance", None) or instance.DEFAULT_NAME)
+    if _instance_is_running(name):
+        _err("实例 %s 正在运行，请先停止：python Steamauto.py --instance %s --stop" % (name, name))
+        return 1
+    ok, msg = instance.remove_instance(name)
+    if ok:
+        _ok(msg)
+        return 0
+    _err(msg)
+    return 1
+
+
+def cmd_rename(args):
+    """`--rename <新名>`：重命名当前实例（--instance 指定的或 default）。"""
+    from utils import instance
+
+    old = instance.normalize(getattr(args, "instance", None) or instance.DEFAULT_NAME)
+    new_raw = getattr(args, "rename", None)
+    if not new_raw:
+        _err("--rename 需要新实例名，如：--instance XX --rename YY")
+        return 2
+    try:
+        new = instance.normalize(new_raw)
+    except ValueError as e:
+        _err(str(e))
+        return 2
+    if _instance_is_running(old):
+        _err("实例 %s 正在运行，请先停止：python Steamauto.py --instance %s --stop" % (old, old))
+        return 1
+    ok, msg = instance.rename_instance(old, new)
+    if ok:
+        _ok(msg)
+        return 0
+    _err(msg)
+    return 1
 
 
 def _show_log(kind="any", lines=50, follow=False, file=None):
@@ -564,6 +622,8 @@ _HELP_SECTIONS = [
         ("python Steamauto.py --instances", "列出所有实例及运行状态"),
         ("python Steamauto.py --instance <NAME> --run", "启动指定实例（独立数据目录，多开）"),
         ("python Steamauto.py --instance <NAME> --status", "查看指定实例状态"),
+        ("python Steamauto.py --instance <NAME> --remove", "删除指定实例（运行中拒绝）"),
+        ("python Steamauto.py --instance <NAME> --rename <新名>", "重命名指定实例"),
     ]),
     ("日志", [
         ("python Steamauto.py --log", "翻阅最新日志（末尾 50 行）"),
@@ -905,8 +965,10 @@ def main(argv=None):
     argv, instance_name = _extract_instance(argv)
     from utils import instance
 
+    # --remove/--rename 不应创建实例（对不存在的实例应报错，而非先建后删/后改）
+    _create = not any(a in ("--remove", "--rm", "--rename") for a in argv)
     try:
-        instance.activate(instance_name or instance.DEFAULT_NAME)
+        instance.activate(instance_name or instance.DEFAULT_NAME, create=_create)
     except ValueError as e:
         _err(str(e))
         return 2
@@ -925,6 +987,8 @@ def main(argv=None):
     args = _parse_args(parser, argv)
     if args is None:
         return 2
+    # 显式指定的实例名（--instance XX；None 表示没带，用默认 default）
+    args.instance = instance_name
 
     return _dispatch(args)
 
@@ -936,9 +1000,13 @@ def _dispatch(args):
     if getattr(args, "help", False):
         return cmd_help(args)
 
-    # ---- 实例列表 ----
+    # ---- 实例管理 ----
     if getattr(args, "instances", False):
         return cmd_instances()
+    if getattr(args, "remove", False):
+        return cmd_remove(args)
+    if getattr(args, "rename", None):
+        return cmd_rename(args)
 
     # ---- 平台 API（兜底：--buff 等不在 argv[0] 时，如 `--table --buff search x`）----
     for plat in ("buff", "uu", "c5", "eco"):
@@ -994,8 +1062,12 @@ def _dispatch(args):
 
 
 def _dispatch_status(args):
-    """`--status [<实例名>|all|account]`：默认 all（所有实例）；实例名 = 指定实例进程状态；account = 账号状态。"""
-    topic = (args.status or "all").strip().lower()
+    """`--status [<实例名>|all|account]`：不带值默认（带 --instance = 当前实例，不带 = all）；实例名 = 指定实例；account = 账号状态。"""
+    topic = args.status
+    if not topic:
+        # 空值/不带值：带 --instance → 当前实例；不带 → all
+        topic = args.instance or "all"
+    topic = (topic or "").strip().lower()
     if topic in ("account", "accounts", "acct", "账号"):
         return cmd_account_status(args)
     if topic in ("all", "全部"):

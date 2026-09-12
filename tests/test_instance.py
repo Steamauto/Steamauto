@@ -200,5 +200,62 @@ class TestCliInstances(_TmpInstances):
         self.assertTrue(os.path.exists(os.path.join(static.INSTANCES_DIR, "bob", "config", "config.json5")))
 
 
+class TestRemoveRename(_TmpInstances):
+    def _run(self, argv):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = cli.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_remove_nonexistent(self):
+        rc, _out, err = self._run(["--instance", "ghost", "--remove"])
+        self.assertEqual(rc, 1)
+        self.assertIn("不存在", err)
+
+    def test_remove_existing(self):
+        from unittest import mock
+
+        with mock.patch.object(instance, "allocate_port", return_value=46010):
+            instance.ensure_instance("alice")
+        rc, out, _ = self._run(["--instance", "alice", "--remove"])
+        self.assertEqual(rc, 0)
+        self.assertFalse(os.path.exists(os.path.join(static.INSTANCES_DIR, "alice")))
+
+    def test_remove_running_refused(self):
+        from unittest import mock
+
+        with mock.patch.object(instance, "allocate_port", return_value=46011):
+            instance.ensure_instance("alice")
+        with mock.patch("utils.daemon.pid_alive", return_value=True):
+            # 写一个 pid 到 alice 的 state，模拟运行中
+            state_file = os.path.join(static.INSTANCES_DIR, "alice", "run", "steamauto.state.json")
+            os.makedirs(os.path.dirname(state_file), exist_ok=True)
+            with open(state_file, "w", encoding="utf-8") as f:
+                f.write('{"pid": 12345}')
+            rc, _out, err = self._run(["--instance", "alice", "--remove"])
+        self.assertEqual(rc, 1)
+        self.assertIn("正在运行", err)
+
+    def test_rename_success(self):
+        from unittest import mock
+
+        with mock.patch.object(instance, "allocate_port", return_value=46012):
+            instance.ensure_instance("alice")
+        rc, out, _ = self._run(["--instance", "alice", "--rename", "bob"])
+        self.assertEqual(rc, 0)
+        self.assertTrue(os.path.exists(os.path.join(static.INSTANCES_DIR, "bob")))
+        self.assertFalse(os.path.exists(os.path.join(static.INSTANCES_DIR, "alice")))
+
+    def test_rename_target_exists(self):
+        from unittest import mock
+
+        with mock.patch.object(instance, "allocate_port", return_value=46013):
+            instance.ensure_instance("alice")
+            instance.ensure_instance("bob")
+        rc, _out, err = self._run(["--instance", "alice", "--rename", "bob"])
+        self.assertEqual(rc, 1)
+        self.assertIn("已存在", err)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -186,3 +186,34 @@ def list_instances():
             pass
         result.append({"name": name, "base_dir": base, "running": running, "pid": pid})
     return result
+
+
+def _instance_exists(name):
+    """实例是否真实存在（有 config.json5，而非仅空目录）。"""
+    return os.path.exists(os.path.join(base_dir(name), "config", "config.json5"))
+
+
+def remove_instance(name):
+    """删除实例目录（彻底删除，不可恢复）。返回 (ok, message)。"""
+    name = normalize(name)
+    bd = base_dir(name)
+    if not _instance_exists(name):
+        return False, "实例 %s 不存在（%s）" % (name, bd)
+    shutil.rmtree(bd, ignore_errors=True)
+    return True, "已删除实例 %s（%s）" % (name, bd)
+
+
+def rename_instance(old, new):
+    """重命名实例（目录改名，凭据/配置/state 原样跟随）。返回 (ok, message)。"""
+    old = normalize(old)
+    new = normalize(new)
+    if old == new:
+        return False, "新旧实例名相同：%s" % old
+    old_bd = base_dir(old)
+    new_bd = base_dir(new)
+    if not _instance_exists(old):
+        return False, "实例 %s 不存在（%s）" % (old, old_bd)
+    if os.path.exists(new_bd):
+        return False, "目标实例 %s 已存在" % new
+    os.rename(old_bd, new_bd)
+    return True, "已将实例 %s 重命名为 %s" % (old, new)
