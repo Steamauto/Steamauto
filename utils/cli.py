@@ -1,37 +1,65 @@
-"""命令行界面（D7）。
+"""命令行界面。
 
-命令一览::
+**命令清单的唯一事实来源是 `_HELP_SECTIONS` + `_HELP_NOTES`**，由 `render_help()`
+渲染成树状（`python Steamauto.py --help` 输出它），避免文档与实际命令各自过期。
 
-    python Steamauto.py                                  前台运行（等价于 run）
-    python Steamauto.py run [-d|--daemon] [--port N]      运行；-d 转后台
-    python Steamauto.py start [--port N]                  后台启动
-    python Steamauto.py stop [--force]                    停止（默认优雅停止）
-    python Steamauto.py restart [--port N] [--force]      重启
-    python Steamauto.py status [--json]                   查看运行状态
-    python Steamauto.py logs [-n N] [-f] [--console]      查看日志
-    python Steamauto.py config get <key>                  读配置
-    python Steamauto.py config set <key> <value> [--str] [--no-apply]
-    python Steamauto.py config unset <key>
-    python Steamauto.py config list [--json]              列出全部配置
-    python Steamauto.py config reload                     让运行中的进程重读配置
-    python Steamauto.py ctl <command> [k=v ...]           直接向控制通道发指令
+设计要点：
 
-本模块被设计为**轻量**：不导入 utils.logger（不产生日志文件）、不导入 Steam
-客户端与插件，因此 `status`/`config` 之类命令开销极小。运行态相关逻辑在
-`run` 时才惰性导入。
+- 本模块刻意**轻量**：不导入 utils.logger（不产生日志文件）、不导入 Steam 客户端
+  与插件，因此 `status` / `--log` / `--login` 这类命令开销极小。
+  需要跑服务的 `run` / `start` 才惰性 `import Steamauto`。
+- 两种写法并存：子命令（`status` / `logs` / `config` …）与 flag
+  （`--status` / `--log` / `--login` / `--logout` / `--help`）。
+- 无参数启动 = 前台完成初始化后**自动转后台**并把控制台交还（见 Steamauto.main 的
+  handoff）；需前台常驻请用 `run`。
+- 含中文的输出一律按**显示宽度**对齐（`_display_width` / `_pad`），
+  因为中文在终端占 2 列而 `len()` 只数 1。
 """
 
 import argparse
 import json
 import os
 import sys
+import unicodedata
 
-from utils import config_writer, control, daemon, runtime, static
-
-# 需要在 import 重型依赖之前处理的轻量命令集合（见 Steamauto.py 顶部引导）
-LIGHT_COMMANDS = ("start", "stop", "restart", "status", "logs", "config", "ctl")
+from utils import config_writer, control, daemon, static
 
 DEFAULT_CONTROL_PORT = control.DEFAULT_PORT
+
+
+# ------------------------------------------------------- 终端显示宽度（中文对齐）
+# 放在模块最前：--help 渲染（render_help）与状态渲染都要用。
+
+
+def _display_width(text):
+    """终端**显示宽度**：东亚宽/全角字符占 2 列。
+
+    中文/全角标点在终端里占 2 列，而 `len()` 只数 1。因此用
+    `"%-22s" % name` 这类按字符数填充的格式化会让含中文的列错位 ——
+    必须按显示宽度计算补白。
+    """
+    return sum(2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in str(text))
+
+
+def _pad(text, cols):
+    """按显示宽度右侧补空格（中文对齐必需）。"""
+    text = str(text)
+    return text + " " * max(0, cols - _display_width(text))
+
+
+def _clip(text, cols):
+    """按显示宽度截断，超宽时以 … 结尾。"""
+    text = str(text)
+    if _display_width(text) <= cols:
+        return text
+    out, width = "", 0
+    for ch in text:
+        cw = 2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1
+        if width + cw > cols - 1:
+            break
+        out += ch
+        width += cw
+    return out + "…"
 
 
 # ------------------------------------------------------------------ 输出工具
@@ -51,75 +79,83 @@ def _ok(msg):
 # ------------------------------------------------------------------ 参数解析
 
 def build_parser():
-    # add_help=False：用自定义 --help 输出分组操作列表（见 cmd_help），
-    # 比 argparse 默认输出更适合「子命令 + flag 两套写法并存」的场景。
+    """构建参数解析器 —— **全部为 `--` 长选项风格**，不再提供子命令写法。
+
+    约定：命令词一律用 `--xxx`；值（平台名 / 配置键 / 行数）直接跟在后面，
+    不加 `--`，例如 `--config --get buff_auto_accept_offer.interval`。
+    """
     parser = argparse.ArgumentParser(
         prog="Steamauto",
         description="Steamauto 命令行：运行控制、账号管理、日志查看与运行时配置修改",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         add_help=False,
     )
-    parser.add_argument("-h", "--help", action="store_true", help="列出全部可用操作")
-    parser.add_argument("-d", "--daemon", action="store_true", help="等价于 start（后台启动）")
-    parser.add_argument("--port", type=int, help="覆盖控制通道端口（默认取配置 control.port）")
 
-    # ---- 账号相关（flag 形式） ----
-    parser.add_argument("--status", metavar="TOPIC", help="查看状态；目前支持 account")
-    parser.add_argument("--login", metavar="PLATFORM", help="登录平台：buff/uu/c5/eco（可逗号分隔）")
-    parser.add_argument("--logout", metavar="PLATFORM", help="登出平台：buff/uu/c5/eco（可逗号分隔）")
+    # ---- 帮助 / 全局 ----
+    parser.add_argument("-h", "--help", action="store_true", help="列出全部可用操作")
+    parser.add_argument("--port", type=int, help="覆盖控制通道端口（默认取配置 control.port）")
+    parser.add_argument("--instance", metavar="NAME", help="指定实例（数据目录 instances/<name>；default 为默认实例）")
+    parser.add_argument("--instances", action="store_true", help="列出所有实例及运行状态")
+
+    # ---- 运行控制 ----
+    parser.add_argument("--run", action="store_true", help="前台运行（初始化后转后台；需常驻前台时用）")
+    parser.add_argument("-d", "--daemon", action="store_true", help="配合 --run：直接后台启动（不做前台初始化）")
+    parser.add_argument("--start", action="store_true", help="后台启动")
+    parser.add_argument("--stop", action="store_true", help="停止运行中的进程（默认优雅停止）")
+    parser.add_argument("--restart", action="store_true", help="重启")
+    parser.add_argument("--force", action="store_true", help="配合 --stop/--restart：强制结束（不优雅）")
+    parser.add_argument("--timeout", type=float, default=daemon.STOP_TIMEOUT, help="等待优雅退出的秒数")
+
+    # ---- 状态 ----
+    # 不带值（或 process）= 进程运行状态；account = 各平台账号状态
+    parser.add_argument(
+        "--status",
+        nargs="?",
+        const="process",
+        metavar="[process|account]",
+        help="查看状态：不带值或 process = 进程运行状态，account = 账号状态",
+    )
     parser.add_argument("--json", action="store_true", help="以 JSON 输出（配合 --status）")
     parser.add_argument("--no-live", action="store_true", help="只读本地凭据，不联网校验（更快）")
 
-    sub = parser.add_subparsers(dest="command", metavar="<命令>")
+    # ---- 账号 ----
+    parser.add_argument("--login", metavar="PLATFORM", help="登录平台：buff/uu/c5/eco（可逗号分隔）")
+    parser.add_argument("--logout", metavar="PLATFORM", help="登出平台：buff/uu/c5/eco（可逗号分隔）")
 
-    p_run = sub.add_parser("run", help="运行（默认前台）")
-    p_run.add_argument("-d", "--daemon", action="store_true", help="转后台启动")
-    p_run.add_argument("--port", type=int, help="覆盖控制通道端口")
+    # ---- 日志 ----
+    parser.add_argument(
+        "--log",
+        nargs="?",
+        const="",
+        metavar="[N|console|app]",
+        help="翻阅日志：可给行数（--log 200），或 console/app 指定来源；默认取最新日志",
+    )
+    parser.add_argument("-n", "--lines", type=int, default=50, help="配合 --log：显示末尾行数（默认 50）")
+    parser.add_argument("-f", "--follow", action="store_true", help="配合 --log：持续跟随输出（Ctrl+C 退出）")
+    parser.add_argument("--console", action="store_true", help="配合 --log：看后台运行的控制台日志")
+    parser.add_argument("--file", metavar="PATH", help="配合 --log：指定日志文件路径")
 
-    p_start = sub.add_parser("start", help="后台启动")
-    p_start.add_argument("--port", type=int, help="覆盖控制通道端口")
+    # ---- 配置 ----
+    parser.add_argument("--config", action="store_true", help="配置操作（需配合 --get/--set/--unset/--list/--reload）")
+    parser.add_argument("--get", metavar="KEY", help="读取配置值（点分路径）")
+    parser.add_argument("--set", dest="set_pair", nargs="+", metavar="KEY VALUE...", help="修改配置值；多个值即数组，如 --set k A B 或 --set k '[\"A\",\"B\"]'")
+    parser.add_argument("--unset", metavar="KEY", help="删除配置项")
+    parser.add_argument("--list", action="store_true", help="列出全部配置")
+    parser.add_argument("--reload", action="store_true", help="让运行中的进程重读配置")
+    parser.add_argument("--str", action="store_true", help="配合 --set：强制按字符串写入")
+    parser.add_argument("--no-apply", action="store_true", help="配合 --set/--unset：只写文件，不通知运行中的进程")
 
-    p_stop = sub.add_parser("stop", help="停止运行中的进程")
-    p_stop.add_argument("--force", action="store_true", help="强制结束（不优雅）")
-    p_stop.add_argument("--timeout", type=float, default=daemon.STOP_TIMEOUT, help="等待优雅退出的秒数")
+    # ---- 平台 API（只读命令；操作名与参数交给 utils.api_cli 解析）----
+    # REMAINDER 捕获操作名 + 参数；真实执行走 cli.main 开头的 argv[0] 检测（api_cli），
+    # 这里的 flag 让 `--help` 文档可被 parser 校验、也作 _dispatch 兜底。
+    parser.add_argument("--buff", nargs=argparse.REMAINDER, help="BUFF 平台操作（balance/nickname/search/on-sale/sell-history/waiting-offer）")
+    parser.add_argument("--uu", nargs=argparse.REMAINDER, help="UU 平台操作（nickname/inventory/on-sale/leased-out/wait-deliver/buy-order）")
+    parser.add_argument("--c5", nargs=argparse.REMAINDER, help="C5 平台操作（balance/orders/check-key）")
+    parser.add_argument("--eco", nargs=argparse.REMAINDER, help="ECO 平台操作（balance/on-sale/inventory）")
 
-    p_restart = sub.add_parser("restart", help="重启")
-    p_restart.add_argument("--port", type=int, help="覆盖控制通道端口")
-    p_restart.add_argument("--force", action="store_true", help="停止阶段强制结束")
-
-    p_status = sub.add_parser("status", help="查看运行状态")
-    p_status.add_argument("--json", action="store_true", help="以 JSON 输出，便于脚本处理")
-
-    p_logs = sub.add_parser("logs", help="查看日志")
-    p_logs.add_argument("-n", "--lines", type=int, default=50, help="显示末尾行数（默认 50）")
-    p_logs.add_argument("-f", "--follow", action="store_true", help="持续跟随输出（Ctrl+C 退出）")
-    p_logs.add_argument("--console", action="store_true", help="查看后台运行的控制台回显日志")
-    p_logs.add_argument("--file", help="指定日志文件路径")
-
-    p_cfg = sub.add_parser("config", help="查看/修改配置（保留注释，运行中可热改）")
-    cfg_sub = p_cfg.add_subparsers(dest="config_command", metavar="<子命令>")
-
-    c_get = cfg_sub.add_parser("get", help="读取配置值")
-    c_get.add_argument("key", help="点分路径，如 buff_auto_accept_offer.interval")
-
-    c_set = cfg_sub.add_parser("set", help="修改配置值")
-    c_set.add_argument("key")
-    c_set.add_argument("value")
-    c_set.add_argument("--str", action="store_true", help="强制按字符串写入（不解析为数字/布尔/数组）")
-    c_set.add_argument("--no-apply", action="store_true", help="只写文件，不通知运行中的进程热应用")
-
-    c_unset = cfg_sub.add_parser("unset", help="删除配置项")
-    c_unset.add_argument("key")
-    c_unset.add_argument("--no-apply", action="store_true", help="只写文件，不通知运行中的进程")
-
-    c_list = cfg_sub.add_parser("list", help="列出全部配置")
-    c_list.add_argument("--json", action="store_true", help="以 JSON 输出")
-
-    cfg_sub.add_parser("reload", help="让运行中的进程重新读取配置文件")
-
-    p_ctl = sub.add_parser("ctl", help="直接向控制通道发指令")
-    p_ctl.add_argument("ctl_command", help="指令名，如 ping / shutdown")
-    p_ctl.add_argument("ctl_args", nargs="*", help="参数，形如 key=value")
+    # ---- 调试 ----
+    parser.add_argument("--ctl", metavar="COMMAND", help="直接向控制通道发指令")
+    parser.add_argument("ctl_args", nargs="*", help="配合 --ctl 的参数，形如 key=value")
 
     return parser
 
@@ -146,9 +182,19 @@ def _request(command, args=None, port=None):
 # ------------------------------------------------------------------ 各子命令
 
 def cmd_run(args):
-    """前台运行（带 --daemon 则转后台）。"""
+    """运行服务。
+
+    默认（无参数启动）：完整初始化后自动转入后台，把控制台还给用户。
+    `run` 子命令：保持传统前台常驻，便于盯日志调试。
+    """
     if getattr(args, "daemon", False):
         return cmd_start(args)
+    # foreground=False 表示「无参数启动」→ 初始化完成后转后台。
+    # 用环境变量传给 Steamauto.main（它是被调用的服务模块，不关心 CLI 细节）。
+    if getattr(args, "foreground", True) is False:
+        os.environ["STEAMAUTO_BG_HANDOFF"] = "1"
+    else:
+        os.environ.pop("STEAMAUTO_BG_HANDOFF", None)
     if getattr(args, "port", None):
         os.environ["STEAMAUTO_CONTROL_PORT"] = str(args.port)
     import Steamauto  # 惰性导入：仅 run 时才加载网络/插件/日志等重型依赖
@@ -207,62 +253,117 @@ def cmd_status(args):
     return 0 if data.get("running") else 3
 
 
-def cmd_logs(args):
-    if args.file:
-        path = args.file
-    elif args.console:
-        path = daemon.latest_log_file(include_console=True)
-        # 控制台日志文件名带 console- 前缀，优先取它
-        folder = static.LOGS_FOLDER
-        if os.path.isdir(folder):
-            console_logs = [os.path.join(folder, n) for n in os.listdir(folder) if n.startswith("console-") and n.endswith(".log")]
-            if console_logs:
-                path = max(console_logs, key=os.path.getmtime)
+def _show_log(kind="any", lines=50, follow=False, file=None):
+    """展示日志。返回退出码。
+
+    :param kind: "app" 应用日志 / "console" 后台控制台日志 / "any" 最新任意日志
+    """
+    if file:
+        path = file
     else:
-        path = daemon.latest_log_file(include_console=False)
+        # 指定类别找不到时回落到「最新任意日志」，避免空手而归
+        path = daemon.latest_log_file(kind) or (daemon.latest_log_file("any") if kind != "any" else None)
     if not path or not os.path.exists(path):
         _err("未找到日志文件（目录：%s）" % static.LOGS_FOLDER)
         return 1
-    if args.follow:
+    if follow:
         _p("正在跟随 %s（Ctrl+C 退出）" % path)
         daemon.follow(path)
         return 0
-    lines = daemon.tail(path, args.lines)
-    _p("== %s（末尾 %d 行）==" % (path, len(lines)))
-    for line in lines:
+    tail_lines = daemon.tail(path, lines)
+    _p("== %s（末尾 %d 行）==" % (path, len(tail_lines)))
+    for line in tail_lines:
         _p(line)
     return 0
+
+
+def cmd_log_flag(args):
+    """`--log [N|console|app] [-n N] [-f] [--console] [--file PATH]`：翻阅日志。
+
+    取值优先级：
+      1. `--log <N>`（行数）或 `--log console|app`（来源）
+      2. `-n/--lines` 指定行数；`--console` 指定来源为控制台日志；`--file` 直接指定文件
+    默认取「最新修改的日志文件」（不论应用日志还是控制台日志），
+    因为转后台后用户最常问的是「刚才到底发生了什么」。
+    """
+    raw = (getattr(args, "log", "") or "").strip().lower()
+    kind, lines = "any", getattr(args, "lines", 50)
+
+    if raw:
+        if raw.isdigit():
+            lines = int(raw)          # --log 200 优先于 -n
+        elif raw in ("console", "c"):
+            kind = "console"
+        elif raw in ("app", "a"):
+            kind = "app"
+        else:
+            _err("无法识别的 --log 参数：%s（可用：行数 / console / app）" % raw)
+            return 2
+
+    # --console 仅在 --log 未指定来源时生效
+    if kind == "any" and getattr(args, "console", False):
+        kind = "console"
+
+    return _show_log(
+        kind=kind,
+        lines=lines,
+        follow=getattr(args, "follow", False),
+        file=getattr(args, "file", None),
+    )
 
 
 # ---- config ----
 
 def _default_keys():
-    """默认配置里的全部点分键（用于提示未知键）。"""
+    """默认配置里的全部点分键（用于提示未知键）。
+
+    expand_arrays=True：把数组下标也纳入，这样 `--set <name>.0 x` 这类
+    针对单个元素的写法不会被误报为未知键。
+    """
     try:
         cfg = config_writer.load_config(static.CONFIG_FILE_PATH)
     except Exception:
         return set()
-    return {k for k, _ in config_writer.flatten(cfg)}
+    return {k for k, _ in config_writer.flatten(cfg, expand_arrays=True) if k}
 
 
-def _prepare_literal(raw, as_string):
-    """把命令行原始值转成 (JSON5 字面量, Python 值)。"""
+def _prepare_literal(raw, as_string=False):
+    """把命令行原始值转成 (JSON5 字面量, Python 值)。
+
+    raw 可以是单个字符串，也可以是列表 —— 后者来自 `--set <KEY> <V1> <V2> ...`
+    这种「多值即成数组」的写法，方便在 PowerShell 里免去转义 JSON 引号的痛苦。
+    """
+    if isinstance(raw, list):
+        values = [str(v) if as_string else config_writer.coerce_value(v) for v in raw]
+        return config_writer.encode_value(values), values
     if as_string:
         return config_writer.encode_value(str(raw)), str(raw)
     value = config_writer.coerce_value(raw)
     return config_writer.encode_value(value), value
 
 
+def _format_config_value(value):
+    """把配置值格式化成给人看的形式。
+
+    数组用**单行 JSON 数组**（`["A", "B"]`）—— 这是它最直观的「数组形态」，
+    也便于直接复制回 `--config --set`。
+    对象用多行缩进（嵌套结构可读）。
+    """
+    if isinstance(value, list):
+        return json.dumps(value, ensure_ascii=False)
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False, indent=2)
+    return str(value)
+
+
 def cmd_config_get(args):
+    """`--config --get <KEY>`：读取配置值。"""
     cfg = config_writer.load_config(static.CONFIG_FILE_PATH)
     found, value = config_writer.get_value(cfg, args.key)
     if not found:
         _err("配置项不存在：%s" % args.key)
         return 1
-    if isinstance(value, (dict, list)):
-        _p(json.dumps(value, ensure_ascii=False, indent=2))
-    else:
-        _p(value)
+    _p(_format_config_value(value))
     return 0
 
 
@@ -312,16 +413,18 @@ def cmd_config_unset(args):
 
 
 def cmd_config_list(args):
+    """`--config --list`：列出全部配置。
+
+    数组按数组形态显示（`["AK", "A1"]`），不拆成 `key.0` / `key.1` 条目。
+    """
     cfg = config_writer.load_config(static.CONFIG_FILE_PATH)
     if args.json:
         _p(json.dumps(cfg, ensure_ascii=False, indent=2))
         return 0
-    flat = config_writer.flatten(cfg)
-    width = max((len(k) for k, _ in flat), default=0)
+    flat = [(k, v) for k, v in config_writer.flatten(cfg) if k]
+    width = max((_display_width(k) for k, _ in flat), default=0)
     for key, value in flat:
-        if isinstance(value, (dict, list)):
-            value = json.dumps(value, ensure_ascii=False)
-        _p("%-*s = %s" % (width, key, value))
+        _p("%s = %s" % (_pad(key, width), _format_config_value(value)))
     return 0
 
 
@@ -371,9 +474,8 @@ def _apply_runtime(key, action="set"):
 
 
 def cmd_ctl(args):
-    if args.ctl_command == "list-commands":
-        # 便于发现可用指令
-        pass
+    """`--ctl <COMMAND> [k=v ...]`：直接向控制通道发指令。"""
+    command = args.ctl
     payload = {}
     for item in args.ctl_args:
         if "=" not in item:
@@ -381,7 +483,7 @@ def cmd_ctl(args):
             return 2
         k, v = item.split("=", 1)
         payload[k] = config_writer.coerce_value(v)
-    ok, resp = _request(args.ctl_command, payload)
+    ok, resp = _request(command, payload)
     if not ok:
         _err(resp)
         return 1
@@ -389,52 +491,121 @@ def cmd_ctl(args):
     return 0
 
 
-# ------------------------------------------------------------------ 账号
+# ------------------------------------------------------------------ 帮助
 
-HELP_TEXT = """\
-Steamauto 可用操作
-======================================================================
+#: 命令清单（`--help` 的唯一事实来源）：(分组名, [(命令写法, 说明)])
+#: 渲染成树状；命令列按**显示宽度**对齐（中文占 2 列）。
+#: 约定：命令词一律带 `--`；值（<平台>/<KEY>/N）不加。
+_HELP_SECTIONS = [
+    ("运行", [
+        ("python Steamauto.py", "启动；初始化完成后自动转入后台"),
+        ("python Steamauto.py --run [-d|--daemon]", "前台常驻运行；带 -d/--daemon 则直接后台启动"),
+        ("python Steamauto.py --start", "后台启动"),
+        ("python Steamauto.py --stop [--force]", "停止（默认优雅停止）"),
+        ("python Steamauto.py --restart [--force]", "重启"),
+        ("python Steamauto.py --status [process]", "查看进程运行状态"),
+    ]),
+    ("实例", [
+        ("python Steamauto.py --instances", "列出所有实例及运行状态"),
+        ("python Steamauto.py --instance <NAME> --run", "启动指定实例（独立数据目录，多开）"),
+        ("python Steamauto.py --instance <NAME> --status", "查看指定实例状态"),
+    ]),
+    ("日志", [
+        ("python Steamauto.py --log", "翻阅最新日志（末尾 50 行）"),
+        ("python Steamauto.py --log 200", "翻阅末尾 200 行"),
+        ("python Steamauto.py --log console", "看后台运行的控制台日志"),
+        ("python Steamauto.py --log app", "看应用（技术）日志"),
+        ("python Steamauto.py --log [-f|--follow]", "持续跟随输出（Ctrl+C 退出）"),
+        ("python Steamauto.py --log -n 200", "等价写法：用 -n 指定行数"),
+        ("python Steamauto.py --log --console", "等价写法：看后台控制台日志"),
+        ("python Steamauto.py --log --file <PATH>", "查看指定日志文件"),
+    ]),
+    ("账号", [
+        ("python Steamauto.py --status account [--json] [--no-live]", "查看各平台登录 / 连接状态"),
+        ("python Steamauto.py --login <平台>", "登录（需交互终端：BUFF 扫码 / UU 短信）"),
+        ("python Steamauto.py --logout <平台>", "登出（清除凭据与相关配置项）"),
+    ]),
+    ("配置", [
+        ("python Steamauto.py --config --get <KEY>", "读取配置值（点分路径）"),
+        ("python Steamauto.py --config --set <KEY> <VALUE> [--str] [--no-apply]", "修改配置值（保留注释）"),
+        ("python Steamauto.py --config --unset <KEY>", "删除配置项"),
+        ("python Steamauto.py --config --list [--json]", "列出全部配置"),
+        ("python Steamauto.py --config --reload", "让运行中的进程重读配置"),
+    ]),
+    ("平台 API", [
+        ("python Steamauto.py --buff <OP> [--table]", "BUFF 余额/搜索/在售/成交（--buff --help 看全部操作）"),
+        ("python Steamauto.py --uu <OP> [--table]", "UU 库存/在售/待发货（--uu --help 看全部操作）"),
+        ("python Steamauto.py --c5 <OP> [--table]", "C5 余额/订单（--c5 --help 看全部操作）"),
+        ("python Steamauto.py --eco <OP> [--table]", "ECO 余额/在售/库存（--eco --help 看全部操作）"),
+    ]),
+    ("调试", [
+        ("python Steamauto.py --ctl <COMMAND> [k=v ...]", "直接向控制通道发指令"),
+        ("python Steamauto.py --help", "显示本帮助"),
+    ]),
+]
 
-运行
-  python Steamauto.py                          前台运行
-  python Steamauto.py run [-d|--daemon]        运行；-d 转后台
-  python Steamauto.py start                    后台启动
-  python Steamauto.py stop [--force]           停止（默认优雅停止）
-  python Steamauto.py restart [--force]        重启
-  python Steamauto.py status [--json]          查看运行状态
+#: --help 末尾的补充说明
+_HELP_NOTES = [
+    "平台名（--login/--logout）可用：buff | uu | c5 | eco；逗号分隔多个，大小写不敏感",
+    "  别名：buffapi | uuyoupin | c5game | ecosteam",
+    "直接运行时先在前台完成初始化（你能看到登录与插件检查过程），",
+    "  随后自动转入后台并把控制台交还；后台输出记录在日志文件里。",
+    "未登录 Steam 也能使用各平台的买卖 / 上架 / 改价 / 行情功能；",
+    "  仅「自动发货」需要 Steam 会话，未登录时会转为人工确认。",
+    "登录成功后若程序正在后台运行，会自动通知它立即重试该平台，无需重启。",
+]
 
-账号
-  python Steamauto.py --status account         查看各平台登录 / 连接状态
-        [--json] [--no-live]                   --json 机器可读；--no-live 不联网校验
-  python Steamauto.py --login <平台>           登录（需交互终端：BUFF 扫码 / UU 短信）
-  python Steamauto.py --logout <平台>          登出（清除凭据与相关配置项）
-        平台：buff | uu | c5 | eco              可逗号分隔多个；大小写不敏感
-                                              别名：buffapi / uuyoupin / c5game / ecosteam
 
-日志
-  python Steamauto.py logs [-n N] [-f] [--console] [--file PATH]
+def render_help():
+    """把命令清单渲染成树状文本（`--help` 的输出）。
 
-配置
-  python Steamauto.py config get <key>         读取配置值
-  python Steamauto.py config set <key> <value> [--str] [--no-apply]
-  python Steamauto.py config unset <key>       删除配置项
-  python Steamauto.py config list [--json]     列出全部配置
-  python Steamauto.py config reload            让运行中的进程重读配置
+    树状规则：除最后一条分支外都用 `├─`；组内子项若其后还有分支，
+    前缀带竖线 `│` 以延续视觉连接；最后一条分支用 `└─`，其子项用空格缩进。
+    """
+    lines = ["Steamauto 可用操作", ""]
 
-调试
-  python Steamauto.py ctl <command> [k=v ...]  直接向控制通道发指令
-  python Steamauto.py --help                   显示本帮助
+    sections = list(_HELP_SECTIONS)
+    for idx, (section, items) in enumerate(sections):
+        # 「说明」也是树的一条分支，因此只有它（或没有说明时的最后一个分组）用 └─
+        is_final_branch = idx == len(sections) - 1 and not _HELP_NOTES
+        lines.append("%s %s" % ("└─" if is_final_branch else "├─", section))
+        cont = "   " if is_final_branch else "│  "
+        cmd_cols = max(_display_width(cmd) for cmd, _ in items)
+        for j, (cmd, desc) in enumerate(items):
+            lines.append(
+                "%s%s %s  %s"
+                % (cont, "└─" if j == len(items) - 1 else "├─", _pad(cmd, cmd_cols), desc)
+            )
 
-说明
-  · 未登录 Steam 也能使用各平台的买卖 / 上架 / 改价 / 行情功能；
-    仅「自动发货」需要 Steam 会话，未登录时会转为人工确认。
-  · 登录成功后若程序正在后台运行，会自动通知它立即重试该平台，无需重启。
-======================================================================
-"""
+    if _HELP_NOTES:
+        lines.append("└─ 说明")
+        for note in _HELP_NOTES:
+            lines.append("   %s" % note)
+
+    return "\n".join(lines)
 
 
 def cmd_help(_args=None):
-    _p(HELP_TEXT.rstrip())
+    _p(render_help())
+    return 0
+
+
+def cmd_instances():
+    """`--instances`：列出所有实例及其运行状态。"""
+    from utils import instance
+
+    entries = instance.list_instances()
+    current = instance.current_name()
+    name_cols = max(_display_width(e["name"]) for e in entries)
+    _p("实例列表（数据目录隔离，互不影响）")
+    for idx, e in enumerate(entries):
+        mark = "└─" if idx == len(entries) - 1 else "├─"
+        star = "*" if e["name"] == current else " "
+        status = "运行中 (PID %s)" % e["pid"] if e["running"] else "未运行"
+        _p("%s %s %s  %s" % (mark, star, _pad(e["name"], name_cols), status))
+        _p("   └─ %s" % e["base_dir"])
+    _p("")
+    _p("* 为当前实例。启动/操作某实例：--instance <name> <命令>，如 --instance alice --run")
     return 0
 
 
@@ -461,52 +632,72 @@ def _collect_status(args):
     return accounts.all_account_states(live=live), accounts.steam_state(live=live), label
 
 
+# ------------------------------------------------------------------ 账号
+
+#: 状态字段标签（同一列组内宽度一致，保证后列对齐）
+_LABELS = {
+    "configured": ("已配置", "未配置"),
+    "logged_in": ("已登录", "未登录"),
+    "connected": ("连接可用", "未校验"),  # 未联网校验时不算失败，故用「未校验」
+}
+
+
 def _render_status(accounts_map, steam, source, live):
-    """把状态渲染成人可读的表格。"""
+    """以树状结构展示各平台账号状态。
+
+    对齐说明：平台名按**显示宽度**补白（中文占 2 列），状态字段用定宽标签，
+    因此每列都能对齐；说明/账号放在子行，避免长文本把表格撑歪。
+
+    树状符号（├ ─ └ 属 East_Asian_Width=Ambiguous，不同终端渲染宽度不同）只要
+    每行前缀字符完全相同就不会错位，故无需按宽度补算。
+    """
     from utils import accounts
 
-    _p("各平台账号状态（来源：%s；联网校验：%s）" % (source, "是" if live else "否"))
-    header = "  %-22s %-8s %-8s %-8s %-16s %s" % ("平台", "已配置", "已登录", "连接可用", "账号", "说明")
-    _p(header)
-    _p("  " + "-" * (len(header) - 2))
-    for name in accounts.platforms():
-        info = accounts_map.get(name) or accounts._blank_state(name)
-        error = info.get("error") or ""
-        _p(
-            "  %-22s %-8s %-8s %-8s %-16s %s"
-            % (
-                info.get("display") or name,
-                "是" if info.get("configured") else "否",
-                "是" if info.get("logged_in") else "否",
-                "是" if info.get("connected") else "-",
-                (info.get("account") or "-")[:16],
-                error,
-            )
-        )
+    infos = [accounts_map.get(p) or accounts._blank_state(p) for p in accounts.platforms()]
     if steam:
-        error = steam.get("error") or ""
+        infos.append(steam)
+
+    def name_of(info):
+        return str(info.get("display") or info.get("platform") or "?")
+
+    name_cols = max(_display_width(name_of(i)) for i in infos)
+
+    _p("各平台账号状态")
+    _p("├─ 来源：%s" % source)
+    _p("├─ 联网校验：%s" % ("是" if live else "否"))
+
+    for idx, info in enumerate(infos):
+        last = idx == len(infos) - 1
+        # 连接列是最后一列，无需补白（补了也会被 rstrip 丢弃）
         _p(
-            "  %-22s %-8s %-8s %-8s %-16s %s"
+            "%s %s  %s  %s  %s"
             % (
-                steam.get("display") or "Steam",
-                "是" if steam.get("configured") else "否",
-                "是" if steam.get("logged_in") else "否",
-                "是" if steam.get("connected") else "-",
-                (steam.get("account") or "-")[:16],
-                error,
+                "└─" if last else "├─",
+                _pad(name_of(info), name_cols),
+                _LABELS["configured"][0 if info.get("configured") else 1],
+                _LABELS["logged_in"][0 if info.get("logged_in") else 1],
+                _LABELS["connected"][0 if info.get("connected") else 1],
             )
         )
+
+        detail = []
+        if info.get("account"):
+            detail.append("账号：%s" % _clip(info["account"], 40))
+        if info.get("error"):
+            detail.append(str(info["error"]))
+        if detail:
+            _p("   └─ %s" % "｜".join(detail))
+
     _p("")
     _p("提示：登录用 `--login <平台>`；查看原始数据用 `--status account --json`。")
 
 
 def cmd_account_status(args):
-    from utils import accounts
+    """`--status account`：展示各平台登录 / 连接状态。
 
-    topic = (getattr(args, "status", "") or "").strip().lower()
-    if topic not in ("account", "accounts", "acct", "账号"):
-        _err("暂不支持的 --status 主题：%s（目前仅支持 account）" % args.status)
-        return 2
+    主题（process/account）的判别已在 `_dispatch_status` 完成，这里不再重复校验。
+    """
+    from utils import accounts
 
     accounts_map, steam, source = _collect_status(args)
     if getattr(args, "json", False):
@@ -617,64 +808,182 @@ def _parse_args(parser, argv):
         return None
 
 
+def _extract_instance(argv):
+    """提取并移除 ``--instance <name>`` / ``--instance=<name>``。
+
+    返回 (剩余 argv, 实例名或 None)。实例名在 parse 之前提取，因为切换实例
+    会影响 static 路径，而 static 路径在 build_parser 之前就要被各模块使用。
+    """
+    name = None
+    out = []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--instance":
+            if i + 1 < len(argv):
+                name = argv[i + 1]
+                i += 2
+                continue
+            out.append(a)  # 缺值：保留 --instance，交给 parser 报「expected one argument」
+            i += 1
+            continue
+        if a.startswith("--instance="):
+            name = a.split("=", 1)[1]
+            i += 1
+            continue
+        out.append(a)
+        i += 1
+    return out, name
+
+
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
+    # 1. 提取并激活 --instance <name>（全局：影响所有命令的数据目录，含平台 API 命令）
+    argv, instance_name = _extract_instance(argv)
+    if instance_name:
+        from utils import instance
+
+        try:
+            instance.activate(instance_name)
+        except ValueError as e:
+            _err(str(e))
+            return 2
+    # 2. 平台 API 命令（--buff/--uu/--c5/--eco）有独立的子命令树与参数约定，
+    #    不走主 parser（避免 REMAINDER 吞掉全局 flag），直接交给 api_cli。
+    if argv and argv[0] in ("--buff", "--uu", "--c5", "--eco"):
+        from utils import api_cli
+
+        return api_cli.main(argv[0].lstrip("-"), argv[1:])
     parser = build_parser()
     if not argv:
-        # 无参数 = 前台运行，保持与改造前一致
-        return cmd_run(argparse.Namespace(daemon=False, port=None))
+        # 无参数 = 完整初始化后自动转后台（把控制台还给用户）。
+        # 需前台常驻请用 `--run`。
+        return cmd_run(argparse.Namespace(daemon=False, port=None, foreground=False))
 
     args = _parse_args(parser, argv)
     if args is None:
         return 2
 
-    # flag 形式优先（D4b）
+    return _dispatch(args)
+
+
+def _dispatch(args):
+    """把解析结果路由到对应处理函数（全部为 `--` 长选项）。"""
     # 注意用 `is not None` 而非真值判断：`--login ""` 这种空值必须走 cmd_login
     # 去报错，否则会被静默忽略、fall-through 成「前台运行」。
     if getattr(args, "help", False):
         return cmd_help(args)
+
+    # ---- 实例列表 ----
+    if getattr(args, "instances", False):
+        return cmd_instances()
+
+    # ---- 平台 API（兜底：--buff 等不在 argv[0] 时，如 `--table --buff search x`）----
+    for plat in ("buff", "uu", "c5", "eco"):
+        rest = getattr(args, plat, None)
+        if rest:
+            from utils import api_cli
+
+            return api_cli.main(plat, rest)
+
+    # ---- 配置 ----
+    if args.config or any((args.get, args.set_pair, args.unset, args.list, args.reload)):
+        return _dispatch_config(args)
+
+    # ---- 账号 ----
     if args.login is not None:
         return cmd_login(args)
     if args.logout is not None:
         return cmd_logout(args)
-    if args.status is not None:
-        return cmd_account_status(args)
 
-    if args.command is None:
+    # ---- 状态 ----
+    if args.status is not None:
+        return _dispatch_status(args)
+
+    # ---- 日志 ----
+    if args.log is not None or args.console or args.file:
+        return cmd_log_flag(args)
+    if args.follow:
+        _err("--follow 需要配合 --log 使用，例如：python Steamauto.py --log -f")
+        return 2
+
+    # ---- 运行控制 ----
+    if args.run:
         if args.daemon:
             return cmd_start(args)
-        return cmd_run(args)
+        return cmd_run(argparse.Namespace(daemon=False, port=args.port, foreground=True))
+    if args.daemon:
+        # 允许 --daemon 单独使用（等价 --start）
+        return cmd_start(args)
+    if args.start:
+        return cmd_start(args)
+    if args.stop:
+        return cmd_stop(args)
+    if args.restart:
+        return cmd_restart(args)
 
-    handlers = {
-        "run": cmd_run,
-        "start": cmd_start,
-        "stop": cmd_stop,
-        "restart": cmd_restart,
-        "status": cmd_status,
-        "logs": cmd_logs,
-        "config": _dispatch_config,
-        "ctl": cmd_ctl,
-    }
-    handler = handlers.get(args.command)
-    if handler is None:
-        _err("未知命令：%s" % args.command)
-        _p("")
-        return cmd_help(args)
-    return handler(args)
+    # ---- 调试 ----
+    if args.ctl is not None:
+        return cmd_ctl(args)
+
+    _err("未指定操作")
+    _p("")
+    return cmd_help(args)
+
+
+def _dispatch_status(args):
+    """`--status [process|account]`：不带值或 process = 进程状态；account = 账号状态。"""
+    topic = (args.status or "process").strip().lower()
+    if topic in ("process", "proc", "进程"):
+        return cmd_status(args)
+    if topic in ("account", "accounts", "acct", "账号"):
+        return cmd_account_status(args)
+    _err("不支持的 --status 主题：%s（可选：process / account）" % args.status)
+    return 2
 
 
 def _dispatch_config(args):
-    if not getattr(args, "config_command", None):
-        _err("请指定 config 子命令：get / set / unset / list / reload")
+    """`--config --get/--set/--unset/--list/--reload`。
+
+    flag 名与命令函数里的属性名不同（`--get <KEY>` → `key`、`--set <KEY> <VALUE>` →
+    `key`/`value`），这里统一做适配，避免每个命令函数各自解析参数。
+    """
+    set_pair = args.set_pair
+    if set_pair is not None and len(set_pair) < 2:
+        _err("--set 至少需要两个值：--config --set <KEY> <VALUE> [<VALUE> ...]")
         return 2
-    table = {
-        "get": cmd_config_get,
-        "set": cmd_config_set,
-        "unset": cmd_config_unset,
-        "list": cmd_config_list,
-        "reload": cmd_config_reload,
-    }
-    return table[args.config_command](args)
+
+    # 注意用 lambda 惰性构造：直接在列表里写 set_pair[0] 会在 set_pair 为 None 时
+    # 立即抛 TypeError（列表元素是马上求值的，不是 lazy 的）。
+    # 值形态：2 个 → 标量（或 JSON 字面量）；3 个及以上 → 数组（多值即成数组）。
+    def _set_value():
+        if len(set_pair) == 2:
+            return set_pair[1]
+        return list(set_pair[1:])
+
+    ops = [
+        (args.get is not None, cmd_config_get, lambda: {"key": args.get}),
+        (set_pair is not None, cmd_config_set, lambda: {"key": set_pair[0], "value": _set_value()}),
+        (args.unset is not None, cmd_config_unset, lambda: {"key": args.unset}),
+        (args.list, cmd_config_list, lambda: {}),
+        (args.reload, cmd_config_reload, lambda: {}),
+    ]
+    chosen = [(fn, make_extra) for flag, fn, make_extra in ops if flag]
+
+    if not chosen:
+        if args.config:
+            _err("--config 需要配合 --get/--set/--unset/--list/--reload 使用")
+        else:
+            _err("未指定配置操作")
+        return 2
+    if len(chosen) > 1:
+        _err("一次只能执行一个配置操作（--get/--set/--unset/--list/--reload 只能选一个）")
+        return 2
+
+    fn, make_extra = chosen[0]
+    for name, value in make_extra().items():
+        setattr(args, name, value)
+    return fn(args)
 
 
 if __name__ == "__main__":

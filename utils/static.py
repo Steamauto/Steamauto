@@ -36,6 +36,9 @@ PID_FILE = os.path.join(RUN_FOLDER, "steamauto.pid")
 CONTROL_TOKEN_FILE = os.path.join(RUN_FOLDER, "control_token.txt")
 # 运行时状态文件：pid / 控制端口 / 启动时间 / 日志路径，供 CLI 读取
 STATE_FILE = os.path.join(RUN_FOLDER, "steamauto.state.json")
+# BUFF 二维码登录的临时图片。必须是绝对路径：相对路径会落到「当前工作目录」，
+# 从别处启动（或测试里 cwd 不同）时二维码会散落在随机位置且清理不掉。
+QRCODE_FILE = os.path.join(_BASE_DIR, "qrcode.png")
 # PLUGIN_FOLDER 保持相对目录名：在 Steamauto.py 中被拼接到绝对路径（os.path.join(base_path, PLUGIN_FOLDER)）
 # 并用作动态导入的模块名前缀（f"{PLUGIN_FOLDER}.xxx"），改成绝对路径会破坏这两处。
 PLUGIN_FOLDER = "plugins"
@@ -51,6 +54,49 @@ os.makedirs(SESSION_FOLDER, exist_ok=True)
 os.makedirs(RUN_FOLDER, exist_ok=True)
 SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
+
+# 实例根目录（多开）：`--instance <name>` 的数据根 = INSTANCES_DIR/<name>。
+# default 实例（不带 --instance）直接使用 _BASE_DIR（= PROJECT_ROOT 或 STEAMAUTO_BASE_DIR）。
+INSTANCES_DIR = os.path.join(PROJECT_ROOT, "instances")
+
+
+def _derive_paths(base_dir):
+    """根据数据根目录计算全部派生路径（供 import 时与 set_base_dir 共用）。"""
+    run = os.path.join(base_dir, "run")
+    cfg = os.path.join(base_dir, "config")
+    return {
+        "LOGS_FOLDER": os.path.join(base_dir, "logs"),
+        "CONFIG_FOLDER": cfg,
+        "RUN_FOLDER": run,
+        "PID_FILE": os.path.join(run, "steamauto.pid"),
+        "CONTROL_TOKEN_FILE": os.path.join(run, "control_token.txt"),
+        "STATE_FILE": os.path.join(run, "steamauto.state.json"),
+        "QRCODE_FILE": os.path.join(base_dir, "qrcode.png"),
+        "CONFIG_FILE_PATH": os.path.join(cfg, "config.json5"),
+        "BUFF_COOKIES_FILE_PATH": os.path.join(cfg, "buff_cookies_{steam_username}.txt"),
+        "UU_TOKEN_FILE_PATH": os.path.join(cfg, "uu_token_{steam_username}.txt"),
+        "STEAM_ACCOUNT_INFO_FILE_PATH": os.path.join(cfg, "steam_account_info.json5"),
+        "ECOSTEAM_RSAKEY_FILE": os.path.join(cfg, "rsakey.txt"),
+        "SESSION_FOLDER": os.path.join(base_dir, "session"),
+    }
+
+
+def set_base_dir(base_dir):
+    """把数据目录切换到 base_dir（多开实例隔离的核心）。
+
+    重算所有 ``_BASE_DIR`` 派生的路径常量并确保目录存在。
+
+    生效范围：只对「模块引用 ``static.X``」的代码生效 —— daemon/accounts/cli/
+    control 等都是 ``from utils import static``，每次访问都读本模块属性。
+    ``from utils.static import X`` 硬绑定的模块（logger/steam_client/buff_helper/
+    plugins 等）是**服务进程**才 import 的，由 daemon.spawn_background 继承的
+    ``STEAMAUTO_BASE_DIR`` 环境变量保证，无需在当前进程更新。
+    """
+    global _BASE_DIR
+    _BASE_DIR = os.path.abspath(base_dir)
+    globals().update(_derive_paths(_BASE_DIR))
+    for d in (CONFIG_FOLDER, LOGS_FOLDER, SESSION_FOLDER, RUN_FOLDER):
+        os.makedirs(d, exist_ok=True)
 BUILD_INFO = info
 if BUILD_INFO == "正在使用源码运行":
     if hasattr(sys, "_MEIPASS"):

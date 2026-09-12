@@ -61,7 +61,7 @@ def steam_id_to_account_id(steam_id: str) -> str:
 
 
 def parse_price(price: str) -> decimal.Decimal:
-    pattern = "\D?(\\d*)(\\.|,)?(\\d*)"
+    pattern = r"\D?(\d*)(\.|,)?(\d*)"
     tokens = re.search(pattern, price, re.UNICODE)
     decimal_str = tokens.group(1) + "." + tokens.group(3)
     return decimal.Decimal(decimal_str)
@@ -136,7 +136,7 @@ def get_market_listings_from_html(html: str) -> dict:
 
 
 def get_sell_listings_from_node(node: Tag) -> dict:
-    sell_listings_raw = node.findAll("div", {"id": re.compile("mylisting_\d+")})
+    sell_listings_raw = node.findAll("div", {"id": re.compile(r"mylisting_\d+")})
     sell_listings_dict = {}
     for listing_raw in sell_listings_raw:
         spans = listing_raw.select("span[title]")
@@ -169,7 +169,7 @@ def get_buy_orders_from_node(node: Tag) -> dict:
 
 def get_listing_id_to_assets_address_from_html(html: str) -> dict:
     listing_id_to_assets_address = {}
-    regex = "CreateItemHoverFromContainer\( [\w]+, 'mylisting_([\d]+)_[\w]+', ([\d]+), '([\d]+)', '([\d]+)', [\d]+ \);"
+    regex = r"CreateItemHoverFromContainer\( [\w]+, 'mylisting_([\d]+)_[\w]+', ([\d]+), '([\d]+)', '([\d]+)', [\d]+ \);"
     for match in re.findall(regex, html):
         listing_id_to_assets_address[match[0]] = [str(match[1]), match[2], match[3]]
     return listing_id_to_assets_address

@@ -155,8 +155,13 @@ def console_log_path() -> str:
     return os.path.join(static.LOGS_FOLDER, name)
 
 
-def latest_log_file(include_console=True):
-    """返回最近修改的日志文件路径（None 表示还没有日志）。"""
+def latest_log_file(kind="app"):
+    """返回最近修改的日志文件路径（None 表示还没有日志）。
+
+    :param kind: "app" 只看应用日志（技术日志）
+                 "console" 只看后台运行的控制台日志（console-*.log）
+                 "any" 两者都看
+    """
     folder = static.LOGS_FOLDER
     if not os.path.isdir(folder):
         return None
@@ -164,7 +169,10 @@ def latest_log_file(include_console=True):
     for name in os.listdir(folder):
         if not name.endswith(".log"):
             continue
-        if not include_console and name.startswith("console-"):
+        is_console = name.startswith("console-")
+        if kind == "app" and is_console:
+            continue
+        if kind == "console" and not is_console:
             continue
         path = os.path.join(folder, name)
         try:
@@ -210,15 +218,20 @@ def follow(path, poll=0.5, out=None):
 # ---------------------------------------------------------------- 启动 / 停止
 
 def _run_command():
-    """构造「以 run 模式启动本程序」的命令行。
+    """构造「以后台服务方式启动本程序」的命令行。
 
-    注意用 PROJECT_ROOT（代码位置）而不是 _BASE_DIR（数据目录，可能被
+    用 `--run`（前台常驻语义）而不是无参数：
+      · 无参数会走「初始化后转后台」，被 detach 的子进程会再次孵化新进程，导致无限套娃；
+      · `--run` 不设置转后台标记，子进程只常驻服务，而它本身已被 detach，
+        控制台与父进程无关，正是我们要的「后台服务」。
+
+    另注意用 PROJECT_ROOT（代码位置）而不是 _BASE_DIR（数据目录，可能被
     STEAMAUTO_BASE_DIR 覆盖），否则数据目录与代码目录分离时会找不到脚本。
     """
     if hasattr(sys, "_MEIPASS"):
-        return [sys.executable, "run"]
+        return [sys.executable, "--run"]
     script = os.path.join(static.PROJECT_ROOT, "Steamauto.py")
-    return [sys.executable, script, "run"]
+    return [sys.executable, script, "--run"]
 
 
 def _popen_detached(cmd, out_handle, env):
@@ -272,7 +285,7 @@ def spawn_background(port=None, extra_args=None, control_enable=True):
             break
         if read_pid() == proc.pid:
             _out("Steamauto 已在后台启动（PID %s）" % proc.pid)
-            _out("  日志文件：%s" % (read_state().get("log_file") or latest_log_file() or "启动中…"))
+            _out("  日志文件：%s" % (read_state().get("log_file") or latest_log_file("any") or "启动中…"))
             _out("  控制台输出：%s" % console_log)
             if control_enable:
                 _out("  可用命令：python Steamauto.py status / stop / config list")

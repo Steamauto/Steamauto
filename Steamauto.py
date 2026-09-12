@@ -12,23 +12,20 @@ import time
 from typing import no_type_check
 
 # ---------------------------------------------------------------------------
-# 轻量 CLI 前置分发
+# CLI 前置分发
 # ---------------------------------------------------------------------------
-# status / config / logs / --login / --status 等只需要 utils.cli 那一小撮轻量模块。
-# 若走完整 import 链，会顺带创建日志文件、加载 Steam 客户端与插件，既慢又会在
-# logs/ 里留下一堆无意义的日志。因此这里在**导入重型依赖之前**就完成分发。
-#
-# 判定规则：子命令名命中白名单，或首个参数以 "-" 开头（flag 形式，含 --help /
-# --status / --login / --logout / -d）。只有「run 或不带参数」才继续往下执行
-# 本模块的其余代码（前台服务）。
+# 命令行**全部为 `--` 长选项风格**（无子命令），因此一律交给 utils.cli：
+#   · --status / --log / --login / --config 等只需 cli 那一小撮轻量模块，
+#     若继续往下执行本模块，会顺带创建日志文件、加载 Steam 客户端与插件，
+#     既慢又会在 logs/ 里留下一堆无意义的日志；
+#   · --run / --start / --restart 需要跑服务，由 cli 决定何时 import 本模块
+#     （见 utils.cli.cmd_run 的惰性导入）；
+#   · **无参数也必须经过 cli** —— 否则拿不到「初始化后转后台」这一运行模式设置
+#     （cli.cmd_run 会设置 STEAMAUTO_BG_HANDOFF，main 据此在初始化后转后台）。
 if __name__ == "__main__":
-    _argv = list(sys.argv[1:])
-    _first = _argv[0] if _argv else ""
-    _is_light = _first in ("start", "stop", "restart", "status", "logs", "config", "ctl")
-    if _is_light or _first.startswith("-"):
-        from utils.cli import main as _cli_main
+    from utils.cli import main as _cli_main
 
-        sys.exit(_cli_main(_argv))
+    sys.exit(_cli_main(list(sys.argv[1:])))
 
 import json5
 from colorama import Fore, Style
@@ -738,13 +735,18 @@ def _start_control_server():
     return server
 
 
-def _teardown_runtime(control_server=None):
-    """退出前收尾：关控制通道、清状态文件、刷日志。"""
+def _teardown_runtime(control_server=None, handed_off=False):
+    """退出前收尾：关控制通道、清状态文件、刷日志。
+
+    handed_off=True 表示服务已移交给后台进程 —— 此时**不能**清状态文件，
+    那是后台刚写好的，清掉会让它失联。
+    """
     try:
         if control_server is not None:
             control_server.stop()
     finally:
-        daemon.clear_state()
+        if not handed_off:
+            daemon.clear_state()
         flush_logging()
 
 
@@ -844,6 +846,71 @@ def _serve_until_shutdown(poll=1.0):
         runtime.interruptible_sleep(poll)
 
 
+def _other_instance_pid():
+    """返回**另一个**正在运行的 Steamauto 实例的 PID；没有则返回 None。
+
+    注意要排除自身：前台进程会把自己的 PID 写进 state 文件，
+    因此 `is_running()` 在 handoff 阶段必然为真，那是自己。
+    """
+    running, existing = daemon.is_running()
+    if not running:
+        return None
+    pid = existing.get("pid")
+    if pid is None or pid == os.getpid():
+        return None
+    return pid
+
+
+def _should_handoff_to_background():
+    """是否应当在初始化完成后转入后台。
+
+    仅「无参数启动」（cli 会设 STEAMAUTO_BG_HANDOFF=1）且当前不是后台进程时为真；
+    `run` 子命令保持传统前台常驻行为（便于盯日志调试）。
+    """
+    if os.environ.get("STEAMAUTO_BG_HANDOFF") != "1":
+        return False
+    if os.environ.get("STEAMAUTO_DAEMON") == "1":
+        return False  # 后台进程自身不再二次转后台
+    return True
+
+
+def _handoff_to_background(plugin_count, control_server=None):
+    """把服务移交后台进程。返回 True 表示移交完成，调用方应结束当前前台进程。
+
+    取舍说明：不做「实时转发后台输出到本终端」，后台的输出落在它自己的
+    控制台日志里（logs/console-*.log），用户可随时用 `--log` 翻阅。
+
+    **必须先让出运行时资源**：前台此刻已经写了 PID/state 文件并绑定了控制端口，
+    若不先释放，spawn 出的后台进程会因「PID 已被占用」被判定为已在运行而启动失败，
+    且控制端口也会冲突。
+    """
+    # 二次防线：正常情况下 main 开头的单实例检查已拦住，这里再确认一次
+    other_pid = _other_instance_pid()
+    if other_pid is not None:
+        echo("检测到 Steamauto 已在运行（PID %s），本次启动取消。" % other_pid, dual=True)
+        return True
+
+    if control_server is not None:
+        control_server.stop()
+    daemon.clear_state()
+
+    ok, msg = daemon.spawn_background()
+    if not ok:
+        logger.error("转入后台失败：%s", msg)
+        echo("转入后台失败：%s" % msg, dual=True)
+        echo("可手动执行：python Steamauto.py start", dual=True)
+        return True  # 仍然结束前台，避免用户以为已经后台运行却有两个实例
+
+    echo("=" * 62, dual=True)
+    echo("已转入后台运行（插件数：%d），控制台交还。" % plugin_count, dual=True)
+    echo("  翻阅日志：python Steamauto.py --log")
+    echo("  运行状态：python Steamauto.py status")
+    echo("  停止运行：python Steamauto.py stop")
+    echo("  前台运行：python Steamauto.py run    （需盯日志时用）")
+    echo("=" * 62, dual=True)
+    return True
+
+
 def main():
     global config, _STEAM_CLIENT, _PLUGIN_RUNTIME
     # GUI/后台启动的子进程无交互终端：出错时不等待按键（pause 自动跳过）
@@ -862,9 +929,21 @@ def main():
 
     runtime.clear_shutdown()
     runtime.clear_wake()
+
+    # 单实例保护：已有进程在跑时不应再起一个（两个实例会重复操作同一批平台账号）。
+    # **必须在 _setup_runtime_state() 之前判断** —— 后者会用自己的 PID 覆盖 state 文件，
+    # 之后就再也看不到已有实例了（实测会导致「初始化后转后台」再拉起一个后台进程）。
+    other_pid = _other_instance_pid()
+    if other_pid is not None:
+        echo("检测到 Steamauto 已在运行（PID %s），本次启动取消。" % other_pid, dual=True)
+        echo("  查看状态：python Steamauto.py status")
+        echo("  重启服务：python Steamauto.py restart")
+        return 0
+
     _setup_runtime_state()
     _register_hot_appliers()
     control_server = _start_control_server()
+    handed_off = False
     try:
         steam_client = login_to_steam(config)
         if steam_client is None:
@@ -892,6 +971,14 @@ def main():
         # 插件管理器：失败插件不再丢弃，留给「登录后动态启动」
         _PLUGIN_RUNTIME = PluginRuntime(plugins_map)
         echo("初始化完成, 开始运行插件!", dual=True)
+
+        # 无参数启动时：初始化完成后转入后台，把控制台还给用户。
+        # 放在 start_all() 之前，避免前台与后台各跑一遍插件（重复请求平台接口）。
+        if _should_handoff_to_background():
+            _handoff_to_background(len(plugins_map), control_server)
+            handed_off = True
+            return 0
+
         time.sleep(0.1)
         started, skipped = _PLUGIN_RUNTIME.start_all()
         for key in skipped:
@@ -921,7 +1008,7 @@ def main():
         pause()
         return 1
     finally:
-        _teardown_runtime(control_server)
+        _teardown_runtime(control_server, handed_off=handed_off)
 
 
 # 程序运行开始处

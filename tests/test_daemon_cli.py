@@ -424,7 +424,7 @@ class TestDaemonState(unittest.TestCase):
         path = os.path.join(self._patches["LOGS_FOLDER"], "2026-01-01-00-00-00.log")
         with io.open(path, "w", encoding="utf-8", newline="") as f:
             f.write("\n".join("line%d" % i for i in range(1, 21)))
-        self.assertEqual(daemon.latest_log_file(), path)
+        self.assertEqual(daemon.latest_log_file("app"), path)
         self.assertEqual(daemon.tail(path, 3), ["line18", "line19", "line20"])
 
     def test_console_log_path_prefix(self):
@@ -529,12 +529,12 @@ class TestCli(unittest.TestCase):
         daemon.static.PID_FILE = self._orig_pid
 
     def test_parse_subcommands(self):
-        self.assertEqual(self.parser.parse_args(["start"]).command, "start")
-        args = self.parser.parse_args(["stop", "--force"])
-        self.assertTrue(args.force)
-        args = self.parser.parse_args(["config", "set", "a.b", "3"])
-        self.assertEqual((args.config_command, args.key, args.value), ("set", "a.b", "3"))
-        args = self.parser.parse_args(["logs", "-n", "5", "-f", "--console"])
+        self.assertTrue(self.parser.parse_args(["--start"]).start)
+        args = self.parser.parse_args(["--stop", "--force"])
+        self.assertTrue(args.stop and args.force)
+        args = self.parser.parse_args(["--config", "--set", "a.b", "3"])
+        self.assertEqual(args.set_pair, ["a.b", "3"])
+        args = self.parser.parse_args(["--log", "-n", "5", "-f", "--console"])
         self.assertEqual(args.lines, 5)
         self.assertTrue(args.follow)
         self.assertTrue(args.console)
@@ -557,54 +557,54 @@ class TestCli(unittest.TestCase):
         self.assertFalse(called["daemon"])
 
     def test_config_get(self):
-        self.assertEqual(self.cli.main(["config", "get", "log_level"]), 0)
-        self.assertEqual(self.cli.main(["config", "get", "missing.key"]), 1)
+        self.assertEqual(self.cli.main(["--config", "--get", "log_level"]), 0)
+        self.assertEqual(self.cli.main(["--config", "--get", "missing.key"]), 1)
 
     def test_config_set_keeps_comments_and_value(self):
-        rc = self.cli.main(["--port", "1", "config", "set", "no_pause", "true", "--no-apply"])
+        rc = self.cli.main(["--port", "1", "--config", "--set", "no_pause", "true", "--no-apply"])
         self.assertEqual(rc, 0)
         text = config_writer.read_text(self.cfg_path)
         self.assertIn("// 保留这条注释", text)
         self.assertIn('"no_pause": true', text)
 
     def test_config_set_string_flag(self):
-        rc = self.cli.main(["config", "set", "log_level", "debug", "--no-apply"])
+        rc = self.cli.main(["--config", "--set", "log_level", "debug", "--no-apply"])
         self.assertEqual(rc, 0)
         self.assertIn('"log_level": "debug"', config_writer.read_text(self.cfg_path))
 
     def test_config_set_unknown_key_warns_but_writes(self):
-        self.assertEqual(self.cli.main(["config", "set", "totally_new", "1", "--no-apply"]), 0)
+        self.assertEqual(self.cli.main(["--config", "--set", "totally_new", "1", "--no-apply"]), 0)
         self.assertIn("totally_new", config_writer.read_text(self.cfg_path))
 
     def test_config_unset(self):
-        self.assertEqual(self.cli.main(["config", "unset", "no_pause", "--no-apply"]), 0)
+        self.assertEqual(self.cli.main(["--config", "--unset", "no_pause", "--no-apply"]), 0)
         self.assertNotIn("no_pause", config_writer.read_text(self.cfg_path))
 
     def test_config_list_returns_zero(self):
-        self.assertEqual(self.cli.main(["config", "list"]), 0)
-        self.assertEqual(self.cli.main(["config", "list", "--json"]), 0)
+        self.assertEqual(self.cli.main(["--config", "--list"]), 0)
+        self.assertEqual(self.cli.main(["--config", "--list", "--json"]), 0)
 
     def test_config_reload_when_not_running(self):
-        self.assertEqual(self.cli.main(["config", "reload"]), 0)
+        self.assertEqual(self.cli.main(["--config", "--reload"]), 0)
 
     def test_status_not_running_exit_code(self):
         # 3 = 未运行（便于脚本区分）
-        self.assertEqual(self.cli.main(["status"]), 3)
-        self.assertEqual(self.cli.main(["status", "--json"]), 3)
+        self.assertEqual(self.cli.main(["--status"]), 3)
+        self.assertEqual(self.cli.main(["--status", "--json"]), 3)
 
     def test_stop_when_not_running(self):
-        self.assertEqual(self.cli.main(["stop"]), 0)
+        self.assertEqual(self.cli.main(["--stop"]), 0)
 
     def test_logs_missing_file(self):
         orig = self.cli.static.LOGS_FOLDER
         self.cli.static.LOGS_FOLDER = self.tmp
         try:
-            self.assertEqual(self.cli.main(["logs"]), 1)
+            self.assertEqual(self.cli.main(["--log"]), 1)
         finally:
             self.cli.static.LOGS_FOLDER = orig
 
     def test_ctl_requires_key_value(self):
-        self.assertEqual(self.cli.main(["ctl", "ping", "badarg"]), 2)
+        self.assertEqual(self.cli.main(["--ctl", "ping", "badarg"]), 2)
 
     def test_help_lists_operations(self):
         """--help 走自定义实现（D4b 要求列出可用操作），返回 0 而非 SystemExit。"""
@@ -615,7 +615,7 @@ class TestCli(unittest.TestCase):
             rc = self.cli.main(["--help"])
         self.assertEqual(rc, 0)
         out = buf.getvalue()
-        for expected in ("--login", "--logout", "--status account", "start", "stop", "config"):
+        for expected in ("--login", "--logout", "--status account", "--start", "--stop", "--config"):
             self.assertIn(expected, out, "--help 未列出 %s" % expected)
 
     def test_short_help_flag(self):
@@ -627,13 +627,13 @@ class TestCli(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertIn("--login", buf.getvalue())
 
-    def test_unknown_command_shows_help(self):
-        """无效子命令：argparse 报错后应补一份操作列表，返回 2。"""
+    def test_unknown_flag_shows_help(self):
+        """无法识别的参数：argparse 报错后应补一份操作列表，返回 2。"""
         import contextlib
 
         buf, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
-            rc = self.cli.main(["definitely-not-a-command"])
+            rc = self.cli.main(["--definitely-not-a-command"])
         self.assertEqual(rc, 2)
         self.assertIn("--login", buf.getvalue())
 
@@ -643,10 +643,6 @@ class TestCli(unittest.TestCase):
         self.assertEqual(port, 49999)
         host, port = self.cli._control_endpoint(port=1234)
         self.assertEqual(port, 1234)
-
-    def test_light_commands_declared(self):
-        for name in ("start", "stop", "restart", "status", "logs", "config", "ctl"):
-            self.assertIn(name, self.cli.LIGHT_COMMANDS)
 
 
 # ============================================================ 插件改造
@@ -686,11 +682,20 @@ class TestEntryPointWiring(unittest.TestCase):
         with io.open(os.path.join(SRC, rel), "r", encoding="utf-8") as f:
             return f.read()
 
-    def test_steamauto_dispatches_light_commands_before_heavy_imports(self):
+    def test_steamauto_dispatches_to_cli_before_heavy_imports(self):
+        """CLI 必须在本模块的重型 import（json5/steampy/插件）之前接手。
+
+        这样 status / --log / --login 等命令不会顺带创建日志文件、加载 Steam
+        客户端与插件（既慢又会在 logs/ 里留下一堆无意义的日志）。
+        无条件转交（而非只挑几个命令名）还保证了「无参数启动」与 `run` 也能拿到
+        运行模式设置（例如初始化后转后台）。
+        """
         src = self._read("Steamauto.py")
         head = src[: src.index("import json5")]
         self.assertIn("utils.cli", head)
-        self.assertIn('"status"', head)
+        self.assertIn("sys.exit", head, "应当在重型 import 之前终止本模块加载")
+        # 无条件转交：不再依赖命令名白名单
+        self.assertIn("sys.argv[1:]", head)
 
     def test_steamauto_registers_control_commands(self):
         src = self._read("Steamauto.py")

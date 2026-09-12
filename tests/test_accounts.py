@@ -401,12 +401,13 @@ class TestFlagCli(_IsolatedPaths):
             "--login",
             "--logout",
             "--status account",
-            "start",
-            "stop",
-            "restart",
-            "logs",
-            "config set",
-            "ctl",
+            "--run",
+            "--start",
+            "--stop",
+            "--restart",
+            "--log",
+            "--config --set",
+            "--ctl",
         ):
             self.assertIn(expected, out, "--help 未列出 %s" % expected)
 
@@ -474,14 +475,22 @@ class TestFlagCli(_IsolatedPaths):
         self.assertIn("请指定平台", err)
 
     def test_status_without_topic_value(self):
-        rc, _out, err = _run_cli(["--status", ""])
-        self.assertEqual(rc, 2)
-        self.assertIn("account", err)
+        """空值应视为 process（等价于不带值），而非报错。"""
+        rc, out, err = _run_cli(["--status", ""])
+        self.assertEqual(rc, 3, "空主题应回落到 process（3 = 未运行）")
+        self.assertIn("状态", out)
 
-    def test_traditional_subcommands_still_work(self):
-        """D4b 只加 flag，原有子命令必须保持可用。"""
-        rc, _out, _err = _run_cli(["status"])
+    def test_status_process_topic(self):
+        rc, out, _ = _run_cli(["--status", "process"])
         self.assertEqual(rc, 3)  # 3 = 未运行
+        self.assertIn("状态", out)
+
+    def test_legacy_subcommands_removed(self):
+        """旧子命令写法已移除：应提示未指定操作并给出帮助。"""
+        rc, out, err = _run_cli(["status"])
+        self.assertEqual(rc, 0, "未指定操作时应打印帮助并返回 0")
+        self.assertIn("未指定操作", err)
+        self.assertIn("--status", out, "帮助应给出新的 --status 写法")
 
 
 # ============================================================ 唤醒机制（D3b）

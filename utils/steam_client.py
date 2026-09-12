@@ -20,7 +20,7 @@ from utils import static
 from utils.logger import PluginLogger, echo, handle_caught_exception
 from utils.notifier import send_notification
 from utils.static import SESSION_FOLDER, STEAM_ACCOUNT_INFO_FILE_PATH, CONFIG_FILE_PATH
-from utils.tools import accelerator, get_encoding, pause
+from utils.tools import accelerator, get_encoding
 
 logger = PluginLogger("SteamClient")
 
@@ -312,11 +312,9 @@ def login_to_steam(config: dict):
             except Exception as e:
                 handle_caught_exception(e, known=True)
                 logger.error("检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + "格式错误, 请检查配置文件格式是否正确! ")
-                pause()
                 return None
     except FileNotFoundError:
         logger.error("未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加后再进行操作!")
-        pause()
         return None
 
     if not isinstance(steam_account_info, dict):
@@ -335,7 +333,6 @@ def login_to_steam(config: dict):
 
     config["use_proxies"] = config.get("use_proxies", False)
     if not _check_proxy_availability(config):
-        pause()
         return None
 
     token_cache = _load_token_cache(username)
@@ -422,33 +419,27 @@ def login_to_steam(config: dict):
     except FileNotFoundError as e:
         handle_caught_exception(e, known=True)
         logger.error("未检测到" + STEAM_ACCOUNT_INFO_FILE_PATH + ", 请添加后再进行操作! ")
-        pause()
         return None
     except (SSLCertVerificationError, SSLError):
         if config["steam_local_accelerate"]:
             logger.error("登录失败. 你开启了本地加速, 但是未关闭SSL证书验证. 请在配置文件中将steam_login_ignore_ssl_error设置为true")
         else:
             logger.error("登录失败. SSL证书验证错误! 若您确定网络环境安全, 可尝试将配置文件中的steam_login_ignore_ssl_error设置为true\n")
-        pause()
         return None
     except (requests.exceptions.ConnectionError, TimeoutError):
         logger.error(
             "网络错误! \n该问题在国内网络环境下较为常见，可尝试部署至海外服务器，或尝试内置加速、代理软件等\n注意: 使用游戏加速器并不能解决问题，请使用代理软件如Clash/Proxifier等"
         )
-        pause()
         return None
     except ApiException:
         logger.error("登录失败. 请检查网络是否正常或被Steam屏蔽!")
-        pause()
         return None
     except (TypeError, AttributeError):
         logger.error("登录失败.可能原因如下：\n 1 代理问题，不建议同时开启proxy和内置代理，或者是代理波动，可以重试\n2 Steam服务器波动，无法登录")
-        pause()
         return None
     except Exception as e:
         handle_caught_exception(e, known=True)
         logger.error("登录失败. 请检查" + STEAM_ACCOUNT_INFO_FILE_PATH + "的格式或内容是否正确!\n")
-        pause()
         return None
 
 

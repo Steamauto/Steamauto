@@ -13,7 +13,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from api.Steam.steampy.client import SteamClient
 from utils.logger import echo, handle_caught_exception
 from utils.notifier import send_notification
-from utils.static import BUFF_COOKIES_FILE_PATH
+from utils.static import BUFF_COOKIES_FILE_PATH, QRCODE_FILE
 from utils.tools import get_encoding, logger
 
 
@@ -91,10 +91,10 @@ def login_to_buff_by_qrcode(steam_client, proxies=None, timeout=0) -> str:
     qr_code_url = response_json["data"]["url"]
     qrcode_terminal.draw(qr_code_url)
     img = qrcode.make(qr_code_url)
-    img.save("qrcode.png")  # type: ignore
+    img.save(QRCODE_FILE)  # type: ignore
     url = "https://api.cl2wm.cn/api/qrcode/code?text=" + qr_code_url
     send_notification(steam_client, f"BUFF登录已失效！请使用手机打开以下链接获取二维码，并使用BUFF扫描该二维码以登录: {url}", "BUFF登录二维码")
-    echo("请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描")
+    echo("请使用手机扫描上方二维码登录BUFF或打开 %s 扫描" % QRCODE_FILE)
     status = 0
     scanned = False
     deadline = (time.monotonic() + float(timeout)) if timeout else None
@@ -118,10 +118,10 @@ def login_to_buff_by_qrcode(steam_client, proxies=None, timeout=0) -> str:
     )
     logger.debug(json5.dumps(response.json()))
     cookies = response.cookies.get_dict(domain="buff.163.com")
-    if os.path.exists("qrcode.png"):
+    if os.path.exists(QRCODE_FILE):
         try:
-            os.remove("qrcode.png")
-        except:
+            os.remove(QRCODE_FILE)
+        except OSError:
             pass
     send_notification(steam_client, "BUFF登录成功！", "BUFF登录")
     return cookies["session"]

@@ -412,15 +412,22 @@ def get_value(cfg, key):
     return True, cur
 
 
-def flatten(cfg, prefix=""):
-    """把配置字典摊平成 [(点分键, 值)]。"""
+def flatten(cfg, prefix="", expand_arrays=False):
+    """把配置字典摊平成 [(点分键, 值)]。
+
+    :param expand_arrays: True 时把数组元素也展开成 `key.0` / `key.1`；
+                          False（默认）时数组**整体作为一个值**返回。
+    默认不展开是为了展示友好：`filter_name` / `blacklist_words` 这类数组应显示成
+    `["A", "B"]`，而不是拆成一堆 `key.0 = A`、`key.1 = B` 的条目。
+    需要枚举「所有可寻址键」（含数组下标）时传 True。
+    """
     out = []
     if isinstance(cfg, dict):
         for k, v in cfg.items():
-            out.extend(flatten(v, "%s.%s" % (prefix, k) if prefix else str(k)))
-    elif isinstance(cfg, list):
+            out.extend(flatten(v, "%s.%s" % (prefix, k) if prefix else str(k), expand_arrays))
+    elif isinstance(cfg, list) and expand_arrays:
         for i, v in enumerate(cfg):
-            out.extend(flatten(v, "%s.%s" % (prefix, i) if prefix else str(i)))
+            out.extend(flatten(v, "%s.%s" % (prefix, i) if prefix else str(i), expand_arrays))
     else:
         out.append((prefix, cfg))
     return out
