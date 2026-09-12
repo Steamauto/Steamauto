@@ -64,14 +64,14 @@ python Steamauto.py
 
 本 fork 新增了完整的命令行操作能力，无需 GUI 即可查询和操作各交易平台。所有命令均可加 `--instance <name>` 前缀操作指定实例（多开）。
 
-#### 平台 API 查询（只读；默认 JSON 输出，加 `--table` 转表格）
+#### 平台 API 查询（只读；默认表格输出便于人读，加 `--json` 输出机器可读 JSON）
 
 | 平台 | 命令 | 说明 |
 | --- | --- | --- |
 | BUFF | `--buff balance` | 余额（可用/仅交易/冻结/总） |
 | BUFF | `--buff nickname` | 当前昵称 |
 | BUFF | `--buff inventory` | 我的库存 |
-| BUFF | `--buff search "<关键词>"` | 搜索建议（仅 10 条） |
+| BUFF | `--buff search "<关键词>"` | 搜索建议（带在售最低/求购最高/在售数量） |
 | BUFF | `--buff search-market "<关键词>"` | 搜索市场（完整结果） |
 | BUFF | `--buff on-sale [页码]` | 我的在售 |
 | BUFF | `--buff sell-history [appid]` | 成交历史 |
