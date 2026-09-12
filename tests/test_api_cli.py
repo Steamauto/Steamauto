@@ -222,7 +222,7 @@ class TestDispatchAndOutput(unittest.TestCase):
     def test_search_market_passes_keyword(self):
         rc, out, _ = _run("buff", ["search-market", "AK-47"])
         self.assertEqual(rc, 0)
-        self.assertIn("714", out)
+        self.assertIn("goods_id", out, "默认表格应显示 items 的 goods_id 列")
 
     def test_inventory_returns_list(self):
         rc, out, _ = _run("buff", ["inventory", "--table"])
@@ -319,7 +319,7 @@ class TestResponseReturningSdk(unittest.TestCase):
     def test_on_sale_response_serializes(self):
         class _Client:
             def get_on_sale(self, page_num=1):
-                return _FakeResponse({"code": "OK", "data": {"total_count": 64}})
+                return _FakeResponse({"code": "OK", "data": {"total_count": 64, "items": [{"id": "x", "goods_id": 1, "price": 5.0, "state_text": "新建", "description": ""}]}})
 
         restore = _inject("buff", _Client())
         orig_load = api_cli.accounts.load_config
@@ -330,7 +330,7 @@ class TestResponseReturningSdk(unittest.TestCase):
             restore()
             api_cli.accounts.load_config = orig_load
         self.assertEqual(rc, 0)
-        self.assertIn('"total_count"', out)
+        self.assertIn("goods_id", out, "默认表格应显示 items 的 goods_id 列")
 
 
 class TestWriteOps(unittest.TestCase):

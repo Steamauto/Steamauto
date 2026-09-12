@@ -47,11 +47,25 @@ def _normalize(data):
     return data
 
 
-def _emit(data, as_table=False):
-    """按 JSON 或表格输出。表格仅对 list[dict] 有效，其余形态回落到 JSON。"""
+def _extract_items(data):
+    """尝试从 dict 返回中提取 items 列表（用于表格化）；无法提取则原样返回。
+
+    很多平台接口返回 ``{"code": "OK", "data": {"items": [...]}}`` 结构，
+    表格化时应直接显示 items，而不是把整个包装 dict 当一行。
+    """
+    if isinstance(data, dict):
+        inner = data.get("data")
+        if isinstance(inner, dict) and isinstance(inner.get("items"), list):
+            return inner["items"]
+    return data
+
+
+def _emit(data, as_table=True):
+    """按表格（默认，人类可读）或 JSON 输出。表格仅对 list[dict] 有效，其余形态回落到 JSON。"""
     if not as_table:
         _out(json.dumps(data, ensure_ascii=False, indent=2))
         return 0
+    data = _extract_items(data)
     if isinstance(data, list) and data and all(isinstance(x, dict) for x in data):
         _render_table(data)
         return 0
@@ -61,16 +75,14 @@ def _emit(data, as_table=False):
 
 
 def _render_table(rows):
-    """把 list[dict] 渲染成对齐表格；列 = 所有行 key 的并集（按首次出现顺序）。"""
+    """把 list[dict] 渲染成对齐表格；只显示标量字段（过滤嵌套 dict/list 列，避免超宽不可读）。"""
     cols = []
     for row in rows:
-        for k in row:
-            if k not in cols:
+        for k, v in row.items():
+            if k not in cols and not isinstance(v, (dict, list)):
                 cols.append(k)
 
     def cell(v):
-        if isinstance(v, (dict, list)):
-            return json.dumps(v, ensure_ascii=False)
         return "" if v is None else str(v)
 
     table = [[cell(r.get(c)) for c in cols] for r in rows]
@@ -161,6 +173,49 @@ _CLIENT_FACTORIES = {
 
 # ------------------------------------------------------------------ 各平台操作
 
+#: 表格显示的关键字段（只显示这些，避免表格过宽）
+_BUFF_INVENTORY_FIELDS = ["assetid", "market_hash_name", "name", "goods_id", "sell_order_price", "sell_min_price", "buy_max_price", "state_text", "steam_price"]
+_BUFF_ON_SALE_FIELDS = ["id", "goods_id", "price", "state_text", "description"]
+
+
+def _project(rows, fields):
+    """提取 rows 的关键字段（仅保留 fields 里存在的标量字段）；fields 为空则原样返回。"""
+    if not fields or not isinstance(rows, list):
+        return rows
+    return [
+        {k: r.get(k) for k in fields if k in r and not isinstance(r.get(k), (dict, list))}
+        for r in rows if isinstance(r, dict)
+    ]
+
+
+def _enrich_search(client, results):
+    """搜索结果补行情：在售最低价、求购最高价、在售数量。"""
+    out = []
+    for r in results:
+        if not isinstance(r, dict):
+            out.append(r)
+            continue
+        gid = r.get("goods_ids")
+        if not gid:
+            out.append(r)
+            continue
+        enriched = dict(r)
+        try:
+            sell = client.get_sell_order(gid)
+            if isinstance(sell, dict):
+                items = sell.get("items") or []
+                enriched["sell_min"] = items[0].get("price") if items else None
+                enriched["sell_num"] = sell.get("total_count")
+        except Exception:
+            pass
+        try:
+            enriched["buy_max"] = client.get_buy_order_max(gid)
+        except Exception:
+            pass
+        out.append(enriched)
+    return out
+
+
 def _buff_ops():
     def balance(client, args):
         d = client.get_user_brief_assest() or {}
@@ -179,11 +234,15 @@ def _buff_ops():
             raise ValueError("search 需要关键词，如：--buff search \"AK-47\"")
         key = args[0]
         game = args[1] if len(args) > 1 else "csgo"
-        return client.search_goods(key, game)
+        return _enrich_search(client, client.search_goods(key, game))
 
     def on_sale(client, args):
         page = int(args[0]) if args else 1
-        return client.get_on_sale(page_num=page)
+        d = client.get_on_sale(page_num=page)
+        if hasattr(d, "json"):
+            d = d.json()
+        items = (d.get("data") or {}).get("items", []) if isinstance(d, dict) else d
+        return _project(items, _BUFF_ON_SALE_FIELDS)
 
     def sell_history(client, args):
         appid = int(args[0]) if args else 730
@@ -262,7 +321,7 @@ def _buff_ops():
         return client.search_market(key, page_num=page)
 
     def inventory(client, args):
-        return client.get_inventory_all()
+        return _project(client.get_inventory_all(), _BUFF_INVENTORY_FIELDS)
 
     def buy_order(client, args):
         if not args:
@@ -460,7 +519,7 @@ def _help(platform):
     for op, (_fn, desc) in ops.items():
         _out("  %-14s %s" % (op, desc))
     _out("")
-    _out("默认输出 JSON；加 --table 转表格；--help 看本帮助。")
+    _out("默认表格输出（人类可读）；加 --json 输出 JSON；--help 看本帮助。")
     return 0
 
 
@@ -471,7 +530,7 @@ def main(platform, argv):
         _err("未知平台：%s（可用：buff / uu / c5 / eco）" % platform)
         return 2
 
-    as_table = False
+    as_table = True  # 默认表格（人类可读）；--json 输出 JSON
     as_yes = False
     dry_run = False
     positional = []
