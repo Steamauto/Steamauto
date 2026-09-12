@@ -1,4 +1,5 @@
 config/*
+instances/
 dev/*
 logs
 session
