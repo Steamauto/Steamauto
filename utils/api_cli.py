@@ -306,6 +306,25 @@ def _buff_ops():
             raise ValueError("塞求购失败：%s" % (result.get("error") or result.get("msg") or result.get("code")))
         return result
 
+    def undercut(client, args):
+        """以市场最低价 - 0.01 上架（压价出售）。"""
+        if not args:
+            raise ValueError("undercut 需要 assetid，如：--buff undercut <assetid>")
+        assetid = args[0]
+        it = _find_item(client, assetid)
+        if it is None:
+            raise ValueError("库存中未找到 assetid=%s，请先确认该饰品在库存中" % assetid)
+        goods_id = it.get("goods_id")
+        if not goods_id:
+            raise ValueError("库存中未找到 assetid=%s 的 goods_id" % assetid)
+        lowest = client.get_sell_min(goods_id)
+        if lowest is None:
+            raise ValueError("该饰品（goods_id=%s）暂无在售单，无法压价上架" % goods_id)
+        price = round(float(lowest) - 0.01, 2)
+        if price <= 0:
+            raise ValueError("该饰品最低价过低（%.2f），无法再压 0.01" % float(lowest))
+        return _sale_result(client.on_sale([_make_asset(client, assetid, price)]))
+
     def off_shelf(client, args):
         if not args:
             raise ValueError("off-shelf 需要至少一个 sell_order_id，如：--buff off-shelf <sell_order_id>...")
@@ -368,7 +387,9 @@ def _buff_ops():
         "lowest-sell": (lowest_sell, "在售最低价（市场最低卖单）：--buff lowest-sell <goods_id>"),
         "waiting-offer": (waiting_offer, "求购待发报价"),
         "list": (list_item, "上架：--buff list <assetid> <price>【写】"),
+        "undercut": (undercut, "以市场最低价 -0.01 上架：--buff undercut <assetid>【写】"),
         "sell-bidder": (sell_bidder, "塞求购（卖给求购者）：--buff sell-bidder <assetid> <goods_id>【写】"),
+        "item-map": (_item_map_cmd, "UU↔BUFF 饰品映射表（assetid 主键，优先缓存）：--buff item-map [--refresh]"),
         "off-shelf": (off_shelf, "下架：--buff off-shelf <sell_order_id>...【写】"),
         "change-price": (change_price, "改价：--buff change-price <sell_order_id> <price>【写】"),
         "buy": (buy, "购买：--buff buy <goods_id> <sell_order_id> <price> [pay_method]【写】"),
@@ -422,23 +443,30 @@ def _uu_ops():
         return client.sell_items({str(assetid): price})
 
     def sell_bidder(client, args):
-        """塞求购 = 卖给求购者：以略低于最高求购价的价格上架，让求购者自动成交。"""
+        """塞求购（供应给求购者）—— 已禁用：UU 网页 API 不支持该交易（仅 APP 支持），待 APP 逆向。"""
+        raise ValueError(
+            "悠悠有品「塞求购（供应给求购者）」网页 API 不支持（仅 APP 支持），该命令已禁用。"
+            "如需出售，请用 --uu sell <assetid> <price> 上架。"
+        )
+
+    def undercut(client, args):
+        """以市场最低价 - 0.01 上架（压价出售）。"""
         if not args:
-            raise ValueError("sell-bidder 需要 assetid，如：--uu sell-bidder <assetid>")
+            raise ValueError("undercut 需要 assetid，如：--uu undercut <assetid>")
         assetid = args[0]
-        # 从库存查 assetid 对应的 template_id
         template_id = None
         for it in client.get_inventory():
             if str(it.get("SteamAssetId")) == str(assetid):
-                ti = it.get("TemplateInfo") or {}
-                template_id = ti.get("Id")
+                template_id = (it.get("TemplateInfo") or {}).get("Id")
                 break
         if template_id is None:
             raise ValueError("库存中未找到 assetid=%s，无法确定 template_id" % assetid)
-        buy_max = client.get_buy_max(int(template_id))
-        if buy_max is None:
-            raise ValueError("该饰品（template_id=%s）暂无求购单，无法塞求购" % template_id)
-        price = round(float(buy_max) - 0.01, 2)
+        lowest = client.get_sell_min(int(template_id))
+        if lowest is None:
+            raise ValueError("该饰品（template_id=%s）暂无在售单，无法压价上架" % template_id)
+        price = round(float(lowest) - 0.01, 2)
+        if price <= 0:
+            raise ValueError("该饰品最低价过低（%.2f），无法再压 0.01" % float(lowest))
         return client.sell_items({str(assetid): price})
 
     def off_shelf(client, args):
@@ -489,7 +517,9 @@ def _uu_ops():
         "highest-buy": (highest_buy, "求购最高价（市场最高求购单）：--uu highest-buy <template_id>"),
         "lowest-sell": (lowest_sell, "在售最低价（市场最低卖单）：--uu lowest-sell <template_id>"),
         "sell": (sell, "上架：--uu sell <assetid> <price>【写】"),
-        "sell-bidder": (sell_bidder, "塞求购（卖给求购者）：--uu sell-bidder <assetid>【写】"),
+        "undercut": (undercut, "以市场最低价 -0.01 上架：--uu undercut <assetid>【写】"),
+        "sell-bidder": (sell_bidder, "塞求购（供应给求购者）【禁用：UU 网页 API 不支持，仅 APP 支持，待 APP 逆向】"),
+        "item-map": (_item_map_cmd, "UU↔BUFF 饰品映射表（assetid 主键，优先缓存）：--uu item-map [--refresh]"),
         "off-shelf": (off_shelf, "下架：--uu off-shelf <commodity_id>...【写】"),
         "buy": (buy, "发求购单（买入）：--uu buy <template_id> <price> [num]【写】"),
         "change-price": (change_price, "改价：--uu change-price <commodity_id> <price>【写】"),
@@ -532,6 +562,26 @@ def _eco_ops():
     }
 
 
+def _item_map_cmd(client, args):
+    """UU↔BUFF 饰品映射表（assetid 主键）。优先读缓存，未命中/出错在线拉并写缓存。
+
+    挂在 --buff 和 --uu 下均可（跨平台映射，两入口共用同一份缓存）。
+    """
+    from utils import item_map as im
+
+    refresh = "--refresh" in args
+    if not refresh:
+        cached = im.load_item_map()
+        if cached is not None:
+            return im.to_rows(cached)
+    cfg = accounts.load_config()
+    buff_client = _buff_client(cfg)
+    uu_client = _uu_client(cfg)
+    item_map = im.build_item_map(buff_client, uu_client)
+    im.save_item_map(item_map)
+    return im.to_rows(item_map)
+
+
 _COMMANDS = {
     "buff": _buff_ops,
     "uu": _uu_ops,
@@ -541,8 +591,8 @@ _COMMANDS = {
 
 #: 写操作命令（默认需二次确认；加 --yes 跳过，--dry-run 只预览不执行）
 _WRITE_OPS = {
-    "buff": {"list", "sell-bidder", "off-shelf", "change-price", "buy"},
-    "uu": {"sell", "off-shelf", "buy", "change-price"},
+    "buff": {"list", "undercut", "sell-bidder", "off-shelf", "change-price", "buy"},
+    "uu": {"sell", "undercut", "off-shelf", "buy", "change-price"},
 }
 
 
@@ -596,6 +646,12 @@ def main(platform, argv):
         _err("未知操作：--%s %s" % (platform, op))
         _help(platform)
         return 2
+    # 未支持的参数（例如 --sjpm）应给出可读提示，而不是在内部 int() 里直接炸。
+    supported_flags = {"--json", "-j", "--table", "-t", "--yes", "-y", "--dry-run", "--help", "-h"}
+    for a in list(argv):
+        if a.startswith("--") and a not in supported_flags and a not in positional:
+            _err("不支持的参数：%s" % a)
+            return 2
 
     # 平台 API 查询/交易需要程序在运行（运行时状态源）
     running, _state = accounts.daemon.is_running()
