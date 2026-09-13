@@ -15,13 +15,13 @@
 其余同名挂单继续出售。
 """
 
-import datetime
 import os
 import time
 
 from api.BuffApi import BuffAccount
-from api.PyECOsteam import ECOsteamClient, models as eco_models
+from api.PyECOsteam import ECOsteamClient
 import api.uuyoupinapi as uuyoupinapi
+from api import platforms
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.notifier import send_notification
@@ -116,137 +116,7 @@ class SoldAutoOffShelf:
 
     # ---------------- 售出检测（B） ----------------
 
-    def get_sold_orders_buff(self) -> list:
-        """返回 BUFF 已售出待发货订单：[{'order_id', 'assetid'|None, 'name'}]"""
-        result = []
-        data = self.buff_client.get_sell_order_to_deliver("csgo", 730)
-        goods_infos = data.get("goods_infos", {}) if data else {}
-        for trade in (data or {}).get("items", []):
-            order_id = str(trade.get("id"))
-            name = ""
-            goods_id = str(trade.get("goods_id", ""))
-            if goods_id in goods_infos:
-                name = goods_infos[goods_id].get("market_hash_name", "")
-            assetids = []
-            for x in trade.get("items_to_trade") or []:
-                if isinstance(x, dict):
-                    aid = x.get("assetid") or x.get("id")
-                else:
-                    aid = x
-                if aid:
-                    assetids.append(str(aid))
-            if assetids:
-                for aid in assetids:
-                    result.append({"order_id": order_id, "assetid": aid, "name": name})
-            else:
-                # 拿不到 assetid 时退化为按名称匹配
-                result.append({"order_id": order_id, "assetid": None, "name": name})
-        return result
-
-    def get_sold_orders_uu(self) -> list:
-        """返回悠悠已售出（待发货）订单：[{'order_id', 'assetid'|None, 'name'}]。只读，不发送报价。"""
-        result = []
-        page_index = 1
-        page_size = 20
-        while True:
-            rsp = self.uu_client.call_api(
-                "POST",
-                "/api/youpin/bff/trade/sale/v1/sell/list",
-                data={"keys": "", "orderStatus": "140", "pageIndex": page_index, "pageSize": page_size},
-            ).json()
-            order_list = (rsp.get("data") or {}).get("orderList", [])
-            for order in order_list:
-                name = (order.get("productDetail") or {}).get("commodityName", "")
-                result.append({"order_id": str(order.get("orderNo")), "assetid": None, "name": name})
-            if len(order_list) == page_size:
-                page_index += 1
-                time.sleep(0.5)
-                continue
-            break
-        return result
-
-    def get_sold_orders_eco(self) -> list:
-        """返回 ECO 已售出（待发货）订单：[{'order_id', 'assetid'|None, 'name'}]"""
-        result = []
-        today = datetime.datetime.today()
-        last_month = (today - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-        tomorrow = (today + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-        orders = self.eco_client.getFullSellerOrderList(last_month, tomorrow, DetailsState=8, SteamId=self.steam_id)
-        for order in orders or []:
-            result.append({"order_id": str(order.get("OrderNum")), "assetid": None, "name": order.get("GoodsName", "")})
-        return result
-
-    # ---------------- 在售货架 ----------------
-
-    def get_shelf(self, platform) -> list:
-        """返回平台在售挂单：[{'order_no', 'assetid', 'name'}]"""
-        shelf = []
-        if platform == "buff":
-            data = self.buff_client.get_on_sale().json()["data"]
-            items = data["items"]
-            if data["total_count"] > 500:
-                items += self.buff_client.get_on_sale(page_num=2).json()["data"]["items"]
-            for item in items:
-                goods_id = str(item.get("goods_id", ""))
-                name = (data.get("goods_infos", {}).get(goods_id) or {}).get("market_hash_name", "")
-                shelf.append(
-                    {
-                        "order_no": item["id"],
-                        "assetid": str(item["asset_info"]["assetid"]),
-                        "name": name,
-                    }
-                )
-        elif platform == "uu":
-            for item in self.uu_client.get_sell_list():
-                shelf.append(
-                    {
-                        "order_no": item["id"],
-                        "assetid": str(item["steamAssetId"]),
-                        "name": item.get("name", ""),
-                    }
-                )
-        elif platform == "eco":
-            for item in self.eco_client.getFullSellGoodsList(self.steam_id):
-                shelf.append(
-                    {
-                        "order_no": item["GoodsNum"],
-                        "assetid": str(item["AssetId"]),
-                        "name": item.get("GoodsName", ""),
-                    }
-                )
-        return shelf
-
-    # ---------------- 下架执行 ----------------
-
-    def offshelf(self, platform, order_nos: list) -> bool:
-        """在指定平台下架一批挂单，返回是否全部成功。"""
-        if not order_nos:
-            return True
-        logger.warning(f"正在在 {PLATFORM_NAMES[platform]} 下架 {len(order_nos)} 个挂单（饰品已在其他平台售出）...")
-        try:
-            if platform == "buff":
-                success, problems = self.buff_client.cancel_sale(order_nos)
-                if problems:
-                    logger.error(f"BUFF 下架部分失败：{problems}")
-                return len(problems) == 0
-            elif platform == "uu":
-                rsp = self.uu_client.off_shelf([str(o) for o in order_nos]).json()
-                if int(rsp.get("Code", -1)) == 0:
-                    return True
-                logger.error(f"悠悠有品下架失败：{rsp}")
-                return False
-            elif platform == "eco":
-                success_count, failure_count = self.eco_client.OffshelfGoods(
-                    [eco_models.GoodsNum(GoodsNum=o, SteamGameId="730") for o in order_nos]
-                )
-                if failure_count:
-                    logger.error(f"ECOsteam 下架 {failure_count} 个失败")
-                return failure_count == 0
-        except Exception as e:
-            handle_caught_exception(e, "SoldAutoOffShelf")
-            logger.error(f"{PLATFORM_NAMES[platform]} 下架过程出错")
-            return False
-        return False
+    # 售出检测（B）/ 在售货架 / 下架 已下沉到 api.platforms（get_sold_orders / get_on_sale / off_shelf）
 
     # ---------------- 主流程 ----------------
 
@@ -280,7 +150,8 @@ class SoldAutoOffShelf:
             logger.warning(
                 f"饰品「{display}」已在 {PLATFORM_NAMES[sold_platform]} 售出（订单 {order_id}），正在从 {PLATFORM_NAMES[platform]} 下架..."
             )
-            if self.offshelf(platform, [target["order_no"]]):
+            success_count, failure_count = platforms.off_shelf(self.buff_client, self.uu_client, self.eco_client, platform, [target["order_no"]])
+            if failure_count == 0:
                 logger.info(f"{PLATFORM_NAMES[platform]} 下架「{display}」成功")
                 try:
                     send_notification(
@@ -310,14 +181,14 @@ class SoldAutoOffShelf:
                 logger.warning(
                     f"检测到 {PLATFORM_NAMES[platform]} 有 {len(offshelf_list)} 个挂单饰品已不在 Steam 库存中，执行下架（兜底）"
                 )
-                self.offshelf(platform, offshelf_list)
+                platforms.off_shelf(self.buff_client, self.uu_client, self.eco_client, platform, offshelf_list)
 
     def run_once(self):
         # 1. 拉取各平台货架
         shelves = {}
         for platform in self.platforms:
             try:
-                shelves[platform] = self.get_shelf(platform)
+                shelves[platform] = platforms.get_on_sale(self.buff_client, self.uu_client, self.eco_client, platform, self.steam_id)
             except Exception as e:
                 handle_caught_exception(e, "SoldAutoOffShelf", known=True)
                 logger.error(f"获取 {PLATFORM_NAMES[platform]} 在售货架失败，本轮跳过该平台")
@@ -325,10 +196,9 @@ class SoldAutoOffShelf:
             time.sleep(1)
 
         # 2. 拉取各平台已售出订单，处理新订单
-        fetchers = {"buff": self.get_sold_orders_buff, "uu": self.get_sold_orders_uu, "eco": self.get_sold_orders_eco}
         for platform in self.platforms:
             try:
-                sold_orders = fetchers[platform]()
+                sold_orders = platforms.get_sold_orders(self.buff_client, self.uu_client, self.eco_client, platform, self.steam_id)
             except Exception as e:
                 handle_caught_exception(e, "SoldAutoOffShelf", known=True)
                 logger.error(f"获取 {PLATFORM_NAMES[platform]} 售出订单失败，本轮跳过")

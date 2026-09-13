@@ -20,6 +20,7 @@ from utils.steam_client import accept_trade_offer, external_handler, get_cs2_inv
 from utils.tools import exit_code, get_encoding
 from utils.uu_helper import get_valid_token_for_uu
 from api.uuyoupinapi import UUAccount
+from api import platforms
 
 sync_sell_shelf_enabled = False
 sync_lease_shelf_enabled = False
@@ -605,24 +606,10 @@ class ECOsteamPlugin:
                             offshelf_list.append(good)
                     if len(offshelf_list) > 0:
                         sell_logger.warning(f"检测到{platform.upper()}平台上架的{len(offshelf_list)}个物品不在Steam库存中！即将下架！")
-                        if platform == "eco":
-                            success_count, failure_count = self.client.OffshelfGoods([models.GoodsNum(GoodsNum=good, SteamGameId="730") for good in offshelf_list])
-                            sell_logger.info(f"下架{success_count}个商品成功！")
-                            if failure_count != 0:
-                                sell_logger.error(f"下架{failure_count}个商品失败！")
-                        elif platform == "buff":
-                            try:
-                                count, problems = self.buff_client.cancel_sale(offshelf_list)
-                                sell_logger.info(f"下架{count}个商品成功！下架{len(problems)}个商品失败！")
-                            except Exception as e:
-                                handle_caught_exception(e, "ECOsteam.cn", known=True)
-                                sell_logger.error("下架商品失败！可能有部分下架成功")
-                        elif platform == "uu":
-                            response = self.uu_client.off_shelf(offshelf_list)
-                            if int(response.json()["Code"]) == "0":
-                                sell_logger.info(f"下架{len(offshelf_list)}个商品成功！")
-                            else:
-                                sell_logger.error(f"下架{len(offshelf_list)}个商品失败！错误信息{str(response.json())}")
+                        success_count, failure_count = platforms.off_shelf(self.buff_client, self.uu_client, self.client, platform, offshelf_list)
+                        sell_logger.info(f"下架{success_count}个商品成功！")
+                        if failure_count != 0:
+                            sell_logger.error(f"下架{failure_count}个商品失败！")
                         # 重新获取上架物品
                         shelves[platform] = self.get_shelf(platform, inventory)
         except Exception as e:

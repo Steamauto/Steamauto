@@ -707,8 +707,29 @@ class UUAccount:
             },
         )
 
-    def sell_items(self, assets: dict, remark=None):
-        item_infos = [{"AssetId": asset, "Price": assets[asset], "Remark": remark} for asset in assets.keys()]
+    def sell_items(self, assets, remark=None):
+        """上架饰品（SellInventoryWithLeaseV2）。
+
+        支持两种入参：
+        - dict: ``{assetid: price}``（旧式，CLI 用），自动补 AssetId/Price/Remark
+        - list[dict]: 完整 ItemInfos（含 IsCanLease/IsCanSold/Price/Remark），插件用
+
+        返回 ``{"success": 成功数, "total": 总数, "problems": {assetid: 原因}}``。
+
+        UU 上架接口可能返回非 0 业务码且**无 Data 字段**，历史实现直接
+        ``rsp["Data"]`` 会抛 ``KeyError: 'Data'``（CLI 显示「错误：'Data'」），
+        现已改为抛带业务信息的清晰错误：
+
+        - ``7000002`` 二次确认场景（如「交易撤回须知」）：需在 UU APP 完成场景确认
+        - ``84101`` 登录信息异常（call_api 已统一拦截）
+        - 其它非 0 码：抛 code + msg
+        """
+        if isinstance(assets, dict):
+            item_infos = [{"AssetId": asset, "Price": assets[asset], "Remark": remark} for asset in assets.keys()]
+        elif isinstance(assets, list):
+            item_infos = assets
+        else:
+            raise TypeError("sell_items 入参应为 {assetid: price} 字典或完整 ItemInfos 列表")
         rsp = self.call_api(
             "POST",
             "/api/commodity/Inventory/SellInventoryWithLeaseV2",
@@ -717,16 +738,37 @@ class UUAccount:
                 "ItemInfos": item_infos,
             },
         ).json()
+        code = rsp.get("code")
+        if code not in (0, None) or "Data" not in rsp:
+            err = rsp.get("errorData") or {}
+            if code == 7000002:
+                scene = err.get("sceneTitle") or err.get("sceneName") or "二次确认场景"
+                confirm_text = err.get("userConfirms") or ""
+                details = [c.get("oneLevelContent") for c in (err.get("content") or []) if isinstance(c, dict)]
+                msg = f"UU 上架被拦截：需先确认「{scene}」（code={code}）"
+                if confirm_text:
+                    msg += f"，确认文案：{confirm_text}"
+                if details:
+                    msg += "；条款：" + "；".join(x for x in details if x)
+                msg += "。该场景确认目前仅 UU APP 内可完成。"
+                logger.error(msg)
+                raise RuntimeError(msg)
+            msg = f"UU 上架失败：code={code} msg={rsp.get('msg')}"
+            logger.error(msg)
+            raise RuntimeError(msg)
         success_count = 0
+        problems = {}
         for commodity in rsp["Data"]:
             if commodity["Status"] != 1:
-                if "不能重复上架" not in commodity["Remark"]:
-                    logger.error(f"商品 {commodity['AssetId']} 上架失败，原因：{commodity['Remark']}")
+                reason = commodity.get("Remark") or "未知原因"
+                if "不能重复上架" not in reason:
+                    logger.error(f"商品 {commodity['AssetId']} 上架失败，原因：{reason}")
                 else:
                     logger.warning(f"商品 {commodity['AssetId']} 可能因为悠悠服务器延迟而导致程序重复上架")
+                problems[str(commodity.get("AssetId"))] = reason
             else:
                 success_count += 1
-        return success_count
+        return {"success": success_count, "total": len(item_infos), "problems": problems}
 
     def change_price(self, assets: dict):
         item_infos = [{"CommodityId": int(asset), "Price": str(assets[asset]), "Remark": None, "IsCanSold": True} for asset in assets.keys()]
@@ -735,6 +777,19 @@ class UUAccount:
             "/api/commodity/Commodity/PriceChangeWithLeaseV2",
             data={"Commoditys": item_infos},
         )
+
+    def get_sold_order_list(self, orderStatus="140", pageIndex=1, pageSize=20):
+        """查询悠悠已售出（待发货）订单列表。
+
+        对应 API: /api/youpin/bff/trade/sale/v1/sell/list
+        返回 ``orderList`` 列表（每项含 orderNo / productDetail.commodityName 等）。
+        """
+        rsp = self.call_api(
+            "POST",
+            "/api/youpin/bff/trade/sale/v1/sell/list",
+            data={"keys": "", "orderStatus": orderStatus, "pageIndex": pageIndex, "pageSize": pageSize},
+        ).json()
+        return (rsp.get("data") or {}).get("orderList", [])
 
     def change_items_price_v2(self, items: list[dict]):
         """
