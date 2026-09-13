@@ -103,9 +103,7 @@ if BUILD_INFO == "正在使用源码运行":
         BUILD_INFO = "非官方二进制构建运行"
 INTERNAL_PLUGINS = [
     "buff_auto_accept_offer",
-    "uu_auto_accept_offer",
-    "uu_auto_lease_item",
-    "uu_auto_sell_item",
+    "uu",
     "steam_auto_accept_offer",
     "ecosteam",
     "c5_auto_accept_offer",
@@ -178,63 +176,65 @@ DEFAULT_CONFIG_JSON = r"""
     "use_proxies": false
   },
   // 悠悠有品自动发货插件配置
-  "uu_auto_accept_offer": {
-    // 悠悠有品自动发货功能是否启用，默认为false
-    "enable": false,
-    // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
-    "interval": 300,
-    //是否使用全局代理设置中的代理连接悠悠有品
-    "use_proxies": false,
-  },
-  // 悠悠有品租赁自动上架配置
-  "uu_auto_lease_item": {
-    // 悠悠有品租赁自动上架功能是否启用，默认为false
-    "enable": false,
-    // 最长租赁时间，默认60天
-    "lease_max_days": 60,
-    // 价格低于 filter_price 的物品不会上架，默认100
-    "filter_price": 100,
-    // 自动上架租赁每天定时运行时间
-    "run_time": "17:30",
-    // 已上架租赁的物品可以定时修改价格（防止很长时间没出租出去，转租的也可以修改）。设置的轮询间隔，单位为分钟
-    "interval": 31,
-    // 不出租的物品名字列表，示例：["物品A", "物品B"]（名字可以不写全，但是要写对，比如M4A1印花集）
-    "filter_name": ["物品A", "物品B"],
-    // 按现价固定比例设置价格
-    "enable_fix_lease_ratio": false,
-    // 出租价格比例, 如现价1000元, 0.001比例，出租价格为1000 * 0.001 = 1元 (不会低于正常计算的出租价格)
-    "fix_lease_ratio": 0.001,
-    // 赔付方式: 0(非会员), 7(v1), 其余的不知道
-    "compensation_type": 7
-  },
-  // 悠悠有品出售自动上架配置
-  "uu_auto_sell_item": {
-    // 悠悠有品出售自动上架功能是否启用，默认为false
-    "enable": false,
-    // 按照止盈率设置定价
-    "take_profile": false,
-    // 止盈率
-    "take_profile_ratio": 0.1,
-    // 自动上架每天定时运行时间
-    "run_time": "15:30",
-    // 每隔多长时间重新请求市场并改价一次（单位：分钟）
-    "sell_interval": 20,
-    // 价格高于 max_on_sale_price 的物品不会上架，设置为0则不限制
-    "max_on_sale_price": 1000,
-    // 已上架的物品可以定时修改价格。设置的轮询间隔，单位为分钟
-    "interval": 51,
-    // 出售的物品名字列表，示例：["物品A", "物品B"]（名字可以不写全，但是要写对）
-    "name": [
-      "AK",
-      "A1"
-    ],
-    // 不出售也不参与改价的物品名字列表，示例：["物品A", "物品B"]（优先级高于出售的物品名字列表）
-    "blacklist_words": [
-      "黑名单词语1",
-      "黑名单词语2"
-    ],
-    "use_price_adjustment": true, // 是否开启自动压价（-0.01）的功能
-    "price_adjustment_threshold": 1.0 // 价格高于此值才会自动压价
+  // 悠悠有品插件配置（自动发货 + 自动出售 + 自动出租，三个功能模块合并）
+  "uu": {
+    // ---- 自动发货模块 ----
+    "accept_offer": {
+      // 悠悠有品自动发货功能是否启用，默认为false
+      "enable": false,
+      // 每次检查是否有新报价的间隔（轮询间隔），单位为秒
+      "interval": 300,
+    },
+    // ---- 自动出售模块 ----
+    "sell_item": {
+      // 悠悠有品出售自动上架功能是否启用，默认为false
+      "enable": false,
+      // 按照止盈率设置定价
+      "take_profile": false,
+      // 止盈率
+      "take_profile_ratio": 0.1,
+      // 自动上架每天定时运行时间
+      "run_time": "15:30",
+      // 每隔多长时间重新请求市场并改价一次（单位：分钟）
+      "sell_interval": 20,
+      // 价格高于 max_on_sale_price 的物品不会上架，设置为0则不限制
+      "max_on_sale_price": 1000,
+      // 已上架的物品可以定时修改价格。设置的轮询间隔，单位为分钟
+      "interval": 51,
+      // 出售的物品名字列表，示例：["物品A", "物品B"]（名字可以不写全，但是要写对）
+      "name": [
+        "AK",
+        "A1"
+      ],
+      // 不出售也不参与改价的物品名字列表，示例：["物品A", "物品B"]（优先级高于出售的物品名字列表）
+      "blacklist_words": [
+        "黑名单词语1",
+        "黑名单词语2"
+      ],
+      "use_price_adjustment": true, // 是否开启自动压价（-0.01）的功能
+      "price_adjustment_threshold": 1.0 // 价格高于此值才会自动压价
+    },
+    // ---- 自动出租模块 ----
+    "lease_item": {
+      // 悠悠有品租赁自动上架功能是否启用，默认为false
+      "enable": false,
+      // 最长租赁时间，默认60天
+      "lease_max_days": 60,
+      // 价格低于 filter_price 的物品不会上架，默认100
+      "filter_price": 100,
+      // 自动上架租赁每天定时运行时间
+      "run_time": "17:30",
+      // 已上架租赁的物品可以定时修改价格（防止很长时间没出租出去，转租的也可以修改）。设置的轮询间隔，单位为分钟
+      "interval": 31,
+      // 不出租的物品名字列表，示例：["物品A", "物品B"]（名字可以不写全，但是要写对，比如M4A1印花集）
+      "filter_name": ["物品A", "物品B"],
+      // 按现价固定比例设置价格
+      "enable_fix_lease_ratio": false,
+      // 出租价格比例, 如现价1000元, 0.001比例，出租价格为1000 * 0.001 = 1元 (不会低于正常计算的出租价格)
+      "fix_lease_ratio": 0.001,
+      // 赔付方式: 0(非会员), 7(v1), 其余的不知道
+      "compensation_type": 7
+    }
   },
   // Steam 自动接受礼物报价插件配置
   "steam_auto_accept_offer": {

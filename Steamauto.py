@@ -154,6 +154,7 @@ def init_files_and_params() -> int:
             handle_caught_exception(e, known=True)
             logger.error("检测到" + CONFIG_FILE_PATH + "格式错误, 请检查配置文件格式是否正确, 或尝试重新生成配置文件并重新配置! ")
             return 0
+    migrate_uu_config(config)
     if not os.path.exists(STEAM_ACCOUNT_INFO_FILE_PATH):
         with open(STEAM_ACCOUNT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
             f.write(DEFAULT_STEAM_ACCOUNT_JSON)
@@ -247,8 +248,33 @@ def camel_to_snake(name):
         return "ecosteam"
     if name == "ECOsteam":  # 特殊处理
         return "ecosteam"
+    if name == "UUAuto":  # 特殊处理：合并后的悠悠有品插件（发货+出售+出租）
+        return "uu"
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+def migrate_uu_config(config):
+    """把旧版 UU 三个独立配置段在内存里合并到合并后的 ``uu`` 段。
+
+    向后兼容：老用户升级后无需手动改配置，旧段（uu_auto_accept_offer /
+    uu_auto_sell_item / uu_auto_lease_item）在内存里自动映射到新 ``uu`` 段
+    （accept_offer / sell_item / lease_item）。只改内存 dict，不写回文件。
+    """
+    if "uu" in config:
+        return config
+    uu = {}
+    for old_key, new_key in (
+        ("uu_auto_accept_offer", "accept_offer"),
+        ("uu_auto_sell_item", "sell_item"),
+        ("uu_auto_lease_item", "lease_item"),
+    ):
+        if isinstance(config.get(old_key), dict):
+            uu[new_key] = config.pop(old_key)
+    if uu:
+        config["uu"] = uu
+        logger.info("检测到旧版悠悠有品配置（uu_auto_* 三段），已自动迁移到合并后的 uu 段")
+    return config
 
 
 def get_plugin_classes():

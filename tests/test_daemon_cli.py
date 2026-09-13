@@ -42,9 +42,7 @@ PLUGIN_FILES = [
     "C5AutoAcceptOffer.py",
     "ECOsteam.py",
     "SteamAutoAcceptOffer.py",
-    "UUAutoAcceptOffer.py",
-    "UUAutoLeaseItem.py",
-    "UUAutoSellItem.py",
+    "UUAuto.py",
 ]
 
 
@@ -82,10 +80,10 @@ class TestConfigWriter(unittest.TestCase):
         self.assertEqual(_comment_lines(text), self.comments)
 
     def test_set_array_element(self):
-        text, _ = config_writer.set_value_in_text(self.orig, ["uu_auto_sell_item", "name", "0"], '"AK47"')
+        text, _ = config_writer.set_value_in_text(self.orig, ["uu", "sell_item", "name", "0"], '"AK47"')
         import json5
 
-        self.assertEqual(json5.loads(text)["uu_auto_sell_item"]["name"][0], "AK47")
+        self.assertEqual(json5.loads(text)["uu"]["sell_item"]["name"][0], "AK47")
         self.assertEqual(_comment_lines(text), self.comments)
 
     def test_add_root_key(self):

@@ -866,7 +866,7 @@ class TestNotifyRuntime(_IsolatedPaths):
     def test_sends_plugin_retry_with_correct_key(self):
         expected = {
             "buff": "buff_auto_accept_offer",
-            "uu": "uu_auto_accept_offer",
+            "uu": "uu",
             "c5": "c5_auto_accept_offer",
             "eco": "ecosteam",
         }

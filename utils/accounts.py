@@ -54,7 +54,7 @@ DISPLAY = {
 #: 平台 -> 对应的 Steamauto 插件配置键（用于让守护进程重启该插件）
 PLUGIN_KEY = {
     "buff": "buff_auto_accept_offer",
-    "uu": "uu_auto_accept_offer",
+    "uu": "uu",
     "c5": "c5_auto_accept_offer",
     "eco": "ecosteam",
 }
