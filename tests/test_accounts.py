@@ -356,6 +356,51 @@ class TestLoginPreconditions(_IsolatedPaths):
         self.assertFalse(ok)
         self.assertIn("交互式终端", msg)
 
+    def test_login_buff_when_already_logged_in(self):
+        """已登录时 --login buff 应提示先 logout，不重新扫码。"""
+        from unittest import mock
+
+        self.write_config()
+        self.write_steam_account()
+        path = accounts.credential_path("buff")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with io.open(path, "w", encoding="utf-8") as f:
+            f.write("session=existing-valid")
+        orig = accounts.stdin_is_interactive
+        accounts.stdin_is_interactive = lambda: True
+        try:
+            with mock.patch("utils.buff_helper.is_session_has_enough_permission", return_value=True), \
+                 mock.patch("utils.buff_helper.get_buff_username", return_value="洛北辰"):
+                ok, msg, _ = accounts.login("buff")
+        finally:
+            accounts.stdin_is_interactive = orig
+        self.assertFalse(ok)
+        self.assertIn("已登录", msg)
+        self.assertIn("logout", msg)
+
+    def test_login_uu_when_already_logged_in(self):
+        """已登录时 --login uu 应提示先 logout，不重新发短信。"""
+        from unittest import mock
+
+        self.write_config()
+        self.write_steam_account()
+        path = accounts.credential_path("uu")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with io.open(path, "w", encoding="utf-8") as f:
+            f.write("token-existing-valid")
+        orig = accounts.stdin_is_interactive
+        accounts.stdin_is_interactive = lambda: True
+        try:
+            fake_account = mock.MagicMock()
+            fake_account.get_user_nickname.return_value = "YP0006457561"
+            with mock.patch("api.uuyoupinapi.UUAccount", return_value=fake_account):
+                ok, msg, _ = accounts.login("uu")
+        finally:
+            accounts.stdin_is_interactive = orig
+        self.assertFalse(ok)
+        self.assertIn("已登录", msg)
+        self.assertIn("logout", msg)
+
     def test_stdin_is_interactive_false_for_devnull(self):
         """回归：Windows 上 NUL 设备会被 os.isatty 误判为终端，必须排除。"""
         import subprocess

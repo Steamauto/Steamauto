@@ -457,6 +457,11 @@ def _login_buff(cfg):
     from utils.steam_client import OfflineSteamClient
 
     proxies = _proxies(cfg, "buff_auto_accept_offer")
+    # 已登录检查：已有有效凭据时提示先 logout，避免无谓扫码
+    existing = _read_text(credential_path("buff"))
+    if existing and buff_helper.is_session_has_enough_permission(existing, proxies):
+        nickname = buff_helper.get_buff_username(existing) or ""
+        return False, "BUFF 已登录%s，无需重复登录；如需更换账号请先执行 `--logout buff`" % ("（账号：%s）" % nickname if nickname else ""), {}
     # 只做扫码：不走 Steam OpenID（那需要真实 Steam 会话），也不需要已登录 Steam
     client = OfflineSteamClient(user)
     try:
@@ -493,6 +498,15 @@ def _login_uu(cfg):
     import api.uuyoupinapi as uuyoupinapi
 
     proxies = _proxies(cfg, "uu_auto_accept_offer")
+    # 已登录检查：已有有效 token 时提示先 logout，避免无谓发短信
+    existing = _read_text(credential_path("uu"))
+    if existing:
+        try:
+            existing_nick = uuyoupinapi.UUAccount(str(existing), proxy=proxies).get_user_nickname()
+            if existing_nick:
+                return False, "UU 已登录（账号：%s），无需重复登录；如需更换账号请先执行 `--logout uu`" % existing_nick, {}
+        except Exception:
+            pass  # token 无效，继续登录
     try:
         token = uu_helper.get_token_automatically(proxies)
     except EOFError:
