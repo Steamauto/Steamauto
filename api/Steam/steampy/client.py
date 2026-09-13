@@ -1,6 +1,7 @@
 import copy
 import decimal
 import json
+import secrets
 import time
 import urllib.parse as urlparse
 from typing import List, Union, Optional
@@ -231,8 +232,15 @@ class SteamClient:
         """
         重新使用账密登录，并返回新的 auth_info
         """
+        previous_cookies = copy.deepcopy(self._session.cookies)
+        previous_state = (self.steam_guard, self.steamid, self.refreshToken, self.was_login_executed)
         self._session.cookies.clear()
-        return self.login(self.username, self._password, self.steam_guard)
+        try:
+            return self.login(self.username, self._password, self.steam_guard)
+        except Exception:
+            self._session.cookies = previous_cookies
+            self.steam_guard, self.steamid, self.refreshToken, self.was_login_executed = previous_state
+            raise
 
     def update_access_token(self):
         """
@@ -359,7 +367,12 @@ class SteamClient:
         return full_response
 
     def _get_session_id(self) -> str:
-        return self._session.cookies.get_dict("steamcommunity.com")["sessionid"]
+        sessionid = self._session.cookies.get_dict("steamcommunity.com").get("sessionid") or self._session.cookies.get_dict().get("sessionid")
+        if not sessionid:
+            sessionid = secrets.token_hex(12)
+        self._session.cookies.set("sessionid", sessionid, domain="steamcommunity.com")
+        self._session.cookies.set("sessionid", sessionid, domain="steampowered.com")
+        return sessionid
 
     def get_trade_offers_summary(self) -> dict:
         params = {"key": self._api_key}
