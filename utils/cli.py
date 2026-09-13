@@ -118,6 +118,7 @@ def build_parser():
         help="查看状态：不带 --instance 默认 all；带 --instance 默认当前实例；account = 账号状态",
     )
     parser.add_argument("--json", action="store_true", help="以 JSON 输出（配合 --status）")
+    parser.add_argument("--table", action="store_true", help="以对齐表格输出（配合 --status account）")
     parser.add_argument("--no-live", action="store_true", help="只读本地凭据，不联网校验（更快）")
 
     # ---- 账号 ----
@@ -664,7 +665,7 @@ _HELP_SECTIONS = [
         ("python Steamauto.py --log --file <PATH>", "查看指定日志文件"),
     ]),
     ("账号", [
-        ("python Steamauto.py --status account [--json] [--no-live]", "查看各平台登录 / 连接状态"),
+        ("python Steamauto.py --status account [--json|--table] [--no-live]", "查看各平台登录 / 连接状态"),
         ("python Steamauto.py --login <平台>", "登录（需交互终端：BUFF 扫码 / UU 短信）"),
         ("python Steamauto.py --logout <平台>", "登出（清除凭据与相关配置项）"),
     ]),
@@ -834,7 +835,46 @@ def _render_status(accounts_map, steam, source, live):
             _p("   └─ %s" % "｜".join(detail))
 
     _p("")
-    _p("提示：登录用 `--login <平台>`；查看原始数据用 `--status account --json`。")
+    _p("提示：登录用 `--login <平台>`；查看原始数据用 `--status account --json`；表格用 `--table`。")
+
+
+def _render_status_table(accounts_map, steam, source, live):
+    """以对齐表格展示各平台账号状态（`--status account --table`）。"""
+    from utils import accounts
+
+    infos = [accounts_map.get(p) or accounts._blank_state(p) for p in accounts.platforms()]
+    if steam:
+        infos.append(steam)
+
+    def name_of(info):
+        return str(info.get("display") or info.get("platform") or "?")
+
+    def conn_text(info):
+        return "连接可用" if info.get("connected") else "未校验"
+
+    rows = []
+    for info in infos:
+        rows.append(
+            {
+                "平台": name_of(info),
+                "已配置": "是" if info.get("configured") else "否",
+                "已登录": "是" if info.get("logged_in") else "否",
+                "连接": conn_text(info),
+                "账号": info.get("account") or "-",
+                "可用余额": ("¥%s" % info["balance"]) if info.get("balance") is not None else "-",
+                "说明": _clip(str(info.get("error") or ""), 50),
+            }
+        )
+
+    cols = ["平台", "已配置", "已登录", "连接", "账号", "可用余额", "说明"]
+    table = [[str(r.get(c) or "-") for c in cols] for r in rows]
+    widths = [max(_display_width(c), *(_display_width(row[i]) for row in table)) for i, c in enumerate(cols)]
+
+    _p("  ".join(_pad(c, w) for c, w in zip(cols, widths)))
+    for row in table:
+        _p("  ".join(_pad(cell, w) for cell, w in zip(row, widths)))
+    _p("")
+    _p("来源：%s｜联网校验：%s" % (source, "是" if live else "否"))
 
 
 def cmd_account_status(args):
@@ -859,6 +899,9 @@ def cmd_account_status(args):
                 indent=2,
             )
         )
+        return 0
+    if getattr(args, "table", False):
+        _render_status_table(accounts_map, steam, source, not getattr(args, "no_live", False))
         return 0
     _render_status(accounts_map, steam, source, not getattr(args, "no_live", False))
     return 0

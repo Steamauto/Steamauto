@@ -71,8 +71,8 @@ python Steamauto.py
 | BUFF | `--buff balance` | 余额（可用/仅交易/冻结/总） |
 | BUFF | `--buff nickname` | 当前昵称 |
 | BUFF | `--buff inventory` | 我的库存 |
-| BUFF | `--buff search "<关键词>"` | 搜索建议（带在售最低/求购最高/在售数量） |
-| BUFF | `--buff search-market "<关键词>"` | 搜索市场（完整结果） |
+| BUFF | `--buff search "<关键词>"` | 搜索建议（仅 10 条下拉联想；额外补在售最低/求购最高/在售数量） |
+| BUFF | `--buff search-market "<关键词>" [页码]` | 搜索市场（完整结果、分页；行情字段接口自带，不额外请求） |
 | BUFF | `--buff on-sale [页码]` | 我的在售 |
 | BUFF | `--buff sell-history [appid]` | 成交历史 |
 | BUFF | `--buff buy-order <goods_id>` | 指定饰品的求购单列表 |
@@ -103,12 +103,16 @@ python Steamauto.py
 | 平台 | 命令 | 说明 |
 | --- | --- | --- |
 | BUFF | `--buff list <assetid> <price>` | 上架（自动从库存补 classid/instanceid/名称） |
+| BUFF | `--buff undercut <assetid>` | 以市场最低价 −0.01 上架（压价，内部查在售最低价后上架） |
 | BUFF | `--buff sell-bidder <assetid> <goods_id>` | 塞求购（直接供应给最高求购单，即时成交资金立刻到账） |
+| BUFF | `--buff item-map [--refresh]` | UU↔BUFF 饰品映射表（assetid 主键，优先读缓存，`--refresh` 强制在线拉） |
 | BUFF | `--buff off-shelf <sell_order_id>...` | 下架 |
 | BUFF | `--buff change-price <sell_order_id> <price>` | 改价 |
 | BUFF | `--buff buy <goods_id> <sell_order_id> <price>` | 购买 |
 | UU | `--uu sell <assetid> <price>` | 上架 |
-| UU | `--uu sell-bidder <assetid>` | 塞求购（当前为上架略低于求购价；UU 直接供应端点待确认） |
+| UU | `--uu undercut <assetid>` | 以市场最低价 −0.01 上架（压价，内部查在售最低价后上架） |
+| UU | `--uu sell-bidder <assetid>` | 塞求购【禁用：UU 网页 API 不支持「供应给求购单」（仅 APP 支持），待 APP 逆向】 |
+| UU | `--uu item-map [--refresh]` | UU↔BUFF 饰品映射表（assetid 主键，优先读缓存，`--refresh` 强制在线拉） |
 | UU | `--uu off-shelf <commodity_id>...` | 下架 |
 | UU | `--uu buy <template_id> <price>` | 发求购单（买入） |
 | UU | `--uu change-price <commodity_id> <price>` | 改价 |
@@ -130,14 +134,30 @@ python Steamauto.py
 
 | 命令 | 说明 |
 | --- | --- |
-| `--login buff\|uu\|c5\|eco` | 登录（BUFF 扫码 / UU 短信） |
-| `--logout buff\|uu\|c5\|eco` | 登出 |
-| `--status account [--json]` | 查看各平台登录/连接状态 + 可用余额 |
-| `--run` / `--start` | 启动（都拉子进程；`--run` 跟随日志到前台） |
-| `--stop [--force]` / `--restart` | 停止 / 重启 |
+| `--login buff\|uu\|c5\|eco` | 登录（BUFF 扫码 / UU 短信；逗号分隔可同时登录多个；已登录时会提示先 `--logout`） |
+| `--logout buff\|uu\|c5\|eco` | 登出（清除凭据与相关配置项；逗号分隔多个） |
+| `--status account [--json\|--table] [--no-live]` | 查看各平台登录/连接状态 + 可用余额（默认树状；`--json` 机器可读、`--table` 对齐表格；`--no-live` 只读本地凭据不联网） |
+| `--run [-d\|--daemon]` | 前台常驻运行；带 `-d/--daemon` 直接后台启动 |
+| `--start` / `--stop [--force]` / `--restart` | 后台启动 / 停止（`--force` 强制结束）/ 重启 |
 | `--status` | 查看实例状态：默认 `all`（所有实例）；`--status <实例名>` 指定实例 |
-| `--config --get/--set/--unset/--list/--reload` | 配置读写（`--set key A B` 多值成数组） |
-| `--log [N\|console\|app\|error\|warning\|info\|debug]` | 翻阅日志：行数 / 来源 / 级别过滤（error 只错误，debug 全显） |
+| `--instances` | 列出所有实例及运行状态 |
+| `--config --get <KEY>` | 读取配置值（点分路径，如 `buff_auto_accept_offer.enable`） |
+| `--config --set <KEY> <VALUE> [--str] [--no-apply]` | 修改配置值（保留注释；`--set k A B` 多值成数组；`--str` 强制字符串；`--no-apply` 只写文件不通知进程） |
+| `--config --unset <KEY>` / `--list [--json]` / `--reload` | 删除配置项 / 列出全部配置 / 让运行中进程重读配置 |
+| `--log [N\|console\|app\|error\|warning\|info\|debug] [-n N] [-f] [--console] [--file PATH]` | 翻阅日志：行数 / 来源（console=控制台、app=技术日志）/ 级别过滤（error 只错误、debug 全显）；`-f` 持续跟随；`--file` 指定文件 |
+| `--ctl <COMMAND> [k=v ...]` | 直接向控制通道发指令（调试用） |
+| `--help` | 列出全部可用操作 |
+
+#### 通用参数
+
+| 参数 | 说明 |
+| --- | --- |
+| `--instance <name>` | 操作指定实例（多开，数据目录 `instances/<name>/`）；可放任意命令前 |
+| `--json` | 配合 `--status` / `--buff` 等，输出机器可读 JSON（查询/列表默认表格） |
+| `--yes` | 写操作（上架/下架/购买/改价/塞求购）跳过二次确认；非交互终端执行写操作必须加 |
+| `--dry-run` | 写操作只预览参数不实际执行 |
+| `--port <PORT>` | 覆盖控制通道端口 |
+| `--timeout <秒>` | 配合 `--stop` 等待优雅退出的秒数 |
 
 ### 平台配置速查
 
