@@ -455,8 +455,8 @@ class BuffAccount:
             "pay_method": PAY_METHOD_MAP[pay_method]
         }
         try:
-            # 获取最新csrf_token
-            self.get_notification()
+            # 获取最新csrf_token（steam_info 接口下发 csrf_token；notification/steam_trade 不下发）
+            self.get(f"{self.BASE_URL}/account/api/steam/info")
             self.session.cookies.get("csrf_token")
         except Exception as e:
             raise ValueError("无法获取CSRF Token，请检查登录状态是否正常.") from e
@@ -558,8 +558,11 @@ class BuffAccount:
                 },
                 headers=self.CSRF_Fucker(),
             )
-            if response.json()["code"] != "OK":
-                raise Exception(response.json().get("msg", None))
+            payload = response.json()
+            if payload.get("code") != "OK":
+                # msg 字段有时缺失，原实现会 raise Exception(None)，CLI 只能看到"错误：None"。
+                err_msg = payload.get("msg") or payload.get("error") or payload.get("code") or str(payload)
+                raise Exception(err_msg)
             for key in response.json()["data"].keys():
                 if response.json()["data"][key] == "OK":
                     success += 1
@@ -606,7 +609,8 @@ class BuffAccount:
 
     @no_type_check
     def CSRF_Fucker(self):
-        self.get(f"{self.BASE_URL}/api/market/steam_trade")
+        # steam_info 接口会 set-cookie 下发 csrf_token；steam_trade 不下发（会导致 X-CSRFToken 为 None，写操作报「页面已过期」）
+        self.get(f"{self.BASE_URL}/account/api/steam/info")
         csrf_token = self.session.cookies.get("csrf_token", domain="buff.163.com")
         headers = copy.deepcopy(self.session.headers)
         headers.update(
