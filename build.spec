@@ -16,7 +16,8 @@ hidden_imports = [
         'PyC5Game',
         'PyECOsteam',
         'uuyoupinapi',
-        'BuffApi'
+        'BuffApi',
+        'schedule',
     ]
 if os.path.exists('requirements.txt'):
     with open('requirements.txt') as f:
