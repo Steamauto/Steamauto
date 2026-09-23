@@ -1,0 +1,282 @@
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+@keyframes rippleEffect {
+    from {
+        transform: scale(0);
+        opacity: 0.6;
+    }
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+@keyframes borderGlow {
+    0%,
+    100% {
+        border-color: var(--border-color);
+        box-shadow: var(--shadow-xs);
+    }
+    50% {
+        border-color: var(--glow-primary);
+        box-shadow: 0 0 20px var(--glow-primary);
+    }
+}
+@keyframes breathePulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.08);
+    }
+}
+@keyframes progressShrink {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+@keyframes iconBounce {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.2);
+    }
+    70% {
+        transform: scale(0.95);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+@keyframes rowSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+@keyframes numberRoll {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@keyframes floatUp {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+@keyframes spinSlow {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+@keyframes overlayFadeIn {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(8px);
+    }
+}
+@keyframes modalBounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(30px);
+    }
+    50% {
+        transform: scale(1.03) translateY(-4px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+@keyframes navIndicatorSlide {
+    from {
+        transform: scaleY(0);
+        opacity: 0;
+    }
+    to {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+@keyframes panelSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+@keyframes toastEnter {
+    from {
+        transform: translateX(120%) scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+@keyframes toastExit {
+    from {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(120%) scale(0.9);
+        opacity: 0;
+    }
+}
+@keyframes focusRing {
+    0%,
+    100% {
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    50% {
+        box-shadow: 0 0 0 5px var(--primary-light);
+    }
+}
+@keyframes textUpdateFade {
+    0% {
+        opacity: 0.2;
+        transform: translateY(2px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.text-fade-update {
+    animation: textUpdateFade 0.3s var(--ease-out) forwards;
+}
+.animate-stagger-1 {
+    animation-delay: 0.05s;
+}
+.animate-stagger-2 {
+    animation-delay: 0.10s;
+}
+.animate-stagger-3 {
+    animation-delay: 0.15s;
+}
+.animate-stagger-4 {
+    animation-delay: 0.20s;
+}
+.animate-stagger-5 {
+    animation-delay: 0.25s;
+}
+.animate-stagger-6 {
+    animation-delay: 0.30s;
+}
+.animate-stagger-7 {
+    animation-delay: 0.35s;
+}
+.animate-stagger-8 {
+    animation-delay: 0.40s;
+}
+.anim-slide-up {
+    animation: slideUp 0.5s var(--ease-spring) both;
+}
+.anim-fade-in {
+    animation: fadeIn 0.4s var(--ease-out) both;
+}
+.anim-fade-in-scale {
+    animation: fadeInScale 0.45s var(--ease-spring) both;
+}
+.anim-row-slide {
+    animation: rowSlideIn 0.35s var(--ease-out) both;
+}
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+.btn-ripple .ripple-circle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.3;
+    pointer-events: none;
+    animation: rippleEffect 0.6s cubic-bezier(0, 0, 0.2, 1) forwards;
+}

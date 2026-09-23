@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AetherSwap</title>
+  <link rel="stylesheet" href="/css/variables.css" />
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/layout.css?v=2" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/animations.css" />
+  <style>
+    /* Nav badge */
+    .nav-badge {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: #ef4444;
+      border-radius: 50%;
+      margin-left: auto;
+      flex-shrink: 0;
+      box-shadow: 0 0 4px rgba(239, 68, 68, .7);
+    }
+
+    .nav-badge.hidden {
+      display: none;
+    }
+
+    .nav-item {
+      position: relative;
+      align-items: center;
+    }
+
+    /* Required badge */
+    .required-badge {
+      display: inline-block;
+      font-size: 0.68em;
+      font-weight: 600;
+      color: #fff;
+      background: #ef4444;
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-left: 5px;
+      vertical-align: middle;
+      letter-spacing: 0.03em;
+    }
+
+    /* Getting-started card */
+    .getting-started-card {
+      margin: 0 0 16px;
+      border: 1px solid var(--border, rgba(255, 255, 255, .1));
+      border-radius: 12px;
+      background: var(--card-bg, rgba(255, 255, 255, .04));
+      padding: 14px 16px;
+      animation: fadeIn .3s ease;
+    }
+
+    .gs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .gs-title {
+      font-size: .88em;
+      font-weight: 600;
+      color: var(--text-muted, #aaa);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .gs-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted, #aaa);
+      font-size: 14px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .gs-close:hover {
+      background: var(--hover-bg, rgba(255, 255, 255, .08));
+    }
+
+    .gs-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .gs-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .85em;
+      color: var(--text, #e0e0e0);
+      padding: 4px 0;
+    }
+
+    .gs-step .gs-icon {
+      font-size: 1em;
+      flex-shrink: 0;
+    }
+
+    .gs-step .gs-link {
+      color: var(--accent, #60a5fa);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .gs-step.done {
+      opacity: .45;
+      text-decoration: line-through;
+    }
+
+    /* Account guide callout */
+    .accounts-guide-callout {
+      margin: 0 0 16px;
+      border: 1px solid var(--border, rgba(255, 255, 255, .1));
+      border-left: 3px solid var(--accent, #60a5fa);
+      border-radius: 8px;
+      background: var(--card-bg, rgba(255, 255, 255, .04));
+      padding: 10px 14px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      animation: fadeIn .3s ease;
+    }
+
+    .accounts-guide-callout.hidden {
+      display: none;
+    }
+
+    .agu-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 20px;
+      font-size: .85em;
+    }
+
+    .agu-step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted, #aaa);
+    }
+
+    .agu-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent, #60a5fa);
+      color: #fff;
+      font-size: .78em;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .agu-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted, #aaa);
+      font-size: 13px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+
+    .agu-close:hover {
+      background: var(--hover-bg, rgba(255, 255, 255, .08));
+    }
+
+    /* Wizard restore from backup */
+    .wizard-restore-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0 12px;
+      color: var(--text-muted, #888);
+      font-size: .8em;
+    }
+
+    .wizard-restore-divider::before,
+    .wizard-restore-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border, rgba(255, 255, 255, .1));
+    }
+
+    .wizard-restore-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px dashed var(--border, rgba(255, 255, 255, .15));
+      border-radius: 10px;
+      background: var(--card-bg, rgba(255, 255, 255, .03));
+      transition: border-color .2s;
+    }
+
+    .wizard-restore-card:hover {
+      border-color: var(--accent, #60a5fa);
+    }
+
+    .wizard-restore-icon {
+      font-size: 1.6em;
+      flex-shrink: 0;
+    }
+
+    .wizard-restore-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .wizard-restore-title {
+      font-size: .88em;
+      font-weight: 600;
+      color: var(--text, #e0e0e0);
+      margin-bottom: 3px;
+    }
+
+    .wizard-restore-desc {
+      font-size: .78em;
+      color: var(--text-muted, #aaa);
+      line-height: 1.4;
+    }
+  </style>
+
+</head>
+
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo-hitbox">
+          <div class="logo-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="brand-info">
+          <div class="brand-name">AetherSwap</div>
+          <div class="brand-desc">自动化交易终端</div>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="auto">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span>仪表盘</span>
+        </button>
+        <button class="nav-item" data-tab="inventory">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          </svg>
+          <span>库存管理</span>
+        </button>
+        <button class="nav-item" data-tab="purchases">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          </svg>
+          <span>持有饰品</span>
+        </button>
+        <button class="nav-item" data-tab="purchase-history">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span>操作记录</span>
+        </button>
+        <button class="nav-item" data-tab="analytics">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          <span>数据分析</span>
+        </button>
+        <button class="nav-item" data-tab="sales">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span>上架记录</span>
+        </button>
+        <button class="nav-item" data-tab="accounts">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span>账号管理</span>
+          <span class="nav-badge hidden" id="nav-badge-accounts" title="尚未添加账号"></span>
+        </button>
+        <button class="nav-item" data-tab="steam-guard">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22c4-2 8-4 8-10V5l-8-3-8 3v7c0 6 4 8 8 10z"></path>
+          </svg>
+          <span>Steam 令牌</span>
+        </button>
+        <button class="nav-item" data-tab="proxy">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span>代理池</span>
+        </button>
+        <button class="nav-item" data-tab="strategies">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 21v-7"></path>
+            <path d="M4 10V3"></path>
+            <path d="M12 21v-9"></path>
+            <path d="M12 8V3"></path>
+            <path d="M20 21v-5"></path>
+            <path d="M20 12V3"></path>
+            <path d="M2 14h4"></path>
+            <path d="M10 8h4"></path>
+            <path d="M18 16h4"></path>
+          </svg>
+          <span>策略中心</span>
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+          <span>系统设置</span>
+          <span class="nav-badge hidden" id="nav-badge-settings" title="关键配置未填写"></span>
+        </button>
+        <button class="nav-item" data-tab="debug">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+          </svg>
+          <span>运行日志</span>
+        </button>
+        <button class="nav-item" data-tab="steam-deals">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          <span>Steam 折扣</span>
+        </button>
+        <button class="nav-item" data-tab="gift">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 12 20 22 4 22 4 12"></polyline>
+            <rect x="2" y="7" width="20" height="5"></rect>
+            <line x1="12" y1="22" x2="12" y2="7"></line>
+            <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+            <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+          </svg>
+          <span>Steam 赠礼</span>
+        </button>
+        <button class="nav-item" data-tab="delivery">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+          <span>自动收发货</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="btn-theme" class="theme-toggle" aria-label="切换主题">
+          <span class="theme-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </span>
+          <span>切换外观</span>
+        </button>
+        <div
+          style="font-size: 0.75rem; color: var(--text-muted, #888); text-align: center; margin-top: 10px; opacity: 0.6; cursor: default;">
+          制作者：烦恼的威尔逊
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-header">
+        <h1 class="page-title" id="page-title-display">仪表盘</h1>
+        <div class="status-indicator" id="status-pill">
+          <div class="status-dot-pulse"></div>
+          <span id="status-text" class="status-text">初始化中</span>
+          <span class="separator">/</span>
+          <span id="last-updated" class="status-time">--:--</span>
+        </div>
+      </header>
+
+      <section id="panel-auto" class="panel active">
+        <div class="stats-grid">
+          <div class="stat-card primary">
+            <div class="stat-label">总出售金额</div>
+            <div class="stat-value" id="stat-total-sold">0.00</div>
+            <div class="stat-trend positive">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                <polyline points="17 6 23 6 23 12"></polyline>
+              </svg>
+              <span>营收</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">已购买投入</div>
+            <div class="stat-value" id="stat-total-purchased">0.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">总收益</div>
+            <div class="stat-value" id="stat-diff">0.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">实际折扣比率</div>
+            <div class="stat-value" id="stat-ratio">0.0000</div>
+          </div>
+        </div>
+
+        <div class="control-bar">
+          <div class="control-info">
+            <div class="lyric-scroll-viewport" id="step-scroll-viewport">
+              <div class="lyric-scroll-track" id="step-scroll-track">
+                <div class="lyric-line" style="opacity:1">等待系统初始化</div>
+              </div>
+            </div>
+          </div>
+          <div class="control-actions">
+            <button id="btn-quit" class="btn btn-danger-outline" style="margin-right: 12px;">退出程序</button>
+            <button id="btn-stop" class="btn btn-secondary">停止运行</button>
+            <span class="btn-hover-anchor">
+              <button id="btn-start" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                启动任务
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <div id="pending-payment" class="payment-alert hidden">
+          <div class="payment-content">
+            <div class="payment-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+              </svg>
+            </div>
+            <div class="payment-text">
+              <h3>等待支付</h3>
+              <p id="pay-type">订单待处理</p>
+              <div id="pay-qrcode-wrap" class="hidden" style="margin-top:10px;">
+                <div id="pay-qrcode"></div>
+              </div>
+            </div>
+          </div>
+          <div class="payment-actions">
+            <a id="pay-link" href="#" target="_blank" class="link-btn">打开链接</a>
+            <button id="btn-copy-pay" class="link-btn">复制</button>
+            <div class="divider-v"></div>
+            <button id="btn-fail" class="btn btn-sm btn-ghost">放弃</button>
+            <button id="btn-paid" class="btn btn-sm btn-primary">已完成支付</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-purchases" class="panel">
+        <div class="panel-toolbar panel-toolbar--purchases">
+          <div class="panel-toolbar-row">
+            <span class="label">持有饰品</span>
+            <button id="btn-holdings-multiselect" class="btn btn-sm btn-secondary">多选</button>
+            <div id="holdings-batch-actions" class="hidden" style="display:none;gap:8px;align-items:center;">
+              <button id="btn-holdings-batch-sell" class="btn btn-sm btn-primary">批量出售</button>
+              <button id="btn-holdings-batch-del" class="btn btn-sm btn-danger-outline">批量删除</button>
+            </div>
+          </div>
+          <div id="purchases-summary" class="purchases-summary"></div>
+        </div>
+        <div class="add-purchase-bar">
+          <span class="label">手动添加购入</span>
+          <input type="text" id="add-purchase-name" placeholder="物品名称" />
+          <input type="text" id="add-purchase-steam-link" placeholder="或 Steam 市场链接（优先取英文名）"
+            title="粘贴 steamcommunity.com/market/listings/730/... 将用链接中的英文名作为记录名称" />
+          <input type="number" id="add-purchase-price" step="0.01" min="0.01" placeholder="价格" />
+          <input type="number" id="add-purchase-quantity" value="1" min="1" placeholder="数量" title="批量添加条数" />
+          <button id="btn-add-purchase" class="btn btn-primary">添加</button>
+        </div>
+        <div class="table-container">
+          <table id="transactions-table-purchases">
+            <thead>
+              <tr>
+                <th id="holding-select-th" class="hidden" style="width:52px;min-width:52px"></th>
+                <th>时间</th>
+                <th>物品/说明</th>
+                <th>assetid</th>
+                <th>购入价</th>
+                <th>购入市场价</th>
+                <th>现市场价</th>
+                <th>税后价格</th>
+                <th>实际折扣比率</th>
+                <th>变现收益</th>
+                <th>自用收益</th>
+                <th>市场变动</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="panel-purchase-history" class="panel">
+        <div class="panel-toolbar panel-toolbar--purchase-history">
+          <div class="panel-toolbar-row">
+            <span class="label">操作记录</span>
+            <button id="btn-history-multiselect" class="btn btn-sm btn-secondary">多选</button>
+            <div id="history-batch-actions" class="hidden" style="display:none;gap:8px;align-items:center;">
+              <button id="btn-history-batch-del" class="btn btn-sm btn-danger-outline">批量删除</button>
+            </div>
+          </div>
+          <div id="purchase-history-summary" class="purchases-summary"></div>
+        </div>
+        <div class="table-container">
+          <table id="transactions-table-purchase-history">
+            <thead>
+              <tr>
+                <th id="history-select-th" class="hidden" style="width:52px;min-width:52px"></th>
+                <th>时间</th>
+                <th>物品说明</th>
+                <th>assetid</th>
+                <th>购入价</th>
+                <th>购入市场价</th>
+                <th>出售状态</th>
+                <th>出售价格</th>
+                <th>实际折扣比率</th>
+                <th>变现收益</th>
+                <th>自用收益</th>
+                <th>价格偏离度</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="panel-sales" class="panel">
+        <div class="panel-toolbar">
+          <span class="label">上架记录</span>
+          <button id="btn-refresh-sales" class="btn btn-sm btn-secondary">刷新</button>
+        </div>
+        <div class="table-container">
+          <table id="transactions-table-sales">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>物品/说明</th>
+                <th>assetid</th>
+                <th>金额</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="panel-analytics" class="panel">
+        <div class="panel-toolbar">
+          <span class="label">饰品交易统计</span>
+        </div>
+        <div class="table-container">
+          <table id="analytics-table">
+            <thead>
+              <tr>
+                <th>饰品名称</th>
+                <th>数量</th>
+                <th>购入均价</th>
+                <th>购入市场均价</th>
+                <th>总出售额</th>
+                <th>出售均价</th>
+                <th>实际折扣比例均值</th>
+                <th>总变现收益</th>
+                <th>价格偏离度均值</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="panel-accounts" class="panel">
+        <div class="panel-toolbar panel-toolbar--accounts">
+          <div class="panel-toolbar-row">
+            <div class="toolbar-title">
+              <span class="label">账号管理</span>
+              <span class="hint">Steam 多账号 · 本地保存</span>
+            </div>
+            <div class="toolbar-actions">
+              <div class="input-pill" title="搜索用户名或 Steam ID">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input id="accounts-search" type="text" placeholder="搜索用户名 / Steam ID" />
+              </div>
+              <button id="btn-add-account" class="btn btn-primary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                添加
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="accounts-guide-callout" id="accounts-guide-callout">
+          <div class="agu-steps">
+            <div class="agu-step"><span class="agu-num">1</span> 点击「<strong>添加</strong>」填写 Steam 用户名/密码</div>
+            <div class="agu-step"><span class="agu-num">2</span> 点击账号卡片上的「<strong>验证</strong>」自动登录获取 Cookie</div>
+            <div class="agu-step"><span class="agu-num">3</span> 返回仪表盘点击「<strong>启动任务</strong>」开始运行</div>
+          </div>
+          <button class="agu-close" id="btn-agu-close" title="关闭">✕</button>
+        </div>
+        <div class="accounts-layout">
+          <div class="accounts-left">
+            <div id="accounts-list" class="accounts-list"></div>
+          </div>
+          <div class="accounts-right">
+            <div id="account-detail" class="account-detail">
+              <div class="account-detail-empty">
+                <div class="empty-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <h3>选择一个账号</h3>
+                <p>在左侧选择账号查看详情，或点击「添加」创建新账号。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="account-form-overlay" class="overlay hidden">
+          <div class="overlay-content account-form-card">
+            <h3 id="account-form-title">添加账号</h3>
+            <p class="form-hint">密码为可选项：仅用于自动填充，界面不会展示明文。</p>
+            <div class="form-grid" style="margin-top:16px">
+              <div class="field">
+                <label>Steam 用户名</label>
+                <input type="text" id="acc-username" placeholder="登录名" autocomplete="username" />
+              </div>
+              <div class="field">
+                <label>密码（可选，用于自动填充）</label>
+                <input type="password" id="acc-password" placeholder="保存后仅用于自动填充" autocomplete="current-password" />
+              </div>
+              <div class="field">
+                <label>Steam ID（可选，登录后自动获取）</label>
+                <input type="text" id="acc-steam-id" placeholder="76561198xxx" />
+              </div>
+              <div class="field">
+                <label>显示名（登录后自动获取）</label>
+                <input type="text" id="acc-display-name" placeholder="个人资料名称" readonly />
+              </div>
+            </div>
+            <div class="account-form-actions">
+              <button type="button" class="btn btn-secondary" id="account-form-cancel">取消</button>
+              <button type="button" class="btn btn-primary" id="account-form-save">保存</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-strategies" class="panel">
+        <div class="strategy-shell">
+          <div class="strategy-hero">
+            <div>
+              <div class="strategy-kicker">Strategy Center</div>
+              <h2>策略中心</h2>
+              <p>管理购入与出售策略，组装内置模块，登记自定义模块，并在启用前完成风险确认。</p>
+            </div>
+            <div class="strategy-hero-actions">
+              <button type="button" class="btn btn-secondary" id="strategy-btn-refresh">刷新</button>
+              <button type="button" class="btn btn-secondary" id="strategy-btn-import">导入策略</button>
+              <button type="button" class="btn btn-primary" id="strategy-btn-new">新建策略</button>
+              <input id="strategy-import-file" type="file" accept=".json" hidden />
+            </div>
+          </div>
+
+          <div class="strategy-tabs" role="tablist">
+            <button type="button" class="strategy-tab active" data-strategy-view="buy">购入策略</button>
+            <button type="button" class="strategy-tab" data-strategy-view="sell">出售策略</button>
+            <button type="button" class="strategy-tab" data-strategy-view="modules">模块管理</button>
+          </div>
+
+          <div class="strategy-workbench" id="strategy-workbench">
+            <aside class="strategy-panel strategy-list-panel">
+              <div class="strategy-panel-head">
+                <div>
+                  <span class="strategy-label">策略库</span>
+                  <strong id="strategy-list-title">购入策略</strong>
+                </div>
+                <span class="strategy-pill" id="strategy-active-pill">—</span>
+              </div>
+              <div id="strategy-list" class="strategy-list"></div>
+            </aside>
+
+            <main class="strategy-panel strategy-flow-panel">
+              <div class="strategy-editor-head">
+                <div>
+                  <span class="strategy-label" id="strategy-editor-origin">—</span>
+                  <h3 id="strategy-editor-name">选择一个策略</h3>
+                  <p id="strategy-editor-desc">策略步骤会在这里显示。</p>
+                </div>
+                <div class="strategy-editor-actions">
+                  <button type="button" class="btn btn-sm btn-secondary" id="strategy-btn-copy">复制</button>
+                  <button type="button" class="btn btn-sm btn-secondary" id="strategy-btn-export">导出</button>
+                  <button type="button" class="btn btn-sm btn-secondary" id="strategy-btn-simulate">模拟</button>
+                  <button type="button" class="btn btn-sm btn-secondary" id="strategy-btn-reset-defaults">恢复默认</button>
+                  <button type="button" class="btn btn-sm btn-primary" id="strategy-btn-save">保存</button>
+                  <button type="button" class="btn btn-sm btn-primary" id="strategy-btn-activate">启用</button>
+                  <button type="button" class="btn btn-sm btn-danger-outline" id="strategy-btn-delete">删除</button>
+                </div>
+              </div>
+              <div id="strategy-steps" class="strategy-steps"></div>
+              <div id="strategy-sim-results" class="strategy-sim-results hidden"></div>
+              <div class="strategy-editor-foot">
+                <button type="button" class="btn btn-secondary" id="strategy-btn-add-step">添加模块</button>
+              </div>
+            </main>
+          </div>
+
+          <div class="strategy-modules-view hidden" id="strategy-modules-view">
+            <div class="strategy-panel">
+              <div class="strategy-panel-head">
+                <div>
+                  <span class="strategy-label">Module Library</span>
+                  <strong>模块管理</strong>
+                </div>
+                <div class="strategy-editor-actions">
+                  <button type="button" class="btn btn-secondary" id="strategy-btn-import-module">导入用户模块</button>
+                  <input id="strategy-module-import-file" type="file" accept=".json" hidden />
+                </div>
+              </div>
+              <div id="strategy-modules-list" class="strategy-modules-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-settings" class="panel">
+        <div class="settings-layout">
+          <div class="settings-group">
+            <h2>SteamDT 数据源</h2>
+            <div class="form-grid">
+              <div class="field">
+                <label for="cfg-games">SteamDT 类型</label>
+                <input id="cfg-games" placeholder="e.g. swap" />
+              </div>
+              <div class="field">
+                <label for="cfg-platforms">目标平台</label>
+                <input id="cfg-platforms" placeholder="e.g. BUFF" />
+              </div>
+              <div class="field">
+                <label for="cfg-sort_by">排序方式</label>
+                <select id="cfg-sort_by">
+                  <option value="sell">最优寄售</option>
+                  <option value="buy">最优求购</option>
+                </select>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>最低价</label>
+                  <input type="number" id="cfg-min_price" min="0" step="0.01" />
+                </div>
+                <div class="field">
+                  <label>最高价</label>
+                  <input type="number" id="cfg-max_price" step="0.01" />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>最低日成交数</label>
+                  <input type="number" id="cfg-min_volume" step="1" title="仅筛选中日成交数大于此值的物品" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h2>Buff 支付</h2>
+            <div class="form-grid">
+              <div class="field">
+                <label for="cfg-pay_method">支付方式</label>
+                <select id="cfg-pay_method">
+                  <option value="alipay">支付宝 (Alipay)</option>
+                  <option value="wechat">微信 (WeChat)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h2>启动时间限制</h2>
+            <div class="form-grid">
+              <div class="field field--switch">
+                <label class="checkbox-wrapper">
+                  <input type="checkbox" id="cfg-start-time-limit-enabled" />
+                  <span>启用启动时间限制</span>
+                </label>
+                <span class="field-hint">开启后，仅在下方时段内执行倒余额（拉取/购买）；非时段内会等待。</span>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="cfg-start-time-hour">开始时间（几点）</label>
+                  <input type="number" id="cfg-start-time-hour" min="0" max="23" placeholder="8"
+                    title="0–23，例 8 表示 8:00" />
+                </div>
+                <div class="field">
+                  <label for="cfg-end-time-hour">结束时间（几点）</label>
+                  <input type="number" id="cfg-end-time-hour" min="0" max="23" placeholder="22"
+                    title="0–23，例 22 表示 22:00" />
+                </div>
+              </div>
+              <span class="field-hint" id="cfg-timezone-display">
+                时间判断采用当前浏览器时区。
+              </span>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h2>Steam 令牌</h2>
+            <div class="form-grid">
+              <div class="field">
+                <label for="cfg-steam-shared-secret">shared_secret</label>
+                <input type="password" id="cfg-steam-shared-secret"
+                  placeholder="* 必填 — 从 Steam 手机令牌中提取的 shared_secret (Base64)" autocomplete="new-password" />
+              </div>
+              <div class="field field--switch">
+                <label class="checkbox-wrapper">
+                  <input type="checkbox" id="cfg-steam-auto-confirm" />
+                  <span>自动确认上架</span>
+                </label>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="cfg-steam-identity-secret">identity_secret</label>
+                  <input type="password" id="cfg-steam-identity-secret"
+                    placeholder="* 必填 — Steam 手机确认 identity_secret (Base64)" autocomplete="new-password" />
+                </div>
+                <div class="field">
+                  <label for="cfg-steam-device-id">device_id</label>
+                  <input type="password" id="cfg-steam-device-id" placeholder="Steam 手机确认 device_id"
+                    autocomplete="new-password" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h2>推送与邮箱确认</h2>
+            <div class="form-grid">
+              <div class="field-row">
+                <div class="field">
+                  <label for="cfg-pushplus_token">PushPlus Token</label>
+                  <input type="password" id="cfg-pushplus_token" placeholder="* 必填 — 微信推送 Token"
+                    autocomplete="new-password" />
+                </div>
+                <div class="field">
+                  <label for="cfg-holdings_report_interval_hours">定时回报间隔（小时）</label>
+                  <input type="number" id="cfg-holdings_report_interval_hours" min="0" max="720" placeholder="0"
+                    title="每隔 N 小时定时推送一次持有饰品回报；0 = 关闭定时回报" />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="cfg-holdings_report_change_threshold_pct">紧急跌幅阈值（%）</label>
+                  <input type="number" id="cfg-holdings_report_change_threshold_pct" min="1" max="100" step="1"
+                    placeholder="20" title="现市价跌幅（相对上次记录）>= 此值时自动发送紧急回报；默认 20%" />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="cfg-email_user">QQ 邮箱账号</label>
+                  <input type="text" id="cfg-email_user" placeholder="xxx@qq.com" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="cfg-email_pass">邮箱授权码</label>
+                  <input type="password" id="cfg-email_pass" placeholder="非QQ密码" autocomplete="off" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="cfg-imap_server">IMAP 服务器</label>
+                <input type="text" id="cfg-imap_server" placeholder="imap.qq.com" />
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="cfg-target_sender">指令发件人(含昵称)</label>
+                  <input type="text" id="cfg-target_sender" placeholder="VexedWilson" title="邮件发件人需包含此字符串" />
+                </div>
+                <div class="field">
+                  <label for="cfg-allowed_sender">允许的发件人邮箱</label>
+                  <input type="text" id="cfg-allowed_sender" placeholder="xxx@qq.com" />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="cfg-subject_success">成功付款邮件标题</label>
+                  <input type="text" id="cfg-subject_success" placeholder="已确认成功付款" />
+                </div>
+                <div class="field">
+                  <label for="cfg-subject_fail">付款失败邮件标题</label>
+                  <input type="text" id="cfg-subject_fail" placeholder="已确认付款失败" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="cfg-email_timeout_seconds">邮箱等待超时(秒)</label>
+                <input type="number" id="cfg-email_timeout_seconds" min="60" placeholder="300" />
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h2>系统参数</h2>
+            <div class="form-grid">
+              <div class="field-row">
+                <div class="field">
+                  <label>无符合时重试间隔（秒）</label>
+                  <input type="number" id="cfg-retry_interval_seconds" min="60" placeholder="300"
+                    title="暂无符合条件或本轮回无稳定品时，等待多少秒后重新拉取判定" />
+                </div>
+                <div class="field">
+                  <label>库存自动刷新 (秒)</label>
+                  <input type="number" id="cfg-inv-refresh" min="600" placeholder="600"
+                    title="库存自动刷新间隔，默认10分钟；过短会频繁触发出售阶段和Steam在售列表获取" />
+                </div>
+                <div class="field">
+                  <label>操作记录现市场价刷新间隔 (分钟)</label>
+                  <input type="number" id="cfg-current-price-refresh-minutes" min="1" placeholder="10"
+                    title="仅在此间隔过后再次打开/刷新操作记录时才请求 Steam 现价" />
+                </div>
+                <div class="field">
+                  <label for="cfg-exchange-refresh-hours">汇率刷新间隔(小时)</label>
+                  <input type="number" id="cfg-exchange-refresh-hours" min="0" step="0.5" placeholder="0"
+                    title="每隔多少小时自动查询一次汇率，0 表示关闭" />
+                </div>
+                <div class="field field--switch">
+                  <label class="checkbox-wrapper" title="默认关闭。仅对本程序浏览器登录生成的 Buff 会话生效；手工 Cookie 不会被浏览器 profile 覆盖。">
+                    <input type="checkbox" id="cfg-buff-session-keepalive-enabled" />
+                    <span>启用 Buff 浏览器会话保活</span>
+                  </label>
+                </div>
+                <div class="field">
+                  <label for="cfg-session-keepalive-hours">会话保活间隔(小时)</label>
+                  <input type="number" id="cfg-session-keepalive-hours" min="0.5" step="0.5" placeholder="4"
+                    title="开启后首次保活也会等待完整间隔；流水线或结账期间不会执行" />
+                </div>
+                <div class="field">
+                  <label for="cfg-ui_scale">界面缩放比例(内部浏览器)</label>
+                  <select id="cfg-ui_scale">
+                    <option value="0.7" selected>70% (默认)</option>
+                    <option value="0.8">80%</option>
+                    <option value="0.9">90%</option>
+                    <option value="1.0">100%</option>
+                    <option value="1.1">110%</option>
+                    <option value="1.2">120%</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h2>Steam 折扣数据</h2>
+            <div class="form-grid">
+              <div class="field field--switch">
+                <label class="checkbox-wrapper">
+                  <input type="checkbox" id="cfg-steam-deals-enabled" />
+                  <span>启用 Steam 折扣数据抓取</span>
+                </label>
+                <span class="field-hint">注意：该功能必须搭配代理池使用，若未配置代理将无法抓取数据。</span>
+              </div>
+              <div class="field-row field-row--3">
+                <div class="field">
+                  <label for="cfg-steam-deals-auto-refresh-days">自动更新间隔 (天)</label>
+                  <input type="number" id="cfg-steam-deals-auto-refresh-days" min="0" placeholder="7"
+                    title="距离上次更新超过此天数则自动获取，0=关闭自动更新" />
+                </div>
+                <div class="field">
+                  <label for="cfg-steam-deals-game-threads">游戏并发数</label>
+                  <input type="number" id="cfg-steam-deals-game-threads" min="1" max="20" placeholder="5"
+                    title="同时处理几个游戏" />
+                </div>
+                <div class="field">
+                  <label for="cfg-steam-deals-region-threads">区域并发数</label>
+                  <input type="number" id="cfg-steam-deals-region-threads" min="1" max="16" placeholder="16"
+                    title="每个游戏同时查询几个区域" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button id="btn-export-config" class="btn btn-secondary">导出配置</button>
+            <label class="btn btn-secondary file-btn">
+              导入配置
+              <input id="cfg-import-file" type="file" accept=".json" hidden />
+            </label>
+            <button id="btn-data-init" class="btn btn-danger" type="button">恢复出厂设置</button>
+            <button id="btn-sync-sold" class="btn btn-secondary" type="button">同步售出/持有</button>
+            <button id="btn-repair-error" class="btn btn-danger-outline" type="button">紧急修复</button>
+            <button id="btn-save-config" class="btn btn-primary">保存所有设置</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-inventory" class="panel">
+        <div class="panel-toolbar">
+          <div class="toolbar-stat">
+            <span class="label">库存总数</span>
+            <span class="value" id="inv-count">0</span>
+          </div>
+          <div class="toolbar-stat">
+            <span class="label">库存价值</span>
+            <span class="value mono" id="inv-total-value">0.00</span>
+          </div>
+          <div class="toolbar-stat">
+            <span class="label">税后价值</span>
+            <span class="value mono" id="inv-tax-value">0.00</span>
+          </div>
+          <button id="btn-refresh-inventory" class="btn btn-sm btn-secondary">立即刷新</button>
+          <span id="inv-data-status" class="muted small" role="status">库存尚未刷新</span>
+        </div>
+        <div class="table-container">
+          <table id="inv-table">
+            <thead>
+              <tr>
+                <th>物品名称</th>
+                <th>链接</th>
+                <th>可出售</th>
+                <th>可交易</th>
+                <th>解禁时间</th>
+                <th>最低价</th>
+                <th>状态说明</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="panel-steam-guard" class="panel">
+        <div class="steam-token-page">
+          <div class="steam-token-glow"></div>
+          <div class="steam-token-card">
+            <h2 class="steam-token-title">Steam 令牌</h2>
+            <div id="steam-token-circle" class="steam-token-circle">
+              <svg class="steam-token-ring" viewBox="0 0 260 260">
+                <defs>
+                  <linearGradient id="steam-ring-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#00a8ff"></stop>
+                    <stop offset="100%" stop-color="#005bff"></stop>
+                  </linearGradient>
+                </defs>
+                <circle cx="130" cy="130" r="110" class="steam-ring-bg"></circle>
+                <circle id="steam-progress-circle" cx="130" cy="130" r="110" class="steam-ring-fg"></circle>
+              </svg>
+              <div class="steam-token-inner" id="steam-token-inner">
+                <div class="steam-code-wrap">
+                  <span id="steam-code-text" class="steam-code-text">-----</span>
+                  <span id="steam-code-subtitle" class="steam-code-subtitle">点击显示令牌</span>
+                </div>
+              </div>
+            </div>
+            <p class="steam-token-tip" id="steam-token-tip">您的账号受到 Steam Guard 保护</p>
+          </div>
+        </div>
+      </section>
+
+
+      <section id="panel-proxy" class="panel">
+
+        <div class="proxy-hero">
+          <div class="proxy-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+              </path>
+            </svg>
+          </div>
+          <div class="proxy-hero-text">
+            <h2>代理 IP 池管理</h2>
+            <p>管理出口代理节点，支持策略切换、连通性检测与批量导入</p>
+          </div>
+        </div>
+
+
+        <div class="proxy-section">
+          <div class="proxy-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M12 22c4-2 8-4 8-10V5l-8-3-8 3v7c0 6 4 8 8 10z"></path>
+            </svg>
+            <span>路由策略</span>
+          </div>
+          <div class="proxy-strategy-grid">
+            <div class="proxy-strategy-card active" data-strategy="1" onclick="selectStrategy(1)">
+              <div class="proxy-strategy-icon proxy-strategy-icon--1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </div>
+              <div class="proxy-strategy-label">策略 1</div>
+              <div class="proxy-strategy-desc">本机优先<br><small>失败或超时后切换代理重试</small></div>
+              <div class="proxy-strategy-check">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="proxy-strategy-card" data-strategy="2" onclick="selectStrategy(2)">
+              <div class="proxy-strategy-icon proxy-strategy-icon--2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                  </path>
+                </svg>
+              </div>
+              <div class="proxy-strategy-label">策略 2</div>
+              <div class="proxy-strategy-desc">完全走代理<br><small>所有请求经代理池轮询发出</small></div>
+              <div class="proxy-strategy-check">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="proxy-strategy-card" data-strategy="3" onclick="selectStrategy(3)">
+              <div class="proxy-strategy-icon proxy-strategy-icon--3">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                  <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                  <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                  <path d="M10.71 5.05A16 16 0 0 1 22.56 9"></path>
+                  <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                  <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                </svg>
+              </div>
+              <div class="proxy-strategy-label">策略 3</div>
+              <div class="proxy-strategy-desc">关闭代理<br><small>全部走本机，代理池停用</small></div>
+              <div class="proxy-strategy-check">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="proxy-section">
+          <div class="proxy-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+              </path>
+            </svg>
+            <span>测试参数</span>
+          </div>
+          <div class="proxy-test-params">
+            <div class="field">
+              <label for="proxy-test-url">检测目标 URL</label>
+              <input id="proxy-test-url" type="url" placeholder="https://ipv4.webshare.io/" />
+            </div>
+            <div class="field">
+              <label for="proxy-timeout">超时时间（秒）</label>
+              <input id="proxy-timeout" type="number" min="3" max="60" placeholder="10" style="max-width:100px" />
+            </div>
+            <div class="field">
+              <label for="proxy-webshare-apikey">Webshare API Key</label>
+              <input id="proxy-webshare-apikey" type="password" placeholder="填入后可点击「获取订阅」自动导入"
+                style="max-width:320px" />
+            </div>
+          </div>
+        </div>
+
+
+        <div class="proxy-section">
+          <div class="proxy-section-header">
+            <div class="proxy-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              <span>代理节点列表</span>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <button id="btn-proxy-webshare" class="btn btn-sm btn-primary" onclick="fetchWebshareProxies()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="8 17 12 21 16 17"></polyline>
+                  <line x1="12" y1="12" x2="12" y2="21"></line>
+                  <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36"></path>
+                </svg>
+                ☁ 获取订阅
+              </button>
+              <button id="btn-proxy-clear" class="btn btn-sm btn-danger-outline" onclick="clearAllProxies()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6l-1 14H6L5 6"></path>
+                  <path d="M10 11v6M14 11v6"></path>
+                  <path d="M9 6V4h6v2"></path>
+                </svg>
+                🗑 清除全部
+              </button>
+              <button id="btn-proxy-test" class="btn btn-sm btn-secondary" onclick="testAllProxies()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="1 4 1 10 7 10"></polyline>
+                  <path d="M3.51 15a9 9 0 1 0 .49-3.57"></path>
+                </svg>
+                测试连通性
+              </button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table id="proxy-list-table">
+              <thead>
+                <tr>
+                  <th style="width:48px">#</th>
+                  <th>节点地址</th>
+                  <th>用户名</th>
+                  <th style="width:90px">连接状态</th>
+                  <th style="width:90px">延迟</th>
+                  <th style="width:130px">检测 IP</th>
+                  <th style="width:70px">操作</th>
+                </tr>
+              </thead>
+              <tbody id="proxy-list-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+
+        <div class="proxy-section">
+          <div class="proxy-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>添加单条代理</span>
+          </div>
+          <div class="proxy-add-row">
+            <input id="proxy-add-host" type="text" placeholder="IP 地址 / 主机名" />
+            <input id="proxy-add-port" type="number" placeholder="端口" min="1" max="65535" style="max-width:100px" />
+            <input id="proxy-add-user" type="text" placeholder="用户名（可选）" />
+            <input id="proxy-add-pass" type="text" placeholder="密码（可选）" />
+            <button class="btn btn-sm btn-primary" onclick="addSingleProxy()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              添加
+            </button>
+          </div>
+        </div>
+
+
+        <div class="proxy-section">
+          <div class="proxy-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <polyline points="16 16 12 12 8 16"></polyline>
+              <line x1="12" y1="12" x2="12" y2="21"></line>
+              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+            </svg>
+            <span>批量导入</span>
+          </div>
+          <p class="proxy-bulk-hint">每行一条，格式：<code>ip:port:username:password</code>（无认证可只填 <code>ip:port</code>）</p>
+          <textarea id="proxy-bulk-input" class="proxy-bulk-textarea" rows="6"
+            placeholder="31.59.20.176:6754:xznlbhkj:7msoi8kphvpd&#10;23.95.150.145:6114:xznlbhkj:7msoi8kphvpd&#10;..."></textarea>
+          <div style="margin-top:8px">
+            <button class="btn btn-sm btn-secondary" onclick="parseBulkProxyImport()">
+              解析并导入
+            </button>
+          </div>
+        </div>
+
+
+        <div class="proxy-footer">
+          <button class="btn btn-primary" onclick="saveProxyConfig()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            保存代理池配置
+          </button>
+        </div>
+      </section>
+
+      <section id="panel-debug" class="panel">
+        <div class="console-wrapper">
+          <div class="console-toolbar">
+            <div class="console-filters">
+              <input id="log-search" type="text" placeholder="搜索日志关键词..." />
+              <select id="log-level">
+                <option value="all">所有级别</option>
+                <option value="info">Info</option>
+                <option value="error">Error</option>
+                <option value="warn">Warn</option>
+              </select>
+              <label class="checkbox-wrapper">
+                <input type="checkbox" id="cfg-verbose-debug">
+                <span>详细模式</span>
+              </label>
+              <label class="checkbox-wrapper">
+                <input type="checkbox" id="cfg-steam-listings-debug">
+                <span>Steam 解析调试</span>
+              </label>
+              <span class="console-stats">
+                <span class="log-count-badge" id="log-count-badge">0 行</span>
+              </span>
+            </div>
+            <div class="console-actions">
+              <button id="btn-toggle-scroll" class="icon-btn" title="切换自动滚动">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="17 11 12 6 7 11" />
+                  <polyline points="17 18 12 13 7 18" />
+                </svg>
+                自动滚动：开
+              </button>
+              <button id="btn-toggle-pause" class="icon-btn" title="暂停/继续刷新">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <rect x="6" y="4" width="4" height="16" />
+                  <rect x="14" y="4" width="4" height="16" />
+                </svg>
+                暂停
+              </button>
+              <button id="btn-clear-log" class="icon-btn" title="清空日志">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14H6L5 6" />
+                  <path d="M10 11v6M14 11v6" />
+                  <path d="M9 6V4h6v2" />
+                </svg>
+                清空
+              </button>
+              <button id="btn-download-log" class="icon-btn" title="下载日志到本地">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="8 17 12 21 16 17" />
+                  <line x1="12" y1="12" x2="12" y2="21" />
+                  <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.36" />
+                </svg>
+                下载
+              </button>
+              <button id="btn-export-log" class="icon-btn" title="保存日志到服务器 log/ 文件夹">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+                导出日志
+              </button>
+            </div>
+          </div>
+          <pre id="log-output" class="console-body" data-last-index="0"></pre>
+        </div>
+      </section>
+
+
+
+
+      <section id="panel-gift" class="panel">
+
+        <div class="gift-hero">
+          <div class="gift-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+              <polyline points="20 12 20 22 4 22 4 12"></polyline>
+              <rect x="2" y="7" width="20" height="5"></rect>
+              <line x1="12" y1="22" x2="12" y2="7"></line>
+              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+            </svg>
+          </div>
+          <div class="gift-hero-text">
+            <h2>Steam 自动赠礼</h2>
+            <p>选择好友与商品，一键完成全自动礼物发送流程</p>
+          </div>
+
+          <div class="gift-wallet-area">
+            <div class="gift-wallet-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+              </svg>
+              Steam 钱包
+            </div>
+            <div id="gift-wallet-wrap" class="gift-wallet-wrap">
+              <span id="gift-wallet-balance" class="gift-wallet-balance">--</span>
+            </div>
+            <button id="btn-gift-refresh-balance" class="gift-wallet-refresh" title="刷新余额">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.57"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+
+
+        <div class="gift-section">
+          <div class="gift-section-header">
+            <div class="gift-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <span>好友列表</span>
+              <span id="gift-friends-count" class="badge">0</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="gift-friend-search" placeholder="搜索好友名称或 SteamID..." class="gift-search-input" />
+              <button id="btn-gift-fetch-friends" class="btn btn-primary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="1 4 1 10 7 10"></polyline>
+                  <path d="M3.51 15a9 9 0 1 0 .49-3.57"></path>
+                </svg>
+                获取好友
+              </button>
+            </div>
+          </div>
+          <div id="gift-friends-loading" class="gift-loading hidden">
+            <div class="gift-spinner"></div>
+            <span>正在拉取好友列表...</span>
+          </div>
+          <div id="gift-friends-grid" class="gift-friends-grid"></div>
+          <div id="gift-friends-empty" class="gift-empty hidden">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+            </svg>
+            <p>暂无好友，点击「获取好友」按钮拉取列表</p>
+          </div>
+        </div>
+
+
+        <div id="gift-selected-friend" class="gift-selected-friend hidden">
+          <div class="gift-selected-avatar">
+            <img id="gift-sel-avatar" src="" alt="avatar" />
+            <div id="gift-sel-avatar-placeholder" class="avatar-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+          </div>
+          <div class="gift-selected-info">
+            <div class="gift-sel-name" id="gift-sel-name">未选择</div>
+            <div class="gift-sel-id" id="gift-sel-id">--</div>
+          </div>
+          <button class="btn btn-sm btn-ghost" id="btn-gift-clear-friend">取消选择</button>
+        </div>
+
+
+        <div class="gift-section">
+          <div class="gift-section-header">
+            <div class="gift-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+              </svg>
+              <span>选择商品</span>
+            </div>
+          </div>
+          <div class="gift-url-row">
+            <input id="gift-store-url" type="url" placeholder="粘贴 Steam 商店链接，例如 https://store.steampowered.com/app/730/"
+              class="gift-url-input" />
+            <button id="btn-gift-fetch-editions" class="btn btn-secondary btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              解析商品
+            </button>
+          </div>
+          <div id="gift-editions-loading" class="gift-loading hidden">
+            <div class="gift-spinner"></div>
+            <span>正在获取商品版本列表...</span>
+          </div>
+
+          <div id="gift-game-preview" class="gift-game-preview hidden">
+            <img id="gift-game-img" src="" alt="game cover" class="gift-game-img" />
+            <div class="gift-game-meta">
+              <div class="gift-game-title" id="gift-game-title"></div>
+              <div class="gift-game-appid" id="gift-game-appid"></div>
+            </div>
+          </div>
+
+          <div id="gift-editions-list" class="gift-editions-list"></div>
+        </div>
+
+
+        <div class="gift-send-bar">
+          <div class="gift-send-summary">
+            <div class="gift-send-info" id="gift-send-info">请选择好友和商品</div>
+          </div>
+          <button id="btn-gift-send" class="btn btn-primary gift-send-btn" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 12 20 22 4 22 4 12"></polyline>
+              <rect x="2" y="7" width="20" height="5"></rect>
+              <line x1="12" y1="22" x2="12" y2="7"></line>
+              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+            </svg>
+            发送礼物
+          </button>
+        </div>
+
+
+        <div id="gift-progress-panel" class="gift-progress-panel hidden">
+          <div class="gift-progress-header">
+            <div class="gift-progress-title">
+              <div id="gift-progress-spinner" class="gift-spinner"></div>
+              <span id="gift-progress-title-text">赠礼进行中...</span>
+            </div>
+            <button id="btn-gift-progress-close" class="icon-btn" title="关闭">✕</button>
+          </div>
+          <div class="gift-progress-steps" id="gift-progress-steps">
+
+          </div>
+          <div id="gift-progress-result" class="gift-progress-result hidden">
+            <div id="gift-progress-result-icon" class="gift-result-icon"></div>
+            <div id="gift-progress-result-msg" class="gift-result-msg"></div>
+          </div>
+        </div>
+      </section>
+
+
+      <section id="panel-steam-deals" class="panel">
+
+
+        <div class="sd-header-bar">
+          <div class="sd-header-left">
+            <div class="sd-update-badge" id="steam-deals-update-info">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>尚未获取数据</span>
+            </div>
+            <span id="steam-deals-total-count" class="sd-count-badge"></span>
+            <span id="steam-deals-progress" class="sd-progress-badge hidden"></span>
+          </div>
+          <div class="sd-header-actions">
+            <button id="steam-deals-fetch-btn" class="btn btn-primary btn-sm sd-fetch-btn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              获取数据
+            </button>
+            <button id="steam-deals-reset-btn" class="btn btn-secondary btn-sm sd-fetch-btn" title="清空旧进度和旧数据后重新全量扫描">
+              重新扫描
+            </button>
+          </div>
+        </div>
+
+
+        <div class="sd-filters-card">
+          <div class="sd-search-row">
+            <div class="sd-search-box">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input id="steam-deals-search-input" type="text" placeholder="输入游戏名称搜索..." />
+            </div>
+          </div>
+          <div class="sd-filter-row">
+            <div class="sd-filter-group">
+              <label for="steam-deals-region">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                  </path>
+                </svg>
+                地区价格
+              </label>
+              <select id="steam-deals-region">
+                <option value="">全部区域</option>
+                <option value="cn">🇨🇳 中国</option>
+                <option value="ru">🇷🇺 俄罗斯</option>
+                <option value="kz">🇰🇿 哈萨克斯坦</option>
+                <option value="ua">🇺🇦 乌克兰</option>
+                <option value="pk">🇵🇰 南亚</option>
+                <option value="tr">🇹🇷 土耳其</option>
+                <option value="ar">🇦🇷 阿根廷</option>
+                <option value="az">🇦🇿 阿塞拜疆</option>
+                <option value="vn">🇻🇳 越南</option>
+                <option value="id">🇮🇩 印尼</option>
+                <option value="in">🇮🇳 印度</option>
+                <option value="br">🇧🇷 巴西</option>
+                <option value="cl">🇨🇱 智利</option>
+                <option value="jp">🇯🇵 日本</option>
+                <option value="hk">🇭🇰 中国香港</option>
+                <option value="ph">🇵🇭 菲律宾</option>
+              </select>
+            </div>
+            <div class="sd-filter-group">
+              <label for="steam-deals-sort">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="4" y1="6" x2="20" y2="6"></line>
+                  <line x1="4" y1="12" x2="16" y2="12"></line>
+                  <line x1="4" y1="18" x2="12" y2="18"></line>
+                </svg>
+                排序方式
+              </label>
+              <select id="steam-deals-sort">
+                <option value="default_recommend|desc">默认推荐 (威尔逊区间法，95% 置信)</option>
+                <option value="region_value|desc">跨区价值比 高→低（2000+评论）</option>
+                <option value="discount_abs|desc">折扣额度 大→小（原价差值）</option>
+                <option value="positive_rate|desc">好评率 高→低</option>
+                <option value="total_reviews|desc">评论数 多→少</option>
+                <option value="price_diff|desc">差价 大→小</option>
+                <option value="name|asc">名称 A → Z</option>
+              </select>
+            </div>
+            <div class="sd-filter-group">
+              <label for="steam-deals-status-filter">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                史低筛选
+              </label>
+              <select id="steam-deals-status-filter">
+                <option value="">全部状态</option>
+                <option value="新史低">🔥 新史低</option>
+                <option value="平史低">🏷️ 平史低</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+
+        <div id="steam-deals-grid" class="steam-game-grid"></div>
+
+
+        <div id="steam-deals-sentinel" class="steam-deals-sentinel">
+          <div class="steam-deals-loading hidden" id="steam-deals-loading">
+            <div class="spinner-ring"></div>
+            <span>加载更多...</span>
+          </div>
+          <div id="steam-deals-empty" class="steam-deals-empty hidden">
+            <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <p>暂无数据，请点击上方「获取数据」按钮开始抓取</p>
+          </div>
+        </div>
+      </section>
+      <section id="panel-delivery" class="panel">
+        <div class="gift-hero" style="margin-bottom: 20px;">
+          <div class="gift-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+              <rect x="1" y="3" width="15" height="13"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+          </div>
+          <div class="gift-hero-text">
+            <h2>多平台自动收发货 & 2FA 移动端签名</h2>
+            <p>集成 Steamauto 全自动收发货引擎，支持网易 BUFF、悠悠有品与 Steam 2FA 自动签名确认</p>
+          </div>
+          <div style="display: flex; gap: 10px; margin-left: auto;">
+            <button id="btn-delivery-confirm-now" class="btn btn-primary btn-sm" title="立即扫描并签署待确认的报价">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              立即 2FA 确认
+            </button>
+            <button id="btn-delivery-poll-now" class="btn btn-secondary btn-sm" title="立即触发一次全平台收发货与报价轮询">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              立即全量轮询
+            </button>
+          </div>
+        </div>
+
+        <!-- 状态指标看板 -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <div class="card" style="padding: 16px;">
+            <div style="font-size: 0.85em; color: var(--text-muted, #888); margin-bottom: 6px;">守护线程状态</div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span id="delivery-worker-status-badge" class="badge badge-secondary">检查中...</span>
+              <span style="font-size: 0.8em; color: var(--text-muted, #888);">轮询间隔: 15s</span>
+            </div>
+          </div>
+          <div class="card" style="padding: 16px;">
+            <div style="font-size: 0.85em; color: var(--text-muted, #888); margin-bottom: 6px;">Steam 2FA 待签署</div>
+            <div style="font-size: 1.5em; font-weight: 700; color: var(--accent, #3b82f6);" id="delivery-confirms-count">0</div>
+          </div>
+          <div class="card" style="padding: 16px;">
+            <div style="font-size: 0.85em; color: var(--text-muted, #888); margin-bottom: 6px;">平台连接心跳</div>
+            <div style="display: flex; gap: 8px; font-size: 0.85em;">
+              <span>BUFF: <b id="delivery-buff-status-text">空闲</b></span>
+              <span>|</span>
+              <span>悠悠: <b id="delivery-uu-status-text">空闲</b></span>
+              <span>|</span>
+              <span>Steam: <b id="delivery-steam-status-text">空闲</b></span>
+            </div>
+          </div>
+          <div class="card" style="padding: 16px;">
+            <div style="font-size: 0.85em; color: var(--text-muted, #888); margin-bottom: 6px;">最近检查时间</div>
+            <div style="font-size: 1.1em; font-weight: 600;" id="delivery-last-check-text">--</div>
+          </div>
+        </div>
+
+        <!-- 平台收发货参数与开关设置 -->
+        <div class="card" style="padding: 20px; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 1.1em; font-weight: 600;">收发货平台与自动化开关</h3>
+            <button id="btn-delivery-save-settings" class="btn btn-primary btn-sm">保存收发货配置</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="delivery-cfg-enabled" checked />
+              <span>启用自动收发货与2FA守护</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="delivery-cfg-buff-ship" checked />
+              <span>网易 BUFF 自动发货</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="delivery-cfg-buff-accept" checked />
+              <span>网易 BUFF 自动收货</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="delivery-cfg-uu-ship" checked />
+              <span>悠悠有品 自动发货</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="delivery-cfg-uu-accept" checked />
+              <span>悠悠有品 自动收货</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="delivery-cfg-uu-lease" checked />
+              <span>悠悠有品 租赁自动上架</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="delivery-cfg-steam-gifts" checked />
+              <span>Steam 零成本礼物自动接受</span>
+            </label>
+          </div>
+
+          <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+            <div class="field">
+              <label>轮询时间间隔 (秒)</label>
+              <input type="number" id="delivery-cfg-poll-interval" min="5" max="300" value="15" />
+            </div>
+            <div class="field">
+              <label>悠悠有品 Token (uu_token)</label>
+              <input type="password" id="delivery-cfg-uu-token" placeholder="输入悠悠有品鉴权 Token" />
+            </div>
+            <div class="field">
+              <label>C5Game App Key (可选)</label>
+              <input type="text" id="delivery-cfg-c5-key" placeholder="C5 开放平台 App Key" />
+            </div>
+            <div class="field">
+              <label>C5Game App Secret (可选)</label>
+              <input type="password" id="delivery-cfg-c5-secret" placeholder="C5 开放平台 Secret" />
+            </div>
+            <div class="field">
+              <label>ECOSteam Partner ID (可选)</label>
+              <input type="text" id="delivery-cfg-ecosteam-id" placeholder="ECOSteam 合作者 ID" />
+            </div>
+            <div class="field">
+              <label>ECOSteam API Key (可选)</label>
+              <input type="password" id="delivery-cfg-ecosteam-key" placeholder="ECOSteam 私钥 / API Key" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 历史收发货与2FA确认明细流水 -->
+        <div class="card" style="padding: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <h3 style="margin: 0; font-size: 1.1em; font-weight: 600;">交易报价与 2FA 签名流水</h3>
+              <select id="delivery-platform-filter" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);">
+                <option value="all">全部平台</option>
+                <option value="buff">网易 BUFF</option>
+                <option value="uu">悠悠有品</option>
+                <option value="steam">Steam 2FA/礼物</option>
+              </select>
+            </div>
+            <button id="btn-delivery-refresh-orders" class="btn btn-secondary btn-sm">刷新记录</button>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>平台</th>
+                  <th>动作</th>
+                  <th>饰品名称</th>
+                  <th>报价/订单ID</th>
+                  <th>金额</th>
+                  <th>状态</th>
+                  <th>时间</th>
+                </tr>
+              </thead>
+              <tbody id="delivery-orders-tbody">
+                <tr><td colspan="7" style="text-align:center; padding: 24px; color: var(--text-muted, #888);">正在加载交易记录...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+  <div id="toast-host"></div>
+  <button id="scroll-top-btn" class="scroll-to-top" aria-label="回到顶部">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+  </button>
+
+  <div id="edit-tx-overlay" class="relogin-overlay hidden">
+    <div class="relogin-modal">
+      <h3>编辑记录</h3>
+      <div class="form-grid" style="margin:12px 0">
+        <div class="field">
+          <label>物品名称</label>
+          <input type="text" id="edit-tx-name" />
+        </div>
+        <div class="field">
+          <label>金额</label>
+          <input type="number" id="edit-tx-price" step="0.01" min="0.01" />
+        </div>
+        <div class="field" id="edit-tx-market-price-wrap">
+          <label>购入市场价（可选）</label>
+          <input type="number" id="edit-tx-market-price" step="0.01" min="0" placeholder="购买时 Steam 最低价" />
+        </div>
+        <div class="field" style="display:none">
+          <label>Buff goods_id（可选）</label>
+          <input type="number" id="edit-tx-goods-id" min="0" />
+        </div>
+        <div class="field" id="edit-tx-assetid-wrap">
+          <label>assetid（可选）</label>
+          <input type="text" id="edit-tx-assetid" placeholder="Steam 资产 ID" />
+        </div>
+        <div class="field" id="edit-tx-listing-wrap">
+          <label>状态</label>
+          <select id="edit-tx-listing">
+            <option value="0">持有中</option>
+            <option value="1">出售中</option>
+            <option value="2">待收货</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button type="button" id="edit-tx-cancel" class="btn btn-secondary">取消</button>
+        <button type="button" id="edit-tx-save" class="btn btn-primary">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sell-tx-overlay" class="relogin-overlay hidden">
+    <div class="relogin-modal">
+      <h3>售出</h3>
+      <p class="muted small" id="sell-tx-item-name"></p>
+      <div class="field" style="margin:12px 0">
+        <label for="sell-tx-price">实际到手金额（税后）</label>
+        <input type="number" id="sell-tx-price" step="0.01" min="0.01" placeholder="填写 Steam 实际到账金额" />
+        <span class="field-hint">记录时会换算为税前出售价，与自动售出记录保持一致。</span>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button type="button" id="sell-tx-cancel" class="btn btn-secondary">取消</button>
+        <button type="button" id="sell-tx-confirm" class="btn btn-primary">确定售出</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="relogin-overlay" class="relogin-overlay hidden">
+    <div class="relogin-modal">
+      <h3 id="relogin-title">Steam 登录已过期</h3>
+      <p id="relogin-message">登录已过期，请按当前运行环境打开浏览器登录，或手动填写 Cookie 后继续。</p>
+      <div class="relogin-actions">
+        <button type="button" id="relogin-btn-open" class="btn btn-primary">登录 / 填写 Cookie</button>
+        <button type="button" id="relogin-btn-ok" class="btn btn-primary" disabled>完成登录</button>
+        <button type="button" id="relogin-btn-fail" class="btn btn-secondary">登录失败</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/js/utils.js?v=3"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/accounts.js"></script>
+  <script src="/js/console.js"></script>
+  <script src="/js/steamGuard.js"></script>
+  <script src="/js/transactions.js"></script>
+  <script src="/js/settings.js?v=2"></script>
+  <script src="/js/proxy.js"></script>
+  <script src="/js/strategies.js"></script>
+  <script src="/js/main.js?v=4"></script>
+  <script src="/js/gift.js"></script>
+  <script src="/js/steamDeals.js"></script>
+  <script src="/js/delivery.js"></script>
+  <script>
+    // 简单的辅助脚本，用于更新标题显示
+    // 页面标题由 tabSwitch 统一处理，避免取消离开策略编辑时标题提前切换。
+  </script>
+
+
+  <!-- 统一新手引导向导 -->
+  <div id="onboard-wizard-overlay" class="relogin-overlay hidden">
+    <div class="wizard-modal">
+      <!-- 进度条 -->
+      <div class="wizard-progress" id="wizard-progress">
+        <div class="wizard-dot active" data-step="0"></div>
+        <div class="wizard-line"></div>
+        <div class="wizard-dot" data-step="1"></div>
+        <div class="wizard-line"></div>
+        <div class="wizard-dot" data-step="2"></div>
+        <div class="wizard-line"></div>
+        <div class="wizard-dot" data-step="3"></div>
+        <div class="wizard-line"></div>
+        <div class="wizard-dot" data-step="4"></div>
+      </div>
+
+      <!-- 步骤 0：欢迎 -->
+      <div class="wizard-step active" id="wizard-step-0">
+        <div class="wizard-icon">🚀</div>
+        <h3 class="wizard-title">欢迎使用 AetherSwap</h3>
+        <p class="wizard-desc">检测到您尚未完成基础配置，建议按向导快速填写关键参数。全程约需 2 分钟，也可跳过后在「设置」面板手动配置。</p>
+        <div class="wizard-steps-preview">
+          <div class="wizard-preview-item"><span class="wizard-preview-num">1</span>Steam 令牌密钥</div>
+          <div class="wizard-preview-item"><span class="wizard-preview-num">2</span>推送通知 Token</div>
+          <div class="wizard-preview-item"><span class="wizard-preview-num">3</span>Buff 账号登录</div>
+          <div class="wizard-preview-item"><span class="wizard-preview-num">4</span>Steam 账号</div>
+        </div>
+        <div class="wizard-restore-divider">
+          <span>或者</span>
+        </div>
+        <div class="wizard-restore-card">
+          <div class="wizard-restore-icon">📦</div>
+          <div class="wizard-restore-text">
+            <div class="wizard-restore-title">已有备份？一键恢复</div>
+            <div class="wizard-restore-desc">如果您之前导出过完整备份文件，可直接导入恢复所有配置、账号和交易数据，无需逐步填写。</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="wiz-restore-btn">选择备份文件</button>
+          <input type="file" id="wiz-restore-file" accept=".json" style="display:none" />
+        </div>
+        <div id="wiz-restore-status" style="display:none; margin-top:8px; font-size:.85em; text-align:center;"></div>
+      </div>
+
+      <!-- 步骤 1：Steam 令牌 -->
+      <div class="wizard-step" id="wizard-step-1">
+        <div class="wizard-icon">🔑</div>
+        <h3 class="wizard-title">Steam 令牌密钥</h3>
+        <p class="wizard-desc">用于自动生成 Steam Guard 验证码和确认交易，是自动挂刀的核心凭据。</p>
+        <div class="field">
+          <label for="wiz-shared-secret">shared_secret <span class="wizard-tag">必填</span></label>
+          <input type="password" id="wiz-shared-secret" placeholder="Steam Guard 共享密钥" autocomplete="off" />
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label for="wiz-identity-secret">identity_secret <span class="wizard-tag">必填</span></label>
+          <input type="password" id="wiz-identity-secret" placeholder="Steam 身份密钥" autocomplete="off" />
+        </div>
+        <p class="wizard-hint">可在 Steam 手机客户端的令牌数据或第三方工具中提取。</p>
+      </div>
+
+      <!-- 步骤 2：推送通知 -->
+      <div class="wizard-step" id="wizard-step-2">
+        <div class="wizard-icon">📲</div>
+        <h3 class="wizard-title">推送通知 Token</h3>
+        <p class="wizard-desc">用于在交易完成或出错时向您的微信/公众号发送通知。</p>
+        <div class="field">
+          <label for="wiz-pushplus-token">PushPlus Token</label>
+          <input type="password" id="wiz-pushplus-token" placeholder="前往 pushplus.plus 获取" autocomplete="off" />
+        </div>
+        <p class="wizard-hint">可选配置，跳过后不影响核心交易功能，但不会收到消息推送。</p>
+      </div>
+
+      <!-- 步骤 3：Buff 登录 -->
+      <div class="wizard-step" id="wizard-step-3">
+        <div class="wizard-icon">🛒</div>
+        <h3 class="wizard-title">Buff 账号登录</h3>
+        <p class="wizard-desc">AetherSwap 需要您的 Buff Cookie 来读取市场数据和下单。桌面环境可打开浏览器登录；无桌面服务器可手动填写 Cookie。</p>
+        <div class="wizard-buff-actions">
+          <button type="button" id="wiz-buff-open" class="btn btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+            登录 / 填写 Buff Cookie
+          </button>
+          <button type="button" id="wiz-buff-done" class="btn btn-primary" disabled>已完成登录 ✓</button>
+        </div>
+        <div id="wiz-buff-status" class="wizard-hint" style="margin-top:10px"></div>
+        <p class="wizard-hint">可跳过，后续在运行过程中若 Buff 登录过期也会自动提示重新登录。</p>
+      </div>
+
+      <!-- 步骤 4：Steam 账号 -->
+      <div class="wizard-step" id="wizard-step-4">
+        <div class="wizard-icon">👤</div>
+        <h3 class="wizard-title">添加 Steam 账号</h3>
+        <p class="wizard-desc">配置完成后，需要在「账号管理」面板添加并登录一个 Steam 账号，机器人才能执行交易。</p>
+        <div class="wizard-account-hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span>引导结束后，点击左侧导航栏的「账号」即可添加账号。</span>
+        </div>
+      </div>
+
+      <!-- 底部操作栏 -->
+      <div class="wizard-footer">
+        <label class="wizard-no-remind">
+          <input type="checkbox" id="wizard-no-remind" /> 不再显示此引导
+        </label>
+        <div class="wizard-footer-btns">
+          <button type="button" id="wizard-btn-skip" class="btn btn-secondary">跳过</button>
+          <button type="button" id="wizard-btn-next" class="btn btn-primary">开始配置 →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</body>
+
+</html>

@@ -1,0 +1,33 @@
+services:
+  aetherswap:
+    build: .
+    image: aetherswap:latest
+    container_name: aetherswap
+    ports:
+      - "${AETHERSWAP_HOST_PORT:-28472}:28472"
+    volumes:
+      - ./config:/app/config
+      - ./log:/app/log
+    environment:
+      AETHERSWAP_MODE: ${AETHERSWAP_MODE:-server}
+      AETHERSWAP_AGREE_DISCLAIMER: ${AETHERSWAP_AGREE_DISCLAIMER:-1}
+      AETHERSWAP_HOST: "0.0.0.0"
+      AETHERSWAP_PORT: "28472"
+      AETHERSWAP_HEADLESS: ${AETHERSWAP_HEADLESS:-}
+      AETHERSWAP_MANUAL_LOGIN_ONLY: ${AETHERSWAP_MANUAL_LOGIN_ONLY:-}
+      HTTP_PROXY: ${HTTP_PROXY:-}
+      HTTPS_PROXY: ${HTTPS_PROXY:-}
+      NO_PROXY: ${NO_PROXY:-}
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:28472/api/runtime')",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

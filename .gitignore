@@ -21,3 +21,8 @@ plugins/*External*
 maFiles
 accounts.txt
 .pdm-python
+log/*
+.env
+*.db
+*.sqlite
+.DS_Store

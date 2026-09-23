@@ -1,0 +1,54 @@
+.git
+.gitignore
+.github
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+
+# Local runtime data (mounted as volumes at runtime)
+config/app.db
+config/app.db-*
+config/credentials.json
+config/app_config.json
+config/accounts.json
+config/playwright_steam/
+config/playwright_buff/
+config/exchange_rate.json
+config/steam_userdata.json
+config/holdings_report_last.json
+config/transactions.json
+config/transactions.json.bak
+log/
+.agreed_disclaimer
+
+# Docs & images (not needed in container)
+images/
+*.md
+!README.md
+
+# Tests
+tests/
