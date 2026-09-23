@@ -17,7 +17,7 @@
 > 免费使用、安全稳定
 
 **使用前请仔细阅读本文档！**
-**欢迎有能力者提交PR来完善本程序。**
+
 **请勿违反开源协议，包括但不限于闭源倒卖此程序或修改后不进行开源等。**
 **[欢迎加入Steamauto 官方QQ群:425721057](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=TMyvQMePF7GeJxz27fLzKHuhC2iAN6Bj&authKey=VAgXngXUeaHBfGwY2uNzE%2F8C7S5FN6HsRJDm8LREGeLObTRLSHoYsWxLHPcI9Llz&noverify=0&group_code=425721057)**
 **网络不好的可以加QQ群在群文件内下载最新构建**
