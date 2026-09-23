@@ -4,7 +4,7 @@ services:
     image: aetherswap:latest
     container_name: aetherswap
     ports:
-      - "${AETHERSWAP_HOST_PORT:-28472}:28472"
+      - "127.0.0.1:${AETHERSWAP_HOST_PORT:-28472}:28472"
     volumes:
       - ./config:/app/config
       - ./log:/app/log

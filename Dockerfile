@@ -1,18 +1,23 @@
-ARG BASE_IMAGE=mcr.microsoft.com/playwright/python:v1.49.0-jammy
-FROM ${BASE_IMAGE}
+FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements-server.txt .
-RUN pip install --no-cache-dir -r requirements-server.txt \
-    && python -m playwright install --with-deps chromium
+RUN pip install --no-cache-dir -r requirements-server.txt
 
 COPY . .
 
 RUN mkdir -p /app/config /app/log \
-    && chown -R pwuser:pwuser /app
+    && useradd -u 1000 -m appuser \
+    && chown -R appuser:appuser /app
 
-USER pwuser
+USER appuser
 
 EXPOSE 28472
 
