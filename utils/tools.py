@@ -2,7 +2,6 @@ import os
 import random
 import re
 
-import chardet
 
 from utils.logger import logger
 import utils.static as static
@@ -25,10 +24,18 @@ class exit_code:
 def get_encoding(file_path):
     if not os.path.exists(file_path):
         return "utf-8"
-    with open(file_path, "rb") as f:
-        data = f.read()
-        charset = chardet.detect(data)["encoding"]
-    return charset
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read(4096)
+        if data.startswith(b"\xef\xbb\xbf"):
+            return "utf-8-sig"
+        try:
+            data.decode("utf-8")
+            return "utf-8"
+        except UnicodeDecodeError:
+            return "gbk"
+    except Exception:
+        return "utf-8"
 
 
 def pause():

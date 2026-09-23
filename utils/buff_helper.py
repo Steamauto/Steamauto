@@ -4,8 +4,14 @@ from json import JSONDecodeError
 from typing import Dict
 
 import json5
-import qrcode
-import qrcode_terminal
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
+try:
+    import qrcode_terminal
+except ImportError:
+    qrcode_terminal = None
 import requests
 from bs4 import BeautifulSoup
 from requests_toolbelt.multipart.encoder import MultipartEncoder
@@ -74,9 +80,17 @@ def login_to_buff_by_qrcode(steam_client, proxies=None) -> str:
         return ""
     code_id = response_json["data"]["code_id"]
     qr_code_url = response_json["data"]["url"]
-    qrcode_terminal.draw(qr_code_url)
-    img = qrcode.make(qr_code_url)
-    img.save("qrcode.png")  # type: ignore
+    if qrcode_terminal:
+        try:
+            qrcode_terminal.draw(qr_code_url)
+        except Exception:
+            pass
+    if qrcode:
+        try:
+            img = qrcode.make(qr_code_url)
+            img.save("qrcode.png")  # type: ignore
+        except Exception:
+            pass
     url = "https://api.cl2wm.cn/api/qrcode/code?text=" + qr_code_url
     send_notification(steam_client, f"BUFF登录已失效！请使用手机打开以下链接获取二维码，并使用BUFF扫描该二维码以登录: {url}", "BUFF登录二维码")
     logger.info("请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描")

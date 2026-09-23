@@ -9,7 +9,10 @@ import time
 from typing import Optional
 
 import requests
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+try:
+    from PIL import Image, ImageDraw, ImageFilter, ImageFont
+except ImportError:
+    Image = ImageDraw = ImageFilter = ImageFont = None
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
@@ -287,6 +290,8 @@ def wrap_text(draw, text, font, max_width):
     return lines
 
 def generate_card(game: SteamDealGame, out_path: str) -> bool:
+    if Image is None:
+        raise RuntimeError("未安装 Pillow，无法生成图片卡片。请执行 pip install Pillow 或在支持环境下使用。")
     print(f"  生成: {game.name or game.name_en} (app_id={game.app_id})")
 
     banner = _download_banner(game.banner_url) if game.banner_url else None

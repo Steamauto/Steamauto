@@ -1,32 +1,26 @@
-
 [project]
+name = "aetherswap"
+version = "1.0.0"
+description = "AetherSwap & Steamauto Unified Delivery & Trading System"
+requires-python = ">=3.11"
 dependencies = [
-    "requests",
-    "apprise",
-    "colorama",
-    "colorlog",
-    "json5",
-    "beautifulsoup4",
-    "chardet==5.2.0",
-    "rsa",
-    "qrcode[pil]",
-    "qrcode-terminal",
-    "PyCryptodome",
-    "protobuf",
-    "PySocks",
-    "schedule",
-    "pytz",
-    "pydantic",
-    "requests-toolbelt",
-    "tqdm",
-]
-requires-python = ">=3.12"
-
-[dependency-groups]
-build = [
-    "pyinstaller>=6.22.2; python_version < '3.16'",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.22.0",
+    "pydantic>=2.0.0",
+    "typing_extensions>=4.15.0",
+    "sqlmodel>=0.0.14",
+    "requests>=2.28.0",
+    "beautifulsoup4>=4.12.0",
+    "steampy>=0.8.0",
+    "apprise>=1.8.0",
+    "json5>=0.9.14",
+    "rsa>=4.9",
+    "pycryptodome>=3.19.0",
+    "protobuf>=4.21.0",
+    "requests-toolbelt>=1.0.0",
+    "pytz>=2023.3",
 ]
 
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
