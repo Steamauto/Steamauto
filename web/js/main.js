@@ -907,14 +907,6 @@ async function init() {
     await loadRuntimeProfile();
   }
 
-  let wizardShown = false;
-  try {
-    // 提前执行新手引导检查，避免被后续可能超时的库存请求阻塞
-    wizardShown = await checkAndShowOnboardingWizard();
-  } catch (e) {
-    console.warn("Failed to check onboarding wizard:", e);
-  }
-
   try {
     await loadConfig();
     await loadProxyConfig();
@@ -922,15 +914,10 @@ async function init() {
     toast("加载配置失败", e.message || "请检查后端是否可用");
   }
 
-  if (wizardShown) {
-    // 如果弹出了引导，则不对无配置的 Steam 发起可能超时的库存请求，仅设置自动刷新
+  // 异步加载库存，避免因 Steam 网络问题阻塞页面其余部分的初始化和展示
+  refreshInventory(true).then(() => {
     setupInventoryAutoRefresh();
-  } else {
-    // 异步加载库存，避免因 Steam 网络问题阻塞页面其余部分的初始化和展示
-    refreshInventory(true).then(() => {
-      setupInventoryAutoRefresh();
-    });
-  }
+  });
 
   await refreshStatus();
   setInterval(refreshStatus, 2000);

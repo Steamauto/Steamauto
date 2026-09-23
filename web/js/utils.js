@@ -223,15 +223,6 @@ function applyRuntimeUiHints() {
   if (reloginOpen) reloginOpen.textContent = canLaunch ? "打开浏览器并登录" : "手动填写 Cookie";
   if (reloginOk && !canLaunch) reloginOk.disabled = true;
 
-  const wizardBuffOpen = el("wiz-buff-open");
-  if (wizardBuffOpen) {
-    const icon = wizardBuffOpen.querySelector("svg")?.outerHTML || "";
-    wizardBuffOpen.innerHTML = `${icon}${canLaunch ? "打开浏览器登录 Buff" : "手动填写 Buff Cookie"}`;
-  }
-  const wizardBuffDesc = document.querySelector("#wizard-step-3 .wizard-desc");
-  if (wizardBuffDesc && !canLaunch) {
-    wizardBuffDesc.textContent = "AetherSwap 需要您的 Buff Cookie 来读取市场数据和下单。当前后端无法弹出图形浏览器，请在本机浏览器登录 Buff 后复制 Cookie 并粘贴保存。";
-  }
   const accountGuideStep = document.querySelector("#accounts-guide-callout .agu-step:nth-child(2)");
   if (accountGuideStep && !canLaunch) {
     accountGuideStep.innerHTML = '<span class="agu-num">2</span> 点击账号卡片上的「<strong>验证</strong>」，若服务器无法自动处理则手动粘贴 Cookie';
