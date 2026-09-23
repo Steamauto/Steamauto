@@ -3,7 +3,7 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
-from app.config_loader import load_config
+from app.config_loader import load_app_config_validated
 from app.database import db_add_trade_order, db_get_trade_orders
 from app.steam_confirm import SteamConfirmer
 from utils.delay import jittered_sleep
@@ -39,7 +39,7 @@ def _get_steam_confirmer() -> Optional[SteamConfirmer]:
         from app.accounts import load_accounts
 
         accs = load_accounts()
-        cfg = load_config().get("app", {})
+        cfg = load_app_config_validated()
         steam_confirm_cfg = cfg.get("steam_confirm", {})
         steam_guard_cfg = cfg.get("steam_guard", {})
 
@@ -263,7 +263,7 @@ def _worker_loop():
 
     while not _STOP_EVENT.is_set():
         try:
-            cfg = load_config().get("app", {})
+            cfg = load_app_config_validated()
             delivery_cfg = cfg.get("delivery", {})
 
             if delivery_cfg.get("enabled", True):
