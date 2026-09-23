@@ -36,28 +36,36 @@ def _cookies_str_to_dict(cookie_str: str) -> Dict[str, str]:
 
 def _get_steam_confirmer() -> Optional[SteamConfirmer]:
     try:
-        from app.accounts import load_accounts
+        from steam.steam_confirm import SteamConfirmer
+        from app.config_loader import load_app_config_validated, get_steam_credentials
+        from app.accounts import list_accounts
 
-        accs = load_accounts()
         cfg = load_app_config_validated()
+        delivery_cfg = cfg.get("delivery", {})
         steam_confirm_cfg = cfg.get("steam_confirm", {})
         steam_guard_cfg = cfg.get("steam_guard", {})
+        steam_cred = get_steam_credentials() or {}
 
-        steam_acc = next((a for a in accs if a.get("platform") == "steam"), None)
-        if not steam_acc:
-            return None
+        accs = list_accounts()
+        current_acc = accs[0] if accs else {}
 
-        cookies = steam_acc.get("cookies", "")
-        steam_id = steam_acc.get("steam_id", "")
+        cookies = steam_cred.get("cookies") or current_acc.get("cookies", "")
+        steam_id = steam_cred.get("steam_id") or current_acc.get("steam_id", "")
         identity_secret = (
-            steam_confirm_cfg.get("identity_secret")
-            or steam_acc.get("identity_secret")
+            delivery_cfg.get("identity_secret")
+            or steam_confirm_cfg.get("identity_secret")
             or steam_guard_cfg.get("identity_secret")
+            or steam_cred.get("identity_secret")
+            or current_acc.get("identity_secret")
             or ""
         )
-        device_id = steam_confirm_cfg.get("device_id") or f"android:{steam_id}"
+        device_id = (
+            delivery_cfg.get("device_id")
+            or steam_confirm_cfg.get("device_id")
+            or (f"android:{steam_id}" if steam_id else "")
+        )
 
-        if not identity_secret:
+        if not identity_secret or not steam_id or not cookies:
             return None
 
         return SteamConfirmer(
@@ -71,54 +79,24 @@ def _get_steam_confirmer() -> Optional[SteamConfirmer]:
         return None
 
 
-def run_trade_confirmations() -> int:
-    """自动扫描并批量签署所有挂起的 Steam 2FA 移动端交易确认"""
-    confirmer = _get_steam_confirmer()
-    if not confirmer:
-        return 0
-
-    ok, conf_list, err = confirmer.get_confirmations()
-    if not ok or not conf_list:
-        return 0
-
-    _LAST_STATUS["pending_confirms_count"] = len(conf_list)
-    logger.info(f"检测到 {len(conf_list)} 个待处理的 Steam 移动端交易确认，正在自动签署...")
-
-    ok_accept, count, err_accept = confirmer.accept_all(conf_list)
-    if ok_accept:
-        logger.info(f"已成功自动签署 {count} 个 Steam 移动端确认！")
-        for c in conf_list:
-            db_add_trade_order({
-                "platform": "steam",
-                "trade_offer_id": str(c.get("creator_id") or c.get("id")),
-                "action": "confirm_2fa",
-                "item_name": "Steam 移动令牌签名",
-                "status": "confirmed",
-                "message": f"成功签署 confirmation id={c.get('id')}",
-            })
-        return count
-    else:
-        logger.warning(f"签署 Steam 移动端确认失败: {err_accept}")
-        return 0
-
-
 def process_buff_delivery(delivery_cfg: dict) -> None:
     """处理网易 BUFF 自动收发货与报价跟踪"""
     if not delivery_cfg.get("buff_auto_ship") and not delivery_cfg.get("buff_auto_accept"):
         return
 
     try:
-        from app.services.buff_client import get_buff_client
-        from app.accounts import load_accounts
+        from app.config_loader import get_buff_credentials, get_steam_credentials
+        from app.services.buff_client import create_buff_client_from_config
         from app.receive_flow import fetch_buff_steam_trade, accept_steam_trade_offer
 
-        buff_client = get_buff_client()
-        if not buff_client:
+        buff_cred = get_buff_credentials()
+        if not buff_cred or not buff_cred.get("cookies"):
+            _LAST_STATUS["buff_status"] = "waiting (no buff cookies)"
             return
 
-        accs = load_accounts()
-        steam_acc = next((a for a in accs if a.get("platform") == "steam"), None)
-        steam_cookies = _cookies_str_to_dict(steam_acc.get("cookies", "") if steam_acc else "")
+        buff_client = create_buff_client_from_config(buff_cred, delivery_cfg)
+        steam_cred = get_steam_credentials()
+        steam_cookies = _cookies_str_to_dict(steam_cred.get("cookies", ""))
 
         # 1. 自动处理待收货
         if delivery_cfg.get("buff_auto_accept") and steam_cookies:
@@ -159,17 +137,17 @@ def process_uu_delivery(delivery_cfg: dict) -> None:
 
     token = (delivery_cfg.get("uu_token") or "").strip()
     if not token:
+        _LAST_STATUS["uu_status"] = "waiting (no uu token)"
         return
 
     try:
         import uuyoupinapi
-        from app.accounts import load_accounts
+        from app.config_loader import get_steam_credentials
         from app.receive_flow import accept_steam_trade_offer
 
         uu = uuyoupinapi.UUAccount(token)
-        accs = load_accounts()
-        steam_acc = next((a for a in accs if a.get("platform") == "steam"), None)
-        steam_cookies = _cookies_str_to_dict(steam_acc.get("cookies", "") if steam_acc else "")
+        steam_cred = get_steam_credentials()
+        steam_cookies = _cookies_str_to_dict(steam_cred.get("cookies", ""))
 
         deliver_list = uu.get_wait_deliver_list()
         if deliver_list:
@@ -207,18 +185,15 @@ def process_steam_gift_offers(delivery_cfg: dict) -> None:
         return
 
     try:
-        from app.accounts import load_accounts
+        from app.config_loader import get_steam_credentials
         from app.receive_flow import accept_steam_trade_offer
         import requests
 
-        accs = load_accounts()
-        steam_acc = next((a for a in accs if a.get("platform") == "steam"), None)
-        if not steam_acc:
-            return
-
-        cookies = _cookies_str_to_dict(steam_acc.get("cookies", ""))
-        api_key = steam_acc.get("api_key") or ""
+        steam_cred = get_steam_credentials()
+        cookies = _cookies_str_to_dict(steam_cred.get("cookies", ""))
+        api_key = steam_cred.get("api_key") or delivery_cfg.get("steam_api_key") or ""
         if not cookies.get("sessionid") or not cookies.get("steamLoginSecure"):
+            _LAST_STATUS["steam_status"] = "waiting (no steam cookies)"
             return
 
         # 如果配置了 API Key，直接调用官方 GetTradeOffers 接口
@@ -255,6 +230,36 @@ def process_steam_gift_offers(delivery_cfg: dict) -> None:
     except Exception as e:
         _LAST_STATUS["steam_status"] = f"error: {str(e)[:50]}"
         logger.debug(f"[Steam礼物报价轮询异常]: {e}")
+
+def run_trade_confirmations() -> int:
+    """自动扫描并批量签署所有挂起的 Steam 2FA 移动端交易确认"""
+    confirmer = _get_steam_confirmer()
+    if not confirmer:
+        return 0
+
+    ok, conf_list, err = confirmer.get_confirmations()
+    if not ok or not conf_list:
+        return 0
+
+    _LAST_STATUS["pending_confirms_count"] = len(conf_list)
+    logger.info(f"检测到 {len(conf_list)} 个待处理的 Steam 移动端交易确认，正在自动签署...")
+
+    ok_accept, count, err_accept = confirmer.accept_all(conf_list)
+    if ok_accept:
+        logger.info(f"已成功自动签署 {count} 个 Steam 移动端确认！")
+        for c in conf_list:
+            db_add_trade_order({
+                "platform": "steam",
+                "trade_offer_id": str(c.get("creator_id") or c.get("id")),
+                "action": "confirm_2fa",
+                "item_name": "Steam 移动令牌签名",
+                "status": "confirmed",
+                "message": f"成功签署 confirmation id={c.get('id')}",
+            })
+        return count
+    else:
+        logger.warning(f"签署 Steam 移动端确认失败: {err_accept}")
+        return 0
 
 
 def _worker_loop():
