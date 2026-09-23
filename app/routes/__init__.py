@@ -27,5 +27,5 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(proxy_router)
     app.include_router(steam_deals_router)
     app.include_router(strategies_router)
-    app.include_router(static_router)
     app.include_router(delivery_router)
+    app.include_router(static_router)
