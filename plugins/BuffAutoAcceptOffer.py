@@ -1,6 +1,6 @@
 import time
 
-from BuffApi import BuffAccount
+from BuffApi import BuffAccount, BuffLoginRequired
 from utils.buff_helper import get_valid_session_for_buff
 from utils.logger import PluginLogger, handle_caught_exception
 from utils.steam_client import accept_trade_offer
@@ -107,18 +107,16 @@ class BuffAutoAcceptOffer:
     def check_buff_account_state(self):
         try:
             username = self.buff_account.get_user_nickname()
-            if username:
-                # 检查是否能正常访问steam_trade接口
-                trades = self.buff_account.get_steam_trade()
-                if trades is None:
-                    self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试!")
-                    return ""
-                return username
-        except Exception as e:
-            self.logger.error(f"检查BUFF账户状态失败: {str(e)}")
-
-        self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试!")
-        return ""
+            if not username:
+                raise ValueError("BUFF用户信息缺少昵称")
+            # 空交易列表表示当前没有订单，不代表登录失效。
+            trades = self.buff_account.get_steam_trade()
+            if not isinstance(trades, list):
+                raise ValueError("BUFF交易接口返回了无效响应")
+            return username
+        except BuffLoginRequired:
+            self.logger.error("BUFF账户登录状态失效, 请检查buff_cookies.txt或稍后再试!")
+            return ""
 
     def format_item_info(self, trade):
         """格式化物品信息用于显示在交易接受描述中"""
@@ -165,8 +163,7 @@ class BuffAutoAcceptOffer:
                     self.logger.info("BUFF账户登录状态失效, 尝试重新登录...")
                     session = get_valid_session_for_buff(self.steam_client, self.logger, proxies=self.buff_account.session.proxies)
                     if session == "":
-                        self.logger.error("BUFF账户登录状态失效, 无法自动重新登录!")
-                        return
+                        raise RuntimeError("BUFF自动重新登录未成功，将在下次轮询时重试")
                     self.buff_account = BuffAccount(session, proxies=self.buff_account.session.proxies)
 
                 notification = self.buff_account.get_notification()
@@ -286,7 +283,7 @@ class BuffAutoAcceptOffer:
                     self.logger.info("没有待处理的交易报价")
             except Exception as e:
                 handle_caught_exception(e, "BuffAutoAcceptOffer")
-                self.logger.info("出现未知错误, 稍后再试!")
+                self.logger.warning("本轮BUFF检查或发货失败，保留当前Cookie，稍后自动重试")
 
             self.logger.info(f"将在{interval}秒后再次检查待发货订单信息!")
             time.sleep(interval)

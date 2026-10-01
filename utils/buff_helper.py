@@ -1,6 +1,5 @@
 import os
 import time
-from json import JSONDecodeError
 from typing import Dict
 
 import json5
@@ -10,11 +9,16 @@ import requests
 from bs4 import BeautifulSoup
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
+from BuffApi import BuffLoginRequired, get_authenticated_data
 from steampy.client import SteamClient
 from utils.logger import handle_caught_exception
 from utils.notifier import send_notification
 from utils.static import BUFF_COOKIES_FILE_PATH
 from utils.tools import get_encoding, logger
+
+
+BUFF_REQUEST_TIMEOUT = 10
+BUFF_QRCODE_TIMEOUT = 180
 
 
 def parse_openid_params(response: str) -> Dict[str, str]:
@@ -30,9 +34,9 @@ def parse_openid_params(response: str) -> Dict[str, str]:
 def get_openid_params(steam_client: SteamClient, proxies=None):
     session = requests.Session()
     session.proxies = proxies
-    response = requests.get("https://buff.163.com/account/login/steam?back_url=/", allow_redirects=False)
+    response = session.get("https://buff.163.com/account/login/steam?back_url=/", allow_redirects=False, timeout=BUFF_REQUEST_TIMEOUT)
     location_url = response.headers["Location"]
-    response = steam_client._session.get(location_url)
+    response = steam_client._session.get(location_url, timeout=BUFF_REQUEST_TIMEOUT)
     return parse_openid_params(response.text), location_url, session
 
 
@@ -47,14 +51,20 @@ def login_to_buff_by_steam(steam_client: SteamClient, proxies=None):
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "Referer": location_url,
     }
-    response = steam_client._session.post("https://steamcommunity.com/openid/login", data=multipart_data, headers=headers, allow_redirects=False)
-    while response.status_code == 302:
-        response = session.get(response.headers["Location"], allow_redirects=False)
+    response = steam_client._session.post(
+        "https://steamcommunity.com/openid/login", data=multipart_data, headers=headers, allow_redirects=False, timeout=BUFF_REQUEST_TIMEOUT
+    )
+    for _ in range(10):
+        if response.status_code != 302:
+            break
+        response = session.get(response.headers["Location"], allow_redirects=False, timeout=BUFF_REQUEST_TIMEOUT)
+    if response.status_code == 302:
+        raise requests.TooManyRedirects("BUFF登录重定向次数过多")
     # 测试是否可用
-    data = session.get("https://buff.163.com/account/api/steam/info").json()
+    data = session.get("https://buff.163.com/account/api/steam/info", timeout=BUFF_REQUEST_TIMEOUT).json()
     if data["code"] != "OK":
         return ""
-    data = session.get(url="https://buff.163.com/account/api/login/status").json()["data"]
+    data = session.get(url="https://buff.163.com/account/api/login/status", timeout=BUFF_REQUEST_TIMEOUT).json()["data"]
     if data["state"] == 2:
         return session.cookies.get_dict(domain="buff.163.com").get("session", "")
     else:
@@ -64,11 +74,13 @@ def login_to_buff_by_steam(steam_client: SteamClient, proxies=None):
 def login_to_buff_by_qrcode(steam_client, proxies=None) -> str:
     session = requests.session()
     session.proxies = proxies
-    response_json = session.get("https://buff.163.com/account/api/qr_code_login_open", params={"_": str(int(time.time() * 1000))}).json()
+    response_json = session.get(
+        "https://buff.163.com/account/api/qr_code_login_open", params={"_": str(int(time.time() * 1000))}, timeout=BUFF_REQUEST_TIMEOUT
+    ).json()
     if response_json["code"] != "OK":
         return ""
     qr_code_create_url = "https://buff.163.com/account/api/qr_code_create"
-    response_json = session.post(qr_code_create_url, json={"code_type": 1, "extra_param": "{}"}).json()
+    response_json = session.post(qr_code_create_url, json={"code_type": 1, "extra_param": "{}"}, timeout=BUFF_REQUEST_TIMEOUT).json()
     if response_json["code"] != "OK":
         logger.error("获取二维码失败")
         return ""
@@ -82,11 +94,20 @@ def login_to_buff_by_qrcode(steam_client, proxies=None) -> str:
     logger.info("请使用手机扫描上方二维码登录BUFF或打开程序目录下的qrcode.png扫描")
     status = 0
     scanned = False
+    deadline = time.monotonic() + BUFF_QRCODE_TIMEOUT
     while status != 3:
+        if time.monotonic() >= deadline:
+            logger.warning("BUFF二维码登录等待超时，稍后重试")
+            return ""
         time.sleep(1)
-        response_json = session.get("https://buff.163.com/account/api/qr_code_poll", params={"_": str(int(time.time() * 1000)), "item_id": code_id}).json()
+        response_json = session.get(
+            "https://buff.163.com/account/api/qr_code_poll", params={"_": str(int(time.time() * 1000)), "item_id": code_id}, timeout=BUFF_REQUEST_TIMEOUT
+        ).json()
+        if response_json["code"] != "OK":
+            logger.error("二维码已失效")
+            return ""
         status = response_json["data"]["state"]
-        if status == 4 or response_json["code"] != "OK":
+        if status == 4:
             logger.error("二维码已失效")
             return ""
         if status == 2 and not scanned:
@@ -95,6 +116,7 @@ def login_to_buff_by_qrcode(steam_client, proxies=None) -> str:
     response = session.post(
         "https://buff.163.com/account/api/qr_code_login",
         json={"item_id": code_id},
+        timeout=BUFF_REQUEST_TIMEOUT,
     )
     logger.debug(json5.dumps(response.json()))
     cookies = response.cookies.get_dict(domain="buff.163.com")
@@ -108,14 +130,17 @@ def login_to_buff_by_qrcode(steam_client, proxies=None) -> str:
 
 
 def is_session_has_enough_permission(session: str, proxies=None) -> bool:
+    if not session or session == "session=":
+        return False
     if not session.startswith("session="):
         session = "session=" + session
     try:
-        response_json = requests.get("https://buff.163.com/api/market/steam_trade", headers={"Cookie": session}, proxies=proxies).json()
-        if "data" not in response_json:
-            return False
+        response = requests.get("https://buff.163.com/api/market/steam_trade", headers={"Cookie": session}, proxies=proxies, timeout=BUFF_REQUEST_TIMEOUT)
+        trades = get_authenticated_data(response)
+        if not isinstance(trades, list):
+            raise ValueError("BUFF交易接口返回了无效响应")
         return True
-    except:
+    except BuffLoginRequired:
         return False
 
 
@@ -123,7 +148,6 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger, proxies=None) 
     logger.info("[BuffLoginSolver] 正在获取与检查BUFF session...")
     if proxies:
         logger.info("[BuffLoginSolver] 检测到Steam代理设置，正在为BUFF设置相同的代理...")
-    global session
     session = ""
     if not os.path.exists(BUFF_COOKIES_FILE_PATH.format(steam_username=steam_client.username)):
         with open(BUFF_COOKIES_FILE_PATH.format(steam_username=steam_client.username), "w", encoding="utf-8") as f:
@@ -151,28 +175,28 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger, proxies=None) 
             else:
                 logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
 
+        except (requests.RequestException, ValueError):
+            # 无法验证时保留缓存，由调用方稍后重试，避免误入扫码登录。
+            raise
         except Exception as e:
             handle_caught_exception(e)
             logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
 
     if not session:  # 尝试通过二维码
         logger.info("[BuffLoginSolver] 正在尝试通过二维码登录至BUFF...")
-        try:
-            session = login_to_buff_by_qrcode(steam_client, proxies)
-            if (not session) or (not is_session_has_enough_permission(session, proxies)):
-                logger.error("[BuffLoginSolver] 使用Steam登录至BUFF失败")
-            else:
-                logger.info("[BuffLoginSolver] 使用二维码登录至BUFF成功")
-        except JSONDecodeError:
-            logger.error("[BuffLoginSolver] 你的服务器IP被BUFF封禁。请尝试更换服务器！")
+        session = login_to_buff_by_qrcode(steam_client, proxies)
+        if (not session) or (not is_session_has_enough_permission(session, proxies)):
+            logger.error("[BuffLoginSolver] 使用二维码登录至BUFF失败")
             session = ""
+        else:
+            logger.info("[BuffLoginSolver] 使用二维码登录至BUFF成功")
     if not session:  # 无法登录至BUFF
         logger.error("[BuffLoginSolver] 无法登录至BUFF, 请手动更新BUFF cookies! ")
         send_notification(steam_client, "无法登录至BUFF，请手动更新BUFF cookies!", "BUFF登录失败")
     else:
         with open(BUFF_COOKIES_FILE_PATH.format(steam_username=steam_client.username), "w", encoding="utf-8") as f:
             f.write("session=" + session.replace("session=", ""))
-    if "session=" not in session:
+    if session and "session=" not in session:
         session = "session=" + session
     return session
 
@@ -180,7 +204,7 @@ def get_valid_session_for_buff(steam_client: SteamClient, logger, proxies=None) 
 def get_buff_username(session) -> str:
     if "session=" not in session:
         session = "session=" + session
-    response_json = requests.get("https://buff.163.com/account/api/user/info", headers={"Cookie": session}).json()
+    response_json = requests.get("https://buff.163.com/account/api/user/info", headers={"Cookie": session}, timeout=BUFF_REQUEST_TIMEOUT).json()
     if response_json["code"] == "OK":
         if "data" in response_json:
             if "nickname" in response_json["data"]:
