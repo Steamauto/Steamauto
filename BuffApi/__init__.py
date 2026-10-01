@@ -26,6 +26,27 @@ from BuffApi import models
 logger = PluginLogger("BuffApi")
 
 
+class BuffLoginRequired(Exception):
+    """BUFF 明确要求重新登录。"""
+
+
+def get_authenticated_data(response):
+    """区分登录失效与网络、限流、服务端及响应格式异常。"""
+    if response.status_code == 401:
+        raise BuffLoginRequired("BUFF账户登录状态失效")
+    if response.status_code == 429 or response.status_code >= 500:
+        response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict):
+        raise ValueError("BUFF接口返回了无效响应")
+    if payload.get("code") == "Login Required":
+        raise BuffLoginRequired("BUFF账户登录状态失效")
+    response.raise_for_status()
+    if payload.get("code") != "OK" or payload.get("data") is None:
+        raise ValueError(f"BUFF接口暂时不可用，错误码: {payload.get('code')}")
+    return payload["data"]
+
+
 def get_ua():
     first_num = random.randint(55, 62)
     third_num = random.randint(0, 3200)
@@ -125,11 +146,7 @@ class BuffAccount:
     def get_user_info(self) -> Dict:
         """获取用户信息，包含SteamID等数据"""
         response = self.get(f"{self.BASE_URL}/account/api/user/info")
-        if response.status_code == 200:
-            data = response.json()
-            if data["code"] == "OK" and "data" in data:
-                return data["data"]
-        return {}
+        return get_authenticated_data(response)
 
     def set_force_buyer_send_offer(self) -> bool:
         """设置只允许买家发起交易报价"""
@@ -370,11 +387,7 @@ class BuffAccount:
 
     def get_steam_trade(self) -> list:
         response = self.get(f"{self.BASE_URL}/api/market/steam_trade")
-        if response.status_code == 200:
-            data = response.json()
-            if data["code"] == "OK":
-                return data["data"]
-        return []
+        return get_authenticated_data(response)
 
     def on_sale(self, assets: list[models.BuffOnSaleAsset]):
         """
