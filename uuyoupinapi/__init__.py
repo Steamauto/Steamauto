@@ -55,6 +55,10 @@ def is_json(data):
     return True
 
 
+class UULoginExpired(Exception):
+    """悠悠有品登录凭据已失效。"""
+
+
 class UUAccount:
     def __init__(self, token: str, deviceToken="", proxy=None):
         """
@@ -231,8 +235,8 @@ class UUAccount:
             log_output = json.dumps(json_output, ensure_ascii=False)
             logger.debug(f"{method} {path} {json.dumps(data)} {log_output}")
 
-            if json_output.get("code") == 84101:
-                raise Exception("登录状态失效，请重新登录")
+            if str(json_output.get("code", json_output.get("Code"))) == "84101":
+                raise UULoginExpired("登录状态失效，请重新登录")
         elif response.status_code == 405:
             logger.error("悠悠UK令牌失效，等待一分钟程序继续运行")
             time.sleep(60)

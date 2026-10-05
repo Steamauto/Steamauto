@@ -22,21 +22,26 @@ def get_valid_token_for_uu(steam_client, proxies=None):
                 uuyoupin = uuyoupinapi.UUAccount(token, proxy=proxies)
                 logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
                 return token
-            except Exception:
+            except uuyoupinapi.UULoginExpired:
                 logger.warning("缓存的悠悠有品Token无效")
+            except Exception as e:
+                handle_caught_exception(e, "[UULoginSolver]")
+                return False
     else:
         logger.info("未检测到存储的悠悠token")
     logger.info("即将重新登录悠悠有品！")
-    token = str(get_token_automatically(proxies))
     try:
+        token = get_token_automatically(proxies)
+        if not isinstance(token, str) or not token.strip():
+            return False
         uuyoupin = uuyoupinapi.UUAccount(token, proxy=proxies)
         logger.info("悠悠有品成功登录, 用户名: " + uuyoupin.get_user_nickname())
         with open(UU_TOKEN_FILE_PATH.format(steam_username=steam_client.username), "w", encoding="utf-8") as f:
             f.write(token)
         logger.info("悠悠有品Token已自动缓存到本地")
         return token
-    except TypeError:
-        logger.error("获取Token失败！可能是验证码填写错误或者未发送验证短信！")
+    except uuyoupinapi.UULoginExpired:
+        logger.error("悠悠有品登录状态失效，请重新登录；本次获取的Token未通过验证")
         return False
     except Exception as e:
         handle_caught_exception(e, "[UULoginSolver]")
@@ -51,7 +56,10 @@ def get_token_automatically(proxies=None):
     device_info = uuyoupinapi.generate_random_string(10)
     headers = uuyoupinapi.generate_headers(device_info, device_info)
 
-    phone_number = input(f"{Style.BRIGHT + Fore.RED}请输入手机号(+86)(如果此时有其它插件输出请忽略！输入完按回车即可！)：{Style.RESET_ALL}")
+    phone_number = input(f"{Style.BRIGHT + Fore.RED}请输入手机号(+86)(如果此时有其它插件输出请忽略！输入完按回车即可！)：{Style.RESET_ALL}").strip()
+    if not phone_number:
+        logger.error("悠悠有品登录失败：请输入手机号")
+        return False
     token_id = device_info
     logger.debug("随机生成的token_id：" + token_id)
     uk = uuyoupinapi.UUAccount.get_uu_uk()
@@ -61,12 +69,15 @@ def get_token_automatically(proxies=None):
     response = {}
     if "成功" in result.get("Msg", ""):
         logger.info("发送验证码结果：" + result["Msg"])
-        sms_code = input(f"{Style.BRIGHT + Fore.RED}请输入验证码(如果此时有其它插件输出请忽略！输入完按回车即可！)：{Style.RESET_ALL}")
+        sms_code = input(f"{Style.BRIGHT + Fore.RED}请输入验证码(如果此时有其它插件输出请忽略！输入完按回车即可！)：{Style.RESET_ALL}").strip()
+        if not sms_code:
+            logger.error("悠悠有品登录失败：请输入短信验证码")
+            return False
         response = uuyoupinapi.UUAccount.sms_sign_in(phone_number, sms_code, token_id, headers=headers, proxies=proxies)
     else:
         logger.info("该手机号需要手动发送短信进行验证，正在获取相关信息...")
         result = uuyoupinapi.UUAccount.get_smsUpSignInConfig(headers, proxies).json()
-        if result["Code"] == 0:
+        if str(result.get("Code", result.get("code"))) == "0":
             logger.info("请求结果：" + result["Msg"])
             logger.info(
                 f"{Style.BRIGHT + Fore.RED}请编辑发送短信 {Fore.YELLOW + result['Data']['SmsUpContent']} {Fore.RED}到号码 {Fore.YELLOW + result['Data']['SmsUpNumber']} {Fore.RED}！(如果此时有其它插件输出请忽略)发送完成后请按下回车{Style.RESET_ALL}",
@@ -75,9 +86,17 @@ def get_token_automatically(proxies=None):
             logger.info("请稍候...")
             time.sleep(3)  # 防止短信发送延迟
             response = uuyoupinapi.UUAccount.sms_sign_in(phone_number, "", token_id, headers=headers, proxies=proxies)
-    logger.info("登录结果：" + response["Msg"])
-    try:
-        got_token = response["Data"]["Token"]
-    except (KeyError, TypeError, AttributeError):
+        else:
+            logger.error("获取短信验证配置失败：" + (result.get("Msg") or result.get("msg") or "接口未返回错误原因"))
+            return False
+    message = response.get("Msg") or response.get("msg") or "接口未返回错误原因"
+    if str(response.get("Code", response.get("code"))) != "0":
+        logger.error("悠悠有品登录失败：" + message)
         return False
-    return got_token
+    data = response.get("Data", response.get("data"))
+    got_token = data.get("Token") if isinstance(data, dict) else None
+    if not isinstance(got_token, str) or not got_token.strip():
+        logger.error("悠悠有品登录失败：接口未返回有效Token，请重新登录")
+        return False
+    logger.info("登录结果：" + message)
+    return got_token.strip()
