@@ -164,4 +164,16 @@ pip install urllib3==1.25.11
 
 感谢 [1Password](https://1password.com/) 为开源项目提供免费的 [1Password](https://1password.com/) 团队账户的授权
 
-感谢 [ZMTO](https://console.zmto.com/?affid=1578) 提供的支持！
+## Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="96">
+      <a href="https://vgtopup.com/" rel="sponsored"><img src="https://cdn.vgtopup.com/logo-icon.png" alt="VGTopup" width="64" height="64" /></a>
+    </td>
+    <td>
+      <a href="https://vgtopup.com/" rel="sponsored"><b>VGTopup</b></a> <sub>Sponsored</sub><br />
+      Game top-ups and live app recharges for gacha and mobile games, with instant delivery.
+    </td>
+  </tr>
+</table>
